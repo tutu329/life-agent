@@ -158,9 +158,9 @@ def main():
 
 def main1():
     llm = LLM_Qwen()
-    res = llm.ask("简单描述一下一个女生正在进行某种运动的情形，用英文回复。").sync_print()
+    res = llm.ask("简单描述一下一个女生正在看书的情形，用英文回复。").sync_print()
     # Stable_Diffusion.quick_start('1girl, super model, showering, breasts, wet, side view, look at viewer, from below, standing, nipples, long legs, full body, sexy, beautiful', in_high_quality=True)
-    Stable_Diffusion.quick_start(res, in_high_quality=True)
+    Stable_Diffusion.quick_start(res, in_high_quality=False)
 
 if __name__ == "__main__":
     main1()
