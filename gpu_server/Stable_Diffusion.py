@@ -466,6 +466,19 @@ class Stable_Diffusion():
             pnginfo.add_text("parameters", response2.json().get("info"))
             image.save(in_file_name+'_'+str(num)+'_'+str(uuid.uuid4())+'.png', pnginfo=pnginfo)
 
+    def txt2img(self):
+        print('请求服务器中...')
+        para=None
+        if self.hires_img:
+            para = self._hires_draw_parameters
+        else:
+            para = self._draw_parameters
+        response = requests.post(url=f'{self.url}/sdapi/v1/txt2img', json=para)
+        json_response = response.json()
+
+        return Image.open(io.BytesIO(base64.b64decode(json_response['images'][0].split(",", 1)[0])))
+
+
     def txt2img_to_clipboard_generator(self):
         import win32clipboard
 
@@ -618,6 +631,31 @@ class Stable_Diffusion():
             # sd.txt2img_to_clipboard_generator()
         elif in_video:
             sd.txt2video(in_file_name=file_name)
+
+    @staticmethod
+    def quick_get_image(in_prompt, in_high_quality=False, in_video=False):
+        import sys
+        sd = Stable_Diffusion(in_model="awportrait_v11.safetensors", in_url="http://116.62.63.204:5000")
+        sd.init()
+        sd.set_prompt(
+            in_hires_img=in_high_quality,  # 仅对image有效
+            # in_hires_img=True,  # 仅对image有效
+
+            in_restore_face_by_adetailer=True,
+            in_vertical=True,
+            in_steps=20,
+            in_batch_size=1,
+            in_sampler='DPM++ 2M Karras',
+            in_cfg_scale=7,
+            in_l_size=768,
+            in_s_size=512,
+
+            in_prompt=in_prompt,
+            in_negative_prompt='(lowres:1.5),(worst quality:2),(low quality:2),(normal quality:2), (text:2), watermark,badhandv4,ng_deepnegative_v1_75t',
+        )
+
+        img = sd.txt2img()
+        return img
 
 def main():
     Stable_Diffusion.quick_start('girl, reading, naked', in_high_quality=False)
