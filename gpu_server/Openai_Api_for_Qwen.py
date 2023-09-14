@@ -47,6 +47,8 @@ class LLM_Qwen():
             else:
                 if self.history_clear_method=='pop':
                     print('======记忆超限，记录本轮对话、删除首轮对话======')
+                    # for item in self.history_list:
+                    #     print(item)
                     if self.role_prompt!='':
                         self.history_list.pop(2)
                         self.history_list.pop(2)
