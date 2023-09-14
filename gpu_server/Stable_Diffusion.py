@@ -591,7 +591,7 @@ class Stable_Diffusion():
         if sys.platform.startswith('win'):
             file_name = 'C:/sd_pics/output'
         else:
-            file_name = '/home/tutu/sd_pics/output'
+            file_name = '/Users/tutu/sd_pics/output'
 
 
         sd = Stable_Diffusion(in_model="awportrait_v11.safetensors", in_url="http://116.62.63.204:5000")
@@ -620,8 +620,8 @@ class Stable_Diffusion():
             sd.txt2video(in_file_name=file_name)
 
 def main():
-    # Stable_Diffusion.quick_start('girl, reading, library', in_high_quality=True)
-    Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),High detail RAW color photo,extremely detailed 8k wallpaper,(photo realism:1.3),1girl, (from below:1.3), look straight ahead, smile, (thin waist), (catwalk:1.5), high heels, long shot,  (standing:1.5), full body, pure orange wall background, super model,long slim legs,black hair,(real skin, ultra detailed, 8k, photo realism),random seductive pose,environment light,photon mapping,radiosity,physically-based rendering', in_high_quality=True)
+    Stable_Diffusion.quick_start('girl, reading, naked', in_high_quality=False)
+    # Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),High detail RAW color photo,extremely detailed 8k wallpaper,(photo realism:1.3),1girl, (from below:1.3), look straight ahead, smile, (thin waist), (catwalk:1.5), high heels, long shot,  (standing:1.5), full body, pure orange wall background, super model,long slim legs,black hair,(real skin, ultra detailed, 8k, photo realism),random seductive pose,environment light,photon mapping,radiosity,physically-based rendering', in_high_quality=True)
     # # sd = Stable_Diffusion(in_model="dreamshaper_8.safetensors", in_url="http://localhost:5000")
     # sd = Stable_Diffusion(in_model="awportrait_v11.safetensors", in_url="http://localhost:5000")
     # # sd = Stable_Diffusion(in_model="awportrait_v11.safetensors")
