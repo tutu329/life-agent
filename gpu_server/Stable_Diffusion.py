@@ -635,6 +635,8 @@ class Stable_Diffusion():
     @staticmethod
     def quick_get_image(in_prompt, in_high_quality=False, in_video=False):
         import sys
+        # sd = Stable_Diffusion(in_model="dreamshaper_8.safetensors", in_url="http://116.62.63.204:5000")
+        # sd = Stable_Diffusion(in_model="majicmixRealistic_betterV2V25.safetensors", in_url="http://116.62.63.204:5000")
         sd = Stable_Diffusion(in_model="awportrait_v11.safetensors", in_url="http://116.62.63.204:5000")
         sd.init()
         sd.set_prompt(

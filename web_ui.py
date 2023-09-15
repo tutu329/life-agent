@@ -15,6 +15,25 @@ def ask(prompt):
     for item in llm.ask(prompt).get_generator():
         res += item
         yield res
+
+g_imgs = []
+def get_image(prompt):
+    # prompt = "1girl, super model, in library, extremely seductive, butt, breasts, wet, extremely sexy, look at viewer, nipples, long legs, full body, beautiful"
+    img=Stable_Diffusion.quick_get_image(prompt)
+    # g_imgs.append(img)
+    # if len(g_imgs)>100:
+    #     g_imgs.pop(0)
+    return img
+    # return g_imgs
+
+def get_images(img):
+    g_imgs.append(img)
+    if len(g_imgs)>100:
+        g_imgs.pop(0)
+    return g_imgs
+
+def summary(file_obj):
+    return 'ok'
     #
 def main():
 
@@ -22,8 +41,9 @@ def main():
 
     with gr.Blocks() as demo:  # 使用gr.Blocks构建界面
 
-        prompt = gr.Textbox(label="输入框")  # 创建文本输入框
-        output = gr.Textbox(label="输出框")  # 创建文本输出框
+        prompt = gr.Textbox(label="输入框", lines=5,
+                            value='1girl, super model, in library, extremely seductive, butt, breasts, wet, extremely sexy, look at viewer, nipples, long legs, full body, beautiful')  # 创建文本输入框
+        output = gr.Textbox(label="输出框", lines=10)  # 创建文本输出框
 
         greet_btn = gr.Button("聊天")  # 创建按钮控件
 
@@ -38,11 +58,19 @@ def main():
             image_button = gr.Button("Flip")
             with gr.Row():
                 # image_input = gr.Image()
-                image_output = gr.Image()
+                image_output = gr.Image(width=512, height=768)
+                gallery_output = gr.Gallery(columns=10, rows=10)
 
 
-        image_button.click(fn=lambda x:Stable_Diffusion.quick_get_image('power system'), inputs=prompt, outputs=image_output)
-        # image_button.click(fn=lambda x:Stable_Diffusion.quick_get_image('1girl, super model, in library, breasts, wet, extremely sexy, look at viewer, nipples, long legs, full body, beautiful'), inputs=prompt, outputs=image_output)
+        # image_button.click(fn=lambda x:Stable_Diffusion.quick_get_image('power system'), inputs=prompt, outputs=image_output)
+        image_button.click(fn=get_image, inputs=prompt, outputs=image_output)
+        image_output.change(fn=get_images, inputs=image_output, outputs=gallery_output)
+
+        file_input = gr.components.File(label="上传文件")
+        file_button = gr.Button("总结文档")
+        file_output = gr.Textbox(label="输出框")  # 创建文本输出框
+        file_button.click(fn=summary, inputs=file_input, outputs=file_output)
+
 
     demo.queue().launch()   # 队列模式
 
