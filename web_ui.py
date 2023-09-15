@@ -7,8 +7,17 @@ import numpy as np
 def flip_image(x):
     print('image: ',x)
     return np.fliplr(x)
+
+llm = LLM_Qwen()
+def ask(prompt):
+    res = ''
+    # llm.ask(prompt).sync_print()
+    for item in llm.ask(prompt).get_generator():
+        res += item
+        yield res
+    #
 def main():
-    llm = LLM_Qwen()
+
     # res = llm.ask("简单描述一下一个女生正在进行某种运动的情形，用英文回复。").sync_print()
 
     with gr.Blocks() as demo:  # 使用gr.Blocks构建界面
@@ -22,7 +31,8 @@ def main():
         # 点击时调用chat函数
         # 输入来自prompt输入框
         # 输出显示到output输出框
-        greet_btn.click(fn=lambda x:llm.ask(x).sync_print(), inputs=prompt, outputs=output)
+        greet_btn.click(fn=ask, inputs=prompt, outputs=output)
+        # greet_btn.click(fn=lambda x:llm.ask(x).sync_print(), inputs=prompt, outputs=output)
 
         with gr.Tab("Flip Image"):
             image_button = gr.Button("Flip")
@@ -31,9 +41,10 @@ def main():
                 image_output = gr.Image()
 
 
-        image_button.click(fn=lambda x:Stable_Diffusion.quick_get_image('1girl, super model, in library, breasts, wet, extremely sexy, look at viewer, nipples, long legs, full body, beautiful'), inputs=prompt, outputs=image_output)
+        image_button.click(fn=lambda x:Stable_Diffusion.quick_get_image('power system'), inputs=prompt, outputs=image_output)
+        # image_button.click(fn=lambda x:Stable_Diffusion.quick_get_image('1girl, super model, in library, breasts, wet, extremely sexy, look at viewer, nipples, long legs, full body, beautiful'), inputs=prompt, outputs=image_output)
 
-    demo.launch()  # 启动构建的界面
+    demo.queue().launch()   # 队列模式
 
 if __name__ == "__main__":
     main()
