@@ -160,7 +160,7 @@ def main():
 
 def main1():
     llm = LLM_Qwen()
-    llm.ask('写一首诗，爱情方面的，1000字。').sync_print()
+    llm.ask('写一首诗，爱情方面的，500字。').sync_print()
 
     # llm = LLM_Qwen()
     # res = llm.ask("简单描述一下一个女生正在看书的情形，用英文回复。").sync_print()
