@@ -160,9 +160,12 @@ def main():
 
 def main1():
     llm = LLM_Qwen()
-    res = llm.ask("简单描述一下一个女生正在看书的情形，用英文回复。").sync_print()
+    llm.ask('写一首诗，爱情方面的，1000字。').sync_print()
+
+    # llm = LLM_Qwen()
+    # res = llm.ask("简单描述一下一个女生正在看书的情形，用英文回复。").sync_print()
     # Stable_Diffusion.quick_start('1girl, super model, showering, breasts, wet, side view, look at viewer, from below, standing, nipples, long legs, full body, sexy, beautiful', in_high_quality=True)
-    Stable_Diffusion.quick_start(res, in_high_quality=False)
+    # Stable_Diffusion.quick_start(res, in_high_quality=False)
 
 def main3():
     llm = LLM_Qwen()
@@ -171,4 +174,4 @@ def main3():
         llm.ask(res).sync_print()
 
 if __name__ == "__main__":
-    main3()
+    main1()

@@ -607,4 +607,4 @@ def main6():
         Stable_Diffusion.quick_start('1girl, super model, in library, breasts, wet, extremely sexy, look at viewer, nipples, long legs, full body, beautiful', in_high_quality=False)
 
 if __name__ == "__main__":
-    main6()
+    main5()
