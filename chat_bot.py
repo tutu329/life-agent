@@ -7,7 +7,7 @@ import numpy as np
 import copy
 
 llm = LLM_Qwen()
-llm.set_role_prompt('你正在扮演一个女孩，你好笨笨。')
+# llm.set_role_prompt('你正在扮演一个女孩，你好笨笨。')
 def llm_async_ask(message, history):
     # gradio的典型对话格式： [['我叫土土', '你好，土土！很高兴认识你。'], [], []]
 
