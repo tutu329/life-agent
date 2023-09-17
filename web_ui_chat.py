@@ -4,17 +4,55 @@ from gpu_server.Openai_Api_for_Qwen import *
 from gpu_server.Stable_Diffusion import *
 
 import numpy as np
+import copy
+
 def flip_image(x):
     print('image: ',x)
     return np.fliplr(x)
 
 llm = LLM_Qwen()
+
+def undo():
+    print('执行undo()')
+    llm.undo()
+
+def retry():
+    print('执行retry()')
+    llm.get_retry_generator()
+
+def clear():
+    print('执行clear()')
+    llm.clear_history()
+
 def async_ask(message, history):
+    # gradio的典型对话格式： [['我叫土土', '你好，土土！很高兴认识你。'], [], []]
+
     res = ''
-    # llm.ask(prompt).sync_print()
-    for item in llm.ask(message).get_generator():
+
+    # # undo
+    # if len(llm.external_last_history)-len(history)==1:
+    #     print('执行Undo()')
+    #     llm.undo()
+    # # retry
+    # elif len(history)>1 and len(llm.external_last_history)-len(history)==0:
+    #     print('执行retry()')
+    #     llm.retry()
+    # # ask
+    # else:
+    for item in llm.ask_prepare(message).get_answer_generator():
         res += item
         yield res
+
+    # 保存history(动态放在llm上)
+    # llm.external_last_history = history
+    llm.print_history()
+
+    # print('message：',message)
+    # print('res：',res)
+    # print('对话历史：',history)
+    # print('[message, res]：', [message, res])
+    # his = copy.deepcopy(history)
+    # print('对话历史：', his.append([message, res]), flush=True)
 
 g_imgs = []
 
@@ -115,10 +153,17 @@ def main():
         # file_button.click(fn=summary, inputs=file_input, outputs=file_output)
     demo.queue().launch()   # 队列模式
 def main1():
-    demo = gr.ChatInterface(async_ask).queue()
+    submit_btn = gr.Button(value="提交")
+    retry_btn = gr.Button(value="重试")
+    undo_btn = gr.Button(value="撤回")
+    clear_btn = gr.Button(value="清空")
+    with gr.Blocks() as demo:  # 使用gr.Blocks构建界面
+        ci = gr.ChatInterface(fn=async_ask,  submit_btn=submit_btn,  retry_btn=retry_btn, undo_btn=undo_btn, clear_btn=clear_btn)
+        # retry_btn.click(fn=retry(), inputs=None, outputs=None)
+        # undo_btn.click(fn=undo(), inputs=None, outputs=None)
+        # clear_btn.click(fn=clear(), inputs=None, outputs=None)
 
-    if __name__ == "__main__":
-        demo.launch()
+    demo.queue().launch()
 
 if __name__ == "__main__":
     main1()

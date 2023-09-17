@@ -6,7 +6,7 @@ openai.api_key = "none"
 from copy import deepcopy
 
 class LLM_Qwen():
-    def __init__(self, history=True, history_max_turns=20, history_clear_method='pop'):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop'):
         self.gen = None     # 返回结果的generator
 
         # 记忆相关
@@ -21,23 +21,48 @@ class LLM_Qwen():
         self.answer_last_turn = ''
 
         self.role_prompt = ''
+        self.has_role_prompt = False
 
+        self.external_last_history = []     # 用于存放外部格式独特的history
 
     # 动态修改role_prompt
+    # def set_role_prompt(self, in_role_prompt):
+    #     if in_role_prompt=='':
+    #         return
+    #
+    #     self.role_prompt = in_role_prompt
+    #     if self.history_list!=[]:
+    #         self.history_list[0] = {"role": "user", "content": self.role_prompt}
+    #         self.history_list[1] = {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'}
+    #     else:
+    #         self.history_list.append({"role": "user", "content": self.role_prompt})
+    #         self.history_list.append({"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
+
     def set_role_prompt(self, in_role_prompt):
-        if in_role_prompt=='':
-            return
-
-        self.role_prompt = in_role_prompt
-        if self.history_list!=[]:
-            self.history_list[0] = {"role": "user", "content": self.role_prompt}
-            self.history_list[1] = {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'}
+        if in_role_prompt!='':
+            # role_prompt有内容
+            self.role_prompt = in_role_prompt
+            if self.has_role_prompt and len(self.history_list)>0 :
+                # 之前已经设置role_prompt
+                self.history_list[0] = {"role": "user", "content": self.role_prompt}
+                self.history_list[1] = {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'}
+            else:
+                # 之前没有设置role_prompt
+                self.history_list.insert(0, {"role": "user", "content": self.role_prompt})
+                self.history_list.insert(1, {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
+                self.has_role_prompt = True
         else:
-            self.history_list.append({"role": "user", "content": self.role_prompt})
-            self.history_list.append({"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
+            # 删除role_prompt
+            if self.has_role_prompt:
+                if len(self.history_list)>0:
+                    self.history_list.pop(0)
+                if len(self.history_list)>0:
+                    self.history_list.pop(0)
+                self.has_role_prompt = False
 
+    # 内部openai格式的history
     def __history_add_last_turn_msg(self):
-        if self.history and self.question_last_turn!='' :
+        if self.history and self.question_last_turn != '':
             question = {"role": "user", "content": self.question_last_turn}
             answer = {"role": "assistant", "content": self.answer_last_turn}
             self.history_list.append(question)
@@ -45,17 +70,17 @@ class LLM_Qwen():
             if self.history_turn_num_now < self.history_max_turns:
                 self.history_turn_num_now += 1
             else:
-                if self.history_clear_method=='pop':
+                if self.history_clear_method == 'pop':
                     print('======记忆超限，记录本轮对话、删除首轮对话======')
                     # for item in self.history_list:
                     #     print(item)
-                    if self.role_prompt!='':
+                    if self.role_prompt != '':
                         self.history_list.pop(2)
                         self.history_list.pop(2)
                     else:
                         self.history_list.pop(0)
                         self.history_list.pop(0)
-                elif self.history_clear_method=='clear':
+                elif self.history_clear_method == 'clear':
                     print('======记忆超限，清空记忆======')
                     self.__history_clear()
 
@@ -64,6 +89,7 @@ class LLM_Qwen():
 
     def __history_clear(self):
         self.history_list.clear()
+        # self.has_role_prompt = False
         self.set_role_prompt(self.role_prompt)
         self.history_turn_num_now = 0
 
@@ -82,9 +108,46 @@ class LLM_Qwen():
             print(f"\t {item['role']}: {item['content']}")
         print('\t=======================================')
 
+    # Undo: 删除上一轮对话
+    def undo(self):
+        if self.has_role_prompt:
+            reserved_num = 2
+        else:
+            reserved_num = 0
+
+        if len(self.history_list) >= reserved_num + 2:
+            self.history_list.pop()
+            self.history_list.pop()
+            self.history_turn_num_now -= 1
+
+        # if self.question_last_turn=='':
+        #     # 多次undo
+        #     if self.has_role_prompt:
+        #         reserved_num = 2
+        #     else:
+        #         reserved_num = 0
+        #
+        #     if len(self.history_list)>=reserved_num+2:
+        #         self.history_list.pop()
+        #         self.history_list.pop()
+        # else:
+        #     # 一次undo
+        #     self.question_last_turn=''
+
+    def get_retry_generator(self):
+        self.undo()
+        return self.ask_prepare(self.question_last_turn).get_answer_generator()
+
+        # temp_question_last_turn = self.question_last_turn
+        # self.undo()
+        # self.ask_prepare(temp_question_last_turn).get_answer_and_sync_print()
+
     # 返回stream(generator)
-    def ask(self, in_question):
-        self.__history_add_last_turn_msg()
+    def ask_prepare(self, in_question, in_clear_history=False, in_retry=False, in_undo=False):
+        # self.__history_add_last_turn_msg()
+
+        if in_clear_history:
+            self.__history_clear()
 
         msgs = self.__history_messages_with_question(in_question)
         # print('msgs: ', msgs)
@@ -101,7 +164,7 @@ class LLM_Qwen():
         return self
 
     # 方式1：直接输出结果
-    def sync_print(self):
+    def get_answer_and_sync_print(self):
         result = ''
         for chunk in self.gen:
             if hasattr(chunk.choices[0].delta, "content"):
@@ -111,10 +174,12 @@ class LLM_Qwen():
 
         print()
         self.answer_last_turn = result
+        self.__history_add_last_turn_msg()
+
         return result
 
     # 方式2：返回generator，在合适的时候输出结果
-    def get_generator(self):
+    def get_answer_generator(self):
         answer = ''
         for chunk in self.gen:
             if hasattr(chunk.choices[0].delta, "content"):
@@ -123,6 +188,7 @@ class LLM_Qwen():
                 yield chunk.choices[0].delta.content
 
         self.answer_last_turn = answer
+        self.__history_add_last_turn_msg()
 
 def main():
     llm = LLM_Qwen(history=True, history_max_turns=20, history_clear_method='pop')
@@ -133,7 +199,7 @@ def main():
     while True:
         question = input("user: ")
         # llm.ask(question).sync_print()
-        for chunk in llm.ask(question).get_generator():
+        for chunk in llm.ask_prepare(question).get_answer_generator():
             print(chunk, end='', flush=True)
         llm.print_history()
 
@@ -155,7 +221,7 @@ def main1():
     question = f"你是电力系统专家，请总结这个表格'{table_content}' 的内容，并返回markdown格式的结果"
     print("user: ", question)
     print("Qwen: ", end='')
-    llm.ask(question).sync_print()
+    llm.ask_prepare(question).get_answer_and_sync_print()
 
     # llm = LLM_Qwen()
     #

@@ -12,7 +12,7 @@ llm = LLM_Qwen()
 def ask(prompt):
     res = ''
     # llm.ask(prompt).sync_print()
-    for item in llm.ask(prompt).get_generator():
+    for item in llm.ask_prepare(prompt).get_answer_generator():
         res += item
         yield res
 

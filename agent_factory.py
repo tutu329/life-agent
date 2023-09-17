@@ -97,7 +97,7 @@ class Human(Base_Agent):
         print('Human, do_something():', end=self.end_char, flush=True)
         time_now =datetime.datetime.now()
 
-        self.test_llm.ask("你现在开始提一个独特的问题，首先你要从生活、兴趣、探索、趣味、影视、游戏、男女、美食等词汇当中选中一个作为问题的方向，记住并不是向我提问，而是你对自身或世界的思考，例如：'到底什么是生活呢？'。每一次回复在形式和内容上绝对都不要重复。").sync_print()
+        self.test_llm.ask_prepare("你现在开始提一个独特的问题，首先你要从生活、兴趣、探索、趣味、影视、游戏、男女、美食等词汇当中选中一个作为问题的方向，记住并不是向我提问，而是你对自身或世界的思考，例如：'到底什么是生活呢？'。每一次回复在形式和内容上绝对都不要重复。").get_answer_and_sync_print()
         # self.test_llm.ask("随机推荐一本好书，简要介绍下内容和作者情况，回复形式不要很重复").sync_print()
 
 class Animal(Base_Agent):
@@ -160,7 +160,7 @@ def main():
 
 def main1():
     llm = LLM_Qwen()
-    llm.ask('写一首诗，爱情方面的，500字。').sync_print()
+    llm.ask_prepare('写一首诗，爱情方面的，500字。').get_answer_and_sync_print()
 
     # llm = LLM_Qwen()
     # res = llm.ask("简单描述一下一个女生正在看书的情形，用英文回复。").sync_print()
@@ -169,9 +169,18 @@ def main1():
 
 def main3():
     llm = LLM_Qwen()
+    # llm.set_role_prompt('你扮演一个女孩，你的名字叫章茵。')
     while True:
         res = input('user: ')
-        llm.ask(res).sync_print()
+        print('bot: ', end='')
+        if res=='retry':
+            llm.get_retry_generator()
+        elif res=='undo':
+            llm.undo()
+        else:
+            llm.set_role_prompt('你扮演一个女孩，你的名字叫笨笨。')
+            llm.ask_prepare(res, in_clear_history=False).get_answer_and_sync_print()
+        llm.print_history()
 
 if __name__ == "__main__":
-    main1()
+    main3()

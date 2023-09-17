@@ -558,7 +558,7 @@ def main():
                 print("user: ", question)
                 print("Qwen: ", end='')
 
-                result = llm.ask(question).sync_print()
+                result = llm.ask_prepare(question).get_answer_and_sync_print()
                 clipboard.OpenClipboard()
                 clipboard.EmptyClipboard()
                 clipboard.SetClipboardText(result)
@@ -596,7 +596,7 @@ def main5():
     llm = LLM_Qwen()
     while True:
         question = input("User: ")
-        llm.ask(question).sync_print()
+        llm.ask_prepare(question).get_answer_and_sync_print()
         print()
 
 def main6():
