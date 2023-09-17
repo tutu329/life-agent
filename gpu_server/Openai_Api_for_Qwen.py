@@ -59,6 +59,9 @@ class LLM_Qwen():
                     print('======记忆超限，清空记忆======')
                     self.__history_clear()
 
+    def clear_history(self):
+        self.__history_clear()
+
     def __history_clear(self):
         self.history_list.clear()
         self.set_role_prompt(self.role_prompt)

@@ -9,10 +9,10 @@ def flip_image(x):
     return np.fliplr(x)
 
 llm = LLM_Qwen()
-def ask(prompt):
+def async_ask(message, history):
     res = ''
     # llm.ask(prompt).sync_print()
-    for item in llm.ask(prompt).get_generator():
+    for item in llm.ask(message).get_generator():
         res += item
         yield res
 
@@ -115,18 +115,10 @@ def main():
         # file_button.click(fn=summary, inputs=file_input, outputs=file_output)
     demo.queue().launch()   # 队列模式
 def main1():
-    import time
-    import gradio as gr
-
-    def slow_echo(message, history):
-        for i in range(len(message)):
-            time.sleep(0.05)
-            yield "You typed: " + message[: i + 1]
-
-    demo = gr.ChatInterface(slow_echo).queue()
+    demo = gr.ChatInterface(async_ask).queue()
 
     if __name__ == "__main__":
         demo.launch()
 
 if __name__ == "__main__":
-    main()
+    main1()
