@@ -283,6 +283,7 @@ def main9():
     import openai
 
     openai.api_key = "EMPTY"  # Not support yet
+    # openai.api_key = "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"
     openai.api_base = "http://116.62.63.204:8000/v1"
 
     from langchain.chat_models import ChatOpenAI
