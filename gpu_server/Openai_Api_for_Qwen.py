@@ -1,8 +1,9 @@
 import openai
 # openai.api_base = "http://powerai.cc:8000/v1"
 # openai.api_base = "http://localhost:8000/v1"
-openai.api_base = "http://116.62.63.204:8000/v1"
-openai.api_key = "none"
+openai.api_base = "http://127.0.0.1:8000/v1"
+# openai.api_base = "http://116.62.63.204:8000/v1"
+openai.api_key = "xxxxx"
 from copy import deepcopy
 
 class LLM_Qwen():
@@ -163,6 +164,29 @@ class LLM_Qwen():
         self.question_last_turn = in_question
         return self
 
+    def ask_block(self, in_question, in_clear_history=False, in_retry=False, in_undo=False):
+        # self.__history_add_last_turn_msg()
+
+        if in_clear_history:
+            self.__history_clear()
+
+        msgs = self.__history_messages_with_question(in_question)
+        # print('msgs: ', msgs)
+        res = openai.ChatCompletion.create(
+            model="Qwen-7B",
+            messages=msgs,
+            stream=False,
+            max_tokens=2048,
+            functions=[
+                {
+                    'name':'run_code',
+                    'parameters': {'type': 'object'}
+                }
+            ]
+            # Specifying stop words in streaming output format is not yet supported and is under development.
+        )
+        return res
+
     # 方式1：直接输出结果
     def get_answer_and_sync_print(self):
         result = ''
@@ -283,7 +307,7 @@ def main9():
     import openai
 
     openai.api_key = "EMPTY"  # Not support yet
-    # openai.api_key = "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"
+    # openai.api_key = "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"
     openai.api_base = "http://116.62.63.204:8000/v1"
 
     from langchain.chat_models import ChatOpenAI
@@ -298,8 +322,24 @@ def main9():
         [HumanMessage(content="Translate this sentence from English to Chinese. I love programming.")])
     print(answer)
 
+def main():
+    llm = LLM_Qwen()
+    print(f'openai.api_base: {openai.api_base}')
+    print(f'openai.api_key: {openai.api_key}')
+    print(f'openai.api_key_path: {openai.api_key_path}')
+    print(f'openai.api_version: {openai.api_version}')
+    print(f'openai.api_type: {openai.api_type}')
+    # llm.ask_prepare("你是谁").get_answer_and_sync_print()
+    res = llm.ask_block('你是谁')
+    # for i in res:
+    #     print('hihihihihih')
+    #     print(i)
+    print(res)
+    print(res['choices'][0]['message']['content'])
+
+
 if __name__ == "__main__" :
-    main9()
+    main()
 
 # create a request activating streaming response
 # for chunk in openai.ChatCompletion.create(
