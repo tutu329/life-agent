@@ -44,7 +44,8 @@ def llm_answer(history, message):
         history[-1][1] += chunk
         yield history, message
 
-def bot_add_text(history, text):
+def bot_add_text(history, text, role_prompt):
+    llm.set_role_prompt(role_prompt)
     history = history + [(text, None)]
     print('text: ',text)
     print('history: ', history)
@@ -56,7 +57,8 @@ def bot_undo(history):
     print('history: ', history)
     return history, gr.update(value="", interactive=False)
 
-def bot_retry(history):
+def bot_retry(history, role_prompt):
+    llm.set_role_prompt(role_prompt)
     if len(history)>0:
         history[-1][1]=''
     return history, gr.update(value="", interactive=False)
@@ -71,6 +73,9 @@ def bot_add_file(history, file):
     history = history + [((file.name,), None)]
     print('history: ', history)
     return history
+
+# def llm_on_role_prompt_change(prompt):
+#     llm.set_role_prompt(prompt)
 
 def main():
     with gr.Blocks() as demo:
@@ -99,6 +104,18 @@ def main():
             retry_btn = gr.Button(value="重试", scale=1)
             submit_btn = gr.Button(value="提交", scale=4)
 
+        with gr.Row():
+            role_prompt_tbx = gr.Textbox(
+                value='',
+                lines=3,
+                max_lines=20,
+                scale=16,
+                show_label=False,
+                placeholder="输入角色提示语",
+                container=False,
+            )
+        # role_prompt.change(llm_on_role_prompt_change, role_prompt, None)
+
         undo_btn.click(
             bot_undo,
             [chatbot],
@@ -117,7 +134,7 @@ def main():
 
         retry_btn.click(
             bot_retry,
-            [chatbot],
+            [chatbot, role_prompt_tbx],
             [chatbot, user_input],
             queue=False
         ).then(
@@ -149,7 +166,7 @@ def main():
 
         submit_btn.click(
             bot_add_text,
-            [chatbot, user_input],
+            [chatbot, user_input, role_prompt_tbx],
             [chatbot, user_input],
             queue=False
         ).then(
@@ -165,7 +182,7 @@ def main():
 
         txt_msg = user_input.submit(
             bot_add_text,
-            [chatbot, user_input],
+            [chatbot, user_input, role_prompt_tbx],
             [chatbot, user_input],
             queue=False
         ).then(

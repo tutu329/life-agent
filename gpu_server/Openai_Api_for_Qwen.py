@@ -279,9 +279,26 @@ def main1():
 
     # ==============================================================================================================
 
+def main9():
+    import openai
+
+    openai.api_key = "EMPTY"  # Not support yet
+    openai.api_base = "http://116.62.63.204:8000/v1"
+
+    from langchain.chat_models import ChatOpenAI
+    from langchain.schema import (
+        AIMessage,
+        HumanMessage,
+        SystemMessage
+    )
+    # 设置为本地的模型，因为vicuna使用的是假名字"text-embedding-ada-002"
+    chat = ChatOpenAI(model="Qwen-7B", temperature=0)
+    answer = chat.predict_messages(
+        [HumanMessage(content="Translate this sentence from English to Chinese. I love programming.")])
+    print(answer)
 
 if __name__ == "__main__" :
-    main()
+    main9()
 
 # create a request activating streaming response
 # for chunk in openai.ChatCompletion.create(
@@ -306,3 +323,4 @@ if __name__ == "__main__" :
 #     stop=[] # You can add custom stop words here, e.g., stop=["Observation:"] for ReAct prompting.
 # )
 # print(response.choices[0].message.content)
+
