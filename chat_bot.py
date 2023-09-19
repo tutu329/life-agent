@@ -8,6 +8,21 @@ import copy
 
 llm = LLM_Qwen()
 # llm.set_role_prompt('你正在扮演一个女孩，你好笨笨。')
+
+# ============================关于角色提示============================
+# 一、你希望llm了解哪些信息：
+# 1) where are you based?
+# 2) what do you do for work?
+# 3) what are your hobbies and interests?
+# 4) what subject can you talk about for hours?
+# 5) what are some goals you have?
+# 二、你希望llm怎样回复：
+# 1) how formal or casual should llm be?
+# 2) how long or short should responses generally be?
+# 3) how do you want to be addressed?
+# 4) should llm have opinions on topics or remain neutral?
+# ============================关于角色提示============================
+
 def llm_async_ask(message, history):
     # gradio的典型对话格式： [['我叫土土', '你好，土土！很高兴认识你。'], [], []]
 
