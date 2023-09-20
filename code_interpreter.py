@@ -104,6 +104,17 @@ def main2():
     interpreter.chat('what is the content in test.xlsx?')
     # interpreter.chat('draw a green circle.')
 
+def main5():
+    import interpreter
+
+    interpreter.auto_run = True
+    interpreter.local = True
+    interpreter.debug_mode = True
+    interpreter.model = "C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ"
+    interpreter.temperature = 0
+    interpreter.reset()
+    interpreter.chat('what is the content in test.xlsx?')
+
 if __name__ == "__main__" :
-    main()
+    main5()
 
