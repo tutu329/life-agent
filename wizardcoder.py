@@ -1,6 +1,11 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, TextStreamer, TextIteratorStreamer, StoppingCriteria, StoppingCriteriaList
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, TextStreamer
+from transformers import TextIteratorStreamer, StoppingCriteria, StoppingCriteriaList
+from transformers.generation import GenerationConfig
+from transformers import GPTQConfig
 from threading import Thread
 import torch
+from tqdm import tqdm
+import time
 
 class Keywords_Stopping_Criteria(StoppingCriteria):
     def __init__(self, keywords_ids:list):
@@ -21,6 +26,29 @@ class Keywords_Stopping_Criteria(StoppingCriteria):
         else:
             return None
 
+class Progress_Task(Thread):
+    def __init__(self):
+        super().__init__()
+        self.__task = None
+        self.__task_finished = False
+        self.__progress = None
+        self.__progress_now = 0
+
+    def run(self):
+        # print('=====================enter===============================')
+        time.sleep(1)
+        self.__progress = tqdm(total=100)
+        while not self.__task_finished:
+            time.sleep(1)
+            self.__progress.update(1)
+            self.__progress_now += 1
+        self.__progress.update(100 - self.__progress_now)
+        self.__progress.close()
+        # print('=====================quit===============================')
+
+    def set_finished(self):
+        self.__task_finished = True
+
 class Wizardcoder_Wrapper():
     def __init__(self):
         self.model_name_or_path = ''
@@ -28,15 +56,40 @@ class Wizardcoder_Wrapper():
         self.tokenizer = None
         self.task = None
 
-    def init(self, in_model_path):
-        # self.model_name_or_path = "C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ"
+    # model的初始化
+    def init(self, in_model_path, use_fast=True, gptq_bits=4, gptq_use_exllama=True, device_map='auto', trust_remote_code=False, revision='main'):
+        print('-'*80)
         self.model_name_or_path = in_model_path
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_name_or_path, device_map="auto", trust_remote_code=False, revision="main")
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=use_fast)
+        quantization_config = GPTQConfig(bits=gptq_bits, disable_exllama=not gptq_use_exllama)     # 只有4bit的才可以用exllama
+        print(f'设置模型路径: \t\t"{self.model_name_or_path}"', flush=True)
+        print(f'设置tokenizer: \t\t"use_fast={use_fast}"', flush=True)
+        print(f'设置quantization_config:"bits={gptq_bits} disable_exllama={not gptq_use_exllama}"', flush=True)
+        print(f'设置model: \t\t"device_map={device_map} trust_remote_code={trust_remote_code} revision={revision}"', flush=True)
 
+        # 读取model并显示进度条
+        print('-'*80)
+        p_task = Progress_Task()
+        p_task.start()
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_name_or_path,
+            quantization_config=quantization_config,
+            device_map=device_map,
+            trust_remote_code=trust_remote_code,
+            revision=revision)
+        p_task.set_finished()
+        time.sleep(1)   # 解决进度条显示问题
+
+        self.model.generation_config = GenerationConfig.from_pretrained(self.model_name_or_path)
+        self.model.generation_config.do_sample = True
+        print(f'设置generation_config: \tgeneration_config={self.model.generation_config}', flush=True)
+        print(f'设置其他参数: \t\t"do_sample={self.model.generation_config.do_sample}"', flush=True)
+        print('-'*80)
+
+    # model生成内容，并返回streamer迭代器
     def generate(self, message, history, temperature=0.7, max_tokens=512, stop=None):
         input_ids = self.tokenizer(message, return_tensors='pt').input_ids.cuda()
-        streamer = TextIteratorStreamer(self.tokenizer)
+        streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
 
         stop_criteria = Keywords_Stopping_Criteria.get_stop_criteria(self.tokenizer, stop)
 
@@ -54,6 +107,7 @@ class Wizardcoder_Wrapper():
         self.task.start()
         return streamer
 
+    # oi用的generate
     def generate_for_open_interpreter(self, prompt, stream, temperature, max_tokens, stop=None):
         input_ids = self.tokenizer(prompt, return_tensors='pt').input_ids.cuda()
         streamer = TextIteratorStreamer(self.tokenizer)
@@ -90,6 +144,7 @@ class Wizardcoder_Wrapper():
         res["choices"][0]["finish_reason"] = 'stop'
         return res
 
+    # oi用的获取instance
     def get_instance_for_open_interpreter(self, in_stream):
         res = {
             'choices':[
@@ -107,21 +162,6 @@ def main():
     # CUDA_VISIBLE_DEVICES=1,2,3,4 python wizardcoder_demo.py \
     #    --base_model "WizardLM/WizardCoder-Python-34B-V1.0" \
     #    --n_gpus 4
-
-    # pipe = pipeline(
-    #     "text-generation",
-    #     model=model,
-    #     streamer=streamer,
-    #     tokenizer=tokenizer,
-    #     max_new_tokens=2048,
-    #     do_sample=True,
-    #     temperature=0.7,
-    #     top_p=0.95,
-    #     top_k=40,
-    #     repetition_penalty=1.1
-    # )
-    # print(pipe(prompt_template)[0]['generated_text'])
-
     llm = Wizardcoder_Wrapper()
     llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
     while True:
@@ -147,23 +187,27 @@ def main():
         #     print(chunk["choices"][0]["text"], end='', flush=True)
         # print()
 
-llm = Wizardcoder_Wrapper()
-llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
-def ask_llm(message, history):
-    prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
-    ### Instruction:
-    {message}
-    ### Response:
-    '''
-    print('==================ask_llm==================')
-    print(message, history)
-    res = ''
-    for ch in llm.generate(prompt_template, history):
-        res += ch
-        yield res
+
+
 
 def main_gr():
     import gradio as gr
+
+    llm = Wizardcoder_Wrapper()
+    llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
+    def ask_llm(message, history):
+        prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
+        ### Instruction:
+        {message}
+        ### Response:
+        '''
+        print('==================ask_llm==================')
+        # print(message, history)
+        res = ''
+        for ch in llm.generate(prompt_template, history, max_tokens=200):
+            print(ch, end='', flush=True)
+            res += ch
+            yield res
 
     demo = gr.ChatInterface(ask_llm).queue().launch()
 
