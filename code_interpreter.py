@@ -119,7 +119,7 @@ def main5():
     interpreter.local = True
     interpreter.debug_mode = True
     interpreter.model = "C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ"
-    interpreter.temperature = 0.7
+    interpreter.temperature = 0.1
     interpreter.reset()
     interpreter.chat('draw a green circle by python')
     # interpreter.chat('what is the content in test.xlsx?')

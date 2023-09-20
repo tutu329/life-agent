@@ -57,7 +57,14 @@ class Wizardcoder_Wrapper():
         self.task = None
 
     # model的初始化
-    def init(self, in_model_path, use_fast=True, gptq_bits=4, gptq_use_exllama=True, device_map='auto', trust_remote_code=False, revision='main'):
+    def init(self,
+             in_model_path,
+             use_fast=True,
+             gptq_bits=4,
+             gptq_use_exllama=True,
+             device_map='auto',
+             trust_remote_code=False,
+             revision='main'):
         print('-'*80)
         self.model_name_or_path = in_model_path
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=use_fast)
@@ -87,7 +94,17 @@ class Wizardcoder_Wrapper():
         print('-'*80)
 
     # model生成内容，并返回streamer迭代器
-    def generate(self, message, history, temperature=0.7, max_tokens=512, stop=None):
+    def generate(
+            self,
+            message,
+            history,
+            temperature=0.7,
+            top_p=0.9,
+            top_k=10,
+            repetition_penalty=1.05,
+            max_tokens=2048,
+            stop=["</s>"],
+    ):
         input_ids = self.tokenizer(message, return_tensors='pt').input_ids.cuda()
         streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
 
@@ -101,6 +118,9 @@ class Wizardcoder_Wrapper():
             stopping_criteria=stop_criteria,
 
             temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            repetition_penalty=repetition_penalty,
             max_new_tokens=max_tokens,
         )
         self.task = Thread(target=self.model.generate, kwargs=generation_kwargs)
@@ -108,7 +128,7 @@ class Wizardcoder_Wrapper():
         return streamer
 
     # oi用的generate
-    def generate_for_open_interpreter(self, prompt, stream, temperature, max_tokens, stop=None):
+    def generate_for_open_interpreter(self, prompt, stream, temperature, max_tokens, stop=["</s>"],):
         input_ids = self.tokenizer(prompt, return_tensors='pt').input_ids.cuda()
         streamer = TextIteratorStreamer(self.tokenizer)
 
@@ -196,15 +216,30 @@ def main_gr():
     llm = Wizardcoder_Wrapper()
     llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
     def ask_llm(message, history):
-        prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
-        ### Instruction:
-        {message}
-        ### Response:
-        '''
-        print('==================ask_llm==================')
-        # print(message, history)
+        # prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
+        # ### Instruction:
+        # {message}
+        # ### Response:
+        # '''
+        historical_prompt = 'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n'
+        instruction_string = '### Instruction:\n'
+        response_string = '### Response:\n'
+        for chat in history:
+            user_content = chat[0] + '\n'
+            bot_content = chat[1] + '\n'
+            historical_prompt += instruction_string
+            historical_prompt += user_content
+            historical_prompt += response_string
+            historical_prompt += bot_content
+
+        historical_prompt += instruction_string
+        historical_prompt += message + '\n'
+        print('\n==========================history==========================')
+        print(historical_prompt)
+        print('\n==========================history==========================')
         res = ''
-        for ch in llm.generate(prompt_template, history, max_tokens=200):
+
+        for ch in llm.generate(historical_prompt, history, max_tokens=2048):
             print(ch, end='', flush=True)
             res += ch
             yield res
