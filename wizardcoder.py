@@ -150,10 +150,15 @@ def main():
 llm = Wizardcoder_Wrapper()
 llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
 def ask_llm(message, history):
+    prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
+    ### Instruction:
+    {message}
+    ### Response:
+    '''
     print('==================ask_llm==================')
     print(message, history)
     res = ''
-    for ch in llm.generate(message, history):
+    for ch in llm.generate(prompt_template, history):
         res += ch
         yield res
 
