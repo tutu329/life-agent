@@ -34,7 +34,27 @@ class Wizardcoder_Wrapper():
         self.model = AutoModelForCausalLM.from_pretrained(self.model_name_or_path, device_map="auto", trust_remote_code=False, revision="main")
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=True)
 
-    def generate(self, prompt, stream, temperature, max_tokens, stop=None):
+    def generate(self, message, history, temperature=0.7, max_tokens=512, stop=None):
+        input_ids = self.tokenizer(message, return_tensors='pt').input_ids.cuda()
+        streamer = TextIteratorStreamer(self.tokenizer)
+
+        stop_criteria = Keywords_Stopping_Criteria.get_stop_criteria(self.tokenizer, stop)
+
+        generation_kwargs = dict(
+            inputs=input_ids,
+            streamer=streamer,
+            do_sample=True,
+
+            stopping_criteria=stop_criteria,
+
+            temperature=temperature,
+            max_new_tokens=max_tokens,
+        )
+        self.task = Thread(target=self.model.generate, kwargs=generation_kwargs)
+        self.task.start()
+        return streamer
+
+    def generate_for_open_interpreter(self, prompt, stream, temperature, max_tokens, stop=None):
         input_ids = self.tokenizer(prompt, return_tensors='pt').input_ids.cuda()
         streamer = TextIteratorStreamer(self.tokenizer)
 
@@ -56,10 +76,32 @@ class Wizardcoder_Wrapper():
         self.task = Thread(target=self.model.generate, kwargs=generation_kwargs)
         self.task.start()
 
-        return streamer
+        res = {
+            'choices': [
+                {
+                    'text': '',
+                    'finish_reason': '',
+                }
+            ]
+        }
+        for chunk in streamer:
+            res["choices"][0]["text"] = chunk
+            yield res
+        res["choices"][0]["finish_reason"] = 'stop'
+        return res
 
-    def get_instance_for_open_interpreter(self):
-        return self.generate
+    def get_instance_for_open_interpreter(self, in_stream):
+        res = {
+            'choices':[
+                {
+                    'text':'',
+                }
+            ]
+        }
+        for chunk in in_stream:
+            res["choices"][0]["text"] = chunk
+            yield res
+
 
 def main():
     # CUDA_VISIBLE_DEVICES=1,2,3,4 python wizardcoder_demo.py \
@@ -89,19 +131,38 @@ def main():
         {question}
         ### Response:
         '''
-        res = llm.generate(
-            prompt=prompt_template,
-            stream=True,
-            temperature=0.7,
-            # stop=None,
-            stop=["</s>"],
-            max_tokens=512,
-        )
+        res = llm.generate(prompt_template, [])
         for chunk in res:
             print(chunk, end='', flush=True)
         print()
+        # res = llm.generate_for_open_interpreter(
+        #     prompt=prompt_template,
+        #     stream=True,
+        #     temperature=0.7,
+        #     # stop=None,
+        #     stop=["</s>"],
+        #     max_tokens=512,
+        # )
+        # for chunk in res:
+        #     print(chunk["choices"][0]["text"], end='', flush=True)
+        # print()
+
+llm = Wizardcoder_Wrapper()
+llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
+def ask_llm(message, history):
+    print('==================ask_llm==================')
+    print(message, history)
+    res = ''
+    for ch in llm.generate(message, history):
+        res += ch
+        yield res
+
+def main_gr():
+    import gradio as gr
+
+    demo = gr.ChatInterface(ask_llm).queue().launch()
 
 if __name__ == "__main__" :
-    main()
+    main_gr()
 
 # https://blog.csdn.net/weixin_44878336/article/details/124894210

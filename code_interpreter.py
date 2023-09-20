@@ -104,16 +104,25 @@ def main2():
     interpreter.chat('what is the content in test.xlsx?')
     # interpreter.chat('draw a green circle.')
 
+
+from wizardcoder import *
+
 def main5():
+    llm = Wizardcoder_Wrapper()
+    llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
+
     import interpreter
+
+    interpreter.llama_instance = llm.generate_for_open_interpreter
 
     interpreter.auto_run = True
     interpreter.local = True
     interpreter.debug_mode = True
     interpreter.model = "C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ"
-    interpreter.temperature = 0
+    interpreter.temperature = 0.7
     interpreter.reset()
-    interpreter.chat('what is the content in test.xlsx?')
+    interpreter.chat('draw a green circle by python')
+    # interpreter.chat('what is the content in test.xlsx?')
 
 if __name__ == "__main__" :
     main5()

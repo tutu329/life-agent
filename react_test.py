@@ -160,7 +160,7 @@ def text_completion(input_text: str, stop_words) -> str:  # 作为一个文本�
 
     # TODO: 增加流式输出的样例实现
     input_ids = torch.tensor([tokenizer.encode(input_text)]).to(model.device)
-    output = model.generate(input_ids, stop_words_ids=stop_words_ids)
+    output = model.generate_for_open_interpreter(input_ids, stop_words_ids=stop_words_ids)
     output = output.tolist()[0]
     output = tokenizer.decode(output, errors="ignore")
     assert output.startswith(input_text)
