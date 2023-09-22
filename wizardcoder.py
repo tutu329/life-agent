@@ -101,8 +101,8 @@ class Wizardcoder_Wrapper():
             temperature=0.7,
             top_p=0.9,
             top_k=10,
-            repetition_penalty=1.05,
-            max_tokens=2048,
+            repetition_penalty=1.1,
+            max_new_tokens=2048,
             stop=["</s>"],
     ):
         input_ids = self.tokenizer(message, return_tensors='pt').input_ids.cuda()
@@ -121,8 +121,11 @@ class Wizardcoder_Wrapper():
             top_p=top_p,
             top_k=top_k,
             repetition_penalty=repetition_penalty,
-            max_new_tokens=max_tokens,
+            max_new_tokens=max_new_tokens,
         )
+        print(f'temperature: {temperature}')
+        print(f'repetition_penalty: {repetition_penalty}')
+        print(f'max_new_tokens: {max_new_tokens}')
         self.task = Thread(target=self.model.generate, kwargs=generation_kwargs)
         self.task.start()
         return streamer
@@ -215,7 +218,14 @@ def main_gr():
 
     llm = Wizardcoder_Wrapper()
     llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
-    def ask_llm(message, history, user_role_prompt):
+    def ask_llm(
+            message,
+            history,
+            user_role_prompt,
+            temperature,
+            repetition_penalty,
+            max_new_tokens,
+    ):
         # prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
         # ### Instruction:
         # {message}
@@ -284,12 +294,28 @@ def main_gr():
         print('\n==========================msg sent to llm==========================')
         res = ''
 
-        for ch in llm.generate(total_msg, history, max_tokens=2048):
+        for ch in llm.generate(
+            total_msg,
+            history,
+            temperature=temperature,
+            repetition_penalty=repetition_penalty,
+            max_new_tokens=max_new_tokens,
+        ):
             print(ch, end='', flush=True)
             res += ch
             yield res
 
+    input_tbx = gr.Textbox(
+        value='',
+        lines=10,
+        max_lines=20,
+        scale=16,
+        show_label=False,
+        placeholder="输入您的请求",
+        container=False,
+    )
     with gr.Blocks() as demo:
+
         role_prompt_tbx = gr.Textbox(
             value='Below is an instruction that describes a task. Write a response that appropriately completes the request.\n',
             lines=10,
@@ -299,10 +325,20 @@ def main_gr():
             placeholder="输入角色提示语",
             container=False,
         )
+        slider_temperature = gr.Slider(minimum=0.1, maximum=1.0, value=0.7, step=0.1, label='temperature', show_label=True)
+        slider_repetition_penalty = gr.Slider(minimum=1.0, maximum=1.5, value=1.1, step=0.05, label='repetition penalty', show_label=True)
+        slider_max_new_tokens = gr.Slider(minimum=50, maximum=8192, value=2048, step=1, label='max new tokens', show_label=True)
         chat = gr.ChatInterface(
             ask_llm,
-            additional_inputs=[role_prompt_tbx]
+            textbox=input_tbx,
+            additional_inputs=[
+                role_prompt_tbx,
+                slider_temperature,
+                slider_repetition_penalty,
+                slider_max_new_tokens,
+            ]
         )
+
     demo.queue().launch()
 
 
