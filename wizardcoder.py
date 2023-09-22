@@ -215,7 +215,7 @@ def main_gr():
 
     llm = Wizardcoder_Wrapper()
     llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
-    def ask_llm(message, history):
+    def ask_llm(message, history, user_role_prompt):
         # prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
         # ### Instruction:
         # {message}
@@ -223,7 +223,7 @@ def main_gr():
         # '''
         total_msg = ''
         system_prompt = 'Below is an instruction that describes a task. Write a response that appropriately completes the request.\n'
-        user_role_prompt = '''
+        planner_role_prompt = '''
             ### General Requirements:\n
             You are Code Interpreter, a world-class programmer that can complete any goal by executing code.
 
@@ -258,10 +258,9 @@ def main_gr():
         instruction_string = '### Instruction:\n'
         response_string = '### Response:\n'
 
-
-
-        total_msg += system_prompt          # Below is an instruction that ...
-        # total_msg += user_role_prompt       # ### General Requirements:\n You are Code Interpreter...
+        total_msg += user_role_prompt          # 用户特定的role_prompt，也可以是：Below is an instruction that ...
+        # total_msg += system_prompt          # Below is an instruction that ...
+        # total_msg += planner_role_prompt       # ### General Requirements:\n You are Code Interpreter...
 
         for chat in history:
             user_content = chat[0] + '\n'
@@ -290,19 +289,23 @@ def main_gr():
             res += ch
             yield res
 
-    demo = gr.ChatInterface(ask_llm).queue().launch()
+    with gr.Blocks() as demo:
+        role_prompt_tbx = gr.Textbox(
+            value='Below is an instruction that describes a task. Write a response that appropriately completes the request.\n',
+            lines=10,
+            max_lines=20,
+            scale=16,
+            show_label=False,
+            placeholder="输入角色提示语",
+            container=False,
+        )
+        chat = gr.ChatInterface(
+            ask_llm,
+            additional_inputs=[role_prompt_tbx]
+        )
+    demo.queue().launch()
 
-func_string = '''
-def calculate(a, b):
-    c=a*b
-    return c
-f=calculate
-print('f1:',f)
-print(f(3,22))
-'''
-func1_string = '''
-print('hi')
-'''
+
 def main11():
     a=12
     b=30
@@ -312,24 +315,21 @@ def main11():
 
     print(ans)
 
-def main12():
-    f = None
-    exec(func_string, globals())
-    print('f1:', f)
-    print('f:', f)
-    g=f
-    print(g(5,6))
-    # func = exec(func_string,{'a':3, 'b':4})
+func_string = '''
+def calculate(a, b):
+    c=a*b
+    return c
+f=calculate
+'''
 
-    # print(calculate(3,5))
+def main():
+    # f=None
+    exec(func_string, globals())
+    print('fff: ', f)
+    print(f(2,3))
 
 if __name__ == "__main__" :
-    ans = 'ff'
-    main11()
-
-
-    main12()
-
-    # main_gr()
+    # main()
+    main_gr()
 
 # https://blog.csdn.net/weixin_44878336/article/details/124894210
