@@ -110,6 +110,8 @@ class Wizardcoder_Wrapper():
 
         stop_criteria = Keywords_Stopping_Criteria.get_stop_criteria(self.tokenizer, stop)
 
+        if temperature==0.0:
+            temperature=0.0001
         generation_kwargs = dict(
             inputs=input_ids,
             streamer=streamer,
@@ -325,7 +327,7 @@ def main_gr():
             placeholder="输入角色提示语",
             container=False,
         )
-        slider_temperature = gr.Slider(minimum=0.1, maximum=1.0, value=0.7, step=0.1, label='temperature', show_label=True)
+        slider_temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, label='temperature', show_label=True)
         slider_repetition_penalty = gr.Slider(minimum=1.0, maximum=1.5, value=1.1, step=0.05, label='repetition penalty', show_label=True)
         slider_max_new_tokens = gr.Slider(minimum=50, maximum=8192, value=2048, step=1, label='max new tokens', show_label=True)
         chat = gr.ChatInterface(
