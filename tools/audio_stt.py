@@ -1,7 +1,9 @@
 import whisper
 import os
 
-model = whisper.load_model("base")
+model = whisper.load_model("medium")
+# model = whisper.load_model("small")
+# model = whisper.load_model("base")
 
 # load audio and pad/trim it to fit 30 seconds
 print('当前文件夹: ', os.getcwd())
