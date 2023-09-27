@@ -1,7 +1,15 @@
 <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">
     <voice name="zh-CN-YunjianNeural">
         <prosody rate="0%" pitch="0%">
-        I recommend a famous novel called “The Great Gatsby” written by F. Scott Fitzgerald. It's a classic novel about the lives of the rich and the poor in New York during the Jazz Age. The story follows a man named Jay Gatsby who builds a mansion in Long Island to impress his lover, Daisy Buchanan, but fails to win her love despite his great effort. The book depicts the excessive pursuit of wealth and power, and how it can corrupt people and destroy relationships. It's a timeless tale of love, betrayal, and redemption, and I believe everyone should read it at least once in their lifetime.
+        陶一衡和妹妹在一起玩王者荣耀，你猜他们都会玩什么角色呢？
         </prosody>
     </voice>
 </speak>
+
+<!--<speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">-->
+<!--    <voice name="zh-CN-XiaoxiaoNeural">-->
+<!--        <mstts:express-as style="chat">-->
+<!--            <prosody rate="0%" pitch="0%">晓晓聊天声音</prosody>-->
+<!--        </mstts:express-as>-->
+<!--    </voice>-->
+<!--</speak>-->

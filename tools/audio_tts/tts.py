@@ -1,3 +1,7 @@
+# github位置：https://github.com/skygongque/tts
+
+
+
 '''
 参考代码
 https://github.com/OS984/DiscordBotBackend/blob/3b06b8be39e4dbc07722b0afefeee4c18c136102/NeuralTTS.py
@@ -13,6 +17,42 @@ import re
 import uuid
 import argparse
 
+class Role():
+    # female
+    HiuGaaiNeural='zh-HK-HiuGaaiNeural'
+    HiuMaanNeural='zh-HK-HiuMaanNeural'
+    WanLungNeural='zh-HK-WanLungNeural'
+    XiaoxiaoNeural='zh-CN-XiaoxiaoNeural'
+    XiaoyiNeural='zh-CN-XiaoyiNeural'
+    XiaobeiNeural='zh-CN-liaoning-XiaobeiNeural'
+    HsiaoChenNeural='zh-TW-HsiaoChenNeural'
+    HsiaoYuNeural='zh-TW-HsiaoYuNeural'
+    XiaoniNeural='zh-CN-shaanxi-XiaoniNeural'
+
+    # male
+    YunjianNeural='zh-CN-YunjianNeural'
+    YunxiNeural='zh-CN-YunxiNeural'
+    YunxiaNeural='zh-CN-YunxiaNeural'
+    YunyangNeural='zh-CN-YunyangNeural'
+    YunJheNeural='zh-TW-YunJheNeural'
+
+    @staticmethod
+    def tts(in_role, in_text, in_output=None):
+        role = in_role
+        text = in_text
+        SSML_text = f'''
+        <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">
+        <voice name="{role}">
+            <prosody rate="0%" pitch="0%">
+            {text}
+            </prosody>
+        </voice>
+        </speak>
+        '''
+        print('ssml文本：\n', SSML_text)
+        output_path = in_output if in_output else 'output_' + str(int(time.time() * 1000))
+        asyncio.get_event_loop().run_until_complete(mainSeq(SSML_text, output_path))
+        print('completed')
 
 '''命令行参数解析'''
 def parseArgs():
@@ -43,8 +83,10 @@ def getXTime():
 
 # Async function for actually communicating with the websocket
 async def transferMsTTSData(SSML_text, outputPath):
+    print(f'开始处理 SSML_text:')
+    print(f'{SSML_text}')
     req_id = uuid.uuid4().hex.upper()
-    print(req_id)
+    # print(req_id)
     # TOKEN来源 https://github.com/rany2/edge-tts/blob/master/src/edge_tts/constants.py
     # 查看支持声音列表 https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4
     TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4"
@@ -84,9 +126,11 @@ async def transferMsTTSData(SSML_text, outputPath):
         # Checks for close connection message
         end_resp_pat = re.compile('Path:turn.end')
         audio_stream = b''
+        print()
         while(True):
             response = await websocket.recv()
-            print('receiving...')
+            print('.', end='', flush=True)
+            # print('receiving...')
             # print(response)
             # Make sure the message isn't telling us to stop
             if (re.search(end_resp_pat, str(response)) == None):
@@ -112,11 +156,40 @@ def get_SSML(path):
     with open(path,'r',encoding='utf-8') as f:
         return f.read()
 
-if __name__ == "__main__":
+def main():
     args = parseArgs()
     SSML_text = get_SSML(args.input)
+    role = Role.XiaoxiaoNeural
+    text = '陶一衡和妹妹在一起玩王者荣耀，你猜他们都会玩什么角色呢？'
+    SSML_text=f'''
+    <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">
+    <voice name="{role}">
+        <prosody rate="0%" pitch="0%">
+        {text}
+        </prosody>
+    </voice>
+    </speak>
+    '''
+    print('ssml文本：\n', SSML_text)
     output_path = args.output if args.output else 'output_'+ str(int(time.time()*1000))
     asyncio.get_event_loop().run_until_complete(mainSeq(SSML_text, output_path))
     print('completed')
     # python tts.py --input SSML.xml
     # python tts.py --input SSML.xml --output 保存文件名
+
+def main1():
+    # args = parseArgs()
+    Role.tts(Role.XiaoniNeural, '陶一衡和妹妹在玩什么呢？')
+    # Role.tts(Role.XiaoniNeural, '陶一衡和妹妹在玩什么呢？', args.output)
+
+if __name__ == "__main__":
+    main1()
+
+
+# <speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">
+#     <voice name="zh-CN-YunjianNeural">
+#         <prosody rate="0%" pitch="0%">
+#         陶一衡和妹妹在一起玩王者荣耀，你猜他们都会玩什么角色呢？
+#         </prosody>
+#     </voice>
+# </speak>
