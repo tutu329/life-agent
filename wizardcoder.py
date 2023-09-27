@@ -188,7 +188,7 @@ def main():
     #    --base_model "WizardLM/WizardCoder-Python-34B-V1.0" \
     #    --n_gpus 4
     llm = Wizardcoder_Wrapper()
-    llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
+    llm.init(in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ")
     while True:
         question = input('user: ')
         prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
@@ -219,7 +219,7 @@ def main_gr():
     import gradio as gr
 
     llm = Wizardcoder_Wrapper()
-    llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
+    llm.init(in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ")
     def ask_llm(
             message,
             history,
