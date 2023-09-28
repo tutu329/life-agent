@@ -7,8 +7,9 @@ openai.api_key = "xxxxx"
 from copy import deepcopy
 
 class LLM_Qwen():
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop'):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0):
         self.gen = None     # 返回结果的generator
+        self.temperature = temperature
 
         # 记忆相关
         self.history_list = []
@@ -94,14 +95,20 @@ class LLM_Qwen():
         self.set_role_prompt(self.role_prompt)
         self.history_turn_num_now = 0
 
+    # def __history_messages_with_question(self, in_question):
+    #     msg_this_turn = {"role": "user", "content": in_question}
+    #     if self.history:
+    #         msgs = deepcopy(self.history_list)
+    #         msgs.append(msg_this_turn)
+    #         return msgs
+    #     else:
+    #         return [msg_this_turn]
+
     def __history_messages_with_question(self, in_question):
         msg_this_turn = {"role": "user", "content": in_question}
-        if self.history:
-            msgs = deepcopy(self.history_list)
-            msgs.append(msg_this_turn)
-            return msgs
-        else:
-            return [msg_this_turn]
+        msgs = deepcopy(self.history_list)
+        msgs.append(msg_this_turn)
+        return msgs
 
     def print_history(self):
         print('\n\t================对话历史================')
@@ -151,9 +158,10 @@ class LLM_Qwen():
             self.__history_clear()
 
         msgs = self.__history_messages_with_question(in_question)
-        # print('msgs: ', msgs)
+        # print('发送到LLM的完整提示: ', msgs)
         gen = openai.ChatCompletion.create(
-            model="Qwen-7B",
+            model="Qwen",
+            temperature=self.temperature,
             messages=msgs,
             stream=True,
             max_tokens=2048,
@@ -173,7 +181,8 @@ class LLM_Qwen():
         msgs = self.__history_messages_with_question(in_question)
         # print('msgs: ', msgs)
         res = openai.ChatCompletion.create(
-            model="Qwen-7B",
+            model="Qwen",
+            temperature=self.temperature,
             messages=msgs,
             stream=False,
             max_tokens=2048,
@@ -317,7 +326,7 @@ def main9():
         SystemMessage
     )
     # 设置为本地的模型，因为vicuna使用的是假名字"text-embedding-ada-002"
-    chat = ChatOpenAI(model="Qwen-7B", temperature=0)
+    chat = ChatOpenAI(model="Qwen", temperature=0)
     answer = chat.predict_messages(
         [HumanMessage(content="Translate this sentence from English to Chinese. I love programming.")])
     print(answer)
@@ -343,7 +352,7 @@ if __name__ == "__main__" :
 
 # create a request activating streaming response
 # for chunk in openai.ChatCompletion.create(
-#     model="Qwen-7B",
+#     model="Qwen",
 #     messages=[
 #         {"role": "user", "content": "在'游戏'、'看书'、'旅游'、'吃喝'、'玩乐'、'健身'、'思考'中随机选择一个"}
 #     ],
@@ -356,7 +365,7 @@ if __name__ == "__main__" :
 
 # create a request not activating streaming response
 # response = openai.ChatCompletion.create(
-#     model="Qwen-7B",
+#     model="Qwen",
 #     messages=[
 #         {"role": "user", "content": "在'游戏'、'看书'、'旅游'、'吃喝'、'玩乐'、'健身'、'思考'中随机选择一个"}
 #     ],
