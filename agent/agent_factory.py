@@ -8,6 +8,10 @@ from gpu_server.Stable_Diffusion import *
 # def ask_llm_with_history(user_input, his=[]):
 #     return ask(user_input=user_input, his=his)
 
+class Agent_Memory():
+    def __int__(self):
+        pass
+
 # 此Agent为异步为主方案，即不以同步完成user的任务为第一目标
 class Base_Agent():
 
@@ -37,6 +41,7 @@ class Base_Agent():
         # ===========================高阶属性===============================
         # 自由意志
         self.mind = None
+        self.memory:Agent_Memory = None
         # 主要器官
         self.brain = None
         self.eyes = None
@@ -46,6 +51,7 @@ class Base_Agent():
         self.hands = None
         self.legs = None
         self.feet = None
+
 
         print(f'agent "{self.agent_id}" created by Agent_Factory.', end=self.end_char, flush=True)
 
@@ -97,7 +103,7 @@ class Human(Base_Agent):
         print('Human, do_something():', end=self.end_char, flush=True)
         time_now =datetime.datetime.now()
 
-        self.test_llm.ask_prepare("你现在开始提一个独特的问题，首先你要从生活、兴趣、探索、趣味、影视、游戏、男女、美食等词汇当中选中一个作为问题的方向，记住并不是向我提问，而是你对自身或世界的思考，例如：'到底什么是生活呢？'。每一次回复在形式和内容上绝对都不要重复。").get_answer_and_sync_print()
+        # self.test_llm.ask_prepare("你现在开始提一个独特的问题，首先你要从生活、兴趣、探索、趣味、影视、游戏、男女、美食等词汇当中选中一个作为问题的方向，记住并不是向我提问，而是你对自身或世界的思考，例如：'到底什么是生活呢？'。每一次回复在形式和内容上绝对都不要重复。").get_answer_and_sync_print()
         # self.test_llm.ask("随机推荐一本好书，简要介绍下内容和作者情况，回复形式不要很重复").sync_print()
 
 class Animal(Base_Agent):
@@ -183,4 +189,4 @@ def main3():
         llm.print_history()
 
 if __name__ == "__main__":
-    main3()
+    main()
