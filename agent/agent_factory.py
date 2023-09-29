@@ -118,7 +118,7 @@ class Agent_Factory():
     agent_config = {
         'life_loop_sleep_time' : 0.1,           # sleep时间(second)
         'probability_do_something' : 0.001,     # 行动概率/0.1秒
-        'debug_end_char' : '',                        # print的end
+        'debug_end_char' : '',                  # print中的end参数，用于适应stream输出，console下面应为''
     }
 
     # 全局唯一的agent池
