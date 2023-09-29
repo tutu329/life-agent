@@ -12,6 +12,12 @@ class Agent_Memory():
     def __int__(self):
         pass
 
+    def load(self):
+        pass
+
+    def save(self):
+        pass
+
 # 此Agent为异步为主方案，即不以同步完成user的任务为第一目标
 class Base_Agent():
 
