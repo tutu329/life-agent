@@ -226,29 +226,25 @@ def main():
     while True:
         time.sleep(1)
 
-def main1():
-    llm = LLM_Qwen()
-    llm.ask_prepare('写一首诗，爱情方面的，500字。').get_answer_and_sync_print()
+def main_gr():
+    import gradio as gr
 
-    # llm = LLM_Qwen()
-    # res = llm.ask("简单描述一下一个女生正在看书的情形，用英文回复。").sync_print()
-    # Stable_Diffusion.quick_start('1girl, super model, showering, breasts, wet, side view, look at viewer, from below, standing, nipples, long legs, full body, sexy, beautiful', in_high_quality=True)
-    # Stable_Diffusion.quick_start(res, in_high_quality=False)
+    with gr.Blocks() as ui:
+        user_input = gr.Textbox(
+            # lines=3,
+            max_lines=20,
+            autofocus=True,
+            scale=16,
+            show_label=False,
+            placeholder="输入文本并按回车，或者上传文件",
+            container=False,
+        )
 
-def main3():
-    llm = LLM_Qwen()
-    # llm.set_role_prompt('你扮演一个女孩，你的名字叫章茵。')
-    while True:
-        res = input('user: ')
-        print('bot: ', end='')
-        if res=='retry':
-            llm.get_retry_generator()
-        elif res=='undo':
-            llm.undo()
-        else:
-            llm.set_role_prompt('你扮演一个女孩，你的名字叫笨笨。')
-            llm.ask_prepare(res, in_clear_history=False).get_answer_and_sync_print()
-        llm.print_history()
+    # demo.launch()
+    # demo.launch(server_name='localhost', server_port=6000)
+    # demo.launch(server_name='0.0.0.0', server_port=6000)
+    ui.queue().launch()
+    # ui.queue().launch(server_name='0.0.0.0', server_port=2222)
 
 if __name__ == "__main__":
-    main()
+    main_gr()
