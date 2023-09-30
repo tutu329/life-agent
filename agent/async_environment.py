@@ -4,32 +4,34 @@ from datetime import datetime
 
 class Event_Type():
     # 事件类型
-    TEXT  = 'TEXT_EVENT'
-    AUDIO = 'AUDIO_EVENT'
-    IMAGE = 'IMAGE_EVENT'
-    VIDEO = 'VIDEO_EVENT'
+    TEXT  = 'EVENT_TEXT'
+    AUDIO = 'EVENT_AUDIO'
+    IMAGE = 'EVENT_IMAGE'
+    VIDEO = 'EVENT_VIDEO'
 
 class Action_Type():
+    # 脑
+    THINK  = 'ACTION_THINK'
+
     # 耳
-    LISTEN = 'LISTEN_ACTION'
+    LISTEN = 'ACTION_LISTEN'
 
     # 口
-    SPEAK  = 'SPEAK_ACTION'
-    EAT    = 'EAT_ACTION'
-    BITE    = 'BITE_ACTION'
+    SPEAK  = 'ACTION_SPEAK'
+    EAT    = 'ACTION_EAT'
+    BITE   = 'ACTION_BITE'
 
     # 眼
-    READ   = 'READ_ACTION'
-    LOOK   = 'LOOK_ACTION'
+    READ   = 'ACTION_READ'
+    LOOK   = 'ACTION_LOOK'
 
     # 手
-    WRITE  = 'WRITE_ACTION'
-    WRITE  = 'WRITE_ACTION'
+    WRITE  = 'ACTION_WRITE'
 
 class Action_Tool():
-    NONE  = 'NONE_TOOL'
-    PHONE = 'PHONE_TOOL'
-    PC    = 'PC_TOOL'
+    NONE  = 'TOOL_NONE'
+    PHONE = 'TOOL_PHONE'
+    PC    = 'TOOL_PC'
 
 @dataclass
 class Environment_Event:
@@ -47,6 +49,9 @@ class Environment_Event:
         res = f'({self.time.strftime("%Y-%m-%d %H:%M:%S")})"{self.type}": [{self.subject}] [{self.action}] to [{self.object}] with [{self.tool}] ("{self.content}")'
         return res
 
+# 异步的Environment类
+# 功能：记录agent的所有action，是一个发布-订阅agent行为的异步消息中间件（后续可考虑跨进程，如基于redis）
+# 注意：agent不知道Environment的存在，Environment
 class Async_Environment():
     def __init__(self):
         self.history:list[Environment_Event] = []

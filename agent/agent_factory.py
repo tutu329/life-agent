@@ -1,7 +1,9 @@
-import time, random, datetime
+import time, random
+from datetime import datetime
 from threading import Thread
 
 from gpu_server.Openai_Api_for_Qwen import *
+from agent.async_environment import *
 from gpu_server.Stable_Diffusion import *
 
 # =============================== LLM接口 =================================
@@ -61,18 +63,38 @@ class Base_Agent():
 
         print(f'agent "{self.agent_id}" created by Agent_Factory.', end=self.end_char, flush=True)
 
-    def test_init(self):
+    def test_init(self, action_question, role_prompt, example_prompts=None, nagetive_example_prompt='', style_prompt='', other_requirement=''):
+        self.test_env=None
+        self.test_action_question = action_question
+
         self.test_llm = LLM_Qwen()
-        # self.test_llm = LLM_Qwen(history_max_turns=3)
+        # role_prompt = '你是一位书籍收藏爱好者，对于国内外各领域经典著作了如指掌。'
+        if example_prompts is None:
+            example_prompts = [
+                # '例如，user发送给你的文字中有单个字的笔误："你是我的好彭友，我们明天粗去玩吧？"，你要指出"彭"应为"朋"、"粗"应为"出"。',
+                # '例如，user发送给你的文字中有涉及语义的笔误："我们已对全社会效益已经财务效益进行了全面分析。"，你要指出"已经"应为"以及"。',
+            ]
+        # nagetive_example_prompt = '需要注意的是，一个词语不完整或者多余，并不属于错别字，例如"社会效益最大"应为"社会效益最大化"、"电影院"应为"电影"就不属于错别字，不要将这种情况误判为错别字。'
+        # style_prompt = '你的错别字修改意见要以json格式返回，具体的json格式要求是，有错别字时像这样：{"result":"有错别字", [{"原有词语":"彭友", "修改意见":"朋友"}, {"原有词语":"粗去", "修改意见":"出去"}]}，没用错别字时像这样：{"result":"无错别字"}。'
+        # other_requirement = '直接返回json意见，不作任何解释。一步一步想清楚。'
+        self.test_llm.set_role_prompt(role_prompt + ''.join(example_prompts) + nagetive_example_prompt + style_prompt + other_requirement)
 
     # agent的初始化
     def init(self):
-        self.test_init()
         return self
+
+    def observe(self):
+        pass
+
+    def think(self):
+        pass
+
+    def action(self):
+        pass
 
     # agent的所有主动行为
     def do_something(self):
-        print('wrong: do_something() in Base_Agent.', end=self.end_char, flush=True)
+        print('ERROR: do_something() invoked in Base_Agent.', end=self.end_char, flush=True)
         pass
 
     # agent的启动
@@ -105,10 +127,41 @@ class Human(Base_Agent):
     def __init__(self, in_agent_id):
         super().__init__(in_agent_id)
 
-    def do_something(self):
-        print('Human, do_something():', end=self.end_char, flush=True)
-        time_now =datetime.datetime.now()
+    def observe(self):
+        print(f'[{self.agent_id}:observe]:')
+        pass
 
+    def think(self):
+        print(f'[{self.agent_id}:think]:')
+        pass
+
+    def action(self):
+        print(f'[{self.agent_id}:action]:')
+        pass
+
+    def do_something(self):
+        print(f'[{self.agent_id}:do_something]:', end=self.end_char, flush=True)
+
+        self.observe()
+        self.think()
+        self.action()
+
+        # time_now =datetime.now()
+
+        res = self.test_llm.ask_prepare(self.test_action_question).get_answer_and_sync_print()
+        self.test_env = Async_Environment()
+        self.test_env.append_event(
+            Event_Type.TEXT,
+            self.agent_id,
+            'ALL',
+            Action_Type.SPEAK,
+            Action_Tool.NONE,
+            res
+        )
+        self.test_env.print_history()
+
+        # self.test_llm.ask_prepare("在1400年-2000年当中随机选择一个年代，如1500-1600年、1900-2000年等等都行，并推荐一本出版于这个年代的畅销书，不要重复。只回复书名、作者、出版时间和书中主人公。").get_answer_and_sync_print()
+        # self.test_llm.pr
         # self.test_llm.ask_prepare("你现在开始提一个独特的问题，首先你要从生活、兴趣、探索、趣味、影视、游戏、男女、美食等词汇当中选中一个作为问题的方向，记住并不是向我提问，而是你对自身或世界的思考，例如：'到底什么是生活呢？'。每一次回复在形式和内容上绝对都不要重复。").get_answer_and_sync_print()
         # self.test_llm.ask("随机推荐一本好书，简要介绍下内容和作者情况，回复形式不要很重复").sync_print()
 
@@ -123,7 +176,7 @@ class Agent_Factory():
     # 全局配置信息
     agent_config = {
         'life_loop_sleep_time' : 0.1,           # sleep时间(second)
-        'probability_do_something' : 0.001,     # 行动概率/0.1秒
+        'probability_do_something' : 0.0001,     # 行动概率/0.1秒
         'debug_end_char' : '',                  # print中的end参数，用于适应stream输出，console下面应为''
     }
 
@@ -161,10 +214,13 @@ class Agent_Factory():
 def main():
     # ask_llm("如果你是大一新生，你入学第一天会做些什么？")
     Agent_Factory.agent_config['life_loop_sleep_time'] = 0.1
-    Agent_Factory.agent_config['probability_do_something'] = 0.03
+    Agent_Factory.agent_config['probability_do_something'] = 0.5
     Agent_Factory.agent_config['debug_end_char'] = '\n'
-    human = Agent_Factory.create_agent(in_agent_id='001', in_agent_type='human')
-    human.init()
+    human = Agent_Factory.create_agent(in_agent_id='笨笨', in_agent_type='human')
+    human.test_init(
+        "在1400年-2000年当中随机选择一个年代，如1500-1600年、1900-2000年等等都行，并推荐一本出版于这个年代的畅销书，不要重复。只回复书名、作者、出版时间和书中主人公。",
+        '你是一位书籍收藏爱好者，对于国内外各领域经典著作了如指掌。'
+    )
     human.life_start()
 
     while True:

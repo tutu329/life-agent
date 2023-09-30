@@ -7,7 +7,7 @@ openai.api_key = "xxxxx"
 from copy import deepcopy
 
 class LLM_Qwen():
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7):
         self.gen = None     # 返回结果的generator
         self.temperature = temperature
 
@@ -158,7 +158,11 @@ class LLM_Qwen():
             self.__history_clear()
 
         msgs = self.__history_messages_with_question(in_question)
+
+        # ==========================================================
         # print('发送到LLM的完整提示: ', msgs)
+        # ==========================================================
+
         gen = openai.ChatCompletion.create(
             model="Qwen",
             temperature=self.temperature,
