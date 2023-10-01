@@ -350,9 +350,36 @@ def main():
     print(res)
     print(res['choices'][0]['message']['content'])
 
+def main_vl():
+    import openai
+
+    openai.api_key = "EMPTY"  # Not support yet
+    # openai.api_key = "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"
+    openai.api_base = "http://116.62.63.204:8080/v1"
+
+    gen = openai.ChatCompletion.create(
+        model="Qwen",
+        temperature=0.9,
+        # messages=[
+        #     {"role": "user", "content": [
+        #         {'image':'D:/server/life-agent/gpu_server/1.png'},
+        #         {'text': '图里是什么?'},
+        #     ]},
+        # ],
+        messages=[
+            {"role": "user", "content": '图里是什么?'},
+        ],
+        stream=False,
+        max_tokens=2048,
+        # Specifying stop words in streaming output format is not yet supported and is under development.
+    )
+
+    # print(gen)
+    print(gen['choices'][0]['message']['content'])
+
 
 if __name__ == "__main__" :
-    main()
+    main_vl()
 
 # create a request activating streaming response
 # for chunk in openai.ChatCompletion.create(
