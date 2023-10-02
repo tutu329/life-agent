@@ -39,6 +39,8 @@ class LLM_Qwen_VL():
         self.images_info=''     # 图片链接的汇编string
         self.images_index = 0   # 图片索引号
 
+        self.res = ''
+
     def add_images(self, in_img_path_list):
         self.images_path +=in_img_path_list
 
@@ -70,6 +72,7 @@ class LLM_Qwen_VL():
         )
         result = res['choices'][0]['message']['content']
         print(f'Qwen-VL:\n\t{result}\n')
+        self.res = res
         return res
 
     # def _fetch_all_box_with_ref(self, text):
@@ -156,11 +159,9 @@ class LLM_Qwen_VL():
         print(f'对象检测-解析后的变量boxes为：{res_boxes}')
         return res_boxes
 
-    def draw_bbox_on_latest_picture(
+    def create_image_with_boxes(
         self,
-        # boxes,
-        response,
-        history=None,
+        output_file_name,
     ) -> Optional[Image.Image]:
         image = self.images_path[-1]
         # image = self._fetch_latest_picture(response, history)
@@ -175,7 +176,7 @@ class LLM_Qwen_VL():
         visualizer = Visualizer(image)
 
         # boxes = self._fetch_all_box_with_ref(response)
-        boxes = self.get_boxes_info(response)
+        boxes = self.get_boxes_info(self.res['choices'][0]['message']['content'])
         if not boxes:
             return None
         color = random.choice([_ for _ in mplc.TABLEAU_COLORS.keys()]) # init color
@@ -187,7 +188,12 @@ class LLM_Qwen_VL():
             visualizer.draw_box((x1, y1, x2, y2), alpha=1, edge_color=color)
             if 'ref' in box:
                 visualizer.draw_text(box['ref'], (x1, y1), color=color, horizontal_alignment="left")
-        return visualizer.output
+
+        image = visualizer.output
+        if image:
+            image.save(output_file_name)
+        else:
+            print("未检测到对象。")
 
 class VisImage:
     def __init__(self, img, scale=1.0):
@@ -662,28 +668,13 @@ def main():
 def main_vl():
     vl = LLM_Qwen_VL(temperature=0.51, url='http://127.0.0.1:8080/v1')
     vl.add_images([
-            'D:\\server\\static\\1.jpeg',
-            'D:\\server\\static\\1.png',
-            'D:\\server\\static\\1.jpeg',
+        'D:\\server\\static\\1.jpeg',
+        # 'D:\\server\\static\\1.png',
     ])
-    vl.clear_images()
-    vl.add_images([
-        # 'D:\\server\\static\\1.jpeg',
-        'D:\\server\\static\\1.png',
-    ])
-    # res = vl.ask_block('输出狗头、狗爪、人脸和所有人手所在位置的检测框')
-    res = vl.ask_block('输出所有狗头和人手所在位置的检测框')
-    # <ref>击掌</ref><box>(536,509),(588,602)</box>
-    image = vl.draw_bbox_on_latest_picture(res['choices'][0]['message']['content'], history=[])
-    # image = vl.draw_bbox_on_latest_picture([{'box':(536,509,588,602)}], history=[])
-    # image = vl.draw_bbox_on_latest_picture(res, history=[])
-    if image:
-        image.save('D:\\server\\static\\box.jpg')
-    else:
-        print("no box")
-
-
-
+    res = vl.ask_block('输出狗头、狗爪、人脸和所有人手所在位置的检测框')
+    # res = vl.ask_block('输出所有狗头和人手所在位置的检测框')
+    # vl.clear_images()
+    vl.create_image_with_boxes(output_file_name = 'D:\\server\\static\\box.jpg',)
 
 if __name__ == "__main__" :
     # main()
