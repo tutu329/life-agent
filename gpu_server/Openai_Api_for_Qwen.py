@@ -1,7 +1,7 @@
 import openai
 # openai.api_base = "http://powerai.cc:8000/v1"
 # openai.api_base = "http://localhost:8000/v1"
-openai.api_base = "http://127.0.0.1:8000/v1"
+# openai.api_base = "http://127.0.0.1:8000/v1"
 # openai.api_base = "http://116.62.63.204:8000/v1"
 openai.api_key = "xxxxx"
 from copy import deepcopy
@@ -18,8 +18,33 @@ from copy import deepcopy
 # print(f'静态文件置于"{static_path}"中，外部访问：{args.server_name}:{args.server_port}/static/')
 # ======================================================================================================================
 
+# Qwen-VL目前不支持stream
+class LLM_Qwen_VL():
+    def __init__(self, temperature=0.7, url='http://127.0.0.1:8080/v1'):
+        self.url = url
+        self.temperature = temperature
+
+    def ask_block(self, in_img_path, in_query):
+        openai.api_base = self.url
+
+        query = f'<img>{in_img_path}</img>\n\t{in_query}'
+        print('User: \n\t', query)
+        res = openai.ChatCompletion.create(
+            model="Qwen",
+            temperature=self.temperature,
+            messages=[
+                {"role": "user", "content": query},
+            ],
+            stream=False,
+            max_tokens=2048,
+        )
+        result = res['choices'][0]['message']['content']
+        print(f'Qwen-VL:\n\t{result}\n')
+        return res
+
 class LLM_Qwen():
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8000/v1'):
+        self.url = url
         self.gen = None     # 返回结果的generator
         self.temperature = temperature
 
@@ -175,6 +200,8 @@ class LLM_Qwen():
         # print('发送到LLM的完整提示: ', msgs)
         # ==========================================================
 
+        print('User: \n\t', msgs[0]['content'])
+        openai.api_base = self.url
         gen = openai.ChatCompletion.create(
             model="Qwen",
             temperature=self.temperature,
@@ -195,7 +222,8 @@ class LLM_Qwen():
             self.__history_clear()
 
         msgs = self.__history_messages_with_question(in_question)
-        # print('msgs: ', msgs)
+        print('User:\n\t', msgs[0]['content'])
+        openai.api_base = self.url
         res = openai.ChatCompletion.create(
             model="Qwen",
             temperature=self.temperature,
@@ -210,17 +238,19 @@ class LLM_Qwen():
             ]
             # Specifying stop words in streaming output format is not yet supported and is under development.
         )
+        result = res['choices'][0]['message']['content']
+        print(f'Qwen:\n\t{result}')
         return res
 
     # 方式1：直接输出结果
     def get_answer_and_sync_print(self):
         result = ''
+        print('Qwen: \n\t', end='')
         for chunk in self.gen:
             if hasattr(chunk.choices[0].delta, "content"):
                 print(chunk.choices[0].delta.content, end="", flush=True)
                 result += chunk.choices[0].delta.content
                 # yield chunk.choices[0].delta.content
-
         print()
         self.answer_last_turn = result
         self.__history_add_last_turn_msg()
@@ -348,53 +378,34 @@ def main9():
     print(answer)
 
 def main():
-    llm = LLM_Qwen()
-    print(f'openai.api_base: {openai.api_base}')
-    print(f'openai.api_key: {openai.api_key}')
-    print(f'openai.api_key_path: {openai.api_key_path}')
-    print(f'openai.api_version: {openai.api_version}')
-    print(f'openai.api_type: {openai.api_type}')
-    # llm.ask_prepare("你是谁").get_answer_and_sync_print()
-    res = llm.ask_block('你是谁')
-    # for i in res:
-    #     print('hihihihihih')
-    #     print(i)
-    print(res)
-    print(res['choices'][0]['message']['content'])
+    # print(f'openai.api_base: {openai.api_base}')
+    # print(f'openai.api_key: {openai.api_key}')
+    # print(f'openai.api_key_path: {openai.api_key_path}')
+    # print(f'openai.api_version: {openai.api_version}')
+    # print(f'openai.api_type: {openai.api_type}')
+
+    llm = LLM_Qwen(
+        history=True,
+        history_max_turns=50,
+        history_clear_method='pop',
+        temperature=0.7,
+        url='http://127.0.0.1:8000/v1'
+    )
+    llm.ask_prepare("你是谁").get_answer_and_sync_print()
+
+    # res = llm.ask_block('你是谁')
+    # print(res['choices'][0]['message']['content'])
 
 def main_vl():
-    import openai
-
-    print('main_vl() started.')
-    openai.api_key = "EMPTY"  # Not support yet
-    # openai.api_key = "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"
-    openai.api_base = "http://116.62.63.204:8080/v1"
-
-    # img_path = 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg'
-    img_path = 'D:\\server\\static\\1.png'
-    # img_path = 'http://localhost:8080/static/1.jpeg'
-    # img_path = 'http://localhost:8080/static/1.png'
-    query = f'<img>{img_path}</img> 图里是什么?'
-    print(f'query：{query}')
-    gen = openai.ChatCompletion.create(
-        model="Qwen",
-        temperature=0.9,
-        messages=[
-            {"role": "user", "content": query},
-        ],
-        # messages=[
-        #     {"role": "user", "content": '图里是什么?'},
-        # ],
-        stream=False,
-        max_tokens=2048,
-        # Specifying stop words in streaming output format is not yet supported and is under development.
+    llm = LLM_Qwen_VL(temperature=0.51, url='http://127.0.0.1:8080/v1')
+    res = llm.ask_block(
+        'D:\\server\\static\\1.jpeg',
+        '图里有什么？'
     )
-
-    # print(gen)
-    print(gen['choices'][0]['message']['content'])
-
+    # print(res['choices'][0]['message']['content'])
 
 if __name__ == "__main__" :
+    main()
     main_vl()
 
 # create a request activating streaming response
