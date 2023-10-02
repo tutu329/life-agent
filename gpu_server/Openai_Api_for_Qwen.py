@@ -6,8 +6,12 @@ openai.api_base = "http://127.0.0.1:8000/v1"
 openai.api_key = "xxxxx"
 from copy import deepcopy
 
-# ======注：若要使用qwen-vl的openai-api，要让客户端api请求中的'<img>localhost:8080/static/1.png</img> 图中内容有什么？'可访问======
-# 需要在qwen-vl的openai_api.py的main中增加下面的代码，并新建D:/server/static，拷入图片：
+# ============================================关于qwen-vl中图片path的可访问性===============================================
+# 1、本地文件系统方式【可行】，必须用反斜杠"\"，如：img_path = 'D:\\server\\static\\1.png'
+# 2、远程方式【可行】，如：img_path = 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg'
+# 3、本地http链接方式【仍然卡死】，如：http://url:port/static/xxx.png，不清楚问题在哪里（可能是uvicorn的server配置问题）
+# ===========（方式3：暂时不可行），要让客户端api请求中的'<img>localhost:8080/static/1.png</img> 图中内容有什么？'可访问============
+# 方式3（暂时不可行）：需要在qwen-vl的openai_api.py的main中增加下面的代码，并新建D:/server/static，拷入图片：
 # from fastapi.staticfiles import StaticFiles
 # static_path = 'D:/server/static/'
 # app.mount("/static", StaticFiles(directory=static_path), name="static")
@@ -361,18 +365,22 @@ def main():
 def main_vl():
     import openai
 
+    print('main_vl() started.')
     openai.api_key = "EMPTY"  # Not support yet
     # openai.api_key = "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"
     openai.api_base = "http://116.62.63.204:8080/v1"
 
     # img_path = 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg'
-    # img_path = 'D:/server/life-agent/gpu_server/1.png'
-    img_path = 'http://localhost:8080/static/1.png'
+    img_path = 'D:\\server\\static\\1.png'
+    # img_path = 'http://localhost:8080/static/1.jpeg'
+    # img_path = 'http://localhost:8080/static/1.png'
+    query = f'<img>{img_path}</img> 图里是什么?'
+    print(f'query：{query}')
     gen = openai.ChatCompletion.create(
         model="Qwen",
         temperature=0.9,
         messages=[
-            {"role": "user", "content": f'<img>{img_path}</img> 图里是什么?'},
+            {"role": "user", "content": query},
         ],
         # messages=[
         #     {"role": "user", "content": '图里是什么?'},
