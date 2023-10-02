@@ -410,22 +410,22 @@ def main():
     # print(res['choices'][0]['message']['content'])
 
 def main_vl():
-    llm = LLM_Qwen_VL(temperature=0.51, url='http://127.0.0.1:8080/v1')
-    llm.add_images([
+    vl = LLM_Qwen_VL(temperature=0.51, url='http://127.0.0.1:8080/v1')
+    vl.add_images([
             'D:\\server\\static\\1.jpeg',
             'D:\\server\\static\\1.png',
             'D:\\server\\static\\1.jpeg',
     ])
-    res = llm.ask_block('这几张图里分别有什么？')
-    llm.add_images([
+    res = vl.ask_block('这几张图里分别有什么？')
+    vl.add_images([
             'D:\\server\\static\\1.png',
     ])
-    res = llm.ask_block('这几张图里分别有什么？')
-    llm.clear_images()
-    llm.add_images([
+    res = vl.ask_block('这几张图里分别有什么？')
+    vl.clear_images()
+    vl.add_images([
         'D:\\server\\static\\1.png',
     ])
-    res = llm.ask_block('图里有什么？')
+    res = vl.ask_block('图里有什么？')
     # print(res['choices'][0]['message']['content'])
 
 if __name__ == "__main__" :
