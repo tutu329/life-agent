@@ -6,6 +6,12 @@ openai.api_base = "http://127.0.0.1:8000/v1"
 openai.api_key = "xxxxx"
 from copy import deepcopy
 
+# ======注：若要使用qwen-vl的openai-api，要让客户端api请求中的'<img>localhost:8080/static/1.png</img> 图中内容有什么？'可访问======
+# 需要在qwen-vl的openai_api.py中增加下面的代码：
+# from fastapi.staticfiles import StaticFiles
+# app.mount("/static", StaticFiles(directory="D:/server/static"), name="static")
+# ======================================================================================================================
+
 class LLM_Qwen():
     def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7):
         self.gen = None     # 返回结果的generator
@@ -357,18 +363,18 @@ def main_vl():
     # openai.api_key = "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"
     openai.api_base = "http://116.62.63.204:8080/v1"
 
+    # img_path = 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg'
+    # img_path = 'D:/server/life-agent/gpu_server/1.png'
+    img_path = 'localhost:8080/1.png'
     gen = openai.ChatCompletion.create(
         model="Qwen",
         temperature=0.9,
-        # messages=[
-        #     {"role": "user", "content": [
-        #         {'image':'D:/server/life-agent/gpu_server/1.png'},
-        #         {'text': '图里是什么?'},
-        #     ]},
-        # ],
         messages=[
-            {"role": "user", "content": '图里是什么?'},
+            {"role": "user", "content": f'<img>{img_path}</img> 图里是什么?'},
         ],
+        # messages=[
+        #     {"role": "user", "content": '图里是什么?'},
+        # ],
         stream=False,
         max_tokens=2048,
         # Specifying stop words in streaming output format is not yet supported and is under development.
