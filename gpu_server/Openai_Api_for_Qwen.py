@@ -23,11 +23,24 @@ class LLM_Qwen_VL():
     def __init__(self, temperature=0.7, url='http://127.0.0.1:8080/v1'):
         self.url = url
         self.temperature = temperature
+        self.images_info=''
+        self.images_index = 0
 
-    def ask_block(self, in_img_path, in_query):
+    def add_images(self, in_img_path_list):
+        for img_path in in_img_path_list:
+            self.images_index += 1
+            self.images_info += f'pic{self.images_index}:' + f'<img>{img_path}</img>\n'
+
+    def clear_images(self):
+        self.images_info = ''
+        self.images_index = 0
+
+    def ask_block(self, in_query):
         openai.api_base = self.url
 
-        query = f'<img>{in_img_path}</img>\n\t{in_query}'
+        query = ''
+        query += self.images_info
+        query += f'\t{in_query}'
         print('User: \n\t', query)
         res = openai.ChatCompletion.create(
             model="Qwen",
@@ -398,14 +411,25 @@ def main():
 
 def main_vl():
     llm = LLM_Qwen_VL(temperature=0.51, url='http://127.0.0.1:8080/v1')
-    res = llm.ask_block(
-        'D:\\server\\static\\1.jpeg',
-        '图里有什么？'
-    )
+    llm.add_images([
+            'D:\\server\\static\\1.jpeg',
+            'D:\\server\\static\\1.png',
+            'D:\\server\\static\\1.jpeg',
+    ])
+    res = llm.ask_block('这几张图里分别有什么？')
+    llm.add_images([
+            'D:\\server\\static\\1.png',
+    ])
+    res = llm.ask_block('这几张图里分别有什么？')
+    llm.clear_images()
+    llm.add_images([
+        'D:\\server\\static\\1.png',
+    ])
+    res = llm.ask_block('图里有什么？')
     # print(res['choices'][0]['message']['content'])
 
 if __name__ == "__main__" :
-    main()
+    # main()
     main_vl()
 
 # create a request activating streaming response
