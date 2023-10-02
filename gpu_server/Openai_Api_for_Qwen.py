@@ -7,9 +7,11 @@ openai.api_key = "xxxxx"
 from copy import deepcopy
 
 # ======注：若要使用qwen-vl的openai-api，要让客户端api请求中的'<img>localhost:8080/static/1.png</img> 图中内容有什么？'可访问======
-# 需要在qwen-vl的openai_api.py中增加下面的代码：
+# 需要在qwen-vl的openai_api.py的main中增加下面的代码，并新建D:/server/static，拷入图片：
 # from fastapi.staticfiles import StaticFiles
-# app.mount("/static", StaticFiles(directory="D:/server/static"), name="static")
+# static_path = 'D:/server/static/'
+# app.mount("/static", StaticFiles(directory=static_path), name="static")
+# print(f'静态文件置于"{static_path}"中，外部访问：{args.server_name}:{args.server_port}/static/')
 # ======================================================================================================================
 
 class LLM_Qwen():
@@ -365,7 +367,7 @@ def main_vl():
 
     # img_path = 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg'
     # img_path = 'D:/server/life-agent/gpu_server/1.png'
-    img_path = 'localhost:8080/1.png'
+    img_path = 'http://localhost:8080/static/1.png'
     gen = openai.ChatCompletion.create(
         model="Qwen",
         temperature=0.9,
