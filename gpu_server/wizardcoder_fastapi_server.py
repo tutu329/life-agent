@@ -113,9 +113,5 @@ def main():
     args = parser.parse_args()
     start_server(model_wrapper, args.host, int(args.port), args.device)
 
-def main_client():
-    pass
-
 if __name__ == '__main__':
     main()
-    # main_client()
