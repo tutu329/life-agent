@@ -49,14 +49,13 @@ class Progress_Task(Thread):
     def set_finished(self):
         self.__task_finished = True
 
-class Wizardcoder_Wrapper():
-    def __init__(self):
+class LLM_Model_Wrapper():
+    def __int__(self):
         self.model_name_or_path = ''
         self.model = None
         self.tokenizer = None
         self.task = None
 
-    # model的初始化
     def init(self,
              in_model_path,
              use_fast=True,
@@ -93,11 +92,10 @@ class Wizardcoder_Wrapper():
         print(f'设置其他参数: \t\t"do_sample={self.model.generation_config.do_sample}"', flush=True)
         print('-'*80)
 
-    # model生成内容，并返回streamer迭代器
     def generate(
             self,
             message,
-            history,
+            # history,
             temperature=0.7,
             top_p=0.9,
             top_k=10,
@@ -132,63 +130,22 @@ class Wizardcoder_Wrapper():
         self.task.start()
         return streamer
 
-    # oi用的generate
-    def generate_for_open_interpreter(self, prompt, stream, temperature, max_tokens, stop=["</s>"],):
-        input_ids = self.tokenizer(prompt, return_tensors='pt').input_ids.cuda()
-        streamer = TextIteratorStreamer(self.tokenizer)
+class Wizardcoder_Wrapper(LLM_Model_Wrapper):
+    def __init__(self):
+        super().__init__()
+        self.model_name = 'WizardCoder-Python-34B-V1.0-GPTQ'
 
-        # stop_words = stop
-        # stop_ids = [self.tokenizer.encode(w)[0] for w in stop_words]
-        # stop_criteria = KeywordsStoppingCriteria(stop_ids)
-        stop_criteria = Keywords_Stopping_Criteria.get_stop_criteria(self.tokenizer, stop)
-
-        generation_kwargs = dict(
-            inputs=input_ids,
-            streamer=streamer,
-            do_sample=True,
-
-            stopping_criteria=stop_criteria,
-
-            temperature=temperature,
-            max_new_tokens=max_tokens,
-        )
-        self.task = Thread(target=self.model.generate, kwargs=generation_kwargs)
-        self.task.start()
-
-        res = {
-            'choices': [
-                {
-                    'text': '',
-                    'finish_reason': '',
-                }
-            ]
-        }
-        for chunk in streamer:
-            res["choices"][0]["text"] = chunk
-            yield res
-        res["choices"][0]["finish_reason"] = 'stop'
-        return res
-
-    # oi用的获取instance
-    def get_instance_for_open_interpreter(self, in_stream):
-        res = {
-            'choices':[
-                {
-                    'text':'',
-                }
-            ]
-        }
-        for chunk in in_stream:
-            res["choices"][0]["text"] = chunk
-            yield res
-
+    def init(self,in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ"):
+        super().init(in_model_path=in_model_path)
 
 def main():
     # CUDA_VISIBLE_DEVICES=1,2,3,4 python wizardcoder_demo.py \
     #    --base_model "WizardLM/WizardCoder-Python-34B-V1.0" \
     #    --n_gpus 4
+    # llm = LLM_Model_Wrapper()
     llm = Wizardcoder_Wrapper()
-    llm.init(in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ")
+    # llm.init(in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ")
+    llm.init()
     while True:
         question = input('user: ')
         prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
@@ -196,7 +153,8 @@ def main():
         {question}
         ### Response:
         '''
-        res = llm.generate(prompt_template, [])
+        res = llm.generate(prompt_template)
+        # res = llm.generate(prompt_template, [])
         for chunk in res:
             print(chunk, end='', flush=True)
         print()
@@ -360,14 +318,14 @@ def calculate(a, b):
 f=calculate
 '''
 
-def main():
-    # f=None
-    exec(func_string, globals())
-    print('fff: ', f)
-    print(f(2,3))
+# def main():
+#     # f=None
+#     exec(func_string, globals())
+#     print('fff: ', f)
+#     print(f(2,3))
 
 if __name__ == "__main__" :
-    # main()
-    main_gr()
+    main()
+    # main_gr()
 
 # https://blog.csdn.net/weixin_44878336/article/details/124894210
