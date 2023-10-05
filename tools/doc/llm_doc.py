@@ -1,8 +1,6 @@
-from gpu_server.api_client_qwen_openai import *
+from tools.llm.api_client_qwen_openai import *
 import openai
 openai.api_base = "http://116.62.63.204:8000/v1"
-
-import copy
 
 from docx import Document
 # llm = LLM_Qwen()

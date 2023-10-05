@@ -1,10 +1,10 @@
 import gradio as gr
 
-from gpu_server.api_client_qwen_openai import *
-from gpu_server.api_client_stable_diffusion import *
+from tools.llm.api_client_qwen_openai import *
+from tools.t2i.api_client_stable_diffusion import *
 
 import numpy as np
-import copy
+
 
 def flip_image(x):
     print('image: ',x)

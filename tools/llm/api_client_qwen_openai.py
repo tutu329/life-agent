@@ -239,10 +239,10 @@ class VisImage:
 class Visualizer:
     def __init__(self, img_rgb, metadata=None, scale=1.0):
 
-        if not os.path.exists("SimSun.ttf"):
+        if not os.path.exists("../../gpu_server/SimSun.ttf"):
             ttf = requests.get("https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/SimSun.ttf")
-            open("SimSun.ttf", "wb").write(ttf.content)
-        FONT_PATH = 'SimSun.ttf'
+            open("../../gpu_server/SimSun.ttf", "wb").write(ttf.content)
+        FONT_PATH = '../../gpu_server/SimSun.ttf'
 
         self.img = np.asarray(img_rgb).clip(0, 255).astype(np.uint8)
         self.font_path = FONT_PATH

@@ -1,10 +1,6 @@
 import gradio as gr
 
-from gpu_server.api_client_qwen_openai import *
-from gpu_server.api_client_stable_diffusion import *
-
-import numpy as np
-import copy
+from tools.llm.api_client_qwen_openai import *
 
 llm = LLM_Qwen()
 # llm.set_role_prompt('你正在扮演一个女孩，你好笨笨。')
