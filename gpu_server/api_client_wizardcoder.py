@@ -55,14 +55,29 @@ class Wizardcoder_Fastapi_Client():
 
         return result
 
-def main():
+def main_completion():
     llm = Wizardcoder_Fastapi_Client()
     # llm = Wizardcoder_Fastapi_Client(url='http://116.62.63.204:8000/stream/')
     llm.ask_prepare('write a simple poem.', max_new_tokens=50)
     res = llm.get_answer_and_sync_print()
     print('=============================final result is : =============================\n', res)
 
+def main_console_QA():
+    llm = Wizardcoder_Fastapi_Client()
+    # llm = Wizardcoder_Fastapi_Client(url='http://116.62.63.204:8000/stream/')
+
+    while True:
+        question = input('user: ')
+        prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
+        ### Instruction:
+        {question}
+        ### Response:
+        '''
+        llm.ask_prepare(prompt_template, max_new_tokens=500)
+        res = llm.get_answer_and_sync_print()
+
 if __name__ == "__main__" :
-    main()
+    # main_completion()
+    main_console_QA()
 
 
