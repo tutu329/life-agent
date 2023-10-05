@@ -1,6 +1,8 @@
 from transformers import AutoProcessor, BarkModel
 import scipy
 import time
+# from bark import generate_audio, SAMPLE_RATE
+# from scipy.io.wavfile import write as write_wav
 
 print('====================1========================')
 # processor = AutoProcessor.from_pretrained("D:/models/bark")
@@ -33,7 +35,7 @@ def t2s(text, chinese=False):
     # ♪ for song lyrics
     # CAPITALIZATION for emphasis of a word
     # [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
-    chinese = False
+    chinese = True
     # generate audio from text
     # if not chinese:
     #     text_prompt = """
@@ -50,10 +52,16 @@ def t2s(text, chinese=False):
     # 把models/bark或bark-small里的speaker_embeddings_path.json最开头的
     # "repo_or_path": "ylacombe/bark-small"改为"repo_or_path": "D:\models\bark-small"即可
     if not chinese:
-        voice_preset = "v2/en_speaker_6"
+        voice_preset = "v2/en_speaker_1"
+        # voice_preset = "v2/en_speaker_6"
     else:
         voice_preset = "v2/zh_speaker_9"
+
+    # inputs = processor(
+    #     text_prompt,
+    #     history_prompt = 'zh_speaker_1')
     inputs = processor(text_prompt, voice_preset=voice_preset)
+
     inputs.to('cuda')
     print('====================4========================')
 
@@ -64,15 +72,39 @@ def t2s(text, chinese=False):
 
     sample_rate = model.generation_config.sample_rate
     scipy.io.wavfile.write("bark_out.wav", rate=sample_rate, data=audio_array)
+
     print('====================7========================')
+    # from bark import SAMPLE_RATE, generate_audio, preload_models
+    # from scipy.io.wavfile import write as write_wav
+    # preload_models()
+    # history_prompt = "D:/bark/bark/assets/prompts/zh_speaker_0.npz"
+    # audio_array = generate_audio(text, =history_prompt)
+    # write_wav("/path/to/audio_2.wav", SAMPLE_RATE, audio_array)
+
+
+
+
+    # from bark import SAMPLE_RATE, generate_audio, preload_models
+    # from scipy.io.wavfile import write as write_wav
+    #
+    # preload_models()
+    #
+    # prompt = "Hello, my name is Suno. And, uh — and I like pizza. [laughs] But I also have other interests such as playing tic tac toe."
+    #
+    # history_prompt = "/path/to/history_prompt.npz"
+    #
+    # audio_array = generate_audio(prompt, history_prompt=history_prompt)
+    #
+    # write_wav("/path/to/audio_2.wav", SAMPLE_RATE, audio_array)
 
 def main():
-    t2s(
-        """
-             Hello, my name is Jack Seaver. And, uh — and I like pizza. [laughs]
-             But I also have other interests [clears throat] such as playing tic tac toe.
-        """
-    )
+    # t2s(
+    #     """
+    #          Hello, my name is Mike Seaver. And, uh — and I like pizza. [laughs]
+    #          But I also have other interests [clears throat] such as playing tic tac toe.
+    #     """
+    # )
+    t2s('今天天气真不错，要不我们出去玩吧！')
 
 if __name__ == "__main__" :
     main()
