@@ -63,7 +63,7 @@ def t2s(text, chinese=False):
     inputs = processor(text_prompt, voice_preset=voice_preset)
 
     inputs.to('cuda')
-    print('====================4========================')
+    print('====================4.5========================')
 
     audio_array = model.generate(**inputs)
     print('====================5========================')
