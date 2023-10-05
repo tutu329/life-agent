@@ -21,7 +21,8 @@ def get_run_time(func):
     return wrapper
 
 @get_run_time
-def t2s():
+def t2s(text, chinese=False):
+    text_prompt = text
     # [laughter]
     # [laughs]
     # [sighs]
@@ -34,16 +35,16 @@ def t2s():
     # [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
     chinese = False
     # generate audio from text
-    if not chinese:
-        text_prompt = """
-             Hello, my name is Suno. And, uh — and I like pizza. [laughs]
-             [music]But I also have other interests [clears throat] such as playing tic tac toe.
-        """
-    else:
-        text_prompt = """
-             你好吗，[music]我是土土，明天我们一起出去玩吧？[clears throat]
-             好长时间没有看见你了，很想念你...对了，听说西湖边有很好的咖啡馆，一起去吧。
-        """
+    # if not chinese:
+    #     text_prompt = """
+    #          Hello, my name is Suno. And, uh — and I like pizza. [laughs]
+    #          [music]But I also have other interests [clears throat] such as playing tic tac toe.
+    #     """
+    # else:
+    #     text_prompt = """
+    #          你好吗，[music]我是土土，明天我们一起出去玩吧？[clears throat]
+    #          好长时间没有看见你了，很想念你...对了，听说西湖边有很好的咖啡馆，一起去吧。
+    #     """
 
     # 关于每次读取preset都要连接huggingface的问题：
     # 把models/bark或bark-small里的speaker_embeddings_path.json最开头的
@@ -52,7 +53,6 @@ def t2s():
         voice_preset = "v2/en_speaker_6"
     else:
         voice_preset = "v2/zh_speaker_9"
-    # inputs = processor(text_prompt)
     inputs = processor(text_prompt, voice_preset=voice_preset)
     inputs.to('cuda')
     print('====================4========================')
@@ -67,7 +67,12 @@ def t2s():
     print('====================7========================')
 
 def main():
-    t2s()
+    t2s(
+        """
+             Hello, my name is Jack Seaver. And, uh — and I like pizza. [laughs]
+             But I also have other interests [clears throat] such as playing tic tac toe.
+        """
+    )
 
 if __name__ == "__main__" :
     main()
