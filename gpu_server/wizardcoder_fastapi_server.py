@@ -16,10 +16,18 @@ from fastapi import FastAPI
 from transformers import AutoTokenizer, AutoModel
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
+import asyncio
 
 from llm_model_wrapper import Wizardcoder_Wrapper
 
-class Wizaardcoder_Fastapi_Server():
+from pydantic import BaseModel
+from typing import Any, Dict, List, Literal, Optional, Union
+
+class Stream_Response(BaseModel):
+    delta: str
+    finish_reason: Optional[Literal['stop', 'length']]
+
+class Wizardcoder_Fastapi_Server():
     def __init__(self) -> None:
         self.llm = Wizardcoder_Wrapper()
 
@@ -71,13 +79,14 @@ def start_server(model_wrapper, http_address: str, port: int, gpu_id: str):
         return {f'FastAPI server: {model_wrapper.model_name}'}
         # return {'message': 'started', 'success': True}
 
-    @app.post("/stream")
-    def answer_question_stream(arg_dict: dict):
-        def decorate(generator):
-            for item in generator:
-                yield ServerSentEvent(json.dumps(item, ensure_ascii=False), event='delta')
+    @app.post("/stream", response_model=Stream_Response)
+    async def answer_question_stream(arg_dict: dict):
+        # def decorate(generator):
+        #     for item in generator:
+        #         yield ServerSentEvent(json.dumps(item, ensure_ascii=False), event='delta')
 
         try:
+            print('=================server0==================')
             message = arg_dict["message"]
             temperature = arg_dict["temperature"]
             top_p = arg_dict["top_p"]
@@ -85,19 +94,63 @@ def start_server(model_wrapper, http_address: str, port: int, gpu_id: str):
             repetition_penalty = arg_dict["repetition_penalty"]
             max_new_tokens = arg_dict["max_new_tokens"]
             stop = arg_dict["stop"]
+            print('=================server1==================')
 
-            return EventSourceResponse(decorate(model_wrapper.stream(
-                message,
-                temperature,
-                top_p,
-                top_k,
-                repetition_penalty,
-                max_new_tokens,
-                stop,
-            )))
+            res=EventSourceResponse(
+                predict(
+                    message,
+                    temperature,
+                    top_p,
+                    top_k,
+                    repetition_penalty,
+                    max_new_tokens,
+                    stop,
+                ),
+                media_type='text/event-stream'
+            )
+            # res=EventSourceResponse(
+            #     decorate(model_wrapper.generate(
+            #         message,
+            #         temperature,
+            #         top_p,
+            #         top_k,
+            #         repetition_penalty,
+            #         max_new_tokens,
+            #         stop,
+            #     )),
+            #     media_type='text/event-stream'
+            # )
+            print('=================server2==================')
+            return res
+
         except Exception as e:
             print(f"/stream error: {e}")
             return f'LLM服务器错误: "{e}"'
+
+    # predict主要是用于把sync的generate()改造为async函数，否则client调用会卡死
+    async def predict(message,
+                      temperature,
+                      top_p,
+                      top_k,
+                      repetition_penalty,
+                      max_new_tokens,
+                      stop,
+                      ):
+        for chunk in model_wrapper.generate(
+            message,
+            temperature,
+            top_p,
+            top_k,
+            repetition_penalty,
+            max_new_tokens,
+            stop,
+        ):
+            res = Stream_Response(delta=chunk, finish_reason=None)    #finish_reason只能为'stop'或'length'，不然只能为None
+            yield '{}'.format(res.model_dump_json(exclude_unset=True))     #返回非'b'的正常字符串
+            # await asyncio.sleep(0.0001)
+        res = Stream_Response(delta='', finish_reason='stop')
+        yield '{}'.format(res.model_dump_json(exclude_unset=True))
+        # await asyncio.sleep(0.0001)
 
     print(f'starting server with url {http_address}:{port} ...')
     uvicorn.run(app=app, host=http_address, port=port, workers=1)

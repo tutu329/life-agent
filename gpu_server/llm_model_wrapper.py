@@ -123,9 +123,9 @@ class LLM_Model_Wrapper():
             repetition_penalty=repetition_penalty,
             max_new_tokens=max_new_tokens,
         )
-        print(f'temperature: {temperature}')
-        print(f'repetition_penalty: {repetition_penalty}')
-        print(f'max_new_tokens: {max_new_tokens}')
+        # print(f'temperature: {temperature}')
+        # print(f'repetition_penalty: {repetition_penalty}')
+        # print(f'max_new_tokens: {max_new_tokens}')
         self.task = Thread(target=self.model.generate, kwargs=generation_kwargs)
         self.task.start()
         return streamer
@@ -256,7 +256,7 @@ def main_gr():
 
         for ch in llm.generate(
             total_msg,
-            history,
+            # history,
             temperature=temperature,
             repetition_penalty=repetition_penalty,
             max_new_tokens=max_new_tokens,
@@ -325,7 +325,7 @@ f=calculate
 #     print(f(2,3))
 
 if __name__ == "__main__" :
-    main()
-    # main_gr()
+    # main()
+    main_gr()
 
 # https://blog.csdn.net/weixin_44878336/article/details/124894210
