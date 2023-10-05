@@ -92,7 +92,7 @@ class LLM_Doc():
 # 4) should llm have opinions on topics or remain neutral?
 # ============================关于角色提示============================
 def main():
-    llm = LLM_Qwen(history=False, history_max_turns=50, history_clear_method='pop', temperature=0.9)
+    llm = LLM_Qwen(url='http://116.62.63.204:8000/v1', history=False, history_max_turns=50, history_clear_method='pop', temperature=0.9)
     role_prompt = '你是一位汉字专家。你需要找出user提供给你的文本中的所有错别字，并给出修改意见。'
     example_prompts = [
         '例如，user发送给你的文字中有单个字的笔误："你是我的好彭友，我们明天粗去玩吧？"，你要指出"彭"应为"朋"、"粗"应为"出"。',
@@ -107,7 +107,7 @@ def main():
     # llm.print_history()
     # llm.ask_prepare('现在帮我在这段文字中找错别字："报告所提投资优化分析适用于新型电力系统、综合能源项目、微电网项目以及传统电力系统项目，具体支持冷热电气各类机组和设备模型，负荷类型支持城市类型、工业类型等，优化目标支持社会效益最大和财务效益最佳等。计算中已经内置了8760h负荷特性、新能源出力特性已经分时电价等信息。"').get_answer_and_sync_print()
 
-    doc = LLM_Doc('/tools/doc/错别字案例.docx')
+    doc = LLM_Doc('错别字案例.docx')
     doc.win32com_init()
     res_list = doc.check_wrong_written_in_docx_file(llm)
     doc.win32_close_file()
