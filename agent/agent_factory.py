@@ -246,4 +246,5 @@ def main_gr():
     # ui.queue().launch(server_name='0.0.0.0', server_port=2222)
 
 if __name__ == "__main__":
+    main()
     main_gr()
