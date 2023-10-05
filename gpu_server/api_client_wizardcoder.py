@@ -56,7 +56,8 @@ class Wizardcoder_Fastapi_Client():
         return result
 
 def main():
-    llm = Wizardcoder_Fastapi_Client(url='http://116.62.63.204:8000/stream/')
+    llm = Wizardcoder_Fastapi_Client()
+    # llm = Wizardcoder_Fastapi_Client(url='http://116.62.63.204:8000/stream/')
     llm.ask_prepare('write a simple poem.', max_new_tokens=50)
     res = llm.get_answer_and_sync_print()
     print('=============================final result is : =============================\n', res)

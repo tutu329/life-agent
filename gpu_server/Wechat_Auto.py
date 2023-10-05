@@ -1,6 +1,6 @@
 import datetime
-from Stable_Diffusion import *
-from Openai_Api_for_Qwen import *
+from api_client_stable_diffusion import *
+from api_client_qwen_openai import *
 
 class Helper:
     """

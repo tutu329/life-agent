@@ -1,4 +1,4 @@
-from gpu_server.Openai_Api_for_Qwen import *
+from gpu_server.api_client_qwen_openai import *
 import openai
 openai.api_base = "http://116.62.63.204:8000/v1"
 

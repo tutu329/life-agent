@@ -2,9 +2,9 @@ import time, random
 from datetime import datetime
 from threading import Thread
 
-from gpu_server.Openai_Api_for_Qwen import *
+from gpu_server.api_client_qwen_openai import *
 from agent.async_environment import *
-from gpu_server.Stable_Diffusion import *
+from gpu_server.api_client_stable_diffusion import *
 
 # =============================== LLM接口 =================================
 # def ask_llm_with_history(user_input, his=[]):
