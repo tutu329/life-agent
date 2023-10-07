@@ -312,7 +312,7 @@ class Visualizer:
         return self.output
 
 class LLM_Qwen():
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8000/v1'):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1'):
         self.url = url
         self.gen = None     # 返回结果的generator
         self.temperature = temperature
@@ -658,7 +658,7 @@ def main():
         history_max_turns=50,
         history_clear_method='pop',
         temperature=0.7,
-        url='http://127.0.0.1:8000/v1'
+        url='http://127.0.0.1:8001/v1'
     )
     llm.ask_prepare("你是谁").get_answer_and_sync_print()
 
