@@ -77,12 +77,19 @@ class LLM_Model_Wrapper():
         print('-'*80)
         p_task = Progress_Task()
         p_task.start()
+
+        import os
+        print(f'os.environ["CUDA_VISIBLE_DEVICES"] = "{os.environ["CUDA_VISIBLE_DEVICES"]}"')
+
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name_or_path,
-            quantization_config=quantization_config,
+            # quantization_config=quantization_config,
             device_map=device_map,
             trust_remote_code=trust_remote_code,
             revision=revision)
+
+
+
         p_task.set_finished()
         time.sleep(1)   # 解决进度条显示问题
 
@@ -174,6 +181,17 @@ def main():
 
 
 def main_gr():
+    # from argparse import ArgumentParser
+    # parser = ArgumentParser()
+    # parser.add_argument(
+    #     "--gpu", type=int, default=0, help="指定GPU_ID: 0、1等"
+    # )
+    # args = parser.parse_args()
+
+    import os
+    # os.environ["CUDA_VISIBLE_DEVICES"] = f'{args.gpu}'
+    print(f'os.environ["CUDA_VISIBLE_DEVICES"] = "{os.environ["CUDA_VISIBLE_DEVICES"]}"')
+
     import gradio as gr
 
     llm = Wizardcoder_Wrapper()

@@ -64,9 +64,10 @@ class Wizardcoder_Fastapi_Server():
             stop=stop,
         )
 
-def start_server(model_wrapper, http_address: str, port: int, gpu_id: str):
-    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
+def start_server(model_wrapper, http_address: str, port: int):
+# def start_server(model_wrapper, http_address: str, port: int, gpu_id: str):
+#     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+    # os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 
     app = FastAPI()
     app.add_middleware(CORSMiddleware,
@@ -160,11 +161,18 @@ def main():
     model_wrapper.init()
 
     parser = argparse.ArgumentParser(description=f'Stream API Service for {model_wrapper.model_name}')
-    parser.add_argument('--device', '-d', help='device，-1 means cpu, other means gpu ids', default='0')
+    # parser.add_argument('--device', '-d', help='device，-1 means cpu, other means gpu ids', default='0')
     parser.add_argument('--host', '-H', help='host to listen', default='0.0.0.0')
     parser.add_argument('--port', '-P', help='port of this service', default=8000)
+    parser.add_argument(
+        "--gpu", type=int, default=0, help="指定的GPU ID: 0、1等"
+    )
     args = parser.parse_args()
-    start_server(model_wrapper, args.host, int(args.port), args.device)
+
+    # import os
+    # os.environ["CUDA_VISIBLE_DEVICES"] = f'{args.gpu}'
+
+    start_server(model_wrapper, args.host, int(args.port))
 
 if __name__ == '__main__':
     main()
