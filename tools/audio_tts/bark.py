@@ -23,9 +23,9 @@ def get_run_time(func):
     return wrapper
 
 @get_run_time
-def t2s(text, chinese=False):
+def t2s(text, chinese=True, output_file="bark_out.wav"):
     text_prompt = text
-    # [laughter]
+    # le
     # [laughs]
     # [sighs]
     # [music]
@@ -35,7 +35,7 @@ def t2s(text, chinese=False):
     # ♪ for song lyrics
     # CAPITALIZATION for emphasis of a word
     # [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
-    chinese = True
+    chinese = chinese
     # generate audio from text
     # if not chinese:
     #     text_prompt = """
@@ -71,7 +71,7 @@ def t2s(text, chinese=False):
     print('====================6========================')
 
     sample_rate = model.generation_config.sample_rate
-    scipy.io.wavfile.write("bark_out.wav", rate=sample_rate, data=audio_array)
+    scipy.io.wavfile.write(output_file, rate=sample_rate, data=audio_array)
 
     print('====================7========================')
     # from bark import SAMPLE_RATE, generate_audio, preload_models
