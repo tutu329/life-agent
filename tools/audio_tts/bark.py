@@ -1,6 +1,17 @@
 from transformers import AutoProcessor, BarkModel
 import scipy
 import time
+
+import nltk  # we'll use this to split into sentences
+import numpy as np
+
+from bark.generation import (
+    generate_text_semantic,
+    preload_models,
+)
+from bark.api import semantic_to_waveform
+from bark import generate_audio, SAMPLE_RATE
+
 # from bark import generate_audio, SAMPLE_RATE
 # from scipy.io.wavfile import write as write_wav
 
@@ -23,9 +34,62 @@ def get_run_time(func):
     return wrapper
 
 @get_run_time
-def t2s(text, chinese=True, output_file="bark_out.wav"):
-    text_prompt = text
-    # le
+def t2s_long(text, chinese=False, output_file="bark_out.wav"):
+    if not chinese:
+        # voice_preset = "v2/en_speaker_1"
+        voice_preset = "v2/en_speaker_6"
+    else:
+        voice_preset = "v2/zh_speaker_9"
+    text = text.replace('\n', ' ').strip()
+
+    sentences = nltk.sent_tokenize(text)
+
+    GEN_TEMP = 0.6
+    SPEAKER = "v2/en_speaker_6"
+    silence = np.zeros(int(0.25 * SAMPLE_RATE))  # quarter second of silence
+
+    pieces = []
+    for sentence in sentences:
+        semantic_tokens = generate_text_semantic(
+            sentence,
+            history_prompt=SPEAKER,
+            temp=GEN_TEMP,
+            min_eos_p=0.05,  # this controls how likely the generation is to end
+        )
+
+        audio_array = semantic_to_waveform(semantic_tokens, history_prompt=SPEAKER, )
+        pieces += [audio_array, silence.copy()]
+
+    # Audio(np.concatenate(pieces), rate=SAMPLE_RATE)
+
+    sample_rate = model.generation_config.sample_rate
+    scipy.io.wavfile.write(output_file, rate=sample_rate, data=np.concatenate(pieces))
+
+@get_run_time
+def t2s(text, chinese=False, output_file="bark_out.wav"):
+    if not chinese:
+        # voice_preset = "v2/en_speaker_1"
+        voice_preset = "v2/en_speaker_6"
+    else:
+        voice_preset = "v2/zh_speaker_9"
+    text = text.replace('\n', ' ').strip()
+
+    # sentences = nltk.sent_tokenize(text)
+    # silence = np.zeros(int(0.25 * SAMPLE_RATE))  # quarter second of silence
+    #
+    # pieces = []
+    # for sentence in sentences:
+    #     semantic_tokens = generate_text_semantic(
+    #         sentence,
+    #         history_prompt=SPEAKER,
+    #         temp=GEN_TEMP,
+    #         min_eos_p=0.05,  # this controls how likely the generation is to end
+    #     )
+    #
+    #     audio_array = semantic_to_waveform(semantic_tokens, history_prompt=SPEAKER, )
+    #     pieces += [audio_array, silence.copy()]
+
+    # [laughter]
     # [laughs]
     # [sighs]
     # [music]
@@ -35,32 +99,12 @@ def t2s(text, chinese=True, output_file="bark_out.wav"):
     # ♪ for song lyrics
     # CAPITALIZATION for emphasis of a word
     # [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
-    chinese = chinese
-    # generate audio from text
-    # if not chinese:
-    #     text_prompt = """
-    #          Hello, my name is Suno. And, uh — and I like pizza. [laughs]
-    #          [music]But I also have other interests [clears throat] such as playing tic tac toe.
-    #     """
-    # else:
-    #     text_prompt = """
-    #          你好吗，[music]我是土土，明天我们一起出去玩吧？[clears throat]
-    #          好长时间没有看见你了，很想念你...对了，听说西湖边有很好的咖啡馆，一起去吧。
-    #     """
 
     # 关于每次读取preset都要连接huggingface的问题：
     # 把models/bark或bark-small里的speaker_embeddings_path.json最开头的
     # "repo_or_path": "ylacombe/bark-small"改为"repo_or_path": "D:\models\bark-small"即可
-    if not chinese:
-        voice_preset = "v2/en_speaker_1"
-        # voice_preset = "v2/en_speaker_6"
-    else:
-        voice_preset = "v2/zh_speaker_9"
 
-    # inputs = processor(
-    #     text_prompt,
-    #     history_prompt = 'zh_speaker_1')
-    inputs = processor(text_prompt, voice_preset=voice_preset)
+    inputs = processor(text, voice_preset=voice_preset)
 
     inputs.to('cuda')
     print('====================4.5========================')
@@ -74,37 +118,16 @@ def t2s(text, chinese=True, output_file="bark_out.wav"):
     scipy.io.wavfile.write(output_file, rate=sample_rate, data=audio_array)
 
     print('====================7========================')
-    # from bark import SAMPLE_RATE, generate_audio, preload_models
-    # from scipy.io.wavfile import write as write_wav
-    # preload_models()
-    # history_prompt = "D:/bark/bark/assets/prompts/zh_speaker_0.npz"
-    # audio_array = generate_audio(text, =history_prompt)
-    # write_wav("/path/to/audio_2.wav", SAMPLE_RATE, audio_array)
 
-
-
-
-    # from bark import SAMPLE_RATE, generate_audio, preload_models
-    # from scipy.io.wavfile import write as write_wav
-    #
-    # preload_models()
-    #
-    # prompt = "Hello, my name is Suno. And, uh — and I like pizza. [laughs] But I also have other interests such as playing tic tac toe."
-    #
-    # history_prompt = "/path/to/history_prompt.npz"
-    #
-    # audio_array = generate_audio(prompt, history_prompt=history_prompt)
-    #
-    # write_wav("/path/to/audio_2.wav", SAMPLE_RATE, audio_array)
 
 def main():
-    # t2s(
-    #     """
-    #          Hello, my name is Mike Seaver. And, uh — and I like pizza. [laughs]
-    #          But I also have other interests [clears throat] such as playing tic tac toe.
-    #     """
-    # )
-    t2s('今天天气真不错，要不我们出去玩吧！')
+    t2s_long(
+        """
+             Hello, my name is Mike Seaver. And, uh — and I like pizza. [laughs]
+             But I also have other interests [clears throat] such as playing tic tac toe.
+        """
+    )
+    # t2s('今天天气真不错，要不我们出去玩吧！')
 
 if __name__ == "__main__" :
     main()
