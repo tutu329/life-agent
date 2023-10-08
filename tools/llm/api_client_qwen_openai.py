@@ -6,7 +6,8 @@ import openai
 openai.api_key = "xxxxx"
 from copy import deepcopy
 import numpy as np
-import os, requests, torch
+import os, requests
+# import os, requests, torch
 import matplotlib.figure as mplfigure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import matplotlib.colors as mplc
@@ -30,286 +31,286 @@ import re
 # ======================================================================================================================
 
 # Qwen-VL目前不支持stream
-class LLM_Qwen_VL():
-    def __init__(self, temperature=0.7, url='http://127.0.0.1:8080/v1'):
-        self.url = url
-        self.temperature = temperature
+# class LLM_Qwen_VL():
+#     def __init__(self, temperature=0.7, url='http://127.0.0.1:8080/v1'):
+#         self.url = url
+#         self.temperature = temperature
+#
+#         self.images_path = []   # 图片链接list
+#         self.images_info=''     # 图片链接的汇编string
+#         self.images_index = 0   # 图片索引号
+#
+#         self.res = ''
+#
+#     def add_images(self, in_img_path_list):
+#         self.images_path +=in_img_path_list
+#
+#         for img_path in in_img_path_list:
+#             self.images_index += 1
+#             self.images_info += f'pic{self.images_index}:' + f'<img>{img_path}</img>\n'
+#
+#     def clear_images(self):
+#         self.images_path = []
+#
+#         self.images_info = ''
+#         self.images_index = 0
+#
+#     def ask_block(self, in_query):
+#         openai.api_base = self.url
+#
+#         query = ''
+#         query += self.images_info
+#         query += f'\t{in_query}'
+#         print('User: \n\t', query)
+#         res = openai.ChatCompletion.create(
+#             model="Qwen",
+#             temperature=self.temperature,
+#             messages=[
+#                 {"role": "user", "content": query},
+#             ],
+#             stream=False,
+#             max_tokens=2048,
+#         )
+#         result = res['choices'][0]['message']['content']
+#         print(f'Qwen-VL:\n\t{result}\n')
+#         self.res = res
+#         return res
+#
+#     # def _fetch_all_box_with_ref(self, text):
+#     #     list_format = self.to_list_format(text)
+#     #     output = []
+#     #     for i, ele in enumerate(list_format):
+#     #         if 'box' in ele:
+#     #             bbox = tuple(map(int, ele['box'].replace('(', '').replace(')', '').split(',')))
+#     #             assert len(bbox) == 4
+#     #             output.append({'box': bbox})
+#     #             if i > 0 and 'ref' in list_format[i-1]:
+#     #                 output[-1]['ref'] = list_format[i-1]['ref'].strip()
+#     #     return output
+#
+#     def get_boxes_info(self, s):
+#         original_s = s
+#         print(f'对象检测-解析字符串为：{s}')
+#         def replace_last(target_string, replace_string, content):
+#             i = content.rfind(target_string)
+#             if i != -1:
+#                 content = content[:i] + replace_string + content[i + len(target_string):]
+#             return content
+#
+#         find_string = s
+#
+#         # 按批次获取ref和box，即必须解析完一个ref对应的所有box，才解析下一组ref及其box
+#         find_index = 0
+#         res_boxes = []
+#
+#         while s.count('<ref>')>0:
+#             find_index += 1
+#             print(f'=========================第{find_index}次循环===========================')
+#             print(f'count of <ref> in "{s}": {s.count("<ref>")}')
+#             if s.count('<ref>')>1:
+#                 # 获取<ref></ref>与<ref></ref>之间的ref和box内容
+#                 whole_ref_and_box_pattern = r'\<(ref)\>(.*?)\<(ref)\>'
+#                 find_string = re.search(whole_ref_and_box_pattern, s)
+#                 if find_string:
+#                     find_string = find_string.group()
+#                     find_string = replace_last('<ref>','', find_string)
+#             elif s.count('<ref>')==1:
+#                 # 获取<ref></ref>与结尾之间的ref和box内容
+#                 whole_ref_and_box_pattern = r'\<(ref)\>(.*$)'
+#                 find_string = re.search(whole_ref_and_box_pattern, s)
+#                 if find_string:
+#                     find_string = find_string.group()
+#
+#             print('find_string(获取<ref></ref>与<ref></ref>或结尾之间的ref和box内容)：', find_string)
+#
+#             s = s.replace(find_string, '')
+#             # 本次循环完成后，删除解析部分即"<ref>狗头1</ref><box>(321,372),(373,460)</box>，<ref>狗头2</ref>" 中的 "<ref>狗头1</ref><box>(321,372),(373,460)</box>，"
+#             print('删除find_string后的内容：', s)
+#
+#             # 解析find_string中所有<ref></ref>
+#             pattern = r'\<(ref)\>(.*?)\</ref\>'
+#             matches = re.findall(pattern, find_string)
+#             refs = [{'ref': match[1]} for match in matches]
+#
+#             # 解析find_string中所有<box></box>
+#             pattern = r'\<(box)\>(.*?)\</box\>'
+#             matches = re.findall(pattern, find_string)
+#             boxes = [{'box': eval(match[1])} for match in matches]
+#
+#             # 返回的boxes信息：
+#             # [
+#             #   {'ref':'some_obj', 'box':(x1, y1, x2, y2)  },
+#             #   {'ref': '',        'box':(x1, y1, x2, y2)  },
+#             # ]
+#             ii = 0
+#             for item in boxes:
+#                 # append本次循环中find_string所包含的ref和box组成的box信息（其中，1个ref可能对应多个box）
+#                 if len(refs) > ii:
+#                     ref_value = refs[ii]['ref']
+#                 else:
+#                     ref_value = ''
+#                 x1, y1 = boxes[ii]['box'][0]
+#                 x2, y2 = boxes[ii]['box'][1]
+#
+#                 res_boxes.append(
+#                     {'ref': ref_value, 'box': (x1, y1, x2, y2)},
+#                 )
+#                 ii += 1
+#         print(f'对象检测-解析前完整字符串为：{original_s}')
+#         print(f'对象检测-解析后的变量boxes为：{res_boxes}')
+#         return res_boxes
+#
+#     def create_image_with_boxes(
+#         self,
+#         output_file_name,
+#     ) -> Optional[Image.Image]:
+#         image = self.images_path[-1]
+#         # image = self._fetch_latest_picture(response, history)
+#         if image is None:
+#             return None
+#         if image.startswith("http://") or image.startswith("https://"):
+#             image = Image.open(requests.get(image, stream=True).raw).convert("RGB")
+#             h, w = image.height, image.width
+#         else:
+#             image = np.asarray(Image.open(image).convert("RGB"))
+#             h, w = image.shape[0], image.shape[1]
+#         visualizer = Visualizer(image)
+#
+#         # boxes = self._fetch_all_box_with_ref(response)
+#         boxes = self.get_boxes_info(self.res['choices'][0]['message']['content'])
+#         if not boxes:
+#             return None
+#         color = random.choice([_ for _ in mplc.TABLEAU_COLORS.keys()]) # init color
+#         for box in boxes:
+#             if 'ref' in box: # random new color for new refexps
+#                 color = random.choice([_ for _ in mplc.TABLEAU_COLORS.keys()])
+#             x1, y1, x2, y2 = box['box']
+#             x1, y1, x2, y2 = (int(x1 / 1000 * w), int(y1 / 1000 * h), int(x2 / 1000 * w), int(y2 / 1000 * h))
+#             visualizer.draw_box((x1, y1, x2, y2), alpha=1, edge_color=color)
+#             if 'ref' in box:
+#                 visualizer.draw_text(box['ref'], (x1, y1), color=color, horizontal_alignment="left")
+#
+#         image = visualizer.output
+#         if image:
+#             image.save(output_file_name)
+#         else:
+#             print("未检测到对象。")
 
-        self.images_path = []   # 图片链接list
-        self.images_info=''     # 图片链接的汇编string
-        self.images_index = 0   # 图片索引号
+# class VisImage:
+#     def __init__(self, img, scale=1.0):
+#         self.img = img
+#         self.scale = scale
+#         self.width, self.height = img.shape[1], img.shape[0]
+#         self._setup_figure(img)
+#
+#     def _setup_figure(self, img):
+#         fig = mplfigure.Figure(frameon=False)
+#         self.dpi = fig.get_dpi()
+#         # add a small 1e-2 to avoid precision lost due to matplotlib's truncation
+#         # (https://github.com/matplotlib/matplotlib/issues/15363)
+#         fig.set_size_inches(
+#             (self.width * self.scale + 1e-2) / self.dpi,
+#             (self.height * self.scale + 1e-2) / self.dpi,
+#         )
+#         self.canvas = FigureCanvasAgg(fig)
+#         # self.canvas = mpl.backends.backend_cairo.FigureCanvasCairo(fig)
+#         ax = fig.add_axes([0.0, 0.0, 1.0, 1.0])
+#         ax.axis("off")
+#         self.fig = fig
+#         self.ax = ax
+#         self.reset_image(img)
+#
+#     def reset_image(self, img):
+#         img = img.astype("uint8")
+#         self.ax.imshow(img, extent=(0, self.width, self.height, 0), interpolation="nearest")
+#
+#     def save(self, filepath):
+#         self.fig.savefig(filepath)
+#
+#     def get_image(self):
+#         canvas = self.canvas
+#         s, (width, height) = canvas.print_to_buffer()
+#
+#         buffer = np.frombuffer(s, dtype="uint8")
+#
+#         img_rgba = buffer.reshape(height, width, 4)
+#         rgb, alpha = np.split(img_rgba, [3], axis=2)
+#         return rgb.astype("uint8")
 
-        self.res = ''
-
-    def add_images(self, in_img_path_list):
-        self.images_path +=in_img_path_list
-
-        for img_path in in_img_path_list:
-            self.images_index += 1
-            self.images_info += f'pic{self.images_index}:' + f'<img>{img_path}</img>\n'
-
-    def clear_images(self):
-        self.images_path = []
-
-        self.images_info = ''
-        self.images_index = 0
-
-    def ask_block(self, in_query):
-        openai.api_base = self.url
-
-        query = ''
-        query += self.images_info
-        query += f'\t{in_query}'
-        print('User: \n\t', query)
-        res = openai.ChatCompletion.create(
-            model="Qwen",
-            temperature=self.temperature,
-            messages=[
-                {"role": "user", "content": query},
-            ],
-            stream=False,
-            max_tokens=2048,
-        )
-        result = res['choices'][0]['message']['content']
-        print(f'Qwen-VL:\n\t{result}\n')
-        self.res = res
-        return res
-
-    # def _fetch_all_box_with_ref(self, text):
-    #     list_format = self.to_list_format(text)
-    #     output = []
-    #     for i, ele in enumerate(list_format):
-    #         if 'box' in ele:
-    #             bbox = tuple(map(int, ele['box'].replace('(', '').replace(')', '').split(',')))
-    #             assert len(bbox) == 4
-    #             output.append({'box': bbox})
-    #             if i > 0 and 'ref' in list_format[i-1]:
-    #                 output[-1]['ref'] = list_format[i-1]['ref'].strip()
-    #     return output
-
-    def get_boxes_info(self, s):
-        original_s = s
-        print(f'对象检测-解析字符串为：{s}')
-        def replace_last(target_string, replace_string, content):
-            i = content.rfind(target_string)
-            if i != -1:
-                content = content[:i] + replace_string + content[i + len(target_string):]
-            return content
-
-        find_string = s
-
-        # 按批次获取ref和box，即必须解析完一个ref对应的所有box，才解析下一组ref及其box
-        find_index = 0
-        res_boxes = []
-
-        while s.count('<ref>')>0:
-            find_index += 1
-            print(f'=========================第{find_index}次循环===========================')
-            print(f'count of <ref> in "{s}": {s.count("<ref>")}')
-            if s.count('<ref>')>1:
-                # 获取<ref></ref>与<ref></ref>之间的ref和box内容
-                whole_ref_and_box_pattern = r'\<(ref)\>(.*?)\<(ref)\>'
-                find_string = re.search(whole_ref_and_box_pattern, s)
-                if find_string:
-                    find_string = find_string.group()
-                    find_string = replace_last('<ref>','', find_string)
-            elif s.count('<ref>')==1:
-                # 获取<ref></ref>与结尾之间的ref和box内容
-                whole_ref_and_box_pattern = r'\<(ref)\>(.*$)'
-                find_string = re.search(whole_ref_and_box_pattern, s)
-                if find_string:
-                    find_string = find_string.group()
-
-            print('find_string(获取<ref></ref>与<ref></ref>或结尾之间的ref和box内容)：', find_string)
-
-            s = s.replace(find_string, '')
-            # 本次循环完成后，删除解析部分即"<ref>狗头1</ref><box>(321,372),(373,460)</box>，<ref>狗头2</ref>" 中的 "<ref>狗头1</ref><box>(321,372),(373,460)</box>，"
-            print('删除find_string后的内容：', s)
-
-            # 解析find_string中所有<ref></ref>
-            pattern = r'\<(ref)\>(.*?)\</ref\>'
-            matches = re.findall(pattern, find_string)
-            refs = [{'ref': match[1]} for match in matches]
-
-            # 解析find_string中所有<box></box>
-            pattern = r'\<(box)\>(.*?)\</box\>'
-            matches = re.findall(pattern, find_string)
-            boxes = [{'box': eval(match[1])} for match in matches]
-
-            # 返回的boxes信息：
-            # [
-            #   {'ref':'some_obj', 'box':(x1, y1, x2, y2)  },
-            #   {'ref': '',        'box':(x1, y1, x2, y2)  },
-            # ]
-            ii = 0
-            for item in boxes:
-                # append本次循环中find_string所包含的ref和box组成的box信息（其中，1个ref可能对应多个box）
-                if len(refs) > ii:
-                    ref_value = refs[ii]['ref']
-                else:
-                    ref_value = ''
-                x1, y1 = boxes[ii]['box'][0]
-                x2, y2 = boxes[ii]['box'][1]
-
-                res_boxes.append(
-                    {'ref': ref_value, 'box': (x1, y1, x2, y2)},
-                )
-                ii += 1
-        print(f'对象检测-解析前完整字符串为：{original_s}')
-        print(f'对象检测-解析后的变量boxes为：{res_boxes}')
-        return res_boxes
-
-    def create_image_with_boxes(
-        self,
-        output_file_name,
-    ) -> Optional[Image.Image]:
-        image = self.images_path[-1]
-        # image = self._fetch_latest_picture(response, history)
-        if image is None:
-            return None
-        if image.startswith("http://") or image.startswith("https://"):
-            image = Image.open(requests.get(image, stream=True).raw).convert("RGB")
-            h, w = image.height, image.width
-        else:
-            image = np.asarray(Image.open(image).convert("RGB"))
-            h, w = image.shape[0], image.shape[1]
-        visualizer = Visualizer(image)
-
-        # boxes = self._fetch_all_box_with_ref(response)
-        boxes = self.get_boxes_info(self.res['choices'][0]['message']['content'])
-        if not boxes:
-            return None
-        color = random.choice([_ for _ in mplc.TABLEAU_COLORS.keys()]) # init color
-        for box in boxes:
-            if 'ref' in box: # random new color for new refexps
-                color = random.choice([_ for _ in mplc.TABLEAU_COLORS.keys()])
-            x1, y1, x2, y2 = box['box']
-            x1, y1, x2, y2 = (int(x1 / 1000 * w), int(y1 / 1000 * h), int(x2 / 1000 * w), int(y2 / 1000 * h))
-            visualizer.draw_box((x1, y1, x2, y2), alpha=1, edge_color=color)
-            if 'ref' in box:
-                visualizer.draw_text(box['ref'], (x1, y1), color=color, horizontal_alignment="left")
-
-        image = visualizer.output
-        if image:
-            image.save(output_file_name)
-        else:
-            print("未检测到对象。")
-
-class VisImage:
-    def __init__(self, img, scale=1.0):
-        self.img = img
-        self.scale = scale
-        self.width, self.height = img.shape[1], img.shape[0]
-        self._setup_figure(img)
-
-    def _setup_figure(self, img):
-        fig = mplfigure.Figure(frameon=False)
-        self.dpi = fig.get_dpi()
-        # add a small 1e-2 to avoid precision lost due to matplotlib's truncation
-        # (https://github.com/matplotlib/matplotlib/issues/15363)
-        fig.set_size_inches(
-            (self.width * self.scale + 1e-2) / self.dpi,
-            (self.height * self.scale + 1e-2) / self.dpi,
-        )
-        self.canvas = FigureCanvasAgg(fig)
-        # self.canvas = mpl.backends.backend_cairo.FigureCanvasCairo(fig)
-        ax = fig.add_axes([0.0, 0.0, 1.0, 1.0])
-        ax.axis("off")
-        self.fig = fig
-        self.ax = ax
-        self.reset_image(img)
-
-    def reset_image(self, img):
-        img = img.astype("uint8")
-        self.ax.imshow(img, extent=(0, self.width, self.height, 0), interpolation="nearest")
-
-    def save(self, filepath):
-        self.fig.savefig(filepath)
-
-    def get_image(self):
-        canvas = self.canvas
-        s, (width, height) = canvas.print_to_buffer()
-
-        buffer = np.frombuffer(s, dtype="uint8")
-
-        img_rgba = buffer.reshape(height, width, 4)
-        rgb, alpha = np.split(img_rgba, [3], axis=2)
-        return rgb.astype("uint8")
-
-class Visualizer:
-    def __init__(self, img_rgb, metadata=None, scale=1.0):
-
-        if not os.path.exists("../../gpu_server/SimSun.ttf"):
-            ttf = requests.get("https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/SimSun.ttf")
-            open("../../gpu_server/SimSun.ttf", "wb").write(ttf.content)
-        FONT_PATH = '../../gpu_server/SimSun.ttf'
-
-        self.img = np.asarray(img_rgb).clip(0, 255).astype(np.uint8)
-        self.font_path = FONT_PATH
-        self.output = VisImage(self.img, scale=scale)
-        self.cpu_device = torch.device("cpu")
-
-        # too small texts are useless, therefore clamp to 14
-        self._default_font_size = max(
-            np.sqrt(self.output.height * self.output.width) // 30, 15 // scale
-        )
-
-    def draw_text(
-            self,
-            text,
-            position,
-            *,
-            font_size=None,
-            color="g",
-            horizontal_alignment="center",
-            rotation=0,
-    ):
-        if not font_size:
-            font_size = self._default_font_size
-
-        # since the text background is dark, we don't want the text to be dark
-        color = np.maximum(list(mplc.to_rgb(color)), 0.2)
-        color[np.argmax(color)] = max(0.8, np.max(color))
-
-        x, y = position
-        self.output.ax.text(
-            x,
-            y,
-            text,
-            size=font_size * self.output.scale,
-            fontproperties=FontProperties(fname=self.font_path),
-            bbox={"facecolor": "black", "alpha": 0.8, "pad": 0.7, "edgecolor": "none"},
-            verticalalignment="top",
-            horizontalalignment=horizontal_alignment,
-            color=color,
-            zorder=10,
-            rotation=rotation,
-        )
-        return self.output
-
-    def draw_box(self, box_coord, alpha=0.5, edge_color="g", line_style="-"):
-        x0, y0, x1, y1 = box_coord
-        width = x1 - x0
-        height = y1 - y0
-
-        linewidth = max(self._default_font_size / 4, 1)
-
-        self.output.ax.add_patch(
-            mpl.patches.Rectangle(
-                (x0, y0),
-                width,
-                height,
-                fill=False,
-                edgecolor=edge_color,
-                linewidth=linewidth * self.output.scale,
-                alpha=alpha,
-                linestyle=line_style,
-            )
-        )
-        return self.output
-
-    def get_output(self):
-        return self.output
+# class Visualizer:
+#     def __init__(self, img_rgb, metadata=None, scale=1.0):
+#
+#         if not os.path.exists("../../gpu_server/SimSun.ttf"):
+#             ttf = requests.get("https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/SimSun.ttf")
+#             open("../../gpu_server/SimSun.ttf", "wb").write(ttf.content)
+#         FONT_PATH = '../../gpu_server/SimSun.ttf'
+#
+#         self.img = np.asarray(img_rgb).clip(0, 255).astype(np.uint8)
+#         self.font_path = FONT_PATH
+#         self.output = VisImage(self.img, scale=scale)
+#         self.cpu_device = torch.device("cpu")
+#
+#         # too small texts are useless, therefore clamp to 14
+#         self._default_font_size = max(
+#             np.sqrt(self.output.height * self.output.width) // 30, 15 // scale
+#         )
+#
+#     def draw_text(
+#             self,
+#             text,
+#             position,
+#             *,
+#             font_size=None,
+#             color="g",
+#             horizontal_alignment="center",
+#             rotation=0,
+#     ):
+#         if not font_size:
+#             font_size = self._default_font_size
+#
+#         # since the text background is dark, we don't want the text to be dark
+#         color = np.maximum(list(mplc.to_rgb(color)), 0.2)
+#         color[np.argmax(color)] = max(0.8, np.max(color))
+#
+#         x, y = position
+#         self.output.ax.text(
+#             x,
+#             y,
+#             text,
+#             size=font_size * self.output.scale,
+#             fontproperties=FontProperties(fname=self.font_path),
+#             bbox={"facecolor": "black", "alpha": 0.8, "pad": 0.7, "edgecolor": "none"},
+#             verticalalignment="top",
+#             horizontalalignment=horizontal_alignment,
+#             color=color,
+#             zorder=10,
+#             rotation=rotation,
+#         )
+#         return self.output
+#
+#     def draw_box(self, box_coord, alpha=0.5, edge_color="g", line_style="-"):
+#         x0, y0, x1, y1 = box_coord
+#         width = x1 - x0
+#         height = y1 - y0
+#
+#         linewidth = max(self._default_font_size / 4, 1)
+#
+#         self.output.ax.add_patch(
+#             mpl.patches.Rectangle(
+#                 (x0, y0),
+#                 width,
+#                 height,
+#                 fill=False,
+#                 edgecolor=edge_color,
+#                 linewidth=linewidth * self.output.scale,
+#                 alpha=alpha,
+#                 linestyle=line_style,
+#             )
+#         )
+#         return self.output
+#
+#     def get_output(self):
+#         return self.output
 
 class LLM_Qwen():
     def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1'):
