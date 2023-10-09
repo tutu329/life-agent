@@ -2,7 +2,12 @@ from transformers import AutoProcessor, BarkModel
 import scipy
 import time
 
+# ==================还是要把本py文件和bark源码文件夹放在一起才能正常import bark===============
+# bark的pip安装有问题
+
+from IPython.display import Audio
 import nltk  # we'll use this to split into sentences
+# nltk.download('punkt')    # nltk模型未下载时，需通过这行下载
 import numpy as np
 
 from bark.generation import (
@@ -34,7 +39,35 @@ def get_run_time(func):
     return wrapper
 
 @get_run_time
+def t2s_simple_long(text, chinese=False, output_file="bark_out.wav"):
+    preload_models()
+
+    if not chinese:
+        # voice_preset = "v2/en_speaker_1"
+        voice_preset = "v2/en_speaker_6"
+    else:
+        voice_preset = "v2/zh_speaker_9"
+    text = text.replace('\n', ' ').strip()
+
+    sentences = nltk.sent_tokenize(text)
+
+    SPEAKER = "v2/en_speaker_6"
+    silence = np.zeros(int(0.25 * SAMPLE_RATE))  # quarter second of silence
+
+    pieces = []
+    for sentence in sentences:
+        audio_array = generate_audio(sentence, history_prompt=SPEAKER)
+        pieces += [audio_array, silence.copy()]
+
+    Audio(np.concatenate(pieces), rate=SAMPLE_RATE)
+
+    sample_rate = model.generation_config.sample_rate
+    scipy.io.wavfile.write(output_file, rate=sample_rate, data=np.concatenate(pieces))
+
+@get_run_time
 def t2s_long(text, chinese=False, output_file="bark_out.wav"):
+    preload_models()
+
     if not chinese:
         # voice_preset = "v2/en_speaker_1"
         voice_preset = "v2/en_speaker_6"
@@ -60,7 +93,7 @@ def t2s_long(text, chinese=False, output_file="bark_out.wav"):
         audio_array = semantic_to_waveform(semantic_tokens, history_prompt=SPEAKER, )
         pieces += [audio_array, silence.copy()]
 
-    # Audio(np.concatenate(pieces), rate=SAMPLE_RATE)
+    Audio(np.concatenate(pieces), rate=SAMPLE_RATE)
 
     sample_rate = model.generation_config.sample_rate
     scipy.io.wavfile.write(output_file, rate=sample_rate, data=np.concatenate(pieces))
@@ -121,11 +154,20 @@ def t2s(text, chinese=False, output_file="bark_out.wav"):
 
 
 def main():
+    # t2s(
     t2s_long(
+    # t2s_simple_long(
         """
-             Hello, my name is Mike Seaver. And, uh — and I like pizza. [laughs]
-             But I also have other interests [clears throat] such as playing tic tac toe.
-        """
+        Hey, have you heard about this new text-to-audio model called "Bark"? 
+        Apparently, it's the most realistic and natural-sounding text-to-audio model 
+        out there right now. People are saying it sounds just like a real person speaking. 
+        I think it uses advanced machine learning algorithms to analyze and understand the 
+        nuances of human speech, and then replicates those nuances in its own speech output. 
+        It's pretty impressive, and I bet it could be used for things like audiobooks or podcasts. 
+        In fact, I heard that some publishers are already starting to use Bark to create audiobooks. 
+        It would be like having your own personal voiceover artist. I really think Bark is going to 
+        be a game-changer in the world of text-to-audio technology.
+        """.replace("\n", " ").strip()
     )
     # t2s('今天天气真不错，要不我们出去玩吧！')
 
