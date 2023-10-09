@@ -570,7 +570,8 @@ def main():
     # user_name = '魏江'
     draw_keyword = '画'
     drawhi_keyword = '高清'
-    llm_keyword = 'llm'
+    # llm_keyword = 'llm'
+    llm_keyword = '@土土'
     # llm_keyword = '@候补财神'
     llm_his = []
     llm_his_max_num = 20
@@ -613,18 +614,19 @@ def main():
 
                 llm = LLM_Qwen()
                 background = f''
-                question = background + '。'.join(llm_his) + '。' + 'user: ' + f"{prompt}。 " + f'{llm_name}: '
+                question = background + '。'.join(llm_his) + '。' + 'user: ' + f"{prompt}。 用英语回答。" + f'{llm_name}: '
                 print("user: ", question)
                 print("Qwen: ", end='')
 
                 result = llm.ask_prepare(question).get_answer_and_sync_print()
-                clipboard.OpenClipboard()
-                clipboard.EmptyClipboard()
-                clipboard.SetClipboardText(result)
-                clipboard.CloseClipboard()
-                chat.send_msg_select_msg_box(user_name)
-                pyautogui.hotkey('ctrl', 'v')
-                pyautogui.hotkey('enter')
+                # clipboard.OpenClipboard()
+                # clipboard.EmptyClipboard()
+                # clipboard.SetClipboardText(result)
+                # clipboard.CloseClipboard()
+                # chat.send_msg_select_msg_box(user_name)
+                # pyautogui.hotkey('ctrl', 'v')
+                # pyautogui.hotkey('enter')
+
                 # print("============result: ", result)
                 # chat.send_msg(user_name, result)
 
@@ -671,8 +673,23 @@ def main6():
         Stable_Diffusion.quick_start('1girl, super model, in library, breasts, wet, extremely sexy, look at viewer, nipples, long legs, full body, beautiful', in_high_quality=False)
 
 if __name__ == "__main__":
-    mp.set_start_method("spawn")
+    # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 屏蔽通知信息和警告信息
+    import warnings
+    # warnings.filterwarnings('always', category=DeprecationWarning, module=r'^{0}.'.format(re.escape(__name__)))
+    # from warnings import filterwarnings
+    # filterwarnings('ignore')
+    import os
 
-    main()
+    # warnings.filterwarnings(
+    #     action='ignore',
+    #     category=DeprecationWarning,
+    #     module=r'.*randpool'
+    # )
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+
+        mp.set_start_method("spawn")
+
+        main()
 
     # main5()
