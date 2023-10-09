@@ -13,7 +13,7 @@ import time
 
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 os.environ["SUNO_USE_SMALL_MODELS"] = "1"
 
 import numpy as np

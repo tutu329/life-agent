@@ -537,7 +537,6 @@ tts_obj = TEXT_TO_SPEECH()
 def tts_and_copy_to_clipboard(in_text):
     global tts_obj
 
-    mp.set_start_method("spawn")
     tts_obj.text_to_speech(in_text, 'temp1122.wav')
     # t2s(in_text, chinese=False, output_file='temp1122.wav')
     copy_file('D:/server/life-agent/temp1122.wav')
@@ -672,5 +671,8 @@ def main6():
         Stable_Diffusion.quick_start('1girl, super model, in library, breasts, wet, extremely sexy, look at viewer, nipples, long legs, full body, beautiful', in_high_quality=False)
 
 if __name__ == "__main__":
+    mp.set_start_method("spawn")
+
     main()
+
     # main5()
