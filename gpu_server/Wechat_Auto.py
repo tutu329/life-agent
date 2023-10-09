@@ -564,9 +564,9 @@ def main():
     # sd = Stable_Diffusion(in_model="majicmixRealistic_betterV2V25.safetensors", in_url="http://localhost:5000")
     sd.init()
 
-    # user_name = '我们的客厅'
+    user_name = '我们的客厅'
     # user_name = input('请输入群名或聊天用户名: ')
-    user_name = '文件传输助手'
+    # user_name = '文件传输助手'
     # user_name = '魏江'
     draw_keyword = '画'
     drawhi_keyword = '高清'
