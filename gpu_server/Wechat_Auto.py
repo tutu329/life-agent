@@ -564,8 +564,9 @@ def main():
     # sd = Stable_Diffusion(in_model="majicmixRealistic_betterV2V25.safetensors", in_url="http://localhost:5000")
     sd.init()
 
-    user_name = '我们的客厅'
+    # user_name = '我们的客厅'
     # user_name = input('请输入群名或聊天用户名: ')
+    user_name = '【官方】通义千问交流4群'
     # user_name = '文件传输助手'
     # user_name = '魏江'
     draw_keyword = '画'
@@ -614,18 +615,18 @@ def main():
 
                 llm = LLM_Qwen()
                 background = f''
-                question = background + '。'.join(llm_his) + '。' + 'user: ' + f"{prompt}。 用英语回答。" + f'{llm_name}: '
+                question = background + '。'.join(llm_his) + '。' + 'user: ' + f"{prompt}。" + f'{llm_name}: '
                 print("user: ", question)
                 print("Qwen: ", end='')
 
                 result = llm.ask_prepare(question).get_answer_and_sync_print()
-                # clipboard.OpenClipboard()
-                # clipboard.EmptyClipboard()
-                # clipboard.SetClipboardText(result)
-                # clipboard.CloseClipboard()
-                # chat.send_msg_select_msg_box(user_name)
-                # pyautogui.hotkey('ctrl', 'v')
-                # pyautogui.hotkey('enter')
+                clipboard.OpenClipboard()
+                clipboard.EmptyClipboard()
+                clipboard.SetClipboardText(result)
+                clipboard.CloseClipboard()
+                chat.send_msg_select_msg_box(user_name)
+                pyautogui.hotkey('ctrl', 'v')
+                pyautogui.hotkey('enter')
 
                 # print("============result: ", result)
                 # chat.send_msg(user_name, result)
@@ -639,9 +640,9 @@ def main():
                 # chat.send_msg_enter()
 
                 # tts
-                wav = tts_and_copy_to_clipboard(result)
-                pyautogui.hotkey('ctrl', 'v')
-                pyautogui.hotkey('enter')
+                # wav = tts_and_copy_to_clipboard(result)
+                # pyautogui.hotkey('ctrl', 'v')
+                # pyautogui.hotkey('enter')
 
                 llm_his.append(f'user: ' + prompt)
                 llm_his.append(f'{llm_name}: ' + result)

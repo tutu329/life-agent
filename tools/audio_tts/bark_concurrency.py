@@ -47,18 +47,19 @@ class TEXT_TO_SPEECH:
         # preload_models(text_use_small=True)
 
         self.voice_name = "Voices/output.npz"
-        self.SPEAKER = "v2/en_speaker_6"
+        # self.SPEAKER = "v2/en_speaker_6"
         self.GEN_TEMP = 0.7
 
     def generate_audio(self, sentence, count, return_dict):
         semantic_tokens = generate_text_semantic(
             sentence,
-            history_prompt=self.SPEAKER,
+            # history_prompt=self.SPEAKER,
             temp=self.GEN_TEMP,
             min_eos_p=0.05,  # this controls how likely the generation is to end
             use_kv_caching=True
         )
-        audio_array = semantic_to_waveform(semantic_tokens, history_prompt=self.SPEAKER)
+        audio_array = semantic_to_waveform(semantic_tokens)
+        # audio_array = semantic_to_waveform(semantic_tokens, history_prompt=self.SPEAKER)
         return_dict[count] = audio_array
         # return_dict[count] = {
         #     'text':sentence,
