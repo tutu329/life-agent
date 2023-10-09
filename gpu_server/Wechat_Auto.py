@@ -586,6 +586,7 @@ def main():
         if res!='' and res.message!='[图片]':
             print('最新信息:', res.message)
             if drawhi_keyword in res.message:
+                pass
                 prompt = res.message.replace(drawhi_keyword, '')
 
                 # llm = LLM_Qwen()
@@ -598,6 +599,7 @@ def main():
 
                 draw(sd, chat, user_name, in_prompt=prompt, in_hires=True, in_vertical=True, in_num=1)
             elif draw_keyword in res.message:
+                pass
                 prompt = res.message.replace(draw_keyword, '')
 
                 # llm = LLM_Qwen()
