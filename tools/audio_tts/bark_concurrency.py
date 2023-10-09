@@ -6,12 +6,13 @@ from bark import SAMPLE_RATE
 from bark.api import semantic_to_waveform
 from scipy.io.wavfile import write as write_wav
 import nltk
+# nltk.download('punkt')
 import torch.multiprocessing as mp
 
 import numpy as np
 import time
 
-import os
+import os, re
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 os.environ["SUNO_USE_SMALL_MODELS"] = "1"
@@ -47,19 +48,21 @@ class TEXT_TO_SPEECH:
         # preload_models(text_use_small=True)
 
         self.voice_name = "Voices/output.npz"
-        # self.SPEAKER = "v2/en_speaker_6"
+        self.SPEAKER = "v2/en_speaker_6"
         self.GEN_TEMP = 0.7
+
+        self.is_chinese = False
 
     def generate_audio(self, sentence, count, return_dict):
         semantic_tokens = generate_text_semantic(
             sentence,
-            # history_prompt=self.SPEAKER,
+            history_prompt=self.SPEAKER,
             temp=self.GEN_TEMP,
             min_eos_p=0.05,  # this controls how likely the generation is to end
             use_kv_caching=True
         )
-        audio_array = semantic_to_waveform(semantic_tokens)
-        # audio_array = semantic_to_waveform(semantic_tokens, history_prompt=self.SPEAKER)
+        # audio_array = semantic_to_waveform(semantic_tokens)
+        audio_array = semantic_to_waveform(semantic_tokens, history_prompt=self.SPEAKER)
         return_dict[count] = audio_array
         # return_dict[count] = {
         #     'text':sentence,
@@ -78,11 +81,44 @@ class TEXT_TO_SPEECH:
         time.sleep(.01)
         return result
 
+    def __has_many_chinese_char(self, in_string, in_gt_chinese_char=10):  # 超过10个中文字，就有可能因为ntlk分句不支持中文而使某一分句超过13-14秒从而出错
+        chinese_char_num = 0
+        total_char_num = len(in_string)
+        for ch in in_string:
+            if u'\u4e00' <= ch <= u'\u9fff':
+                chinese_char_num += 1
+        if chinese_char_num >= in_gt_chinese_char:
+            return True
+        else:
+            return False
+
+    def __chinese_sentence_tokenize(self, x):
+        sents_temp = re.split('(\.|。|！|\!|？|\?)', x)
+        # sents_temp = re.split('(：|:|,|，|。|！|\!|\.|？|\?)', x)
+        sentences = []
+        for i in range(len(sents_temp) // 2):
+            sent = sents_temp[2 * i] + sents_temp[2 * i + 1]
+            sentences.append(sent)
+        return sentences
+
+    def __sentence_tokenize_all(self, in_string):
+        if self.__has_many_chinese_char(in_string):
+            sentences = self.__chinese_sentence_tokenize(in_string)
+            print(f'输入为中文，字数为{len(in_string)}')
+            self.is_chinese = True
+        else:
+            sentences = nltk.sent_tokenize(in_string)
+            print(f'输入非中文，字数为{len(in_string)}')
+            self.is_chinese = False
+        return sentences
+
     @get_run_time
     def text_to_speech(self, text_prompt, wav_path="speech.wav"):
         text_prompt = text_prompt.replace("\n", " ").strip()
 
-        sentences = nltk.sent_tokenize(text_prompt)
+        sentences = self.__sentence_tokenize_all(text_prompt)
+        print(sentences)
+        # sentences = nltk.sent_tokenize(text_prompt)
         silence = np.zeros(int(0.25 * SAMPLE_RATE))
         count = 0
 
@@ -97,14 +133,22 @@ class TEXT_TO_SPEECH:
         for sentence in sentences:
             current_tokens = len(nltk.Text(sentence))
 
-            if token_counter + current_tokens <= 250:
+            if token_counter + current_tokens <= 250 and self.is_chinese==False:
                 # 添加在当前chunk
                 token_counter += current_tokens
                 chunks[-1] = chunks[-1] + "" + sentence
             else:
-                # 新增一个chunk
-                chunks.append('...'+sentence)   # — or ... for hesitations
-                token_counter = current_tokens
+                if chunks==['']:
+                    chunks = [sentence]
+                else:
+                    # 新增一个chunk
+                    chunks.append('...'+sentence)   # — or ... for hesitations
+                    token_counter = current_tokens
+
+        if self.is_chinese:
+            self.SPEAKER = "v2/zh_speaker_9"
+        else:
+            self.SPEAKER = "v2/en_speaker_6"
 
         for prompt in chunks:
             count += 1
