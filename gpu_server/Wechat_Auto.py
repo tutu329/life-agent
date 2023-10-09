@@ -527,10 +527,16 @@ def copy_file(in_file):
     finally:
         win32clipboard.CloseClipboard()  # 无论什么情况，都关闭剪贴板
 
-def tts_and_copy_to_clipboard(in_text):
-    from tools.audio_tts.bark import t2s
 
-    t2s(in_text, chinese=False, output_file='temp1122.wav')
+
+from tools.audio_tts.bark_concurrency import *
+
+def tts_and_copy_to_clipboard(in_text):
+
+    obj = TEXT_TO_SPEECH()
+    mp.set_start_method("spawn")
+    obj.text_to_speech(in_text, 'temp1122.wav')
+    # t2s(in_text, chinese=False, output_file='temp1122.wav')
     copy_file('D:/server/life-agent/temp1122.wav')
 
     # import win32clipboard
