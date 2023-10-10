@@ -123,7 +123,7 @@ class TEXT_TO_SPEECH:
             sentences = self.__chinese_sentence_tokenize(in_string)
             print(f'===输入为中文，字数为{len(in_string)}===')
             self.is_chinese = True
-            self.SPEAKER = "zh_speaker_9"
+            self.SPEAKER = "zh_speaker_5"
         else:
             sentences = nltk.sent_tokenize(in_string)
             print(f'===输入非中文，字数为{len(in_string)}===')
