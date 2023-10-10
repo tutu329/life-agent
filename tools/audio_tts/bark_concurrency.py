@@ -99,6 +99,7 @@ class TEXT_TO_SPEECH:
         time.sleep(.01)
         return result
 
+    # 是否有超过10个以上中文字符
     def __has_many_chinese_char(self, in_string, in_gt_chinese_char=10):  # 超过10个中文字，就有可能因为ntlk分句不支持中文而使某一分句超过13-14秒从而出错
         chinese_char_num = 0
         total_char_num = len(in_string)
@@ -110,15 +111,38 @@ class TEXT_TO_SPEECH:
         else:
             return False
 
+    # 中文字符串的分句
     def __chinese_sentence_tokenize(self, x):
-        sents_temp = re.split('(。|！|\!|？|\?)', x)
+        sents_temp = re.split('(,|，|。|！|\!|？|\?)', x)   # 分割到逗号，如果都太长，就先不管了，太长的结果是该分句输出语音有13秒之外的丢失
         # sents_temp = re.split('(：|:|,|，|。|！|\!|\.|？|\?)', x)
         sentences = []
+        not_enough_char_num = 20
+        not_enough_char = False
+        not_appended_sentence = ''
         for i in range(len(sents_temp) // 2):
+            # 分组后是：['我们是谁', '？', '你们', '。', '他们', '。', '']
+            # 因此，需要2个组成一句
             sent = sents_temp[2 * i] + sents_temp[2 * i + 1]
-            sentences.append(sent)
+            if 2*i+3<len(sents_temp):
+                if len(not_appended_sentence + sents_temp[2 * i] + sents_temp[2 * i + 1] + sents_temp[2 * i+2] + sents_temp[2 * i + 3])<= not_enough_char_num:
+                    # 前后两句加起来不足10char
+                    not_appended_sentence += sent
+                    not_enough_char = True
+                else:
+                    not_appended_sentence = ''
+                    not_enough_char = False
+            else:
+                not_appended_sentence = ''
+                not_enough_char = False
+            if not_enough_char:
+                # 当前分句和后面的一个分句加起来不足10，因此等到下一个分句再考虑是否append
+                pass
+            else:
+                sentences.append(not_appended_sentence+sent)
+                not_appended_sentence = ''
         return sentences
 
+    # 所有字符串的分句
     def __sentence_tokenize_all(self, in_string):
         if self.__has_many_chinese_char(in_string):
             sentences = self.__chinese_sentence_tokenize(in_string)
@@ -159,6 +183,9 @@ class TEXT_TO_SPEECH:
         group_num = 0
         # print('========3=========')
         for sentences_in_one_group in groups:
+            if sentences_in_one_group==[]:
+                continue
+
             # print('========4=========')
             print(f'======第{group_num+1}组sentence：{sentences_in_one_group}')
             output_file_name = f'{wav_path}_{group_num+1}.wav'
