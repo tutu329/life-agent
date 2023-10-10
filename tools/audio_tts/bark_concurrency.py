@@ -1,3 +1,18 @@
+# ==================================关于bark的优化1(speaker_embeddings_path.json)==================================
+# 关于每次读取preset都要连接huggingface的问题：
+# 把models/bark或bark-small里的speaker_embeddings_path.json最开头的
+# "repo_or_path": "ylacombe/bark-small"改为"repo_or_path": "D:\models\bark-small"即可
+# ==================================关于bark的优化2(bert-base-multilingual-cased)==================================
+# d:/models下：git clone https://huggingface.co/bert-base-multilingual-cased
+# C:\Users\tutu\anaconda3\envs\bark\Lib\site-packages\bark下的generation.py里：
+# tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
+# 改为: tokenizer = BertTokenizer.from_pretrained("D:/models/bert-base-multilingual-cased")
+# ==================================关于bark的优化3(并行计算)==================================
+# 详见代码中的mp实现
+# ==================================关于bark的优化4(kv cache)==================================
+# 本项目的bark文件夹下的api.py、generation.py、model.py即为bark的kv cache版本文件
+# C:\Users\tutu\anaconda3\envs\bark\Lib\site-packages\bark下的api.py、generation.py、model.py替换为kv cache版本的文件
+
 from transformers import AutoProcessor, BarkModel
 from transformers import BertTokenizer
 from bark.generation import SAMPLE_RATE, preload_models, codec_decode, generate_coarse, generate_fine, \
@@ -48,12 +63,13 @@ class TEXT_TO_SPEECH:
         # preload_models(text_use_small=True)
 
         self.voice_name = "Voices/output.npz"
-        self.SPEAKER = "v2/en_speaker_6"
+        self.SPEAKER = "en_speaker_6"
         self.GEN_TEMP = 0.7
 
         self.is_chinese = False
 
     def generate_audio(self, sentence, count, return_dict):
+        print(f'===============generate_text_semantic() his_prompt: {self.SPEAKER}================')
         semantic_tokens = generate_text_semantic(
             sentence,
             history_prompt=self.SPEAKER,
@@ -62,6 +78,7 @@ class TEXT_TO_SPEECH:
             use_kv_caching=True
         )
         # audio_array = semantic_to_waveform(semantic_tokens)
+        print('===============semantic_to_waveform() started================')
         audio_array = semantic_to_waveform(semantic_tokens, history_prompt=self.SPEAKER)
         return_dict[count] = audio_array
         # return_dict[count] = {
@@ -104,19 +121,21 @@ class TEXT_TO_SPEECH:
     def __sentence_tokenize_all(self, in_string):
         if self.__has_many_chinese_char(in_string):
             sentences = self.__chinese_sentence_tokenize(in_string)
-            print(f'输入为中文，字数为{len(in_string)}')
+            print(f'===输入为中文，字数为{len(in_string)}===')
             self.is_chinese = True
+            self.SPEAKER = "zh_speaker_9"
         else:
             sentences = nltk.sent_tokenize(in_string)
-            print(f'输入非中文，字数为{len(in_string)}')
+            print(f'===输入非中文，字数为{len(in_string)}===')
             self.is_chinese = False
+            self.SPEAKER = "en_speaker_6"
         return sentences
 
     @get_run_time
     def text_to_speech(self, text_prompt, wav_path="speech.wav"):
         text_prompt = text_prompt.replace("\n", " ").strip()
 
-        sentences = self.__sentence_tokenize_all(text_prompt)
+        sentences = self.__sentence_tokenize_all(text_prompt)   # 根据中文或非中文分别进行分句
         print(sentences)
         # sentences = nltk.sent_tokenize(text_prompt)
         silence = np.zeros(int(0.25 * SAMPLE_RATE))
@@ -144,11 +163,6 @@ class TEXT_TO_SPEECH:
                     # 新增一个chunk
                     chunks.append('...'+sentence)   # — or ... for hesitations
                     token_counter = current_tokens
-
-        if self.is_chinese:
-            self.SPEAKER = "v2/zh_speaker_9"
-        else:
-            self.SPEAKER = "v2/en_speaker_6"
 
         for prompt in chunks:
             count += 1
@@ -181,8 +195,9 @@ def main():
     obj = TEXT_TO_SPEECH()
     mp.set_start_method("spawn")
     # start_time = time.time()
-    # text = "Methamphetamine is a powerful and addictive stimulant drug that affects the central nervous system. It is made by chemically altering the amphetamine molecule, which is found in some over-the-counter medications. The most common form of methamphetamine is a white crystalline powder that can be smoked, snorted, or injected. It has been associated with a range of negative health effects, including addiction, psychosis, and cardiovascular disease."
-    text = """
+    text0 = "what is your name?"
+    text1 = "Methamphetamine is a powerful and addictive stimulant drug that affects the central nervous system. It is made by chemically altering the amphetamine molecule, which is found in some over-the-counter medications. The most common form of methamphetamine is a white crystalline powder that can be smoked, snorted, or injected. It has been associated with a range of negative health effects, including addiction, psychosis, and cardiovascular disease."
+    text2 = """
     Hey, have you heard about this new text-to-audio model called "Bark"? 
     Apparently, it's the most realistic and natural-sounding text-to-audio model 
     out there right now. People are saying it sounds just like a real person speaking. 
@@ -196,7 +211,7 @@ def main():
     
     I really think Bark is going to be a game-changer in the world of text-to-audio technology.
     """
-    obj.text_to_speech(text)
+    obj.text_to_speech(text0)
     # end_time = time.time()
 
     # print(f"Time taken to generate audio with {len(text)} words is {end_time - start_time} seconds.")
