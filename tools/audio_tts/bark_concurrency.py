@@ -116,7 +116,7 @@ class TEXT_TO_SPEECH:
         sents_temp = re.split('(,|，|。|！|\!|？|\?)', x)   # 分割到逗号，如果都太长，就先不管了，太长的结果是该分句输出语音有13秒之外的丢失
         # sents_temp = re.split('(：|:|,|，|。|！|\!|\.|？|\?)', x)
         sentences = []
-        not_enough_char_num = 20
+        not_enough_char_num = 50
         not_enough_char = False
         not_appended_sentence = ''
         for i in range(len(sents_temp) // 2):
@@ -124,18 +124,16 @@ class TEXT_TO_SPEECH:
             # 因此，需要2个组成一句
             sent = sents_temp[2 * i] + sents_temp[2 * i + 1]
             if 2*i+3<len(sents_temp):
-                if len(not_appended_sentence + sents_temp[2 * i] + sents_temp[2 * i + 1] + sents_temp[2 * i+2] + sents_temp[2 * i + 3])<= not_enough_char_num:
-                    # 前后两句加起来不足10char
+                if len(not_appended_sentence + sent + sents_temp[2 * i+2] + sents_temp[2 * i + 3])<= not_enough_char_num:
+                    # 前后两句加起来不足50char
                     not_appended_sentence += sent
                     not_enough_char = True
                 else:
-                    not_appended_sentence = ''
                     not_enough_char = False
             else:
-                not_appended_sentence = ''
                 not_enough_char = False
             if not_enough_char:
-                # 当前分句和后面的一个分句加起来不足10，因此等到下一个分句再考虑是否append
+                # 当前分句和后面的一个分句加起来不足50，因此等到下一个分句再考虑是否append
                 pass
             else:
                 sentences.append(not_appended_sentence+sent)
