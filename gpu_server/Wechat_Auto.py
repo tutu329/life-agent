@@ -562,8 +562,8 @@ def main():
 
     # user_name = '我们的客厅'
     # user_name = input('请输入群名或聊天用户名: ')
-    # user_name = '【官方】通义千问交流4群'
-    user_name = '文件传输助手'
+    user_name = '【官方】通义千问交流4群'
+    # user_name = '文件传输助手'
     # user_name = '魏江'
     draw_keyword = '画'
     drawhi_keyword = '高清'
