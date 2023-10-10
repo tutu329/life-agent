@@ -9,7 +9,7 @@
 # 改为: tokenizer = BertTokenizer.from_pretrained("D:/models/bert-base-multilingual-cased")
 # ==================================关于bark的优化3(并行计算)==================================
 # 详见代码中的mp实现
-# ==================================关于bark的优化4(kv cache)==================================
+# ==================================关于bark的优化4(kv cache)(2023-10-10测试：该版本没有官方版本快，官方版本时间为1/4！)==================================
 # 本项目的bark文件夹下的api.py、generation.py、model.py即为bark的kv cache版本文件
 # C:\Users\tutu\anaconda3\envs\bark\Lib\site-packages\bark下的api.py、generation.py、model.py替换为kv cache版本的文件
 
@@ -69,7 +69,7 @@ class TEXT_TO_SPEECH:
         self.is_chinese = False
 
     def generate_audio(self, sentence, count, return_dict):
-        print(f'===============generate_text_semantic() his_prompt: {self.SPEAKER}================')
+        print(f'===============self.SPEAKER: {self.SPEAKER}================')
         semantic_tokens = generate_text_semantic(
             sentence,
             history_prompt=self.SPEAKER,
