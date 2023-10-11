@@ -121,13 +121,18 @@ def main_console_QA():
 
     while True:
         question = input('user: ')
-        prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
-        ### Instruction:
-        {question}
-        ### Response:
-        '''
-        llm.ask_prepare(prompt_template, max_new_tokens=500)
+        llm.ask_prepare(question, max_new_tokens=512)
         res = llm.get_answer_and_sync_print()
+
+    # while True:
+    #     question = input('user: ')
+    #     prompt_template = f'''Below is an instruction that describes a task. Write a response that appropriately completes the request.
+        ## Instruction:
+        # {question}
+        ## Response:
+        # '''
+        # llm.ask_prepare(prompt_template, max_new_tokens=500)
+        # res = llm.get_answer_and_sync_print()
 
 if __name__ == "__main__" :
     # main_completion()

@@ -147,6 +147,11 @@ class LLM_Model_Wrapper():
             max_new_tokens=2048,
             stop=["</s>"],
     ):
+        message = self.get_prompt(message)  # 读取prompt_template格式化后的message
+        print('\n==========================msg sent to llm==========================')
+        print(message)
+        print('\n==========================msg sent to llm==========================')
+
         input_ids = self.tokenizer(message, return_tensors='pt').input_ids.cuda()
         streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
 
@@ -315,13 +320,13 @@ def main_gr():
         only response me the plan json string. do not response me any other information.
         '''
 
-        print('\n==========================msg sent to llm==========================')
-        print(llm.get_prompt(message))
-        print('\n==========================msg sent to llm==========================')
+        # print('\n==========================msg sent to llm==========================')
+        # print(llm.get_prompt(message))
+        # print('\n==========================msg sent to llm==========================')
         res = ''
 
         for ch in llm.generate(
-            llm.get_prompt(message),
+            message,
             # history,
             temperature=temperature,
             repetition_penalty=repetition_penalty,

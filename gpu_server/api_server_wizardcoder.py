@@ -53,7 +53,8 @@ class Wizardcoder_Fastapi_Server():
             stop=["</s>"],
     ):
         return self.llm.generate(
-            message=message,
+            message=self.llm.get_prompt(message),
+            # message=message,
             temperature=temperature,
             top_p=top_p,
             top_k=top_k,
@@ -157,6 +158,7 @@ def start_server(model_wrapper, http_address: str, port: int):
 def main():
     model_wrapper = Wizardcoder_Wrapper()
     model_wrapper.init()
+    print(model_wrapper.get_prompt('{}'))
 
     parser = argparse.ArgumentParser(description=f'Stream API Service for {model_wrapper.model_name}')
     # parser.add_argument('--device', '-d', help='device，-1 means cpu, other means gpu ids', default='0')

@@ -44,24 +44,25 @@ class Phind_Codellama_Fastapi_Server():
     #     history = [list(h) for h in history]
     #     return response, history
 
-    def stream(self,
-            message,
-            temperature=0.7,
-            top_p=0.95,
-            top_k=40,
-            repetition_penalty=1.1,
-            max_new_tokens=512,
-            stop=["</s>"],
-    ):
-        return self.llm.generate(
-            message=message,
-            temperature=temperature,
-            top_p=top_p,
-            top_k=top_k,
-            repetition_penalty=repetition_penalty,
-            max_new_tokens=max_new_tokens,
-            stop=stop,
-        )
+    # def stream(self,
+    #         message,
+    #         temperature=0.7,
+    #         top_p=0.95,
+    #         top_k=40,
+    #         repetition_penalty=1.1,
+    #         max_new_tokens=512,
+    #         stop=["</s>"],
+    # ):
+    #     return self.llm.generate(
+    #         message=self.llm.get_prompt(message),
+    #         # message=message,
+    #         temperature=temperature,
+    #         top_p=top_p,
+    #         top_k=top_k,
+    #         repetition_penalty=repetition_penalty,
+    #         max_new_tokens=max_new_tokens,
+    #         stop=stop,
+    #     )
 
 def start_server(model_wrapper, http_address: str, port: int):
 # def start_server(model_wrapper, http_address: str, port: int, gpu_id: str):
@@ -86,7 +87,7 @@ def start_server(model_wrapper, http_address: str, port: int):
         #         yield ServerSentEvent(json.dumps(item, ensure_ascii=False), event='delta')
 
         try:
-            print('=================server0==================')
+            # print('=================server0==================')
             message = arg_dict["message"]
             temperature = arg_dict["temperature"]
             top_p = arg_dict["top_p"]
@@ -94,7 +95,7 @@ def start_server(model_wrapper, http_address: str, port: int):
             repetition_penalty = arg_dict["repetition_penalty"]
             max_new_tokens = arg_dict["max_new_tokens"]
             stop = arg_dict["stop"]
-            print('=================server1==================')
+            # print('=================server1==================')
 
             res=EventSourceResponse(
                 predict(
@@ -158,6 +159,7 @@ def start_server(model_wrapper, http_address: str, port: int):
 def main():
     model_wrapper = Phind_Codellama_Wrapper()
     model_wrapper.init()
+    print(model_wrapper.get_prompt('{}'))
 
     parser = argparse.ArgumentParser(description=f'Stream API Service for {model_wrapper.model_name}')
     # parser.add_argument('--device', '-d', help='device，-1 means cpu, other means gpu ids', default='0')
