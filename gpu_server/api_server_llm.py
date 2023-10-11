@@ -49,7 +49,7 @@ class Progress_Task(Thread):
     def set_finished(self):
         self.__task_finished = True
 
-class Wizard_Prompt_Template():
+class Wizardcoder_Prompt_Template():
     def __init__(self):
         self.prompt_template = '''
         Below is an instruction that describes a task. Write a response that appropriately completes the request.
@@ -58,6 +58,22 @@ class Wizard_Prompt_Template():
         {prompt}
 
         ### Response:
+        '''
+    def get_prompt(self, prompt):
+        res = self.prompt_template.format(prompt=prompt)
+        return res
+
+class Wizardlm_Prompt_Template():
+    def __init__(self):
+        self.prompt_template = '''
+        A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful and detailed answers to the user's questions. 
+        USER: Hi
+        ASSISTANT: Hello.</s>
+        USER: Who are you? 
+        ASSISTANT: I am WizardLM.</s>
+        ......
+        USER: {prompt}
+        ASSISTANT:
         '''
     def get_prompt(self, prompt):
         res = self.prompt_template.format(prompt=prompt)
@@ -185,7 +201,15 @@ class Wizardcoder_Wrapper(LLM_Model_Wrapper):
         self.model_name = 'WizardCoder-Python-34B-V1.0-GPTQ'
 
     def init(self, in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ"):
-        super().init(in_prompt_template=Wizard_Prompt_Template(), in_model_path=in_model_path)
+        super().init(in_prompt_template=Wizardcoder_Prompt_Template(), in_model_path=in_model_path)
+
+class Wizardlm_Wrapper(LLM_Model_Wrapper):
+    def __init__(self):
+        super().__init__()
+        self.model_name = 'WizardLM-70B-V1.0-GPTQ'
+
+    def init(self, in_model_path="d:/models/WizardLM-70B-V1.0-GPTQ", revision='gptq-4bit-64g-actorder_True'):
+        super().init(in_prompt_template=Wizardlm_Prompt_Template(), in_model_path=in_model_path)
 
 class Phind_Codellama_Wrapper(LLM_Model_Wrapper):
     def __init__(self):
@@ -233,7 +257,7 @@ def main_gr():
     from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.add_argument(
-        "--model", type=str, default='wizard', help="指定model如wizard、phind等"
+        "--model", type=str, default='phind', help="指定model如 wizard、wizard70、phind 等"
     )
     args = parser.parse_args()
 
@@ -248,6 +272,9 @@ def main_gr():
     elif args.model=='phind':
         llm = Phind_Codellama_Wrapper()
         llm.init(in_model_path="d:/models/Phind-CodeLlama-34B-v2-GPTQ", revision='gptq-4bit-64g-actorder_True')
+    elif args.model=='wizard70':
+        llm = Wizardlm_Wrapper()
+        llm.init(in_model_path="d:/models/WizardLM-70B-V1.0-GPTQ", revision='gptq-4bit-64g-actorder_True')
 
     def ask_llm(
             message,
