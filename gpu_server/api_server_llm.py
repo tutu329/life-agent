@@ -128,9 +128,9 @@ class LLM_Model_Wrapper():
         time.sleep(1)   # 解决进度条显示问题
 
         self.model.generation_config = GenerationConfig.from_pretrained(self.model_name_or_path)
-        self.model.generation_config.do_sample = True
+        # self.model.generation_config.do_sample = True
         print(f'设置generation_config: \tgeneration_config={self.model.generation_config}', flush=True)
-        print(f'设置其他参数: \t\t"do_sample={self.model.generation_config.do_sample}"', flush=True)
+        # print(f'设置其他参数: \t\t"do_sample={self.model.generation_config.do_sample}"', flush=True)
         print('-'*80)
 
     def get_prompt(self, prompt):
