@@ -1,6 +1,7 @@
 # -*-coding:utf-8-*-
 '''
-D:\models\WizardCoder-Python-34B-V1.0-GPTQ
+git clone --single-branch --branch gptq-4bit-64g-actorder_True https://huggingface.co/TheBloke/Phind-CodeLlama-34B-v2-GPTQ
+D:\models\Phind-CodeLlama-34B-v2-GPTQ
 '''
 
 import os
@@ -16,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
 import asyncio
 
-from api_server_llm import Wizardcoder_Wrapper
+from api_server_llm import Phind_Codellama_Wrapper
 
 from pydantic import BaseModel
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -25,9 +26,9 @@ class Stream_Response(BaseModel):
     delta: str
     finish_reason: Optional[Literal['stop', 'length']]
 
-class Wizardcoder_Fastapi_Server():
+class Phind_Codellama_Fastapi_Server():
     def __init__(self) -> None:
-        self.llm = Wizardcoder_Wrapper()
+        self.llm = Phind_Codellama_Wrapper()
 
     def init(self):
         self.llm.init()
@@ -155,7 +156,7 @@ def start_server(model_wrapper, http_address: str, port: int):
     uvicorn.run(app=app, host=http_address, port=port, workers=1)
 
 def main():
-    model_wrapper = Wizardcoder_Wrapper()
+    model_wrapper = Phind_Codellama_Wrapper()
     model_wrapper.init()
 
     parser = argparse.ArgumentParser(description=f'Stream API Service for {model_wrapper.model_name}')
