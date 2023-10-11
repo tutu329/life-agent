@@ -1,0 +1,1 @@
+jupyter lab --allow-root --ServerApp.allow_remote_access=True --ServerApp.token=jack --ip=* --port=7862

@@ -1,0 +1,1 @@
+docker run -p 7862:7862 -v /d/jupyter_temp:/usr/local/jupyter_temp -it jupyter_with_common_python_libs
