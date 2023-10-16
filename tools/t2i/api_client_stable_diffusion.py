@@ -661,7 +661,7 @@ class Stable_Diffusion():
         time.sleep(10)  # 根据经验，大约需要30秒重启时间
 
     @staticmethod
-    def quick_start(in_prompt, in_high_quality=False, in_video=False):
+    def quick_start(in_prompt, in_high_quality=False, in_video=False, in_l_size=768, in_s_size=512):
         import sys
         if sys.platform.startswith('win'):
             file_name = 'd:/sd_pics/output'
@@ -681,8 +681,8 @@ class Stable_Diffusion():
             in_batch_size=1,
             in_sampler='DPM++ 2M Karras',
             in_cfg_scale=7,
-            in_l_size=768,
-            in_s_size=512,
+            in_l_size=in_l_size,
+            in_s_size=in_s_size,
 
             in_prompt=in_prompt,
             in_negative_prompt='(lowres:1.5),(worst quality:2),(low quality:2),(normal quality:2), (text:2), watermark,badhandv4,ng_deepnegative_v1_75t',
@@ -729,7 +729,13 @@ def main():
     # print(f'restartable1: {restartable1}')
     # print(f'restartable2: {restartable2}')
     while True:
-        Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),extremely detailed 8k wallpaper,(photo realism:1.3),1girl, nipples,topless, (thin waist), white microskirt and hip, stand still, on the beach, white cloud, super model,long slim legs, high heels,black hair,(perfect face, real skin, ultra detailed, 8k, photo realism),(extremely beautiful eyes, blue eyes, ultra detailed, 8k),full body', in_high_quality=False, in_video=True)
+        Stable_Diffusion.quick_start(
+            'highest quality,(masterpiece:1.2),extremely detailed 8k wallpaper,(photo realism:1.3),1girl, nipples,topless, (thin waist), white microskirt and hip, stand still, on the beach, white cloud, super model,long slim legs, high heels,black hair,(perfect face, real skin, ultra detailed, 8k, photo realism),(extremely beautiful eyes, blue eyes, ultra detailed, 8k),full body',
+            in_high_quality=False,
+            in_video=True,
+            in_l_size=1024,
+            in_s_size=768
+        )
     # Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),High detail RAW color photo,extremely detailed 8k wallpaper,(photo realism:1.3),1girl, (from below:1.3), look straight ahead, smile, (thin waist), (catwalk:1.5), high heels, long shot,  (standing:1.5), full body, pure orange wall background, super model,long slim legs,black hair,(real skin, ultra detailed, 8k, photo realism),random seductive pose,environment light,photon mapping,radiosity,physically-based rendering', in_high_quality=True)
     # # sd = Stable_Diffusion(in_model="dreamshaper_8.safetensors", in_url="http://localhost:5000")
     # sd = Stable_Diffusion(in_model="awportrait_v11.safetensors", in_url="http://localhost:5000")
