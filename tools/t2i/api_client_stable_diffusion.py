@@ -621,15 +621,18 @@ class Stable_Diffusion():
         num = 0
         print('=====服务器已返回.=====')
         # print('json_response: ', json_response)
-        for i in json_response['images']:
-            num += 1
-            # image = Image.open(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
 
-            print('gif文件长度: ', len(base64.b64decode(i)))
-            file = open(in_file_name+'_'+str(num)+'_'+str(uuid.uuid4())+'.gif', 'wb')
-            file.write(base64.b64decode(i))
-            # file.write(base64.b64decode(i.split(",", 1)[0]))
-            file.close()
+        # ==============================目前返回的是16个静态图片而非gif或mp4，视频可以直接到sd的output\animatediff里找===============================================
+        # for i in json_response['images']:
+        #     num += 1
+        #     # image = Image.open(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
+
+            # print('gif文件长度: ', len(base64.b64decode(i)))
+            # file = open(in_file_name+'_'+str(num)+'_'+str(uuid.uuid4())+'.gif', 'wb')
+            # file.write(base64.b64decode(i))
+            # # file.write(base64.b64decode(i.split(",", 1)[0]))
+            # file.close()
+        # ==============================目前返回的是16个静态图片而非gif或mp4，视频可以直接到sd的output\animatediff里找===============================================
 
             # png_payload = {
             #     "image": "data:image/gif;base64," + i
