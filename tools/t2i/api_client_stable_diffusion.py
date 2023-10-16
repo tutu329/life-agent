@@ -544,26 +544,82 @@ class Stable_Diffusion():
             # print(f"txt2img_generator yield: {pnginfo}")
             # yield pnginfo
 
+    # def txt2video(self, in_file_name='gif_output'):
+    #     prompt = deepcopy(self._draw_parameters)
+    #     plugin_animatediff = {
+    #         'args': [{
+    #             # True,           # 正规方式这里应该打开注释，但是这样server生成的png位置不对，生成视频会失败
+    #             'enabled': True,  # 这里其实不对，但是这样写生成视频能成功
+    #         }]
+    #     }
+    #     prompt["alwayson_scripts"]['AnimateDiff'] = plugin_animatediff
+    #
+    #     try:
+    #         print(f'API调用: \t"{self.url}/sdapi/v1/txt2img"')
+    #         response = requests.post(url=f'{self.url}/sdapi/v1/txt2img', json=prompt)
+    #         json_response = response.json()
+    #     except Exception as e:
+    #         print('txt2video() exception: ', e)
+    #
+    #     json_response = response.json()
+    #     num = 0
+    #     print('服务器已返回.')
+    #     # print('json_response: ', json_response)
+    #     for i in json_response['images']:
+    #         num += 1
+    #         # image = Image.open(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
+    #
+    #         print('gif文件长度: ', len(base64.b64decode(i)))
+    #         file = open(in_file_name+'_'+str(num)+'_'+str(uuid.uuid4())+'.gif', 'wb')
+    #         file.write(base64.b64decode(i))
+    #         # file.write(base64.b64decode(i.split(",", 1)[0]))
+    #         file.close()
+    #
+    #         # png_payload = {
+    #         #     "image": "data:image/gif;base64," + i
+    #         # }
+    #         # response2 = requests.post(url=f'{self.url}/sdapi/v1/png-info', json=png_payload)
+    #         #
+    #         # pnginfo = PngImagePlugin.PngInfo()
+    #         # pnginfo.add_text("parameters", response2.json().get("info"))
+    #         # image.save(in_file_name+str(num)+'.gif', pnginfo=pnginfo)
+    #
+    #     if self.restore_face_by_adetailer:
+    #         print('插件AnimateDiff和Adetailer冲突，需要重启SD webui服务，重启约30秒后恢复正常。')
+    #         self.restart_server_by_api()
+
     def txt2video(self, in_file_name='gif_output'):
+        print('===进入txt2video===')
         prompt = deepcopy(self._draw_parameters)
         plugin_animatediff = {
             'args': [{
-                # True,           # 正规方式这里应该打开注释，但是这样server生成的png位置不对，生成视频会失败
-                'enabled': True,  # 这里其实不对，但是这样写生成视频能成功
+                'enable': True,  # enable AnimateDiff
+                'video_length': 16,  # video frame number, 0-24 for v1 and 0-32 for v2
+                'format': ['GIF', 'MP4'],  # 'GIF' | 'MP4' | 'PNG' | 'TXT'
+                'loop_number': 0,  # 0 = infinite loop
+                'fps': 8,  # frames per second
+                'model': 'mm_sd_v15_v2.ckpt',  # motion module name
+                'reverse': [],  # 0 | 1 | 2 - 0: Add Reverse Frame, 1: Remove head, 2: Remove tail
+                # parameters below are for img2gif only.
+                'latent_power': 1,
+                'latent_scale': 32,
+                'last_frame': None,
+                'latent_power_last': 1,
+                'latent_scale_last': 32
             }]
         }
         prompt["alwayson_scripts"]['AnimateDiff'] = plugin_animatediff
 
         try:
-            print(f'API调用: \t"{self.url}/sdapi/v1/txt2img"')
+            print(f'=========API调用: \t"{self.url}/sdapi/v1/txt2img"=========')
             response = requests.post(url=f'{self.url}/sdapi/v1/txt2img', json=prompt)
             json_response = response.json()
         except Exception as e:
-            print('txt2video() exception: ', e)
+            print('========txt2video() exception: ========', e)
 
         json_response = response.json()
         num = 0
-        print('服务器已返回.')
+        print('=====服务器已返回.=====')
         # print('json_response: ', json_response)
         for i in json_response['images']:
             num += 1
@@ -584,14 +640,16 @@ class Stable_Diffusion():
             # pnginfo.add_text("parameters", response2.json().get("info"))
             # image.save(in_file_name+str(num)+'.gif', pnginfo=pnginfo)
 
+        print(f'self.restore_face_by_adetailer: {self.restore_face_by_adetailer}')
         if self.restore_face_by_adetailer:
-            print('插件AnimateDiff和Adetailer冲突，需要重启SD webui服务，重启约30秒后恢复正常。')
+            print('=====插件AnimateDiff和Adetailer冲突，需要重启SD webui服务，重启约30秒后恢复正常。=====')
             self.restart_server_by_api()
 
     def restart_server_by_api(self):
         try:
             print(f'API调用: \t"{self.url}/sdapi/v1/server-restart"')
             res = requests.post(url=f"{self.url}/sdapi/v1/server-restart", json={})
+            print(f'restart_server_by_api() res={res}')
         except Exception as e:
             print('SD webui服务重启中...')
             # print('SD webui服务重启捕获异常: ', e)
@@ -602,7 +660,7 @@ class Stable_Diffusion():
     def quick_start(in_prompt, in_high_quality=False, in_video=False):
         import sys
         if sys.platform.startswith('win'):
-            file_name = 'C:/sd_pics/output'
+            file_name = 'd:/sd_pics/output'
         else:
             file_name = '/Users/tutu/sd_pics/output'
 
@@ -660,6 +718,14 @@ class Stable_Diffusion():
         return img
 
 def main():
+    import os
+    restartable1 = bool(os.environ.get('SD_WEBUI_RESTART'))
+    os.environ['SD_WEBUI_RESTART'] = 'True'
+    restartable2 = bool(os.environ.get('SD_WEBUI_RESTART'))
+    print(f'SD_WEBUI_RESTART: {os.environ.get("SD_WEBUI_RESTART")}')
+    print(f'restartable1: {restartable1}')
+    print(f'restartable2: {restartable2}')
+    # Stable_Diffusion.quick_start('girl, reading, naked', in_high_quality=False, in_video=True)
     Stable_Diffusion.quick_start('girl, reading, naked', in_high_quality=False)
     # Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),High detail RAW color photo,extremely detailed 8k wallpaper,(photo realism:1.3),1girl, (from below:1.3), look straight ahead, smile, (thin waist), (catwalk:1.5), high heels, long shot,  (standing:1.5), full body, pure orange wall background, super model,long slim legs,black hair,(real skin, ultra detailed, 8k, photo realism),random seductive pose,environment light,photon mapping,radiosity,physically-based rendering', in_high_quality=True)
     # # sd = Stable_Diffusion(in_model="dreamshaper_8.safetensors", in_url="http://localhost:5000")
