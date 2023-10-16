@@ -614,16 +614,16 @@ class Stable_Diffusion():
         try:
             print(f'=========API调用: \t"{self.url}/sdapi/v1/txt2img"=========')
             response = requests.post(url=f'{self.url}/sdapi/v1/txt2img', json=prompt)
-            json_response = response.json()
+            # json_response = response.json()
         except Exception as e:
             print('========txt2video() exception: ========', e)
 
-        json_response = response.json()
-        num = 0
         print('=====服务器已返回.=====')
         # print('json_response: ', json_response)
 
         # ==============================目前返回的是16个静态图片而非gif或mp4，视频可以直接到sd的output\animatediff里找===============================================
+        # json_response = response.json()
+        # num = 0
         # for i in json_response['images']:
         #     num += 1
         #     # image = Image.open(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
@@ -658,7 +658,7 @@ class Stable_Diffusion():
             print('SD webui服务重启中...')
             # print('SD webui服务重启捕获异常: ', e)
         import time
-        time.sleep(10)  # 根据经验，大约需要30秒重启时间
+        time.sleep(13)  # 根据经验，大约需要30秒重启时间
 
     @staticmethod
     def quick_start(in_prompt, in_high_quality=False, in_video=False, in_l_size=768, in_s_size=512):
@@ -733,8 +733,8 @@ def main():
             'highest quality,(masterpiece:1.2),extremely detailed 8k wallpaper,(photo realism:1.3),1girl, nipples,topless, (thin waist), white microskirt and hip, stand still, on the beach, white cloud, super model,long slim legs, high heels,black hair,(perfect face, real skin, ultra detailed, 8k, photo realism),(extremely beautiful eyes, blue eyes, ultra detailed, 8k),full body',
             in_high_quality=False,
             in_video=True,
-            in_l_size=1024,
-            in_s_size=768
+            # in_l_size=1024,
+            # in_s_size=768
         )
     # Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),High detail RAW color photo,extremely detailed 8k wallpaper,(photo realism:1.3),1girl, (from below:1.3), look straight ahead, smile, (thin waist), (catwalk:1.5), high heels, long shot,  (standing:1.5), full body, pure orange wall background, super model,long slim legs,black hair,(real skin, ultra detailed, 8k, photo realism),random seductive pose,environment light,photon mapping,radiosity,physically-based rendering', in_high_quality=True)
     # # sd = Stable_Diffusion(in_model="dreamshaper_8.safetensors", in_url="http://localhost:5000")
