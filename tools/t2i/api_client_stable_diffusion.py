@@ -1,6 +1,6 @@
 import json
 import requests
-import io
+import io, os
 import base64
 from PIL import Image, PngImagePlugin, GifImagePlugin
 from copy import deepcopy
@@ -590,6 +590,7 @@ class Stable_Diffusion():
 
     def txt2video(self, in_file_name='gif_output'):
         print('===进入txt2video===')
+        os.environ['SD_WEBUI_RESTART'] = 'True' # 用于重启sd webui
         prompt = deepcopy(self._draw_parameters)
         plugin_animatediff = {
             'args': [{
@@ -645,7 +646,7 @@ class Stable_Diffusion():
 
         print(f'self.restore_face_by_adetailer: {self.restore_face_by_adetailer}')
         if self.restore_face_by_adetailer:
-            print('=====插件AnimateDiff和Adetailer冲突，需要重启SD webui服务，重启约30秒后恢复正常。=====')
+            print('=====插件AnimateDiff和Adetailer冲突，需要重启SD webui服务，重启约10秒后恢复正常。=====')
             self.restart_server_by_api()
 
     def restart_server_by_api(self):
@@ -657,7 +658,7 @@ class Stable_Diffusion():
             print('SD webui服务重启中...')
             # print('SD webui服务重启捕获异常: ', e)
         import time
-        time.sleep(30)  # 根据经验，大约需要30秒重启时间
+        time.sleep(10)  # 根据经验，大约需要30秒重启时间
 
     @staticmethod
     def quick_start(in_prompt, in_high_quality=False, in_video=False):
@@ -721,14 +722,14 @@ class Stable_Diffusion():
         return img
 
 def main():
-    import os
-    restartable1 = bool(os.environ.get('SD_WEBUI_RESTART'))
-    os.environ['SD_WEBUI_RESTART'] = 'True'
-    restartable2 = bool(os.environ.get('SD_WEBUI_RESTART'))
-    print(f'SD_WEBUI_RESTART: {os.environ.get("SD_WEBUI_RESTART")}')
-    print(f'restartable1: {restartable1}')
-    print(f'restartable2: {restartable2}')
-    Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),extremely detailed 8k wallpaper,(photo realism:1.3),1girl, nipples,topless, (thin waist), white microskirt and hip, stand still, on the beach, white cloud, super model,long slim legs, high heels,black hair,(perfect face, real skin, ultra detailed, 8k, photo realism),(extremely beautiful eyes, blue eyes, ultra detailed, 8k),full body', in_high_quality=False, in_video=True)
+    # restartable1 = bool(os.environ.get('SD_WEBUI_RESTART'))
+    # os.environ['SD_WEBUI_RESTART'] = 'True'
+    # restartable2 = bool(os.environ.get('SD_WEBUI_RESTART'))
+    # print(f'SD_WEBUI_RESTART: {os.environ.get("SD_WEBUI_RESTART")}')
+    # print(f'restartable1: {restartable1}')
+    # print(f'restartable2: {restartable2}')
+    while True:
+        Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),extremely detailed 8k wallpaper,(photo realism:1.3),1girl, nipples,topless, (thin waist), white microskirt and hip, stand still, on the beach, white cloud, super model,long slim legs, high heels,black hair,(perfect face, real skin, ultra detailed, 8k, photo realism),(extremely beautiful eyes, blue eyes, ultra detailed, 8k),full body', in_high_quality=False, in_video=True)
     # Stable_Diffusion.quick_start('highest quality,(masterpiece:1.2),High detail RAW color photo,extremely detailed 8k wallpaper,(photo realism:1.3),1girl, (from below:1.3), look straight ahead, smile, (thin waist), (catwalk:1.5), high heels, long shot,  (standing:1.5), full body, pure orange wall background, super model,long slim legs,black hair,(real skin, ultra detailed, 8k, photo realism),random seductive pose,environment light,photon mapping,radiosity,physically-based rendering', in_high_quality=True)
     # # sd = Stable_Diffusion(in_model="dreamshaper_8.safetensors", in_url="http://localhost:5000")
     # sd = Stable_Diffusion(in_model="awportrait_v11.safetensors", in_url="http://localhost:5000")
