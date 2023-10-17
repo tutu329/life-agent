@@ -1,6 +1,6 @@
 from tools.llm.api_client_qwen_openai import *
 import openai
-openai.api_base = "http://116.62.63.204:8000/v1"
+openai.api_base = "http://116.62.63.204:8001/v1"
 
 from docx import Document
 # llm = LLM_Qwen()
@@ -42,9 +42,12 @@ class LLM_Doc():
 
     def win32_close_file(self):
         if self.win32_doc:
-            self.win32_doc_app.Documents.Close(self.doc_name)
+            try:
+                self.win32_doc_app.Documents.Close(self.doc_name)
+            except Exception as e:
+                print(f'关闭文件"{self.doc_name}"出错: {e}')
 
-    def __get_paragraphs_generator_for_docx_file(self):
+    def get_paras(self):
         try:
             doc = Document(self.doc_name)
         except Exception as e:
@@ -64,7 +67,7 @@ class LLM_Doc():
 
         ii = 0
         result_list = []
-        for para in self.__get_paragraphs_generator_for_docx_file():
+        for para in self.get_paras():
             ii += 1
             # print(f"正在分析第{ii}个段落...")
 
@@ -91,8 +94,14 @@ class LLM_Doc():
 # 3) how do you want to be addressed?
 # 4) should llm have opinions on topics or remain neutral?
 # ============================关于角色提示============================
-def main():
-    llm = LLM_Qwen(url='http://116.62.63.204:8000/v1', history=False, history_max_turns=50, history_clear_method='pop', temperature=0.9)
+def main1():
+    llm = LLM_Qwen(
+        url='http://116.62.63.204:8001/v1',
+        history=False,
+        history_max_turns=50,
+        history_clear_method='pop',
+        temperature=0.9,
+    )
     role_prompt = '你是一位汉字专家。你需要找出user提供给你的文本中的所有错别字，并给出修改意见。'
     example_prompts = [
         '例如，user发送给你的文字中有单个字的笔误："你是我的好彭友，我们明天粗去玩吧？"，你要指出"彭"应为"朋"、"粗"应为"出"。',
@@ -118,6 +127,28 @@ def main():
         jj += 1
         print(f'第{jj}段检查结果：\n {item}')
 
+def main():
+    llm = LLM_Qwen(
+        url='http://116.62.63.204:8001/v1',
+        history=False,
+        history_max_turns=50,
+        history_clear_method='pop',
+        temperature=0.9,
+    )
+    file = 'd:/server/life-agent/tools/doc/错别字案例.docx'
+    doc = LLM_Doc(file)
+    doc.win32com_init()
+    print(f'===文档: {file}===')
+    for para in doc.get_paras():
+        print(para)
+    doc.win32_close_file()
 
 if __name__ == "__main__":
     main()
+
+
+# 若win32com打开word文件报错：AttributeError: module 'win32com.gen_py.00020905-0000-0000-C000-000000000046x0x8x7' has no attribute 'CLSIDToClassMap'
+# 则删除目录C:\Users\tutu\AppData\Local\Temp\gen_py\3.10中的对应缓存文件夹00020905-0000-0000-C000-000000000046x0x8x7即可
+
+# doc.win32_close_file()若报错：pywintypes.com_error: (-2147352567, '发生意外。', (0, 'Microsoft Word', '类型不匹配', 'wdmain11.chm', 36986, -2146824070), None)
+# 很可能是和wps有关，据说卸载word，win32.gencache.EnsureDispatch('Word.Application')会成功调用wps
