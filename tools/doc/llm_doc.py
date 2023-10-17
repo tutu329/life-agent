@@ -29,7 +29,7 @@ class Image_Part():
     height: int
 
 @dataclass
-class Node_Data():
+class Doc_Node_Data():
     level: int
     name: str
     text: str
@@ -46,7 +46,7 @@ class LLM_Doc():
         self.win32_constant = None
 
         self.doc = None
-        self.doc_tree = None
+        self.doc_root = None
 
         try:
             self.doc = Document(self.doc_name)
@@ -80,12 +80,19 @@ class LLM_Doc():
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
     # 将doc解析为层次结构，每一级标题（容器）下都有text、image等对象
-    def parse_all_docx(self, inout_doc_tree, in_doc):
-        inout_doc_tree = {
-            'node':{},
-            'container':{}
-        }
+    def parse_all_docx(self, in_doc):
+        # 处理root
+        self.doc_root = Hierarchy_Node(Doc_Node_Data(0, 'root', 'root_no_text', None))
 
+        # 递归遍历doc的函数
+        # def doc_traverse():
+        #     if 标题:
+        #         node = add_node()
+        #         doc_traverse(node)
+        #     elif 内容:
+        #         pass
+
+        # 递归遍历doc
         for para in in_doc.paragraphs:
             style = para.style.name                 # "Heading 1"
             toc_name  = style.split(' ')[0]         # 标题 "Heading
@@ -264,35 +271,7 @@ class Color(Enum):
     blue=auto()
 
 if __name__ == "__main__":
-    root = Hierarchy_Node(Node_Data(0, '0', 'aaa', None))
-    node_1 = Hierarchy_Node(Node_Data(1, '1', 'abc', None))
-    node_1_1 = Hierarchy_Node(Node_Data(2, '1.1', 'cde', None))
-    node_1_2 = Hierarchy_Node(Node_Data(2, '1.2', 'fea', None))
-
-    node_2 = Hierarchy_Node(Node_Data(1, '2', 'abc', None))
-    node_2_1 = Hierarchy_Node(Node_Data(2, '2.1', 'fhn', None))
-    node_2_2 = Hierarchy_Node(Node_Data(2, '2.2', 'hww', None))
-
-    root.add_child(node_1)
-    root.add_child(node_2)
-    node_1.add_child(node_1_1)
-    node_1.add_child(node_1_2)
-    node_2.add_child(node_2_1)
-    node_2.add_child(node_2_2)
-
-    print(root)
-    print(node_1)
-    print(node_1_1)
-    print(node_1_2)
-    print(node_2)
-    print(node_2_1)
-    print(node_2_2)
-    print('='*80)
-
-    res = root.traverse('2.1')
-    print(f'res: {res}')
-
-    # main_image()
+    main_image()
 
     # print(f'color: {Color(1)}')
     # print(f'color: {Color.blue}')

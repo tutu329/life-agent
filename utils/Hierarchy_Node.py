@@ -6,11 +6,6 @@ class _test_node_data():
     name: str
     text: str
 
-class _test():
-    level = 1
-    name =2
-    text=3
-
 class Hierarchy_Node:
     def __init__(self, node_data):
         self.node_data = node_data
@@ -29,16 +24,16 @@ class Hierarchy_Node:
     def add_child(self, child):
         self.children.append(child)
 
-    def traverse(self, in_node_name):
+    def find(self, in_node_name):
         print(f'进入节点: {self.node_data.name}')
         if self.node_data.name == in_node_name:
             print(f'--------找到了node: {self.node_data.name}---------')
-            return self.node_data
+            return self # 返回所找到的node对象
 
         if self.children:
             print(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
         for child in self.children:
-            res = child.traverse(in_node_name)
+            res = child.find(in_node_name)
             if res is not None:
                 return res
         return None
@@ -69,18 +64,8 @@ def main():
     print(node_2_2)
     print('=' * 80)
 
-    res = root.traverse('1.2')
+    res = root.find('1.2')
     print(f'res: {res}')
-
-    # a = [attr for attr in dir(Hierarchy_Node) if not callable(getattr(Hierarchy_Node, attr)) and not attr.startswith("__")]
-    # print(root)
-    #
-    # members = type(node_2_2.node_data).__annotations__
-    # string = []
-    # for k,v in members.items():
-    #     string.append(k + ': ' + str(getattr(node_2_2.node_data, k)))
-    # print(', '.join(string))
-
 
 if __name__ == "__main__":
     main()
