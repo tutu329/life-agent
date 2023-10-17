@@ -25,7 +25,7 @@ class Hierarchy_Node:
         self.children.append(child)
 
     def find(self, in_node_name):
-        print(f'进入节点: {self.node_data.name}')
+        print(f'查找节点: {self.node_data.name}')
         if self.node_data.name == in_node_name:
             print(f'--------找到了node: {self.node_data.name}---------')
             return self # 返回所找到的node对象

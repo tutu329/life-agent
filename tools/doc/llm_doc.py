@@ -80,29 +80,94 @@ class LLM_Doc():
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
     # 将doc解析为层次结构，每一级标题（容器）下都有text、image等对象
-    def parse_all_docx(self, in_doc):
+    def parse_all_docx(self):
+        # 获取上一级的name，如'1.1.3'的上一级为'1.1', '1'的上一级为'root'
+        def find_parent_node(in_node_name):
+            print(f'================查找节点"{in_node_name}"的父节点', end='')
+            if len(in_node_name.split('.')) == 1:
+                parent_name = 'root'
+                print(f'"{parent_name}"========')
+                return self.doc_root.find(parent_name)
+            else:
+                # name_list = in_node_name.split('.')
+                # name_list.pop()
+                # parent_name = '.'.join(name_list)
+                # print(f'"{parent_name}"========')
+                # return self.doc_root.find(parent_name)
+
+                name_list = in_node_name.split('.')
+                while True:
+                    # 循环pop()，直到找到parent_node，例如3.4后面突然出现3.4.1.1，这时候的parent_node就3.4而不是3.4.1
+                    name_list.pop()
+                    parent_name = '.'.join(name_list)
+                    print(f'"{parent_name}"========')
+                    node = self.doc_root.find(parent_name)
+                    if node:
+                        return node
+
         # 处理root
         self.doc_root = Hierarchy_Node(Doc_Node_Data(0, 'root', 'root_no_text', None))
 
-        # 递归遍历doc的函数
-        # def doc_traverse():
-        #     if 标题:
-        #         node = add_node()
-        #         doc_traverse(node)
-        #     elif 内容:
-        #         pass
+        current_node = self.doc_root
+        current_node_name = 'root'
+        current_level = 0
 
         # 递归遍历doc
-        for para in in_doc.paragraphs:
-            style = para.style.name                 # "Heading 1"
-            toc_name  = style.split(' ')[0]         # 标题 "Heading
+        for para in self.doc.paragraphs:
+            style = para.style.name                     # "Heading 1"
+            style_name  = style.split(' ')[0]           # 标题 "Heading
 
-            if toc_name=='Heading':
-                # 增加新的层级
-                toc_level = int(style.split(' ')[1])    # 标题级别 1
+            if style_name=='Heading':
+                # 标题
+                new_level = int(style.split(' ')[1])    # 标题级别 1
+
+                # 计算current_node_name, 如：'1.1.1'或'1.2'
+                if current_node_name=='root':
+                    current_node_name = '.'.join(['1']*new_level)   # 1级为'1', 如果直接为2级就是'1.1'
+                else:
+                    if new_level == current_level:
+                        print(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        print(f'new_level: {new_level}')
+                        print(f'current_level: {current_level}')
+                        # ‘1.1.1’变为'1.1.2'
+                        new_node_list = current_node_name.split('.')  # ['1', '1', '1']
+                        last_num = int(new_node_list[-1]) + 1  # 2
+                        new_node_list.pop()  # ['1', '1']
+                        current_node_name = '.'.join(new_node_list) + '.' + str(last_num)  # '1.1.2'
+                        # current_node_name = current_node_name[:-1] + str(int(current_node_name[-1])+1)
+                    elif new_level > current_level:
+                        print(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        print(f'new_level: {new_level}')
+                        print(f'current_level: {current_level}')
+                        # ‘1.1.1’变为'1.1.1.1.1'
+                        current_node_name += '.' + '.'.join(['1']*(new_level-current_level))
+                    elif new_level < current_level:
+                        print(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        print(f'new_level: {new_level}')
+                        print(f'current_level: {current_level}')
+                        # ‘1.1.1’变为'1.2' 或 ‘1.1.1’变为'2'
+                        new_node_list = current_node_name.split('.')    # ['1', '1', '1']
+                        for i in range(current_level-new_level):
+                            new_node_list.pop()                         # ['1', '1']
+                        last_num = int(new_node_list[-1]) +1                      # 2
+                        new_node_list.pop()                             # ['1']
+                        if len(new_node_list)>0:
+                            current_node_name = '.'.join(new_node_list) + '.' + str(last_num)   # '1.2'
+                        else:
+                            current_node_name = str(last_num)
+                        # current_node_name = current_node_name[:-1-2*(current_level-new_level)] + str(int(current_node_name[-1-2*(current_level-new_level)])+1)
+                current_level = new_level
+
+                # 找到parent节点，并添加new_node
+                new_node = Hierarchy_Node(Doc_Node_Data(current_level, current_node_name, para.text, None))
+                parent_node = find_parent_node(current_node_name)
+                parent_node.add_child(new_node)
+
+                # 刷新current状态
+                current_node = new_node
             else:
-                # text、image等元素
-                pass
+                # 内容(text、image等元素)
+                current_node.node_data.text += para.text
 
     def get_para_inline_images(self, in_para):
         image = {
@@ -255,14 +320,20 @@ def main_image():
     #     print(f'image: {image.type}')
         # print(f'image: {docx.enum.shape.WD_INLINE_SHAPE(3)}')
         # print(docx.enum.shape.WD_INLINE_SHAPE.PICTURE)
-    for image in doc.get_all_inline_images():
-        print(', '.join([
-            f'image name: {image["name"]}',
-            f'image size: {len(image["data"])}',
-            f'image width: {image["width"]}',
-            f'image height: {image["height"]}'
-        ]))
 
+    # for image in doc.get_all_inline_images():
+    #     print(', '.join([
+    #         f'image name: {image["name"]}',
+    #         f'image size: {len(image["data"])}',
+    #         f'image width: {image["width"]}',
+    #         f'image height: {image["height"]}'
+    #     ]))
+
+    doc.parse_all_docx()
+    # res = doc.doc_root.find('2')
+    # res = doc.doc_root.find('9')
+    res = doc.doc_root.find('8.1.3')
+    print(f'res: {res}')
 
 # Color枚举类
 class Color(Enum):
