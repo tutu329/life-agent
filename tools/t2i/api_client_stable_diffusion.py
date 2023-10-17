@@ -658,7 +658,7 @@ class Stable_Diffusion():
             print('SD webui服务重启中...')
             # print('SD webui服务重启捕获异常: ', e)
         import time
-        time.sleep(13)  # 根据经验，大约需要30秒重启时间
+        time.sleep(15)  # 根据经验，大约需要30秒重启时间
 
     @staticmethod
     def quick_start(in_prompt, in_high_quality=False, in_video=False, in_l_size=768, in_s_size=512):
