@@ -730,7 +730,8 @@ def main():
     # print(f'restartable2: {restartable2}')
     while True:
         Stable_Diffusion.quick_start(
-            'highest quality,(masterpiece:1.2),extremely detailed 8k wallpaper,(photo realism:1.3),1girl, nipples,topless, (thin waist), white microskirt and hip, stand still, on the beach, white cloud, super model,long slim legs, high heels,black hair,(perfect face, real skin, ultra detailed, 8k, photo realism),(extremely beautiful eyes, blue eyes, ultra detailed, 8k),full body',
+            'highest quality,(masterpiece:1.2),High detail RAW color photo,extremely detailed 8k wallpaper,(photo realism:1.3),1girl, (from below:1.3), look straight ahead, smile, (thin waist), (catwalk:1.5), high heels, long shot,  (standing:1.5), full body, pure orange wall background, super model,long slim legs,black hair,(real skin, ultra detailed, 8k, photo realism),random seductive pose,environment light,photon mapping,radiosity,physically-based rendering',
+            # 'highest quality,(masterpiece:1.2),extremely detailed 8k wallpaper,(photo realism:1.3),1girl, nipples,topless, (thin waist), white microskirt and hip, stand still, on the beach, white cloud, super model,long slim legs, high heels,black hair,(perfect face, real skin, ultra detailed, 8k, photo realism),(extremely beautiful eyes, blue eyes, ultra detailed, 8k),full body',
             in_high_quality=False,
             in_video=True,
             # in_l_size=1024,
