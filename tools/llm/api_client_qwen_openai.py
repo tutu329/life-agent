@@ -317,6 +317,7 @@ class LLM_Qwen():
         self.url = url
         self.gen = None     # 返回结果的generator
         self.temperature = temperature
+        # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
 
         # 记忆相关
         self.history_list = []
@@ -475,6 +476,7 @@ class LLM_Qwen():
         gen = openai.ChatCompletion.create(
             model="Qwen",
             temperature=self.temperature,
+            # top_k=self.top_k,
             messages=msgs,
             stream=True,
             max_tokens=2048,
@@ -678,8 +680,8 @@ def main_vl():
     vl.create_image_with_boxes(output_file_name = 'D:\\server\\static\\box.jpg',)
 
 if __name__ == "__main__" :
-    # main()
-    main_vl()
+    main()
+    # main_vl()
 
 # create a request activating streaming response
 # for chunk in openai.ChatCompletion.create(

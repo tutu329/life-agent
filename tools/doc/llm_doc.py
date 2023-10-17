@@ -1,9 +1,14 @@
+import copy
+
 from tools.llm.api_client_qwen_openai import *
 import openai
 openai.api_base = "http://116.62.63.204:8001/v1"
 
+import docx
 from docx import Document
 # llm = LLM_Qwen()
+
+from enum import Enum, auto
 
 def is_win():
     import platform
@@ -13,6 +18,7 @@ def is_win():
     else:
         return False
 
+# LLM_Doc：采用python-docx解析文档，采用win32com解决页码问题
 class LLM_Doc():
     def __init__(self, in_file_name):
         self.doc_name = in_file_name
@@ -20,6 +26,13 @@ class LLM_Doc():
         self.win32_doc = None
         self.win32_doc_app = None
         self.win32_constant = None
+
+        self.doc = None
+
+        try:
+            self.doc = Document(self.doc_name)
+        except Exception as e:
+            print(f'文件"{self.doc_name}" 未找到。')
         
     def win32com_init(self):
         print(f'win32尝试打开文件"{self.doc_name}"')
@@ -47,14 +60,39 @@ class LLM_Doc():
             except Exception as e:
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
-    def get_paras(self):
-        try:
-            doc = Document(self.doc_name)
-        except Exception as e:
-            print(f'文件"{self.doc_name}" 未找到。')
-            return None
+    def get_inline_images(self):
+        image = {
+            'name':'',
+            'data':None,
+        }
+        images_list = []
 
-        for para in doc.paragraphs:
+        # 打印ImagePart的成员函数
+        # for item in dir(docx.parts.image.ImagePart):
+        #     print(item)
+
+        # 这一段由python-docx库的issue中网友mfripp提供：https://github.com/python-openxml/python-docx/issues/249
+        for para in self.doc.paragraphs:
+            for run in para.runs:
+                for inline in run._r.xpath("w:drawing/wp:inline"):
+                    width = float(inline.extent.cx)  # in EMUs https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/
+                    height = float(inline.extent.cy)
+                    if inline.graphic.graphicData.pic is not None:
+                        rId = inline.graphic.graphicData.pic.blipFill.blip.embed
+                        image_part = self.doc.part.related_parts[rId]
+                        filename = image_part.filename      # 文件名称(其实是类型), 如"image.wmf"
+                        bytes_of_image = image_part.blob    # 文件数据(bytes)
+                        image['name'] = filename
+                        image['data'] = bytes_of_image
+                        images_list.append(copy.deepcopy(image))
+
+                        # print(f'image_part:{image_part}, width:{width}, height:{height}, rId: {rId}, image:{image}, filename:{filename}')
+                        # with open('a.wmf', 'wb') as f:  # make a copy in the local dir
+                        #     f.write(bytes_of_image)
+        return images_list
+
+    def get_paras(self):
+        for para in self.doc.paragraphs:
             yield para.text
 
     # 检查某doc文档所有para的错别词
@@ -127,7 +165,7 @@ def main1():
         jj += 1
         print(f'第{jj}段检查结果：\n {item}')
 
-def main():
+def main_toc():
     llm = LLM_Qwen(
         url='http://116.62.63.204:8001/v1',
         history=False,
@@ -153,8 +191,29 @@ def main():
     #     print(para)
     # doc.win32_close_file()
 
+def main():
+    file = 'd:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx'
+    doc = LLM_Doc(file)
+    # for para in doc.get_paras():
+    #     print(para)
+    # for image in doc.doc.inline_shapes:
+    #     print(f'image: {image.type}')
+        # print(f'image: {docx.enum.shape.WD_INLINE_SHAPE(3)}')
+        # print(docx.enum.shape.WD_INLINE_SHAPE.PICTURE)
+    for image in doc.get_inline_images():
+        print(f'image name: {image["name"]}')
+        print(f'image size: {len(image["data"])}')
+
+# Color枚举类
+class Color(Enum):
+    red=auto()
+    green=auto()
+    blue=auto()
+
 if __name__ == "__main__":
     main()
+    # print(f'color: {Color(1)}')
+    # print(f'color: {Color.blue}')
 
 
 # 若win32com打开word文件报错：AttributeError: module 'win32com.gen_py.00020905-0000-0000-C000-000000000046x0x8x7' has no attribute 'CLSIDToClassMap'
