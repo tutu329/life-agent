@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import copy
 
 from tools.llm.api_client_qwen_openai import *
@@ -18,6 +19,52 @@ def is_win():
     else:
         return False
 
+# =========================================管理doc的层次化递归数据结构=================================================
+
+@dataclass
+class Image_Part():
+    name: str
+    data: str
+    width: int
+    height: int
+
+@dataclass
+class Node_Data():
+    level: int
+    name: str
+    text: str
+    image: Image_Part
+
+class Doc_Node:
+    def __init__(self, node_data):
+        self.node_data = node_data
+        self.children = []
+
+    def add_child(self, child):
+        self.children.append(child)
+
+class Doc_Hierarchical_Data:
+    def __init__(self):
+        self.root = Doc_Node(None)
+
+    def add_node(self, node_data):
+        if not self.root.children:
+            self.root.node_data = node_data
+        else:
+            current_node = self.root
+            child_node = Doc_Node(node_data)
+            current_node.add_child(child_node)
+            current_node = child_node
+
+    def print_tree(self):
+        def print_node(node):
+            print(f"node_data: {node.node_data}")
+            for child in node.children:
+                print_node(child)
+
+        print_node(self.root)
+# =========================================管理doc的层次化递归数据结构=================================================
+
 # LLM_Doc：采用python-docx解析文档，采用win32com解决页码问题
 class LLM_Doc():
     def __init__(self, in_file_name):
@@ -28,6 +75,7 @@ class LLM_Doc():
         self.win32_constant = None
 
         self.doc = None
+        self.doc_tree = None
 
         try:
             self.doc = Document(self.doc_name)
@@ -60,10 +108,30 @@ class LLM_Doc():
             except Exception as e:
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
-    def get_inline_images(self):
+    # 将doc解析为层次结构，每一级标题（容器）下都有text、image等对象
+    def parse_all_docx(self, inout_doc_tree, in_doc):
+        inout_doc_tree = {
+            'node':{},
+            'container':{}
+        }
+
+        for para in in_doc.paragraphs:
+            style = para.style.name                 # "Heading 1"
+            toc_name  = style.split(' ')[0]         # 标题 "Heading
+
+            if toc_name=='Heading':
+                # 增加新的层级
+                toc_level = int(style.split(' ')[1])    # 标题级别 1
+            else:
+                # text、image等元素
+                pass
+
+    def get_para_inline_images(self, in_para):
         image = {
             'name':'',
             'data':None,
+            'width':0,
+            'height':0,
         }
         images_list = []
 
@@ -72,23 +140,32 @@ class LLM_Doc():
         #     print(item)
 
         # 这一段由python-docx库的issue中网友mfripp提供：https://github.com/python-openxml/python-docx/issues/249
-        for para in self.doc.paragraphs:
-            for run in para.runs:
-                for inline in run._r.xpath("w:drawing/wp:inline"):
-                    width = float(inline.extent.cx)  # in EMUs https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/
-                    height = float(inline.extent.cy)
-                    if inline.graphic.graphicData.pic is not None:
-                        rId = inline.graphic.graphicData.pic.blipFill.blip.embed
-                        image_part = self.doc.part.related_parts[rId]
-                        filename = image_part.filename      # 文件名称(其实是类型), 如"image.wmf"
-                        bytes_of_image = image_part.blob    # 文件数据(bytes)
-                        image['name'] = filename
-                        image['data'] = bytes_of_image
-                        images_list.append(copy.deepcopy(image))
+        for run in in_para.runs:
+            for inline in run._r.xpath("w:drawing/wp:inline"):
+                width = float(inline.extent.cx)  # in EMUs https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/
+                height = float(inline.extent.cy)
+                if inline.graphic.graphicData.pic is not None:
+                    rId = inline.graphic.graphicData.pic.blipFill.blip.embed
+                    image_part = self.doc.part.related_parts[rId]
+                    filename = image_part.filename      # 文件名称(其实是类型), 如"image.wmf"
+                    bytes_of_image = image_part.blob    # 文件数据(bytes)
+                    image['name'] = filename
+                    image['data'] = bytes_of_image
+                    image['width'] = width
+                    image['height'] = height
+                    images_list.append(copy.deepcopy(image))
 
-                        # print(f'image_part:{image_part}, width:{width}, height:{height}, rId: {rId}, image:{image}, filename:{filename}')
-                        # with open('a.wmf', 'wb') as f:  # make a copy in the local dir
-                        #     f.write(bytes_of_image)
+                    # print(f'image_part:{image_part}, width:{width}, height:{height}, rId: {rId}, image:{image}, filename:{filename}')
+                    # with open('a.wmf', 'wb') as f:  # make a copy in the local dir
+                    #     f.write(bytes_of_image)
+        return images_list
+
+
+    def get_all_inline_images(self):
+        images_list = []
+
+        for para in self.doc.paragraphs:
+            images_list += self.get_para_inline_images(para)
         return images_list
 
     def get_paras(self):
@@ -191,7 +268,7 @@ def main_toc():
     #     print(para)
     # doc.win32_close_file()
 
-def main():
+def main_image():
     file = 'd:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx'
     doc = LLM_Doc(file)
     # for para in doc.get_paras():
@@ -200,9 +277,14 @@ def main():
     #     print(f'image: {image.type}')
         # print(f'image: {docx.enum.shape.WD_INLINE_SHAPE(3)}')
         # print(docx.enum.shape.WD_INLINE_SHAPE.PICTURE)
-    for image in doc.get_inline_images():
-        print(f'image name: {image["name"]}')
-        print(f'image size: {len(image["data"])}')
+    for image in doc.get_all_inline_images():
+        print(', '.join([
+            f'image name: {image["name"]}',
+            f'image size: {len(image["data"])}',
+            f'image width: {image["width"]}',
+            f'image height: {image["height"]}'
+        ]))
+
 
 # Color枚举类
 class Color(Enum):
@@ -211,7 +293,7 @@ class Color(Enum):
     blue=auto()
 
 if __name__ == "__main__":
-    main()
+    main_image()
     # print(f'color: {Color(1)}')
     # print(f'color: {Color.blue}')
 
