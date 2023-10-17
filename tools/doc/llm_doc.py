@@ -135,13 +135,23 @@ def main():
         history_clear_method='pop',
         temperature=0.9,
     )
-    file = 'd:/server/life-agent/tools/doc/错别字案例.docx'
-    doc = LLM_Doc(file)
-    doc.win32com_init()
-    print(f'===文档: {file}===')
-    for para in doc.get_paras():
-        print(para)
-    doc.win32_close_file()
+    file = 'd:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx'
+    import docx
+    doc = docx.Document(file)
+    for para in doc.paragraphs:
+        if para.style.name=="Heading 1":
+            print(para.text)
+        if para.style.name=="Heading 2":
+            print('\t'+para.text)
+        if para.style.name=="Heading 3":
+            print('\t\t'+para.text)
+        # if para.style.name=="Heading 4":
+        #     print('\t\t\t'+para.text)
+    # doc = LLM_Doc(file)
+    # doc.win32com_init()
+    # for para in doc.get_paras():
+    #     print(para)
+    # doc.win32_close_file()
 
 if __name__ == "__main__":
     main()
