@@ -20,6 +20,7 @@ def is_win():
         return False
 
 # =========================================管理doc的层次化递归数据结构=================================================
+from utils.Hierarchy_Node import Hierarchy_Node
 @dataclass
 class Image_Part():
     name: str
@@ -33,36 +34,6 @@ class Node_Data():
     name: str
     text: str
     image: Image_Part
-
-class Doc_Node:
-    def __init__(self, node_data):
-        self.node_data = node_data
-        self.children = []
-
-    def __str__(self):
-        return ', '.join([
-            'level: ' + str(self.node_data.level),
-            'name: ' + self.node_data.name,
-            'text: ' + self.node_data.text,
-            'children: [' + ', '.join([child.node_data.name for child in self.children]) + ']',
-        ])
-
-    def add_child(self, child):
-        self.children.append(child)
-
-    def traverse(self, in_node_name):
-        print(f'进入节点: {self.node_data.name}')
-        if self.node_data.name == in_node_name:
-            print(f'--------找到了node: {self.node_data.name}---------')
-            return self.node_data
-
-        if self.children:
-            print(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
-        for child in self.children:
-            res = child.traverse(in_node_name)
-            if res is not None:
-                return res
-        return None
 # =========================================管理doc的层次化递归数据结构=================================================
 
 # LLM_Doc：采用python-docx解析文档，采用win32com解决页码问题
@@ -293,14 +264,14 @@ class Color(Enum):
     blue=auto()
 
 if __name__ == "__main__":
-    root = Doc_Node(Node_Data(0, '0', 'aaa', None))
-    node_1 = Doc_Node(Node_Data(1, '1', 'abc', None))
-    node_1_1 = Doc_Node(Node_Data(2, '1.1', 'cde', None))
-    node_1_2 = Doc_Node(Node_Data(2, '1.2', 'fea', None))
+    root = Hierarchy_Node(Node_Data(0, '0', 'aaa', None))
+    node_1 = Hierarchy_Node(Node_Data(1, '1', 'abc', None))
+    node_1_1 = Hierarchy_Node(Node_Data(2, '1.1', 'cde', None))
+    node_1_2 = Hierarchy_Node(Node_Data(2, '1.2', 'fea', None))
 
-    node_2 = Doc_Node(Node_Data(1, '2', 'abc', None))
-    node_2_1 = Doc_Node(Node_Data(2, '2.1', 'fhn', None))
-    node_2_2 = Doc_Node(Node_Data(2, '2.2', 'hww', None))
+    node_2 = Hierarchy_Node(Node_Data(1, '2', 'abc', None))
+    node_2_1 = Hierarchy_Node(Node_Data(2, '2.1', 'fhn', None))
+    node_2_2 = Hierarchy_Node(Node_Data(2, '2.2', 'hww', None))
 
     root.add_child(node_1)
     root.add_child(node_2)
