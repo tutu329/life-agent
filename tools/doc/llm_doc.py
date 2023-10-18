@@ -11,6 +11,12 @@ from docx import Document
 
 from enum import Enum, auto
 
+
+LLM_Doc_DEBUG = False
+def dprint(*args, **kwargs):
+    if LLM_Doc_DEBUG:
+        print(*args, **kwargs)
+
 def is_win():
     import platform
     sys_platform = platform.platform().lower()
@@ -39,14 +45,15 @@ class Doc_Node_Data():
 # LLM_Doc：采用python-docx解析文档，采用win32com解决页码问题
 class LLM_Doc():
     def __init__(self, in_file_name):
-        self.doc_name = in_file_name
+        self.doc_name = in_file_name    # 文件名
 
         self.win32_doc = None
         self.win32_doc_app = None
         self.win32_constant = None
 
-        self.doc = None
-        self.doc_root = None
+        self.doc = None                 # Document对象
+        self.doc_root = None            # 存放doc层次化数据
+        self.doc_root_parsed = False    # 是否已经解析为层次化数据
 
         try:
             self.doc = Document(self.doc_name)
@@ -79,14 +86,30 @@ class LLM_Doc():
             except Exception as e:
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
+    # 遍历输出整个doc_root
+    def print_doc_root(self, in_node=None):
+        if in_node is None:
+            node = self.doc_root
+        else:
+            node = in_node
+
+        node_level = node.node_data.level
+        node_name = node.node_data.name
+        node_content = node.node_data.text
+        print(f'{"-"*node_level}{node_name}{"-"*(80-node_level-len(node_name))}')
+        print(f'{node_content}')
+
+        for child in node.children:
+            self.print_doc_root(child)
+
     # 将doc解析为层次结构，每一级标题（容器）下都有text、image等对象
     def parse_all_docx(self):
         # 获取上一级的name，如'1.1.3'的上一级为'1.1', '1'的上一级为'root'
         def find_parent_node(in_node_name):
-            print(f'================查找节点"{in_node_name}"的父节点', end='')
+            dprint(f'================查找节点"{in_node_name}"的父节点', end='')
             if len(in_node_name.split('.')) == 1:
                 parent_name = 'root'
-                print(f'"{parent_name}"========')
+                dprint(f'"{parent_name}"========')
                 return self.doc_root.find(parent_name)
             else:
                 # name_list = in_node_name.split('.')
@@ -100,7 +123,7 @@ class LLM_Doc():
                     # 循环pop()，直到找到parent_node，例如3.4后面突然出现3.4.1.1，这时候的parent_node就3.4而不是3.4.1
                     name_list.pop()
                     parent_name = '.'.join(name_list)
-                    print(f'"{parent_name}"========')
+                    dprint(f'"{parent_name}"========')
                     node = self.doc_root.find(parent_name)
                     if node:
                         return node
@@ -126,9 +149,9 @@ class LLM_Doc():
                     current_node_name = '.'.join(['1']*new_level)   # 1级为'1', 如果直接为2级就是'1.1'
                 else:
                     if new_level == current_level:
-                        print(f'----------------------------current_node_name: {current_node_name}----------------------------')
-                        print(f'new_level: {new_level}')
-                        print(f'current_level: {current_level}')
+                        dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        dprint(f'new_level: {new_level}')
+                        dprint(f'current_level: {current_level}')
                         # ‘1.1.1’变为'1.1.2'
                         new_node_list = current_node_name.split('.')  # ['1', '1', '1']
                         last_num = int(new_node_list[-1]) + 1  # 2
@@ -136,15 +159,15 @@ class LLM_Doc():
                         current_node_name = '.'.join(new_node_list) + '.' + str(last_num)  # '1.1.2'
                         # current_node_name = current_node_name[:-1] + str(int(current_node_name[-1])+1)
                     elif new_level > current_level:
-                        print(f'----------------------------current_node_name: {current_node_name}----------------------------')
-                        print(f'new_level: {new_level}')
-                        print(f'current_level: {current_level}')
+                        dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        dprint(f'new_level: {new_level}')
+                        dprint(f'current_level: {current_level}')
                         # ‘1.1.1’变为'1.1.1.1.1'
                         current_node_name += '.' + '.'.join(['1']*(new_level-current_level))
                     elif new_level < current_level:
-                        print(f'----------------------------current_node_name: {current_node_name}----------------------------')
-                        print(f'new_level: {new_level}')
-                        print(f'current_level: {current_level}')
+                        dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        dprint(f'new_level: {new_level}')
+                        dprint(f'current_level: {current_level}')
                         # ‘1.1.1’变为'1.2' 或 ‘1.1.1’变为'2'
                         new_node_list = current_node_name.split('.')    # ['1', '1', '1']
                         for i in range(current_level-new_level):
@@ -168,6 +191,8 @@ class LLM_Doc():
             else:
                 # 内容(text、image等元素)
                 current_node.node_data.text += para.text
+
+        self.doc_root_parsed = True
 
     def get_para_inline_images(self, in_para):
         image = {
@@ -330,10 +355,11 @@ def main_image():
     #     ]))
 
     doc.parse_all_docx()
+    doc.print_doc_root()
     # res = doc.doc_root.find('2')
     # res = doc.doc_root.find('9')
-    res = doc.doc_root.find('8.1.3')
-    print(f'res: {res}')
+    # res = doc.doc_root.find('8.1.3')
+    # print(f'res: {res}')
 
 # Color枚举类
 class Color(Enum):

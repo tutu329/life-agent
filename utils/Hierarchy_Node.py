@@ -1,5 +1,11 @@
 from dataclasses import dataclass
 
+Hierarchy_Node_DEBUG = False
+
+def dprint(*args, **kwargs):
+    if Hierarchy_Node_DEBUG:
+        print(*args, **kwargs)
+
 @dataclass
 class _test_node_data():
     level: int
@@ -25,13 +31,13 @@ class Hierarchy_Node:
         self.children.append(child)
 
     def find(self, in_node_name):
-        print(f'查找节点: {self.node_data.name}')
+        dprint(f'查找节点: {self.node_data.name}')
         if self.node_data.name == in_node_name:
-            print(f'--------找到了node: {self.node_data.name}---------')
+            dprint(f'--------找到了node: {self.node_data.name}---------')
             return self # 返回所找到的node对象
 
         if self.children:
-            print(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
+            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
         for child in self.children:
             res = child.find(in_node_name)
             if res is not None:
