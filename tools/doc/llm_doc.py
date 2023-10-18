@@ -389,7 +389,7 @@ def main_image():
     # node = doc.find_doc_root('2.1.8')
     # doc.print_doc_root(node)
 
-    print(doc.get_toc_json_string(in_max_level=1))
+    print(doc.get_toc_json_string(in_max_level=3))
 
 # Color枚举类
 class Color(Enum):
