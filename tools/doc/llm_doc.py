@@ -87,15 +87,26 @@ class LLM_Doc():
             except Exception as e:
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
-    # 获取node下目录(table of content)的json格式
-    def get_toc_json_string(self, in_max_level=3):
+    # 获取node下目录(table of content)的json格式, list形式，节省字符串长度
+    def get_toc_list_json_string(self, in_max_level=3):
+        import json
+        toc = []
+        if self.doc_root is None:
+            return json.dumps([], indent=2, ensure_ascii=False)
+
+        self.doc_root.get_toc_list_json(toc, self.doc_root, in_max_level)
+
+        return json.dumps(toc, indent=2, ensure_ascii=False)
+
+    # 获取node下目录(table of content)的json格式, dict形式，比较占用字符串长度
+    def get_toc_dict_json_string(self, in_max_level=3):
+        import json
         toc = {}
         if self.doc_root is None:
-            return {}
+            return json.dumps({}, indent=2, ensure_ascii=False)
 
-        self.doc_root.get_toc_json(toc, self.doc_root, in_max_level)
+        self.doc_root.get_toc_dict_json(toc, self.doc_root, in_max_level)
 
-        import json
         return json.dumps(toc, indent=2, ensure_ascii=False)
 
     # 用'1.1.3'这样的字符串查找node
@@ -389,7 +400,8 @@ def main_image():
     # node = doc.find_doc_root('2.1.8')
     # doc.print_doc_root(node)
 
-    print(doc.get_toc_json_string(in_max_level=3))
+    print(doc.get_toc_list_json_string(in_max_level=3))
+    # print(doc.get_toc_json_string(in_max_level=3))
 
 # Color枚举类
 class Color(Enum):

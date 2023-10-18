@@ -45,8 +45,44 @@ class Hierarchy_Node:
                 return res
         return None
 
-    # 获取node下目录(table of content)的json格式
-    def get_toc_json(self, inout_toc_json_dict, in_node='root', in_max_level=3):
+    # 获取node下目录(table of content)的json格式，list形式，节省字符串长度
+    def get_toc_list_json(self, inout_toc_json_list, in_node='root', in_max_level=3):
+        # 如果输入'1.1.3'这样的字符串
+        if type(in_node)==str:
+            node_s = in_node
+            in_node = self.find(node_s)
+            if in_node is None:
+                print(f'节点"{node_s}"未找到.')
+                inout_toc_json_list = []
+                return
+
+        # 如果输入Hierarchy_Node对象
+        if in_node is None:
+            inout_toc_json_list = []
+            return
+        else:
+            node = in_node
+
+        dprint(f'进入节点{node.node_data.name}')
+
+        # 处理当前node的数据
+        inout_toc_json_list.append(node.node_data.name + ' ' + node.node_data.heading)
+        # inout_toc_json_list.append(node.node_data.heading)
+
+        if node.node_data.level < in_max_level:
+            child_list = []
+            # 遍历child node
+            for child in node.children:
+                self.get_toc_list_json(child_list, child, in_max_level)
+            if child_list != []:
+                inout_toc_json_list.append(child_list)
+
+
+
+        return
+
+    # 获取node下目录(table of content)的json格式，dict形式，比较占用字符串长度
+    def get_toc_dict_json(self, inout_toc_json_dict, in_node='root', in_max_level=3):
         # 如果输入'1.1.3'这样的字符串
         if type(in_node)==str:
             node_s = in_node
@@ -66,16 +102,19 @@ class Hierarchy_Node:
         dprint(f'进入节点{node.node_data.name}')
 
         # 处理当前node的数据
-        inout_toc_json_dict['name'] = node.node_data.name
-        inout_toc_json_dict['heading'] = node.node_data.heading
-        inout_toc_json_dict['children'] = []
+        inout_toc_json_dict['name'] = node.node_data.name + ' ' + node.node_data.heading
+        # inout_toc_json_dict['head'] = node.node_data.heading
+        inout_toc_json_dict['ch'] = []
 
         if node.node_data.level < in_max_level:
             # 遍历child node
             for child in node.children:
                 child_dict = {}
-                self.get_toc_json(child_dict, child, in_max_level)
-                inout_toc_json_dict['children'].append(child_dict)
+                self.get_toc_dict_json(child_dict, child, in_max_level)
+                inout_toc_json_dict['ch'].append(child_dict)
+
+        if inout_toc_json_dict['ch'] == []:
+            del inout_toc_json_dict['ch']
 
         return
 
@@ -109,7 +148,7 @@ def main():
     print(f'res: {res}')
 
     toc = {}
-    root.get_toc_json(toc, root)
+    root.get_toc_dict_json(toc, root)
 
     import json
     print(json.dumps(toc, indent=2, ensure_ascii=False))
