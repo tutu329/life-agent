@@ -87,6 +87,17 @@ class LLM_Doc():
             except Exception as e:
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
+    # 获取node下目录(table of content)的json格式
+    def get_toc_json_string(self, in_max_level=3):
+        toc = {}
+        if self.doc_root is None:
+            return {}
+
+        self.doc_root.get_toc_json(toc, self.doc_root, in_max_level)
+
+        import json
+        return json.dumps(toc, indent=2, ensure_ascii=False)
+
     # 用'1.1.3'这样的字符串查找node
     def find_doc_root(self, in_node_s):
         if self.doc_root is None:
@@ -95,7 +106,7 @@ class LLM_Doc():
         return self.doc_root.find(in_node_s)
 
     # 遍历输出整个doc_root
-    def print_doc_root(self, in_node='root'):
+    def print_doc_root(self, in_node='root'):   # in_node为'1.1.3'或者Hierarchy_Node对象
         # 如果输入'1.1.3'这样的字符串
         if type(in_node)==str:
             node_s = in_node
@@ -373,10 +384,12 @@ def main_image():
     #     ]))
 
     doc.parse_all_docx()
-    doc.print_doc_root()
-    doc.print_doc_root('2.1.7')
-    node = doc.find_doc_root('2.1.8')
-    doc.print_doc_root(node)
+    # doc.print_doc_root()
+    # doc.print_doc_root('2.1.7')
+    # node = doc.find_doc_root('2.1.8')
+    # doc.print_doc_root(node)
+
+    print(doc.get_toc_json_string(in_max_level=1))
 
 # Color枚举类
 class Color(Enum):
