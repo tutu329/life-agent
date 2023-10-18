@@ -87,10 +87,26 @@ class LLM_Doc():
             except Exception as e:
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
+    # 用'1.1.3'这样的字符串查找node
+    def find_doc_root(self, in_node_s):
+        if self.doc_root is None:
+            return None
+
+        return self.doc_root.find(in_node_s)
+
     # 遍历输出整个doc_root
-    def print_doc_root(self, in_node=None):
+    def print_doc_root(self, in_node='root'):
+        # 如果输入'1.1.3'这样的字符串
+        if type(in_node)==str:
+            node_s = in_node
+            in_node = self.doc_root.find(node_s)
+            if in_node is None:
+                print(f'节点"{node_s}"未找到.')
+                return
+
+        # 如果输入Hierarchy_Node对象
         if in_node is None:
-            node = self.doc_root
+            return
         else:
             node = in_node
 
@@ -192,7 +208,7 @@ class LLM_Doc():
                 current_node = new_node
             else:
                 # 内容(text、image等元素)
-                current_node.node_data.text += para.text    # 这里para.text是文本内容 Doc_Node_Data.text
+                current_node.node_data.text += para.text + '\n'    # 这里para.text是文本内容 Doc_Node_Data.text
 
         self.doc_root_parsed = True
 
@@ -358,10 +374,9 @@ def main_image():
 
     doc.parse_all_docx()
     doc.print_doc_root()
-    # res = doc.doc_root.find('2')
-    # res = doc.doc_root.find('9')
-    # res = doc.doc_root.find('8.1.3')
-    # print(f'res: {res}')
+    doc.print_doc_root('2.1.7')
+    node = doc.find_doc_root('2.1.8')
+    doc.print_doc_root(node)
 
 # Color枚举类
 class Color(Enum):
