@@ -9,8 +9,9 @@ def dprint(*args, **kwargs):
 @dataclass
 class _test_node_data():
     level: int
-    name: str
-    text: str
+    name: str       # 如: '1.1.3'
+    heading: str    # 如: '建设必要性'
+    text: str       # 如: '本项目建设是必要的...'
 
 class Hierarchy_Node:
     def __init__(self, node_data):
@@ -45,14 +46,14 @@ class Hierarchy_Node:
         return None
 
 def main():
-    root = Hierarchy_Node(_test_node_data(0, '0', 'aaa'))
-    node_1 = Hierarchy_Node(_test_node_data(1, '1', 'abc'))
-    node_1_1 = Hierarchy_Node(_test_node_data(2, '1.1', 'cde'))
-    node_1_2 = Hierarchy_Node(_test_node_data(2, '1.2', 'fea'))
+    root = Hierarchy_Node(_test_node_data(0, '0', '标题0', 'aaa'))
+    node_1 = Hierarchy_Node(_test_node_data(1, '1', '标题1', 'abc'))
+    node_1_1 = Hierarchy_Node(_test_node_data(2, '1.1','标题2',  'cde'))
+    node_1_2 = Hierarchy_Node(_test_node_data(2, '1.2', '标题2', 'fea'))
 
-    node_2 = Hierarchy_Node(_test_node_data(1, '2', 'abc'))
-    node_2_1 = Hierarchy_Node(_test_node_data(2, '2.1', 'fhn'))
-    node_2_2 = Hierarchy_Node(_test_node_data(2, '2.2', 'hww'))
+    node_2 = Hierarchy_Node(_test_node_data(1, '2', '标题1', 'abc'))
+    node_2_1 = Hierarchy_Node(_test_node_data(2, '2.1', '标题2', 'fhn'))
+    node_2_2 = Hierarchy_Node(_test_node_data(2, '2.2', '标题2', 'hww'))
 
     root.add_child(node_1)
     root.add_child(node_2)

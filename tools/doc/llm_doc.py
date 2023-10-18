@@ -37,8 +37,9 @@ class Image_Part():
 @dataclass
 class Doc_Node_Data():
     level: int
-    name: str
-    text: str
+    name: str       # 如: '1.1.3'
+    heading: str    # 如: '建设必要性'
+    text: str       # 如: '本项目建设是必要的...'
     image: Image_Part
 # =========================================管理doc的层次化递归数据结构=================================================
 
@@ -95,8 +96,9 @@ class LLM_Doc():
 
         node_level = node.node_data.level
         node_name = node.node_data.name
+        node_heading = node.node_data.heading
         node_content = node.node_data.text
-        print(f'{"-"*node_level}{node_name}{"-"*(80-node_level-len(node_name))}')
+        print(f'{"-"*node_level}{node_name}-{node_heading}{"-"*(80-node_level-len(node_name)-len(node_heading))}')
         print(f'{node_content}')
 
         for child in node.children:
@@ -129,7 +131,7 @@ class LLM_Doc():
                         return node
 
         # 处理root
-        self.doc_root = Hierarchy_Node(Doc_Node_Data(0, 'root', 'root_no_text', None))
+        self.doc_root = Hierarchy_Node(Doc_Node_Data(0, 'root', 'root根', 'root_no_text', None))
 
         current_node = self.doc_root
         current_node_name = 'root'
@@ -182,7 +184,7 @@ class LLM_Doc():
                 current_level = new_level
 
                 # 找到parent节点，并添加new_node
-                new_node = Hierarchy_Node(Doc_Node_Data(current_level, current_node_name, para.text, None))
+                new_node = Hierarchy_Node(Doc_Node_Data(current_level, current_node_name, para.text, '', None)) # 这里para.text是标题内容 Doc_Node_Data.heading
                 parent_node = find_parent_node(current_node_name)
                 parent_node.add_child(new_node)
 
@@ -190,7 +192,7 @@ class LLM_Doc():
                 current_node = new_node
             else:
                 # 内容(text、image等元素)
-                current_node.node_data.text += para.text
+                current_node.node_data.text += para.text    # 这里para.text是文本内容 Doc_Node_Data.text
 
         self.doc_root_parsed = True
 
