@@ -107,6 +107,7 @@ class LLM_Doc():
 
         prompt2 = prompt2.format(text_got=text_got, query=in_query)
         print(prompt2)
+        print(f'材料长度为: {len(text_got)}')
         # self.llm.need_print = True          # 打开print输出
         gen = self.llm.ask_prepare(prompt2).get_answer_generator()
         return gen
