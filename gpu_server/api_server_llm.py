@@ -63,6 +63,19 @@ class Wizardcoder_Prompt_Template():
         res = self.prompt_template.format(prompt=prompt)
         return res
 
+class CausalLM_Prompt_Template():
+    def __init__(self):
+        self.prompt_template = '''
+        <|im_start|>system
+        {system_message}<|im_end|>
+        <|im_start|>user
+        {prompt}<|im_end|>
+        <|im_start|>assistant
+        '''
+    def get_prompt(self, prompt, system_message=''):
+        res = self.prompt_template.format(prompt=prompt, system_message=system_message)
+        return res
+
 class Wizardlm_Prompt_Template():
     def __init__(self):
         self.prompt_template = '''
@@ -149,6 +162,12 @@ class LLM_Model_Wrapper():
         # print(f'设置其他参数: \t\t"do_sample={self.model.generation_config.do_sample}"', flush=True)
         print('-'*80)
 
+        # 报错：RuntimeError: The temp_state buffer is too small in the exllama backend. Please call the exllama_set_max_input_length function to increase the buffer size. Example:
+        # from auto_gptq import exllama_set_max_input_length
+        # model = exllama_set_max_input_length(model, 4096)
+        from auto_gptq import exllama_set_max_input_length
+        self.model = exllama_set_max_input_length(self.model, 8192)
+
     def get_prompt(self, prompt):
         return self.prompt_template.get_prompt(prompt)
 
@@ -194,6 +213,14 @@ class LLM_Model_Wrapper():
         self.task = Thread(target=self.model.generate, kwargs=generation_kwargs)
         self.task.start()
         return streamer
+
+class CausalLM_Wrapper(LLM_Model_Wrapper):
+    def __init__(self):
+        super().__init__()
+        self.model_name = 'CausalLM-14B-GPTQ'
+
+    def init(self, in_model_path="d:/models/CausalLM-14B-GPTQ"):
+        super().init(in_prompt_template=CausalLM_Prompt_Template(), in_model_path=in_model_path)
 
 class Wizardcoder_Wrapper(LLM_Model_Wrapper):
     def __init__(self):
@@ -275,6 +302,9 @@ def main_gr():
     elif args.model=='wizard70':
         llm = Wizardlm_Wrapper()
         llm.init(in_model_path="d:/models/WizardLM-70B-V1.0-GPTQ", revision='gptq-4bit-64g-actorder_True')
+    elif args.model=='causallm':
+        llm = CausalLM_Wrapper()
+        llm.init(in_model_path="d:/models/CausalLM-14B-GPTQ")
 
     def ask_llm(
             message,
