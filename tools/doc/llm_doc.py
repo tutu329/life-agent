@@ -409,8 +409,43 @@ class Color(Enum):
     green=auto()
     blue=auto()
 
+import fitz
+from fitz import TextPage
+
 if __name__ == "__main__":
     main_image()
+
+    doc = fitz.open("D:/server/life-agent/WorldEnergyOutlook2023.pdf")
+    # 获取Document 文档对象的属性和方法
+    # 1、获取pdf 页数
+    pageCount = doc.page_count
+    print("pdf 页数", pageCount)
+
+    # 2、获取pdf 元数据
+    metaData = doc.metadata
+    print("pdf 元数据:", metaData)
+
+    # 3、获取pdf 目录信息
+    toc = doc.get_toc()
+    print("pdf 目录：")
+    for item in toc:
+        level = item[0]
+        head = item[1]
+        print(f'{"-"*level}{head}')
+
+    import json
+    toc_json = json.dumps(toc)
+    print(f'toc_json is : {toc_json}')
+
+    llm = LLM_Qwen(
+        history=True,
+        history_max_turns=50,
+        history_clear_method='pop',
+        temperature=0.7,
+        url='http://127.0.0.1:8001/v1'
+    )
+    prompt = f'"{toc_json}"为一本书的目录结构列表，注意列表中每一个元素的数据结构为[level, toc_head, page]，请只把level为1和2的目录标题翻译为中文后返回给我'
+    llm.ask_prepare(prompt, in_max_tokens=4096).get_answer_and_sync_print()
 
     # print(f'color: {Color(1)}')
     # print(f'color: {Color.blue}')
