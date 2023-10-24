@@ -49,7 +49,7 @@ class Doc_Node_Data():
 
 # LLM_Doc：采用python-docx解析文档，采用win32com解决页码问题
 class LLM_Doc():
-    def __init__(self, in_file_name):
+    def __init__(self, in_file_name, in_llm=None):
         self.doc_name = in_file_name    # 文件名
 
         self.win32_doc = None
@@ -60,11 +60,57 @@ class LLM_Doc():
         self.doc_root = None            # 存放doc层次化数据
         self.doc_root_parsed = False    # 是否已经解析为层次化数据
 
+        self.llm = in_llm
+        if self.llm is None:
+            self.llm = LLM_Qwen(
+                history=False,
+                # history_max_turns=50,
+                # history_clear_method='pop',
+                temperature=0.7,
+                url='http://127.0.0.1:8001/v1',
+                need_print=False,
+            )
+
         try:
             self.doc = Document(self.doc_name)
         except Exception as e:
             print(f'文件"{self.doc_name}" 未找到。')
-        
+
+    def ask_docx(self, in_query, in_max_level=3):
+        file = self.doc_name
+        doc = self
+        doc.parse_all_docx()
+        toc = doc.get_toc_list_json_string(in_max_level=in_max_level)
+
+        # -------------------------------找到query内容所在章节---------------------------------------
+        prompt = '''
+        这是文档的目录结构"{toc}",
+        请问这个问题"{query}"涉及的内容应该在具体的哪个章节中，不解释，请直接以"章节编号"形式返回。
+        '''
+        prompt = prompt.format(toc=toc, query=in_query)
+        self.llm.need_print = False         # 关闭print输出
+        res = self.llm.ask_prepare(prompt).get_answer_and_sync_print()
+
+        # --------------将'1.1.3 some章节'转换为'1.1.3'----------------------
+        re_result = re.search(r"\d+(.\d+)*", res).group(0)
+
+        # --------------获取'1.1.3'对应章节下的text_got----------------------
+        node = doc.find_doc_root(re_result)
+        inout_text = []
+        doc.get_text_from_doc_node(inout_text, node)
+        text_got = '\n'.join(inout_text)
+
+        # --------------对text_got进行限定范围的query----------------------
+        prompt2 = '''
+        请根据材料"{text_got}"中的内容, 回答问题"{query}"。
+        '''
+
+        prompt2 = prompt2.format(text_got=text_got, query=in_query)
+        print(prompt2)
+        # self.llm.need_print = True          # 打开print输出
+        gen = self.llm.ask_prepare(prompt2).get_answer_generator()
+        return gen
+
     def win32com_init(self):
         print(f'win32尝试打开文件"{self.doc_name}"')
         if is_win():
@@ -526,13 +572,7 @@ def main_image():
     # print(doc.get_toc_list_json_string(in_max_level=3))
     # print(doc.get_toc_json_string(in_max_level=3))
 
-def main_ask_docx():
-
-    file = 'd:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx'
-    doc = LLM_Doc(file)
-    doc.parse_all_docx()
-    toc = doc.get_toc_list_json_string(in_max_level=3)
-
+def ask_docx(in_filename='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx'):
     llm = LLM_Qwen(
         history=False,
         # history_max_turns=50,
@@ -541,6 +581,13 @@ def main_ask_docx():
         url='http://127.0.0.1:8001/v1',
         need_print=False,
     )
+
+    file = in_filename
+    doc = LLM_Doc(file, llm)
+    doc.parse_all_docx()
+    toc = doc.get_toc_list_json_string(in_max_level=3)
+
+
 
     while True:
         query = input('User: ')
@@ -585,14 +632,15 @@ class Color(Enum):
 
 
 if __name__ == "__main__":
-    # rtn = re.search(r"\d",'1.2.3 今天')
-    # rtn = re.search(r"\d+(.\d+)*",'12.256.7346 今天')
-    # print(f'rtn: {rtn}')
-    # if rtn is not None:
-    #     res = rtn.group(0)
-    #     print(res)
+    doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
+    while True:
+        query = input("User: ")
+        print('Assistant: ')
+        gen = doc.ask_docx(query)
+        for chunk in gen:
+            print(chunk, end='', flush=True)
+        print()
 
-    main_ask_docx()
     # main_image()
 
     # doc = fitz.open("D:/server/life-agent/WorldEnergyOutlook2023.pdf")
