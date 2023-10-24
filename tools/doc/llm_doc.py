@@ -1,9 +1,13 @@
 from dataclasses import dataclass
 import copy
+import json
 
 from tools.llm.api_client_qwen_openai import *
 import openai
 openai.api_base = "http://116.62.63.204:8001/v1"
+
+import fitz
+from fitz import TextPage
 
 import docx
 from docx import Document
@@ -117,7 +121,7 @@ class LLM_Doc():
         return self.doc_root.find(in_node_s)
 
     # 遍历输出整个doc_root
-    def print_doc_root(self, in_node='root'):   # in_node为'1.1.3'或者Hierarchy_Node对象
+    def print_from_doc_node(self, in_node='root'):   # in_node为'1.1.3'或者Hierarchy_Node对象
         # 如果输入'1.1.3'这样的字符串
         if type(in_node)==str:
             node_s = in_node
@@ -140,10 +144,129 @@ class LLM_Doc():
         print(f'{node_content}')
 
         for child in node.children:
-            self.print_doc_root(child)
+            self.print_from_doc_node(child)
+
+    # 遍历输出整个doc_root
+    def get_text_from_doc_node(self, inout_text_list, in_node='root'):   # in_node为'1.1.3'或者Hierarchy_Node对象
+        # 如果输入'1.1.3'这样的字符串
+        if type(in_node)==str:
+            node_s = in_node
+            in_node = self.doc_root.find(node_s)
+            if in_node is None:
+                dprint(f'节点"{node_s}"未找到.')
+                return
+
+        # 如果输入Hierarchy_Node对象
+        if in_node is None:
+            return
+        else:
+            node = in_node
+
+        node_level = node.node_data.level
+        node_name = node.node_data.name
+        node_heading = node.node_data.heading
+        node_content = node.node_data.text
+
+        inout_text_list.append(f'{"-"*node_level}{node_name}-{node_heading}{"-"*(80-node_level-len(node_name)-len(node_heading))}')
+        inout_text_list.append(f'{node_content}')
+
+        for child in node.children:
+            self.get_text_from_doc_node(inout_text_list, child)
 
     # 将doc解析为层次结构，每一级标题（容器）下都有text、image等对象
     def parse_all_docx(self):
+        # 获取上一级的name，如'1.1.3'的上一级为'1.1', '1'的上一级为'root'
+        def find_parent_node(in_node_name):
+            dprint(f'================查找节点"{in_node_name}"的父节点', end='')
+            if len(in_node_name.split('.')) == 1:
+                parent_name = 'root'
+                dprint(f'"{parent_name}"========')
+                return self.doc_root.find(parent_name)
+            else:
+                # name_list = in_node_name.split('.')
+                # name_list.pop()
+                # parent_name = '.'.join(name_list)
+                # print(f'"{parent_name}"========')
+                # return self.doc_root.find(parent_name)
+
+                name_list = in_node_name.split('.')
+                while True:
+                    # 循环pop()，直到找到parent_node，例如3.4后面突然出现3.4.1.1，这时候的parent_node就3.4而不是3.4.1
+                    name_list.pop()
+                    parent_name = '.'.join(name_list)
+                    dprint(f'"{parent_name}"========')
+                    node = self.doc_root.find(parent_name)
+                    if node:
+                        return node
+
+        # 处理root
+        self.doc_root = Hierarchy_Node(Doc_Node_Data(0, 'root', 'root根', 'root_no_text', None))
+
+        current_node = self.doc_root
+        current_node_name = 'root'
+        current_level = 0
+
+        # 递归遍历doc
+        for para in self.doc.paragraphs:
+            style = para.style.name                     # "Heading 1"
+            style_name  = style.split(' ')[0]           # 标题 "Heading
+
+            if style_name=='Heading':
+                # 标题
+                new_level = int(style.split(' ')[1])    # 标题级别 1
+
+                # 计算current_node_name, 如：'1.1.1'或'1.2'
+                if current_node_name=='root':
+                    current_node_name = '.'.join(['1']*new_level)   # 1级为'1', 如果直接为2级就是'1.1'
+                else:
+                    if new_level == current_level:
+                        dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        dprint(f'new_level: {new_level}')
+                        dprint(f'current_level: {current_level}')
+                        # ‘1.1.1’变为'1.1.2'
+                        new_node_list = current_node_name.split('.')  # ['1', '1', '1']
+                        last_num = int(new_node_list[-1]) + 1  # 2
+                        new_node_list.pop()  # ['1', '1']
+                        current_node_name = '.'.join(new_node_list) + '.' + str(last_num)  # '1.1.2'
+                        # current_node_name = current_node_name[:-1] + str(int(current_node_name[-1])+1)
+                    elif new_level > current_level:
+                        dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        dprint(f'new_level: {new_level}')
+                        dprint(f'current_level: {current_level}')
+                        # ‘1.1.1’变为'1.1.1.1.1'
+                        current_node_name += '.' + '.'.join(['1']*(new_level-current_level))
+                    elif new_level < current_level:
+                        dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                        dprint(f'new_level: {new_level}')
+                        dprint(f'current_level: {current_level}')
+                        # ‘1.1.1’变为'1.2' 或 ‘1.1.1’变为'2'
+                        new_node_list = current_node_name.split('.')    # ['1', '1', '1']
+                        for i in range(current_level-new_level):
+                            new_node_list.pop()                         # ['1', '1']
+                        last_num = int(new_node_list[-1]) +1                      # 2
+                        new_node_list.pop()                             # ['1']
+                        if len(new_node_list)>0:
+                            current_node_name = '.'.join(new_node_list) + '.' + str(last_num)   # '1.2'
+                        else:
+                            current_node_name = str(last_num)
+                        # current_node_name = current_node_name[:-1-2*(current_level-new_level)] + str(int(current_node_name[-1-2*(current_level-new_level)])+1)
+                current_level = new_level
+
+                # 找到parent节点，并添加new_node
+                new_node = Hierarchy_Node(Doc_Node_Data(current_level, current_node_name, para.text, '', None)) # 这里para.text是标题内容 Doc_Node_Data.heading
+                parent_node = find_parent_node(current_node_name)
+                parent_node.add_child(new_node)
+
+                # 刷新current状态
+                current_node = new_node
+            else:
+                # 内容(text、image等元素)
+                current_node.node_data.text += para.text + '\n'    # 这里para.text是文本内容 Doc_Node_Data.text
+
+        self.doc_root_parsed = True
+
+    # 将pdf解析为层次结构，每一级标题（容器）下都有text、image等对象
+    def parse_all_pdf(self):
         # 获取上一级的name，如'1.1.3'的上一级为'1.1', '1'的上一级为'root'
         def find_parent_node(in_node_name):
             dprint(f'================查找节点"{in_node_name}"的父节点', end='')
@@ -397,35 +520,19 @@ def main_image():
     doc.parse_all_docx()
     # doc.print_doc_root()
     # doc.print_doc_root('2.1.7')
-    # node = doc.find_doc_root('2.1.8')
-    # doc.print_doc_root(node)
+    node = doc.find_doc_root('2.1.7')
+    doc.print_from_doc_node(node)
 
-    print(doc.get_toc_list_json_string(in_max_level=3))
+    # print(doc.get_toc_list_json_string(in_max_level=3))
     # print(doc.get_toc_json_string(in_max_level=3))
 
-# Color枚举类
-class Color(Enum):
-    red=auto()
-    green=auto()
-    blue=auto()
+def main_ask_docx():
 
-import fitz
-from fitz import TextPage
+    file = 'd:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx'
+    doc = LLM_Doc(file)
+    doc.parse_all_docx()
+    toc = doc.get_toc_list_json_string(in_max_level=3)
 
-if __name__ == "__main__":
-    main_image()
-
-    doc = fitz.open("D:/server/life-agent/WorldEnergyOutlook2023.pdf")
-    # 获取Document 文档对象的属性和方法
-    # 1、获取pdf 页数
-    pageCount = doc.page_count
-    print("pdf 页数", pageCount)
-
-    # 2、获取pdf 元数据
-    metaData = doc.metadata
-    print("pdf 元数据:", metaData)
-
-    # 3、获取pdf 目录信息
     llm = LLM_Qwen(
         history=False,
         # history_max_turns=50,
@@ -435,18 +542,118 @@ if __name__ == "__main__":
         need_print=False,
     )
 
-    toc = doc.get_toc()
-    print("pdf 目录：")
-    for item in toc:
-        level = item[0]
-        head = item[1]
-        print(f'{"-"*level}{head}')
+    while True:
+        query = input('User: ')
 
-    # prompt = f'"{toc_json}"为一本书的目录结构列表，注意列表中每一个元素的数据结构为[level, toc_head, page]，请只把level为1和2的目录标题翻译为中文后返回给我'
+        json_example = '{"head":"1.1.3"}'
+        prompt = '''
+        这是文档的目录结构"{toc}",
+        请问这个问题"{query}"涉及的内容应该在具体的哪个章节中，不解释，请直接以"章节编号"形式返回。
+        '''
 
-        prompt = f'把{head}翻译为中文'
-        res = llm.ask_prepare(prompt, in_max_tokens=4096).get_answer_and_sync_print()
-        print(res)
+        prompt = prompt.format(toc=toc, query=query, json_example=json_example)
+        # print(f'--------发给LLM的prompt----------')
+        # print(prompt)
+        # print(f'--------发给LLM的prompt----------')
+        res = llm.ask_prepare(prompt).get_answer_and_sync_print()
+        print(f'Bot: {res}')
+        re_result = re.search(r"\d+(.\d+)*",res).group(0)
+        print(f'RE: {re_result}')
+
+        node = doc.find_doc_root(re_result)
+        # text_got = node.node_data.text
+        inout_text = []
+        doc.get_text_from_doc_node(inout_text, node)
+        text_got = '\n'.join(inout_text)
+        print(f'text_got: {text_got}')
+
+
+        prompt2 = '''
+        请根据材料"{text_got}"中的内容, 回答问题"{query}"。
+        '''
+
+        prompt2 = prompt2.format(text_got=text_got, query=query)
+        llm.need_print = True
+        res = llm.ask_prepare(prompt2).get_answer_and_sync_print()
+
+# Color枚举类
+class Color(Enum):
+    red=auto()
+    green=auto()
+    blue=auto()
+
+
+
+if __name__ == "__main__":
+    # rtn = re.search(r"\d",'1.2.3 今天')
+    # rtn = re.search(r"\d+(.\d+)*",'12.256.7346 今天')
+    # print(f'rtn: {rtn}')
+    # if rtn is not None:
+    #     res = rtn.group(0)
+    #     print(res)
+
+    main_ask_docx()
+    # main_image()
+
+    # doc = fitz.open("D:/server/life-agent/WorldEnergyOutlook2023.pdf")
+    # # 获取Document 文档对象的属性和方法
+    # # 1、获取pdf 页数
+    # pageCount = doc.page_count
+    # print("pdf 页数", pageCount)
+    #
+    # # 2、获取pdf 元数据
+    # metaData = doc.metadata
+    # print("pdf 元数据:", metaData)
+
+    # 3、获取pdf 目录信息
+    # llm = LLM_Qwen(
+    #     history=False,
+    #     # history_max_turns=50,
+    #     # history_clear_method='pop',
+    #     temperature=0.7,
+    #     url='http://127.0.0.1:8001/v1',
+    #     need_print=False,
+    # )
+
+    # toc = doc.get_toc()
+    # print("pdf 目录：")
+
+    # 4、遍历para
+    # for page in doc.pages(100, 102):
+    #     print(f'--------{page}---------')
+    #     print(page.get_text('text'))
+    #     # print(f'--------{page}---------')
+    #     # print(page.get_text('blocks'))
+    #     print(f'--------{page}---------')
+    #     # print(json.dumps(page.get_text('dict'), indent=2))
+    #     text_dict = page.get_text('dict')
+    #     blocks = text_dict['blocks']
+    #     for block in blocks:
+    #         lines = block['lines']
+    #         for line in lines:
+    #             spans = line['spans']
+    #             for span in spans:
+    #                 text = span['text']
+    #                 print(f'【line】: {text}')
+
+        # print(f'--------{page}---------')
+        # print(page.get_text().encode('utf8'))
+        # print(f'--------{page}---------')
+        # print(page.get_text())
+
+    # for item in toc:
+    #     level = item[0]
+    #     head = item[1]
+    #     print(f'{"-"*level}{head}')
+    #
+    # # prompt = f'"{toc_json}"为一本书的目录结构列表，注意列表中每一个元素的数据结构为[level, toc_head, page]，请只把level为1和2的目录标题翻译为中文后返回给我'
+    #
+    #     prompt = f'把{head}翻译为中文'
+    #     res = llm.ask_prepare(prompt, in_max_tokens=4096).get_answer_and_sync_print()
+    #     print(res)
+
+
+
 
     # print(f'color: {Color(1)}')
     # print(f'color: {Color.blue}')
