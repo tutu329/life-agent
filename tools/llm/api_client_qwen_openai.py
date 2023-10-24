@@ -313,7 +313,7 @@ import re
 #         return self.output
 
 class LLM_Qwen():
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1'):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', need_print=True):
         self.url = url
         self.gen = None     # 返回结果的generator
         self.temperature = temperature
@@ -334,6 +334,7 @@ class LLM_Qwen():
         self.has_role_prompt = False
 
         self.external_last_history = []     # 用于存放外部格式独特的history
+        self.need_print = need_print
 
     # 动态修改role_prompt
     # def set_role_prompt(self, in_role_prompt):
@@ -471,7 +472,8 @@ class LLM_Qwen():
         # print('发送到LLM的完整提示: ', msgs)
         # ==========================================================
 
-        print('User: \n\t', msgs[0]['content'])
+        if self.need_print:
+            print('User: \n\t', msgs[0]['content'])
         openai.api_base = self.url
         gen = openai.ChatCompletion.create(
             model="Qwen",
@@ -494,7 +496,8 @@ class LLM_Qwen():
             self.__history_clear()
 
         msgs = self.__history_messages_with_question(in_question)
-        print('User:\n\t', msgs[0]['content'])
+        if self.need_print:
+            print('User:\n\t', msgs[0]['content'])
         openai.api_base = self.url
         res = openai.ChatCompletion.create(
             model="Qwen",
@@ -511,19 +514,23 @@ class LLM_Qwen():
             # Specifying stop words in streaming output format is not yet supported and is under development.
         )
         result = res['choices'][0]['message']['content']
-        print(f'Qwen:\n\t{result}')
+        if self.need_print:
+            print(f'Qwen:\n\t{result}')
         return res
 
     # 方式1：直接输出结果
     def get_answer_and_sync_print(self):
         result = ''
-        print('Qwen: \n\t', end='')
+        if self.need_print:
+            print('Qwen: \n\t', end='')
         for chunk in self.gen:
             if hasattr(chunk.choices[0].delta, "content"):
-                print(chunk.choices[0].delta.content, end="", flush=True)
+                if self.need_print:
+                    print(chunk.choices[0].delta.content, end="", flush=True)
                 result += chunk.choices[0].delta.content
                 # yield chunk.choices[0].delta.content
-        print()
+        if self.need_print:
+            print()
         self.answer_last_turn = result
         self.__history_add_last_turn_msg()
 
