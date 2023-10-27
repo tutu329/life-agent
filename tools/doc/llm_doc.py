@@ -50,9 +50,14 @@ class Image_Data():
 
 @dataclass
 class Table_Data():
-    head: str = ''  # 表格标题
-    text: str = ''  # 表格内容文本
-    obj:Any = None  # 表格的Table对象
+    # table标题
+    index:      str = ''  # '2.1.6.3.1-1'
+    head:       str = ''  # '南麂微电网2015年各支路潮流及各配变负载率计算结果'
+    unit:       str = ''  # '万元'
+    annotate:   str = ''  # '注: ...'
+    # table内容
+    text:       str = ''  # 表格内容文本
+    obj:        Any = None  # 表格的Table对象
 
 @dataclass
 class Doc_Node_Data():
@@ -270,8 +275,24 @@ class LLM_Doc():
             self.get_text_from_doc_node(inout_text_list, child)
 
     # 从文本中解析出table的标题
-    def get_table_head_from_text(self, in_text):
-        return in_text
+    def get_table_head_from_text(self, in_text, inout_table_obj):
+        '附表21   南麂岛10kV线路总概算表   单位：万元'
+        import re
+        match_index = re.search(r'^表\d+(.\d+)*|^附表\d+(.\d+)*', in_text)
+        match_index = match_index.group(0) if match_index else ''
+
+        match_unit = re.search(r'(?:单位：)\s*[\u4e00-\u9fa5]+', in_text)
+        match_unit = match_unit.group(0) if match_unit else ''
+
+        match_head = in_text.replace(match_index, '').replace(match_unit, '').replace(' ', '').replace('\t', '')
+
+
+        inout_table_obj.index = match_index     # '附表21'
+        inout_table_obj.head = match_head       # '南麂岛10kV线路总概算表'
+        inout_table_obj.unit = match_unit       # '万元'
+        inout_table_obj.annotate= ''        # '注: ...'
+
+        return inout_table_obj
 
     # 替代para.text，因为para.text解析word xml的文字时，会漏掉'w:smartTag'或'w:ins'下的'w:r'，导致如'表2.1.6.3.4'变为'表.3.4'的问题
     def _patch_get_text(self, in_para):
@@ -327,11 +348,13 @@ class LLM_Doc():
             if block.style.name == 'Normal Table':
                 #--------------------------------------------找到表格-----------------------------------------------------
                 table = block
-                table_obj = Table_Data(head=self.get_table_head_from_text(last_para_text), obj=table)
+                inout_table_obj = Table_Data(obj=table)
+                self.get_table_head_from_text(last_para_text, inout_table_obj)  # 解析table的标题
+                # table_obj = Table_Data(head=self.get_table_head_from_text(last_para_text), obj=table)
                 # 添加内容(text、table、image等元素)
                 self.parse_node_data_callback(
                     in_node_data_list_ref=current_node.node_data.data_list,
-                    in_data=Doc_Node_Data(type='table', table=table_obj)
+                    in_data=Doc_Node_Data(type='table', table=inout_table_obj)
                 )  # 这里para.text是文本内容 Doc_Node_Data.data_list中的text
             else:
                 #--------------------------------------------找到标题head、文本text、图image等------------------------------
@@ -411,14 +434,23 @@ class LLM_Doc():
                 node_content += node_data.text + '\n'
             elif node_data.type=='table':
                 # 表格
+                # table头
+                tbl_index = node_data.table.index
                 tbl_head = node_data.table.head
-                half_len = (80-len(tbl_head)-len('表格[]'))//2
-                node_content += '-'*half_len + f'表格[{tbl_head}]' + '-'*half_len + '\n'
+                tbl_unit = node_data.table.unit
+                tbl_annotate = node_data.table.annotate
+                half1 = (80-len(tbl_index)-len(tbl_head)-len(tbl_unit)-len('表格[]'))//2
+                half2 = (80-len(tbl_annotate))//2
+
+                node_content += '-'*half1 + f'表格[{tbl_index}:{tbl_head}:{tbl_unit}]' + '-'*half1 + '\n'
+
+                # table内容
                 for row in node_data.table.obj.rows:
                     for cell in row.cells:
                         node_content += cell.text + '\t'
                     node_content += '\n'
-                node_content += '-' * 80 + '\n'
+                # table注解
+                node_content += '-'*half2 + f'表格[{tbl_annotate}]' + '-'*half2 + '\n'
             else:
                 pass
 
@@ -682,8 +714,8 @@ def main_image():
     doc.parse_all_docx()
     # doc.print_doc_root()
     # doc.print_doc_root('2.1.7')
-    # node = doc.find_doc_root('8')
-    node = doc.find_doc_root('2.1.6.3')
+    node = doc.find_doc_root('9')
+    # node = doc.find_doc_root('2.1.6.3')
     # node = doc.find_doc_root('2.1.7')
     doc.print_from_doc_node(node)
 
