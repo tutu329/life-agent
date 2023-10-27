@@ -12,6 +12,7 @@ from fitz import TextPage
 
 import docx
 from docx import Document   # api.Document
+from docx.oxml.ns import qn
 
 
 import docx  # 导入python-docx库
@@ -24,7 +25,6 @@ from docx.text.paragraph import Paragraph
 # llm = LLM_Qwen()
 
 from enum import Enum, auto
-
 
 LLM_Doc_DEBUG = False
 def dprint(*args, **kwargs):
@@ -42,26 +42,31 @@ def is_win():
 # =========================================管理doc的层次化递归数据结构=================================================
 from utils.Hierarchy_Node import Hierarchy_Node
 @dataclass
-class Image_Part():
+class Image_Data():
     name: str
     data: str
     width: int
     height: int
 
 @dataclass
-class Doc_Data():
-    type:str = ''   # 'text' 'table' 'image'
-
-    text:str = ''
-    table:Any = None    # Table对象
-    image:Image_Part = None
+class Table_Data():
+    head: str = ''  # 表格标题
+    text: str = ''  # 表格内容文本
+    obj:Any = None  # 表格的Table对象
 
 @dataclass
 class Doc_Node_Data():
+    type:str = ''   # 'text' 'table' 'image'
+    text:str = ''
+    table:Table_Data = None    # Table_Data 对象
+    image:Image_Data = None
+
+@dataclass
+class Doc_Node_Content():
     level: int
     name: str       # 如: '1.1.3'
     heading: str    # 如: '建设必要性'
-    data_list:List[Doc_Data] = field(default_factory=list)   # 元素包括(text:str, image:Image_Part, table:str)
+    data_list:List[Doc_Node_Data] = field(default_factory=list)   # 元素包括(text:str, image:Image_Part, table:str)
     # text: str       # 如: '本项目建设是必要的...'
     # image: Image_Part
 # =========================================管理doc的层次化递归数据结构=================================================
@@ -206,7 +211,7 @@ class LLM_Doc():
 
         return self.doc_root.find(in_node_s)
 
-    # 遍历输出整个doc_root
+    # 遍历打印node下的所有内容
     def print_from_doc_node(self, in_node='root'):   # in_node为'1.1.3'或者Hierarchy_Node对象
         # 如果输入'1.1.3'这样的字符串
         if type(in_node)==str:
@@ -235,7 +240,7 @@ class LLM_Doc():
         for child in node.children:
             self.print_from_doc_node(child)
 
-    # 遍历输出整个doc_root
+    # 遍历输出node下的所有内容
     def get_text_from_doc_node(self, inout_text_list, in_node='root'):   # in_node为'1.1.3'或者Hierarchy_Node对象
         # 如果输入'1.1.3'这样的字符串
         if type(in_node)==str:
@@ -264,9 +269,25 @@ class LLM_Doc():
         for child in node.children:
             self.get_text_from_doc_node(inout_text_list, child)
 
+    # 从文本中解析出table的标题
+    def get_table_head_from_text(self, in_text):
+        return in_text
+
+    # 替代para.text，因为para.text解析word xml的文字时，会漏掉'w:smartTag'或'w:ins'下的'w:r'，导致如'表2.1.6.3.4'变为'表.3.4'的问题
+    def _patch_get_text(self, in_para):
+        text = []
+        for elem in in_para._element:
+            if elem.tag == qn('w:r'):
+                text.append(elem.text)
+            elif elem.tag == qn('w:ins') or elem.tag == qn('w:smartTag'):
+                for sub_elem in elem:
+                    if sub_elem.tag == qn('w:r'):
+                        text.append(sub_elem.text)
+        return ''.join(text)
+
     # 将doc解析为层次结构，每一级标题（容器）下都有text、table、image等对象
     def parse_all_docx(self):
-        # 获取上一级的name，如'1.1.3'的上一级为'1.1', '1'的上一级为'root'
+        # 获取node上一级即parent的name，如'1.1.3'的上一级为'1.1', '1'的上一级为'root'
         def find_parent_node(in_node_name):
             dprint(f'================查找节点"{in_node_name}"的父节点', end='')
             if len(in_node_name.split('.')) == 1:
@@ -291,29 +312,36 @@ class LLM_Doc():
                         return node
 
         # 处理root
-        self.doc_root = Hierarchy_Node(Doc_Node_Data(0, 'root', 'root根'))
+        self.doc_root = Hierarchy_Node(Doc_Node_Content(0, 'root', 'root根'))
 
         current_node = self.doc_root
         current_node_name = 'root'
         current_level = 0
 
+        # 上一个文本，主要用于查找table标题
+        last_para_text = ''
+
         # 递归遍历doc
         # for para in self.doc.paragraphs:
         for block in self.iter_block_items(self.doc):
             if block.style.name == 'Normal Table':
+                #--------------------------------------------找到表格-----------------------------------------------------
                 table = block
+                table_obj = Table_Data(head=self.get_table_head_from_text(last_para_text), obj=table)
                 # 添加内容(text、table、image等元素)
                 self.parse_node_data_callback(
                     in_node_data_list_ref=current_node.node_data.data_list,
-                    in_data=Doc_Data(type='table', table=table)
+                    in_data=Doc_Node_Data(type='table', table=table_obj)
                 )  # 这里para.text是文本内容 Doc_Node_Data.data_list中的text
             else:
+                #--------------------------------------------找到标题head、文本text、图image等------------------------------
                 para = block
+                last_para_text = self._patch_get_text(para)
                 style = para.style.name                     # "Heading 1"
                 style_name  = style.split(' ')[0]           # 标题 "Heading
 
                 if style_name=='Heading':
-                    # 标题
+                    # ----------------------------------找到标题heading，处理Hierarchy层次结构-------------------------------
                     new_level = int(style.split(' ')[1])    # 标题级别 1
 
                     # 计算current_node_name, 如：'1.1.1'或'1.2'
@@ -354,17 +382,17 @@ class LLM_Doc():
                     current_level = new_level
 
                     # 找到parent节点，并添加new_node
-                    new_node = Hierarchy_Node(Doc_Node_Data(current_level, current_node_name, para.text)) # 这里para.text是标题内容 Doc_Node_Data.heading
+                    new_node = Hierarchy_Node(Doc_Node_Content(current_level, current_node_name, self._patch_get_text(para))) # 这里para.text是标题内容 Doc_Node_Data.heading
                     parent_node = find_parent_node(current_node_name)
                     parent_node.add_child(new_node)
 
                     # 刷新current状态
                     current_node = new_node
                 else:
-                    # 内容(text、table、image等元素)
+                    # ------------------------------------------找到内容：text、image等------------------------------------
                     self.parse_node_data_callback(
                         in_node_data_list_ref=current_node.node_data.data_list,
-                        in_data=Doc_Data(type='text', text=para.text)
+                        in_data=Doc_Node_Data(type='text', text=self._patch_get_text(para))
                     )    # 这里para.text是文本内容 Doc_Node_Data.data_list中的text
 
         self.doc_root_parsed = True
@@ -377,14 +405,16 @@ class LLM_Doc():
     def get_node_data_callback(self, in_node):
         node_content = ''
 
-        for item in in_node.node_data.data_list:
-            if item.type=='text':
+        for node_data in in_node.node_data.data_list:
+            if node_data.type=='text':
                 # 普通文本
-                node_content += item.text + '\n'
-            elif item.type=='table':
+                node_content += node_data.text + '\n'
+            elif node_data.type=='table':
                 # 表格
-                node_content += '-'*38 + '表格' + '-'*38 + '\n'
-                for row in item.table.rows:
+                tbl_head = node_data.table.head
+                half_len = (80-len(tbl_head)-len('表格[]'))//2
+                node_content += '-'*half_len + f'表格[{tbl_head}]' + '-'*half_len + '\n'
+                for row in node_data.table.obj.rows:
                     for cell in row.cells:
                         node_content += cell.text + '\t'
                     node_content += '\n'
@@ -421,7 +451,7 @@ class LLM_Doc():
                         return node
 
         # 处理root
-        self.doc_root = Hierarchy_Node(Doc_Node_Data(0, 'root', 'root根', 'root_no_text', None))
+        self.doc_root = Hierarchy_Node(Doc_Node_Content(0, 'root', 'root根'))
 
         current_node = self.doc_root
         current_node_name = 'root'
@@ -474,15 +504,18 @@ class LLM_Doc():
                 current_level = new_level
 
                 # 找到parent节点，并添加new_node
-                new_node = Hierarchy_Node(Doc_Node_Data(current_level, current_node_name, para.text)) # 这里para.text是标题内容 Doc_Node_Data.heading
+                new_node = Hierarchy_Node(Doc_Node_Content(current_level, current_node_name, self._patch_get_text(para))) # 这里para.text是标题内容 Doc_Node_Data.heading
                 parent_node = find_parent_node(current_node_name)
                 parent_node.add_child(new_node)
 
                 # 刷新current状态
                 current_node = new_node
             else:
-                # 内容(text、image等元素)
-                current_node.node_data.data_list.append(Doc_Data(type='text', text=para.text))    # 这里para.text是文本内容 Doc_Node_Data.text
+                # --------------------------------------------内容：text、image等-------------------------------------
+                self.parse_node_data_callback(
+                    in_node_data_list_ref=current_node.node_data.data_list,
+                    in_data=Doc_Node_Data(type='text', text=self._patch_get_text(para))
+                )  # 这里para.text是文本内容 Doc_Node_Data.data_list中的text
 
         self.doc_root_parsed = True
 
@@ -649,9 +682,15 @@ def main_image():
     doc.parse_all_docx()
     # doc.print_doc_root()
     # doc.print_doc_root('2.1.7')
-    node = doc.find_doc_root('8.1')
+    # node = doc.find_doc_root('8')
+    node = doc.find_doc_root('2.1.6.3')
     # node = doc.find_doc_root('2.1.7')
     doc.print_from_doc_node(node)
+
+    # text_list = []
+    # doc.get_text_from_doc_node(text_list, node)
+    # print('\n'.join(text_list))
+
 
     # print(doc.get_toc_list_json_string(in_max_level=3))
     # print(doc.get_toc_json_string(in_max_level=3))
@@ -757,6 +796,7 @@ if __name__ == "__main__":
     # main_table()
 
     main_image()
+
 
     # doc = fitz.open("D:/server/life-agent/WorldEnergyOutlook2023.pdf")
     # # 获取Document 文档对象的属性和方法
