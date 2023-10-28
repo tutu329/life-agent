@@ -274,23 +274,31 @@ class LLM_Doc():
         for child in node.children:
             self.get_text_from_doc_node(inout_text_list, child)
 
+    # 为table增加annotate'注: ...'
+    def get_table_annotate_from_text(self, in_text, inout_table_obj):
+        match_annotate = re.search(r'\s*(?<=注[:：]).*', in_text)
+        match_annotate = match_annotate.group(0).strip() if match_annotate else ''
+        inout_table_obj.annotate = match_annotate
+        return inout_table_obj
+
     # 从文本中解析出table的标题
     def get_table_head_from_text(self, in_text, inout_table_obj):
-        '附表21   南麂岛10kV线路总概算表   单位：万元'
-        import re
-        match_index = re.search(r'^表\d+(.\d+)*|^附表\d+(.\d+)*', in_text)
-        match_index = match_index.group(0) if match_index else ''
+        '\n附表2.1.6.3.1 -1   南麂岛10kV线路总概算表   单位：万元'
+        match_index = re.search(r'^((\s*)(表|附表))[\d\.\s-]*', in_text)  # 开头可能有'\n'这种字符，2.1.6.3.1和-1中间可能有空格' '
+        match_index = match_index.group(0).strip() if match_index else ''
 
-        match_unit = re.search(r'(?:单位：)\s*[\u4e00-\u9fa5]+', in_text)
-        match_unit = match_unit.group(0) if match_unit else ''
+        match_unit = re.search(r'(?<=单位[：|:])\s*[\u4e00-\u9fa5]+', in_text)     # (?<=exp)匹配exp后面，(?=exp)匹配exp前面，(?!exp)匹配后面跟的不是exp，(?<!exp)匹配前面不是exp
+        match_unit = match_unit.group(0).strip() if match_unit else ''
 
-        match_head = in_text.replace(match_index, '').replace(match_unit, '').replace(' ', '').replace('\t', '')
+        match_unit_all = re.search(r'单位[：|:]\s*[\u4e00-\u9fa5]+', in_text)     # (?<=exp)匹配exp后面，(?=exp)匹配exp前面，(?!exp)匹配后面跟的不是exp，(?<!exp)匹配前面不是exp
+        match_unit_all = match_unit_all.group(0).strip() if match_unit_all else ''
 
+        match_head = in_text.replace(match_index, '').replace(match_unit_all, '').strip()
 
         inout_table_obj.index = match_index     # '附表21'
         inout_table_obj.head = match_head       # '南麂岛10kV线路总概算表'
         inout_table_obj.unit = match_unit       # '万元'
-        inout_table_obj.annotate= ''        # '注: ...'
+        # inout_table_obj.annotate= ''        # '注: ...'
 
         return inout_table_obj
 
@@ -341,6 +349,9 @@ class LLM_Doc():
 
         # 上一个文本，主要用于查找table标题
         last_para_text = ''
+        # 用于判断'注：...'前面是否为表格
+        last_is_table = False
+        last_table_obj = None
 
         # 递归遍历doc
         # for para in self.doc.paragraphs:
@@ -356,9 +367,22 @@ class LLM_Doc():
                     in_node_data_list_ref=current_node.node_data.data_list,
                     in_data=Doc_Node_Data(type='table', table=inout_table_obj)
                 )  # 这里para.text是文本内容 Doc_Node_Data.data_list中的text
+
+                last_is_table = True
+                last_table_obj = inout_table_obj
             else:
                 #--------------------------------------------找到标题head、文本text、图image等------------------------------
                 para = block
+                if last_is_table:
+                    self.get_table_annotate_from_text(self._patch_get_text(para), last_table_obj)
+                    # *******************测试para.text的bug************************
+                    # if '注：由于各配电变压器' in para.text:
+                    #     print(f'注：由于各配电变压器: [{self._patch_get_text(para)}]')
+                    #     print(f'注：由于各配电变压器: [{para.text}]')
+                        # print(f'注：由于各配电变压器: [{para._element.xml}]')
+                        # print(f'annotate: {last_table_obj.annotate}')
+                    # *******************测试para.text的bug************************
+
                 last_para_text = self._patch_get_text(para)
                 style = para.style.name                     # "Heading 1"
                 style_name  = style.split(' ')[0]           # 标题 "Heading
@@ -418,6 +442,9 @@ class LLM_Doc():
                         in_data=Doc_Node_Data(type='text', text=self._patch_get_text(para))
                     )    # 这里para.text是文本内容 Doc_Node_Data.data_list中的text
 
+                last_is_table = False
+                last_table_obj = None
+
         self.doc_root_parsed = True
 
     # 解析node数据的callback
@@ -439,8 +466,8 @@ class LLM_Doc():
                 tbl_head = node_data.table.head
                 tbl_unit = node_data.table.unit
                 tbl_annotate = node_data.table.annotate
-                half1 = (80-len(tbl_index)-len(tbl_head)-len(tbl_unit)-len('表格[]'))//2
-                half2 = (80-len(tbl_annotate))//2
+                half1 = (80-len(tbl_index)-len(tbl_head)-len(tbl_unit)-len('表格[::]'))//2
+                half2 = (80-len(tbl_annotate)-len('[注: ]'))//2
 
                 node_content += '-'*half1 + f'表格[{tbl_index}:{tbl_head}:{tbl_unit}]' + '-'*half1 + '\n'
 
@@ -450,7 +477,10 @@ class LLM_Doc():
                         node_content += cell.text + '\t'
                     node_content += '\n'
                 # table注解
-                node_content += '-'*half2 + f'表格[{tbl_annotate}]' + '-'*half2 + '\n'
+                if tbl_annotate:
+                    node_content += '-'*half2 + f'[注: {tbl_annotate}]' + '-'*half2 + '\n'
+                else:
+                    node_content += '-'*80
             else:
                 pass
 
@@ -714,8 +744,8 @@ def main_image():
     doc.parse_all_docx()
     # doc.print_doc_root()
     # doc.print_doc_root('2.1.7')
-    node = doc.find_doc_root('9')
-    # node = doc.find_doc_root('2.1.6.3')
+    # node = doc.find_doc_root('9')
+    node = doc.find_doc_root('2.1.6.3')
     # node = doc.find_doc_root('2.1.7')
     doc.print_from_doc_node(node)
 
@@ -826,9 +856,13 @@ def main():
 
 if __name__ == "__main__":
     # main_table()
-
+    # (? <= \s)\d + (?=\s)
     main_image()
-
+    # match_unit = re.search(r'\s*(?<=注[:：]).*', ' 注：由于各配电变压器均只有一条631或632线路支线作为进线，各支线的潮流与流入配电变压器的功率相等，简化起见，在表中有功、无功和视在功率统一表示。')
+    # match_unit = re.search(r'^(\s(表|附表))\d+(.\d+)*', '\n附表16                                 南麂岛智能用电系统安装工程费用表                                 单位：元')
+    # match_unit = re.search(r'(?<=单位[：|:])\s*[\u4e00-\u9fa5]+', '附表21   南麂岛10kV线路总概算表   单位： 万元')
+    # match_unit = match_unit.group(0) if match_unit else ''
+    # print(match_unit)
 
     # doc = fitz.open("D:/server/life-agent/WorldEnergyOutlook2023.pdf")
     # # 获取Document 文档对象的属性和方法
