@@ -670,7 +670,7 @@ def main():
         temperature=0.7,
         url='http://127.0.0.1:8001/v1'
     )
-    llm.ask_prepare("你是谁").get_answer_and_sync_print()
+    llm.ask_prepare("写一个简单的markdown，里面有一个表格").get_answer_and_sync_print()
 
     # res = llm.ask_block('你是谁')
     # print(res['choices'][0]['message']['content'])
