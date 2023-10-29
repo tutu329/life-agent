@@ -473,7 +473,7 @@ class LLM_Qwen():
         # ==========================================================
 
         if self.need_print:
-            print('User: \n\t', msgs[0]['content'])
+            print('User: \n\t', msgs[-1]['content'])
         openai.api_base = self.url
         gen = openai.ChatCompletion.create(
             model="Qwen",

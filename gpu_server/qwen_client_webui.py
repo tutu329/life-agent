@@ -1,8 +1,9 @@
 import gradio as gr
 
 from tools.llm.api_client_qwen_openai import *
+from tools.doc.llm_doc import *
 
-llm = LLM_Qwen()
+llm = LLM_Qwen(need_print=False)
 # llm.set_role_prompt('你正在扮演一个女孩，你好笨笨。')
 
 # ============================关于角色提示============================
@@ -47,19 +48,36 @@ def llm_clear():
     llm.print_history()
 
 def llm_answer(history, message):
-    print('执行llm_answer()')
-    print('message: ',message)
+    print('---------------------执行llm_answer()---------------------')
     message = history[-1][0]
-    history[-1][1] = ""
-    for chunk in llm_async_ask(message, history):
-        history[-1][1] += chunk
-        yield history, message
+    if '上传文件' in history[-1][0]:
+        filename = history[-1][0][0]
+        if 'docx' in filename:
+            print(f'上传了文件: {history[-1][0][0]}')
+            history[-1][1] = "" # history[-1][1]即为bot的输出
+            doc = LLM_Doc(filename)
+            doc.parse_all_docx()
+            node = doc.find_doc_root('2.1.6.3')
+            text = []
+            doc.get_text_from_doc_node(text, node)
+            for line in text:
+                history[-1][1] += line + '\n'
+                yield history, ''
+    else:
+        print('user: ',message)
+        history[-1][1] = ""
+        print('assistant: ', end='')
+        for chunk in llm_async_ask(message, history):
+            history[-1][1] += chunk
+            print(chunk, end='', flush=True)
+            yield history, message
+        print()
 
 def bot_add_text(history, text, role_prompt):
     llm.set_role_prompt(role_prompt)
     history = history + [(text, None)]
-    print('text: ',text)
-    print('history: ', history)
+    print('bot add text: ',text)
+    print("bot's history: ", history)
     return history, gr.update(value="", interactive=False)
 
 def bot_undo(history):
@@ -80,9 +98,9 @@ def bot_clear(history):
     print('history: ', history)
     return history, gr.update(value="", interactive=False)
 
-def bot_add_file(history, file):
-    history = history + [((file.name,), None)]
-    print('history: ', history)
+def bot_on_upload(history, file):
+    history = history + [((file.name,'上传文件'), None)]
+    print('bot_on_upload, history: ', history)
     return history
 
 # def llm_on_role_prompt_change(prompt):
@@ -269,8 +287,8 @@ def main():
             [user_input],
             queue=False
         )
-        file_msg = upload_btn.upload(bot_add_file, [chatbot, upload_btn], [chatbot], queue=False).then(
-            llm_answer, [chatbot, user_input], chatbot
+        file_msg = upload_btn.upload(bot_on_upload, [chatbot, upload_btn], [chatbot], queue=False).then(
+            llm_answer, [chatbot, user_input], [chatbot, user_input]
         )
 
         dark_mode_btn.click(

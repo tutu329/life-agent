@@ -747,7 +747,10 @@ def main_image():
     # node = doc.find_doc_root('9')
     node = doc.find_doc_root('2.1.6.3')
     # node = doc.find_doc_root('2.1.7')
-    doc.print_from_doc_node(node)
+    text = []
+    doc.get_text_from_doc_node(text, node)
+    print(''.join(text))
+    # doc.print_from_doc_node(node)
 
     # text_list = []
     # doc.get_text_from_doc_node(text_list, node)
