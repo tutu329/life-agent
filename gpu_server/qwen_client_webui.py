@@ -88,39 +88,102 @@ def bot_add_file(history, file):
 # def llm_on_role_prompt_change(prompt):
 #     llm.set_role_prompt(prompt)
 
+from typing import Iterable
+from gradio.themes.utils import colors, fonts, sizes
+from gradio.themes.default import Default
+class Qwen_Theme(Default):
+    def __init__(
+        self,
+        *,
+        primary_hue: colors.Color | str = colors.emerald,
+        secondary_hue: colors.Color | str = colors.blue,
+        neutral_hue: colors.Color | str = colors.gray,
+        spacing_size: sizes.Size | str = sizes.spacing_sm,
+        radius_size: sizes.Size | str = sizes.radius_sm,
+        text_size: sizes.Size | str = sizes.text_sm,
+        font: fonts.Font
+        | str
+        | Iterable[fonts.Font | str] = (
+            fonts.GoogleFont("Quicksand"),
+            "ui-sans-serif",
+            "sans-serif",
+        ),
+        font_mono: fonts.Font
+        | str
+        | Iterable[fonts.Font | str] = (
+            fonts.GoogleFont("IBM Plex Mono"),
+            "ui-monospace",
+            "monospace",
+        ),
+    ):
+        super().__init__(
+            primary_hue=primary_hue,
+            secondary_hue=secondary_hue,
+            neutral_hue=neutral_hue,
+            spacing_size=spacing_size,
+            radius_size=radius_size,
+            text_size=text_size,
+            font=font,
+            font_mono=font_mono,
+        )
+
+qwen_theme = Qwen_Theme()
 def main():
-    with gr.Blocks() as demo:
+    # gr.themes.builder()
+    # pass
+    with gr.Blocks(theme=qwen_theme) as demo:
         chatbot = gr.Chatbot(
             [],
             elem_id="chatbot",
+            # layout='panel',
+            # layout='bubble',
+            show_copy_button=True,
+            # line_breaks = False,
+            # render_markdown=False,
             bubble_full_width=False,
+            height=550,
             # avatar_images=(None, (os.path.join(os.path.dirname(__file__), "avatar.png"))),
         )
 
         with gr.Row():
             user_input = gr.Textbox(
-                lines=10,
+                lines=3,
                 max_lines=20,
                 autofocus=True,
-                scale=16,
+                scale=32,
                 show_label=False,
                 placeholder="输入文本并按回车，或者上传文件",
                 container=False,
             )
-            upload_btn = gr.UploadButton("📁", scale=1, file_types=["docx", "pdf", "image", "text", "video", "audio"])
+            submit_btn = gr.Button(value="提交", min_width=50, scale=1)
 
         with gr.Row():
-            clear_btn = gr.Button(value="清空", scale=1)
-            undo_btn = gr.Button(value="回撤", scale=1)
-            retry_btn = gr.Button(value="重试", scale=1)
-            submit_btn = gr.Button(value="提交", scale=4)
+            dark_mode_btn = gr.Button(
+                "💡",
+                scale=1,
+                size="sm",
+                min_width=20,
+                variant="primary",
+            )
+            upload_btn = gr.UploadButton(
+                "📁",
+                scale=1,
+                size='sm',
+                min_width=20,
+                file_types=["image", "text", "video", "audio"],
+                # file_count = "multiple"
+            )
+            undo_btn = gr.Button(value="回撤", min_width=20,scale=3)
+            retry_btn = gr.Button(value="重试",min_width=20, scale=3)
+            clear_btn = gr.Button(value="清空", min_width=20,scale=6)
+
 
         with gr.Row():
             role_prompt_tbx = gr.Textbox(
                 value='',
                 lines=3,
                 max_lines=20,
-                scale=16,
+                # scale=16,
                 show_label=False,
                 placeholder="输入角色提示语",
                 container=False,
@@ -208,6 +271,20 @@ def main():
         )
         file_msg = upload_btn.upload(bot_add_file, [chatbot, upload_btn], [chatbot], queue=False).then(
             llm_answer, [chatbot, user_input], chatbot
+        )
+
+        dark_mode_btn.click(
+            None,
+            None,
+            None,
+            _js="""() => {
+            if (document.querySelectorAll('.dark').length) {
+                document.querySelectorAll('.dark').forEach(el => el.classList.remove('dark'));
+            } else {
+                document.querySelector('body').classList.add('dark');
+            }
+        }""",
+            api_name=False,
         )
 
     demo.queue().launch()
