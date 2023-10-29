@@ -45,6 +45,54 @@ class Hierarchy_Node:
                 return res
         return None
 
+    # 获取node下目录(table of content)的md格式
+    def get_toc_md_string(self, inout_toc_md_list, in_node='root', in_max_level=3):
+        # 如果输入'1.1.3'这样的字符串
+        if type(in_node)==str:
+            node_s = in_node
+            in_node = self.find(node_s)
+            if in_node is None:
+                print(f'节点"{node_s}"未找到.')
+                inout_toc_md_list = []
+                return
+
+        # 如果输入Hierarchy_Node对象
+        if in_node is None:
+            inout_toc_md_list = []
+            return
+        else:
+            node = in_node
+
+        dprint(f'进入节点{node.node_data.name}')
+
+        # 处理当前node的数据
+        if node.node_data.level > 0:
+            if node.node_data.level==1:
+                color_string = '<mark>'
+                # color_string = '<<table><tr><td bgcolor="grey">'
+                color_string_end = '</mark>'
+                # color_string_end = '</td></tr></table>'
+            else:
+                color_string = color_string_end = ''
+
+            inout_toc_md_list.append(
+                # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                '#'*node.node_data.level + ' ' + color_string + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                node.node_data.name.strip() + ' ' +
+                node.node_data.heading.strip() + color_string_end
+                # node.node_data.heading.strip() + '</font>'
+            )
+
+        if node.node_data.level < in_max_level:
+            child_list = []
+            # 遍历child node
+            for child in node.children:
+                self.get_toc_md_string(child_list, child, in_max_level)
+            if child_list != []:
+                inout_toc_md_list += child_list    # 这里和get_toc_list_json（）的list1.append(list2)形成[1.1, 1.2, [1.2.1, 1.2.2]]不一样，这里是形成[#1.1, #1.2, ##1.2.1, ##1.2.2]
+
+        return
+
     # 获取node下目录(table of content)的json格式，list形式，节省字符串长度
     def get_toc_list_json(self, inout_toc_json_list, in_node='root', in_max_level=3):
         # 如果输入'1.1.3'这样的字符串
@@ -76,8 +124,6 @@ class Hierarchy_Node:
                 self.get_toc_list_json(child_list, child, in_max_level)
             if child_list != []:
                 inout_toc_json_list.append(child_list)
-
-
 
         return
 

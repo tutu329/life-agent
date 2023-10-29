@@ -57,12 +57,17 @@ def llm_answer(history, message):
             history[-1][1] = "" # history[-1][1]即为bot的输出
             doc = LLM_Doc(filename)
             doc.parse_all_docx()
-            node = doc.find_doc_root('2.1.6.3')
-            text = []
-            doc.get_text_from_doc_node(text, node)
-            for line in text:
-                history[-1][1] += line + '\n'
-                yield history, ''
+            toc = doc.get_toc_md_string()
+            history[-1][1] += toc
+            print(toc)
+            yield history, ''
+
+            # node = doc.find_doc_root('2.1.6.3')
+            # text = []
+            # doc.get_text_from_doc_node(text, node)
+            # for line in text:
+            #     history[-1][1] += line + '\n'
+            #     yield history, ''
     else:
         print('user: ',message)
         history[-1][1] = ""

@@ -187,6 +187,18 @@ class LLM_Doc():
             elif isinstance(child, CT_Tbl):
                 yield Table(child, parent)
 
+    # 获取node下目录(table of content)的md格式
+    def get_toc_md_string(self, in_max_level=3):
+        import json
+        toc = []
+        # toc = [f'@[toc]({"报告目录"})']
+        if self.doc_root is None:
+            return []
+
+        self.doc_root.get_toc_md_string(toc, self.doc_root, in_max_level)
+
+        return '\n'.join(toc)
+
     # 获取node下目录(table of content)的json格式, list形式，节省字符串长度
     def get_toc_list_json_string(self, in_max_level=3):
         import json
