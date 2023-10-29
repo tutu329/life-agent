@@ -99,7 +99,7 @@ def main():
 
         with gr.Row():
             user_input = gr.Textbox(
-                # lines=3,
+                lines=10,
                 max_lines=20,
                 autofocus=True,
                 scale=16,
@@ -107,7 +107,7 @@ def main():
                 placeholder="输入文本并按回车，或者上传文件",
                 container=False,
             )
-            upload_btn = gr.UploadButton("📁", scale=1, file_types=["image", "text", "video", "audio"])
+            upload_btn = gr.UploadButton("📁", scale=1, file_types=["docx", "pdf", "image", "text", "video", "audio"])
 
         with gr.Row():
             clear_btn = gr.Button(value="清空", scale=1)
