@@ -769,7 +769,7 @@ def main_image():
     # print('\n'.join(text_list))
 
 
-    # print(doc.get_toc_list_json_string(in_max_level=3))
+    print(doc.get_toc_list_json_string(in_max_level=2))
     # print(doc.get_toc_json_string(in_max_level=3))
 
 def ask_docx(in_filename='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx'):
