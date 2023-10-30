@@ -204,7 +204,7 @@ def main():
         with gr.Row():
             role_prompt_tbx = gr.Textbox(
                 value='',
-                lines=3,
+                lines=10,
                 max_lines=20,
                 # scale=16,
                 show_label=False,
