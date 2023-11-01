@@ -41,6 +41,7 @@ def is_win():
 
 # =========================================管理doc的层次化递归数据结构=================================================
 from utils.Hierarchy_Node import Hierarchy_Node
+# node 数据中的image数据
 @dataclass
 class Image_Data():
     name: str
@@ -48,6 +49,7 @@ class Image_Data():
     width: int
     height: int
 
+# node 数据中的table数据
 @dataclass
 class Table_Data():
     # table标题
@@ -59,6 +61,7 @@ class Table_Data():
     text:       str = ''  # 表格内容文本
     obj:        Any = None  # 表格的Table对象
 
+# node 数据
 @dataclass
 class Doc_Node_Data():
     type:str = ''   # 'text' 'table' 'image'
@@ -66,11 +69,12 @@ class Doc_Node_Data():
     table:Table_Data = None    # Table_Data 对象
     image:Image_Data = None
 
+# node 基本信息
 @dataclass
 class Doc_Node_Content():
-    level: int
-    name: str       # 如: '1.1.3'
-    heading: str    # 如: '建设必要性'
+    level: int      # 必需属性
+    name: str       # 必需属性, 如: '1.1.3'
+    heading: str    # 必需属性, 如: '建设必要性'
     data_list:List[Doc_Node_Data] = field(default_factory=list)   # 元素包括(text:str, image:Image_Part, table:str)
     # text: str       # 如: '本项目建设是必要的...'
     # image: Image_Part
@@ -103,8 +107,8 @@ class LLM_Doc():
         self.question_types = [
             '"关于文档总体的提问"',
             '"关于文档细节的提问"',
-            '"关于文档指定章节内容的问题"',
-            '"关于文档表格数据的提问"',
+            '"关于文档指定章节的问题"',
+            '"关于文档表格的提问"',
             '"与文档无关的问题"',
         ]
 
@@ -113,12 +117,14 @@ class LLM_Doc():
         except Exception as e:
             print(f'文件"{self.doc_name}" 未找到。')
 
+    # llm对user的提问进行分类，返回问题类型的index
     def llm_classify_question(self, in_question):
         question = f'用户正在对文档进行提问，问题是："{in_question}"，请问该问题属于哪种类型的提问，请从以下类型中选择一种：[{",".join(self.question_types)}]'
         print(f'llm_classify_question() question is : {question}')
         result = self.llm.ask_prepare(question).get_answer_and_sync_print()
+        print(f'llm_classify_question result is: {result}')
         for i in range(len(self.question_types)):
-            if self.question_types[i].replace('"', '') == result.replace('"', '').replace("'", "") :
+            if self.question_types[i].replace('"', '') in result :
                 return i
         return -1
 
@@ -126,16 +132,62 @@ class LLM_Doc():
         content = ''
         answer = ''
         match in_tool_index:
-            case 0:
+            case 0: #关于文档总体的提问
                 question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回具体章节'
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
-                content = self.get_text_from_doc_node(in_node=chapter)
-                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题“本项目总投资是多少”，请根据这块内容回答问题'
+                print(f'call_tools[0] 选择chapter raw: {chapter}')
+                chapter = re.search(r'\d+(.\d+)*', chapter).group(0)
+                print(f'call_tools[0] 选择chapter: {chapter}')
+
+                inout_text_list = []
+                self.get_text_from_doc_node(inout_text_list, in_node=chapter)
+                content = '\n'.join(inout_text_list)
+                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
+                print(f'call_tools[0] 最终问题:\n{question}')
                 answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
-            case 1:
-                pass
+            case 1: # 关于文档细节的提问
+                question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在文档的哪个章节，请返回具体章节'
+                chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
+                print(f'call_tools[0] 选择chapter raw: {chapter}')
+                chapter = re.search(r'\d+(.\d+)*', chapter).group(0)
+                print(f'call_tools[0] 选择chapter: {chapter}')
+
+                inout_text_list = []
+                self.get_text_from_doc_node(inout_text_list, in_node=chapter)
+                content = '\n'.join(inout_text_list)
+                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
+                print(f'call_tools[0] 最终问题:\n{question}')
+                answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+            case 2: # 关于文档指定章节的问题
+                chapter = in_question
+                print(f'call_tools[0] 选择chapter raw: {chapter}')
+                chapter = re.search(r'\d+(.\d+)*', chapter).group(0)
+                print(f'call_tools[0] 选择chapter: {chapter}')
+
+                inout_text_list = []
+                self.get_text_from_doc_node(inout_text_list, in_node=chapter)
+                content = '\n'.join(inout_text_list)
+                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
+                print(f'call_tools[0] 最终问题:\n{question}')
+                answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+            case 3: # 关于文档表格的提问
+                table_names = [f'"{table.head}"' for table in in_tables]
+                question = f'[{", ".join(table_names)}]. 以上是从文档中所有表格名称的清单，用户的提问是"{in_question}"，不要做任何解释，请直接返回提问相关的表格名称。'
+                table_name = self.llm.ask_prepare(question).get_answer_and_sync_print()
+                print(f'call_tools[0] 选择table_name raw: {table_name}')
+                table_name = re.search(r'".+"', table_name).group(0)
+                print(f'call_tools[0] 选择table_name: {table_name}')
+
+                content = self.get_table_content_by_head(table_name)
+                question = f'{content}. 以上是从文档中获取的表格内容，用户针对这块内容提出了问题"{in_question}"，请根据表格内容回答问题'
+                print(f'call_tools[0] 最终问题:\n{question}')
+                answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+            case 4: # 与文档无关的问题
+                answer = self.llm.ask_prepare(in_question).get_answer_and_sync_print()
             case -1:
                 print('call_tools(): 未匹配到tool')
+
+        return answer
 
     def ask_docx(self, in_query, in_max_level=3):
         file = self.doc_name
@@ -156,7 +208,7 @@ class LLM_Doc():
         re_result = re.search(r"\d+(.\d+)*", res).group(0)
 
         # --------------获取'1.1.3'对应章节下的text_got----------------------
-        node = doc.find_doc_root(re_result)
+        node = doc.find_doc_node(re_result)
         inout_text = []
         doc.get_text_from_doc_node(inout_text, node)
         text_got = '\n'.join(inout_text)
@@ -199,6 +251,7 @@ class LLM_Doc():
             except Exception as e:
                 print(f'关闭文件"{self.doc_name}"出错: {e}')
 
+    # 遍历python-docx数据某个节点下所有block里的paragraph内容或table内容
     def iter_block_items(self, parent):
         """
         Yield each paragraph and table child within *parent*, in document order.
@@ -219,19 +272,45 @@ class LLM_Doc():
             elif isinstance(child, CT_Tbl):
                 yield Table(child, parent)
 
-    # 获取node下目录(table of content)的md格式
-    def get_toc_md_string(self, in_max_level=3):
+    # 获取所有node中所有table组成的清单
+    def get_all_tables(self):
+        table_names = []
+        if self.doc_root is None:
+            return []
+
+        def _get_all_tables(in_node):
+            for child in in_node.children:
+                for item in child.node_data.data_list:
+                    if item.type=='table':
+                        table_names.append(item.table)
+                _get_all_tables(child)
+
+        root = self.find_doc_node('root')
+        _get_all_tables(root)
+
+        return table_names
+
+    # 从table清单中按照表明(head)查找一个表
+    def get_table_content_by_head(self, in_head):
+        table_head = in_head.replace('"', '').replace('“', '')
+        print(f'get_table_content_by_head() table_head: {table_head}')
+        for table in self.get_all_tables():
+            if table_head in table.head :
+                return table.text
+
+    # 获取目录(table of content)的md格式
+    def get_toc_md_string(self, in_max_level=3, in_show_md=False):
         import json
         toc = []
         # toc = [f'@[toc]({"报告目录"})']
         if self.doc_root is None:
             return []
 
-        self.doc_root.get_toc_md_string(toc, self.doc_root, in_max_level)
+        self.doc_root.get_toc_md_string(toc, self.doc_root, in_max_level, in_show_md=in_show_md)
 
         return '\n'.join(toc)
 
-    # 获取node下目录(table of content)的json格式, list形式，节省字符串长度
+    # 获取目录(table of content)的json格式, list形式，节省字符串长度
     def get_toc_list_json_string(self, in_max_level=3):
         import json
         toc = []
@@ -242,7 +321,7 @@ class LLM_Doc():
 
         return json.dumps(toc, indent=2, ensure_ascii=False)
 
-    # 获取node下目录(table of content)的json格式, dict形式，比较占用字符串长度
+    # 获取下目录(table of content)的json格式, dict形式，比较占用字符串长度
     def get_toc_dict_json_string(self, in_max_level=3):
         import json
         toc = {}
@@ -254,7 +333,7 @@ class LLM_Doc():
         return json.dumps(toc, indent=2, ensure_ascii=False)
 
     # 用'1.1.3'这样的字符串查找node
-    def find_doc_root(self, in_node_s):
+    def find_doc_node(self, in_node_s):
         if self.doc_root is None:
             return None
 
@@ -328,7 +407,8 @@ class LLM_Doc():
     # 从文本中解析出table的标题
     def get_table_head_from_text(self, in_text, inout_table_obj):
         '\n附表2.1.6.3.1 -1   南麂岛10kV线路总概算表   单位：万元'
-        match_index = re.search(r'^((\s*)(表|附表))[\d\.\s-]*', in_text)  # 开头可能有'\n'这种字符，2.1.6.3.1和-1中间可能有空格' '
+        match_index = re.search(r'^((\s*)(表|附表))[\d\.-]*', in_text)  # 开头可能有'\n'这种字符，2.1.6.3.1和-1中间可能有空格' ', 不管这个空格
+        # match_index = re.search(r'^((\s*)(表|附表))[\d\.\s-]*', in_text)  # 开头可能有'\n'这种字符，2.1.6.3.1和-1中间可能有空格' '
         match_index = match_index.group(0).strip() if match_index else ''
 
         match_unit = re.search(r'(?<=单位[：|:])\s*[\u4e00-\u9fa5]+', in_text)     # (?<=exp)匹配exp后面，(?=exp)匹配exp前面，(?!exp)匹配后面跟的不是exp，(?<!exp)匹配前面不是exp
@@ -493,7 +573,34 @@ class LLM_Doc():
 
     # 解析node数据的callback
     def parse_node_data_callback(self, in_node_data_list_ref, in_data):
-        in_node_data_list_ref.append(in_data)
+        # 处理node中table的text内容
+        node_content = ''
+        node_data = in_data
+        if node_data.type=='table':
+            # 表格
+            # table头
+            tbl_index = node_data.table.index
+            tbl_head = node_data.table.head
+            tbl_unit = node_data.table.unit
+            tbl_annotate = node_data.table.annotate
+
+            node_content += '表格索引: ' + tbl_index + '\n'
+            node_content += '表格名称: ' + tbl_head + '\n'
+            node_content += '表格数值的单位: ' + tbl_unit + '\n'
+
+            # table内容
+            for row in node_data.table.obj.rows:
+                for cell in row.cells:
+                    node_content += cell.text + '\t'
+                node_content += '\n'
+            # table注解
+            if tbl_annotate:
+                node_content += '表格的注解: ' + tbl_annotate + '\n'
+
+            node_data.table.text = node_content     # 解析过程中，将表格数据存入text
+
+        # 将处理后的node_data添加到node_data_list
+        in_node_data_list_ref.append(node_data)
 
     # 读取node数据的callback
     def get_node_data_callback(self, in_node):
@@ -525,6 +632,8 @@ class LLM_Doc():
                     node_content += '-'*half2 + f'[注: {tbl_annotate}]' + '-'*half2 + '\n'
                 else:
                     node_content += '-'*80
+
+                node_data.table.text = node_content     # 解析过程中，将表格数据存入text
             else:
                 pass
 
@@ -789,7 +898,7 @@ def main_image():
     # doc.print_doc_root()
     # doc.print_doc_root('2.1.7')
     # node = doc.find_doc_root('9')
-    node = doc.find_doc_root('2.1.6.3')
+    node = doc.find_doc_node('2.1.6.3')
     # node = doc.find_doc_root('2.1.7')
     text = []
     doc.get_text_from_doc_node(text, node)
@@ -839,7 +948,7 @@ def ask_docx(in_filename='d:/server/life-agent/tools/doc/南麂岛离网型微�
         re_result = re.search(r"\d+(.\d+)*",res).group(0)
         print(f'RE: {re_result}')
 
-        node = doc.find_doc_root(re_result)
+        node = doc.find_doc_node(re_result)
         # text_got = node.node_data.text
         inout_text = []
         doc.get_text_from_doc_node(inout_text, node)
@@ -888,7 +997,6 @@ def main_table():
     # node = doc.find_doc_root('2.1.3.2')
     # doc.print_from_doc_node(node)
 
-
 def main():
 
 
@@ -901,10 +1009,37 @@ def main():
             print(chunk, end='', flush=True)
         print()
 
+def main_llm():
+    doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
+    doc.llm.need_print = False
+
+    doc.parse_all_docx()
+
+    toc = doc.get_toc_md_string(2, in_show_md=False)
+    print(toc)
+    tables = doc.get_all_tables()
+    for table in tables:
+        print(f'table: {table.text}')
+
+    # question = '投资估算是多少？'
+    # question = '报告讲了什么？'
+    # question = '报告2.2.3讲了什么？'
+    # question = '负荷预测表返回给我'
+    question = '今天天气如何？'
+    print(f'user: {question}')
+    tool = doc.llm_classify_question(question)
+    print(f'选择工具: {tool}')
+    answer = doc.call_tools(tool, question, toc, tables)
+    print(f'assistant: {answer}')
+
+
+
+
 if __name__ == "__main__":
+    main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
-    main_image()
+    # main_image()
     # match_unit = re.search(r'\s*(?<=注[:：]).*', ' 注：由于各配电变压器均只有一条631或632线路支线作为进线，各支线的潮流与流入配电变压器的功率相等，简化起见，在表中有功、无功和视在功率统一表示。')
     # match_unit = re.search(r'^(\s(表|附表))\d+(.\d+)*', '\n附表16                                 南麂岛智能用电系统安装工程费用表                                 单位：元')
     # match_unit = re.search(r'(?<=单位[：|:])\s*[\u4e00-\u9fa5]+', '附表21   南麂岛10kV线路总概算表   单位： 万元')

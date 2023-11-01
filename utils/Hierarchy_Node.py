@@ -46,7 +46,16 @@ class Hierarchy_Node:
         return None
 
     # 获取node下目录(table of content)的md格式
-    def get_toc_md_string(self, inout_toc_md_list, in_node='root', in_max_level=3):
+    def get_toc_md_string(self, inout_toc_md_list, in_node='root', in_max_level=3, in_show_md=False):
+        if in_show_md:
+            blank_str = '&emsp;'
+            highlight_mark = '<mark>'
+            highlight_mark_end = '</mark>'
+        else:
+            blank_str = ''
+            highlight_mark = ''
+            highlight_mark_end = ''
+
         # 如果输入'1.1.3'这样的字符串
         if type(in_node)==str:
             node_s = in_node
@@ -68,16 +77,16 @@ class Hierarchy_Node:
         # 处理当前node的数据
         if node.node_data.level > 0:
             if node.node_data.level==1:
-                color_string = '<mark>'
+                color_string = highlight_mark
                 # color_string = '<<table><tr><td bgcolor="grey">'
-                color_string_end = '</mark>'
+                color_string_end = highlight_mark_end
                 # color_string_end = '</td></tr></table>'
             else:
                 color_string = color_string_end = ''
 
             inout_toc_md_list.append(
                 # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
-                '#'*node.node_data.level + ' ' + color_string + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                '#'*node.node_data.level + ' ' + color_string + blank_str*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
                 node.node_data.name.strip() + ' ' +
                 node.node_data.heading.strip() + color_string_end
                 # node.node_data.heading.strip() + '</font>'
@@ -87,7 +96,7 @@ class Hierarchy_Node:
             child_list = []
             # 遍历child node
             for child in node.children:
-                self.get_toc_md_string(child_list, child, in_max_level)
+                self.get_toc_md_string(child_list, child, in_max_level, in_show_md=in_show_md)
             if child_list != []:
                 inout_toc_md_list += child_list    # 这里和get_toc_list_json（）的list1.append(list2)形成[1.1, 1.2, [1.2.1, 1.2.2]]不一样，这里是形成[#1.1, #1.2, ##1.2.1, ##1.2.2]
 
