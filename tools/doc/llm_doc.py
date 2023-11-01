@@ -100,10 +100,42 @@ class LLM_Doc():
                 need_print=False,
             )
 
+        self.question_types = [
+            '"关于文档总体的提问"',
+            '"关于文档细节的提问"',
+            '"关于文档指定章节内容的问题"',
+            '"关于文档表格数据的提问"',
+            '"与文档无关的问题"',
+        ]
+
         try:
             self.doc = Document(self.doc_name)
         except Exception as e:
             print(f'文件"{self.doc_name}" 未找到。')
+
+    def llm_classify_question(self, in_question):
+        question = f'用户正在对文档进行提问，问题是："{in_question}"，请问该问题属于哪种类型的提问，请从以下类型中选择一种：[{",".join(self.question_types)}]'
+        print(f'llm_classify_question() question is : {question}')
+        result = self.llm.ask_prepare(question).get_answer_and_sync_print()
+        for i in range(len(self.question_types)):
+            if self.question_types[i].replace('"', '') == result.replace('"', '').replace("'", "") :
+                return i
+        return -1
+
+    def call_tools(self, in_tool_index, in_question, in_toc, in_tables):
+        content = ''
+        answer = ''
+        match in_tool_index:
+            case 0:
+                question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回具体章节'
+                chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
+                content = self.get_text_from_doc_node(in_node=chapter)
+                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题“本项目总投资是多少”，请根据这块内容回答问题'
+                answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+            case 1:
+                pass
+            case -1:
+                print('call_tools(): 未匹配到tool')
 
     def ask_docx(self, in_query, in_max_level=3):
         file = self.doc_name
