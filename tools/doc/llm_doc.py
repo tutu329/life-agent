@@ -136,7 +136,9 @@ class LLM_Doc():
                 question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回具体章节'
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
                 print(f'call_tools[0] 选择chapter raw: {chapter}')
-                chapter = re.search(r'\d+(.\d+)*', chapter).group(0)
+                chapter = re.search(r'\d+(.\d+)*', chapter)
+                if chapter is not None:
+                    chapter = chapter.group(0)
                 print(f'call_tools[0] 选择chapter: {chapter}')
 
                 inout_text_list = []
@@ -144,12 +146,14 @@ class LLM_Doc():
                 content = '\n'.join(inout_text_list)
                 question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
                 print(f'call_tools[0] 最终问题:\n{question}')
-                answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+                answer = self.llm.ask_prepare(question).get_answer_generator()
             case 1: # 关于文档细节的提问
                 question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在文档的哪个章节，请返回具体章节'
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
                 print(f'call_tools[0] 选择chapter raw: {chapter}')
-                chapter = re.search(r'\d+(.\d+)*', chapter).group(0)
+                chapter = re.search(r'\d+(.\d+)*', chapter)
+                if chapter is not None:
+                    chapter = chapter.group(0)
                 print(f'call_tools[0] 选择chapter: {chapter}')
 
                 inout_text_list = []
@@ -157,11 +161,13 @@ class LLM_Doc():
                 content = '\n'.join(inout_text_list)
                 question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
                 print(f'call_tools[0] 最终问题:\n{question}')
-                answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+                answer = self.llm.ask_prepare(question).get_answer_generator()
             case 2: # 关于文档指定章节的问题
                 chapter = in_question
                 print(f'call_tools[0] 选择chapter raw: {chapter}')
-                chapter = re.search(r'\d+(.\d+)*', chapter).group(0)
+                chapter = re.search(r'\d+(.\d+)*', chapter)
+                if chapter is not None:
+                    chapter = chapter.group(0)
                 print(f'call_tools[0] 选择chapter: {chapter}')
 
                 inout_text_list = []
@@ -169,21 +175,23 @@ class LLM_Doc():
                 content = '\n'.join(inout_text_list)
                 question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
                 print(f'call_tools[0] 最终问题:\n{question}')
-                answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+                answer = self.llm.ask_prepare(question).get_answer_generator()
             case 3: # 关于文档表格的提问
                 table_names = [f'"{table.head}"' for table in in_tables]
                 question = f'[{", ".join(table_names)}]. 以上是从文档中所有表格名称的清单，用户的提问是"{in_question}"，不要做任何解释，请直接返回提问相关的表格名称。'
                 table_name = self.llm.ask_prepare(question).get_answer_and_sync_print()
                 print(f'call_tools[0] 选择table_name raw: {table_name}')
-                table_name = re.search(r'".+"', table_name).group(0)
+                table_name = re.search(r'".+"', table_name)
+                if table_name is not None:
+                    table_name = table_name.group(0)
                 print(f'call_tools[0] 选择table_name: {table_name}')
 
                 content = self.get_table_content_by_head(table_name)
                 question = f'{content}. 以上是从文档中获取的表格内容，用户针对这块内容提出了问题"{in_question}"，请根据表格内容回答问题'
                 print(f'call_tools[0] 最终问题:\n{question}')
-                answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+                answer = self.llm.ask_prepare(question).get_answer_generator()
             case 4: # 与文档无关的问题
-                answer = self.llm.ask_prepare(in_question).get_answer_and_sync_print()
+                answer = self.llm.ask_prepare(in_question).get_answer_generator()
             case -1:
                 print('call_tools(): 未匹配到tool')
 
@@ -1030,7 +1038,8 @@ def main_llm():
     tool = doc.llm_classify_question(question)
     print(f'选择工具: {tool}')
     answer = doc.call_tools(tool, question, toc, tables)
-    print(f'assistant: {answer}')
+    for chunk in answer:
+        print(chunk, end='', flush=True)
 
 
 if __name__ == "__main__":

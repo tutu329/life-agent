@@ -52,31 +52,42 @@ def llm_answer(history, message):
     message = history[-1][0]
     if '上传文件' in history[-1][0]:
         filename = history[-1][0][0]
-        if 'docx' in filename:
-            print(f'上传了文件: {history[-1][0][0]}')
-            history[-1][1] = "" # history[-1][1]即为bot的输出
-            doc = LLM_Doc(filename)
-            doc.parse_all_docx()
-            toc = doc.get_toc_md_string()
-            history[-1][1] += toc
-            print(toc)
-            yield history, ''
-
-            # node = doc.find_doc_root('2.1.6.3')
-            # text = []
-            # doc.get_text_from_doc_node(text, node)
-            # for line in text:
-            #     history[-1][1] += line + '\n'
-            #     yield history, ''
+        # if 'docx' in filename:
+        #     print(f'上传了文件: {history[-1][0][0]}')
+        #     history[-1][1] = "" # history[-1][1]即为bot的输出
+        #     doc = LLM_Doc(filename)
+        #     doc.parse_all_docx()
+        #     toc = doc.get_toc_md_string()
+        #     history[-1][1] += toc
+        #     print(toc)
+        #     yield history, ''
     else:
-        print('user: ',message)
-        history[-1][1] = ""
-        print('assistant: ', end='')
-        for chunk in llm_async_ask(message, history):
-            history[-1][1] += chunk
-            print(chunk, end='', flush=True)
-            yield history, message
-        print()
+        if current_file != '' and 'docx' in current_file:
+            # 已有docx文件上传
+            doc = LLM_Doc(current_file)
+            doc.llm.need_print = False
+            doc.parse_all_docx()
+            toc = doc.get_toc_md_string(2, in_show_md=False)
+            tables = doc.get_all_tables()
+            tool = doc.llm_classify_question(message)
+            answer_gen = doc.call_tools(tool, message, toc, tables)
+            print('user: ', message)
+            history[-1][1] = ""
+            print('assistant: ', end='')
+            for chunk in answer_gen:
+                history[-1][1] += chunk
+                print(chunk, end='', flush=True)
+                yield history, message
+            print()
+        else:
+            print('user: ',message)
+            history[-1][1] = ""
+            print('assistant: ', end='')
+            for chunk in llm_async_ask(message, history):
+                history[-1][1] += chunk
+                print(chunk, end='', flush=True)
+                yield history, message
+            print()
 
 def bot_add_text(history, text, role_prompt):
     llm.set_role_prompt(role_prompt)
@@ -103,7 +114,10 @@ def bot_clear(history):
     print('history: ', history)
     return history, gr.update(value="", interactive=False)
 
+current_file = ''
 def bot_on_upload(history, file):
+    global current_file
+    current_file = file.name
     history = history + [((file.name,'上传文件'), None)]
     print('bot_on_upload, history: ', history)
     return history
@@ -292,9 +306,10 @@ def main():
             [user_input],
             queue=False
         )
-        file_msg = upload_btn.upload(bot_on_upload, [chatbot, upload_btn], [chatbot], queue=False).then(
-            llm_answer, [chatbot, user_input], [chatbot, user_input]
-        )
+        file_msg = upload_btn.upload(bot_on_upload, [chatbot, upload_btn], [chatbot], queue=False)
+        # file_msg = upload_btn.upload(bot_on_upload, [chatbot, upload_btn], [chatbot], queue=False).then(
+        #     llm_answer, [chatbot, user_input], [chatbot, user_input]
+        # )
 
         dark_mode_btn.click(
             None,
