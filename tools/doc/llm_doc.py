@@ -1032,9 +1032,6 @@ def main_llm():
     answer = doc.call_tools(tool, question, toc, tables)
     print(f'assistant: {answer}')
 
-
-
-
 if __name__ == "__main__":
     main_llm()
     # main_table()

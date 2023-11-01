@@ -208,5 +208,6 @@ def main():
     import json
     print(json.dumps(toc, indent=2, ensure_ascii=False))
 
+
 if __name__ == "__main__":
     main()
