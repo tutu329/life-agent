@@ -1022,6 +1022,62 @@ def main():
             print(chunk, end='', flush=True)
         print()
 
+def main_llm_pdf():
+    # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf')
+    # doc.parse_all_pdf()
+    # toc = doc.get_toc_md_string(2, in_show_md=False)
+    # print(toc)
+
+    doc = fitz.open("D:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf")
+    # 获取Document 文档对象的属性和方法
+    # 1、获取pdf 页数
+    pageCount = doc.page_count
+    print("pdf 页数", pageCount)
+
+    # 2、获取pdf 元数据
+    metaData = doc.metadata
+    print("pdf 元数据:", metaData)
+
+    # 3、获取pdf 目录信息
+    # llm = LLM_Qwen(
+    #     history=False,
+    #     # history_max_turns=50,
+    #     # history_clear_method='pop',
+    #     temperature=0.7,
+    #     url='http://127.0.0.1:8001/v1',
+    #     need_print=False,
+    # )
+
+    toc = doc.get_toc()
+    for item in toc:
+        print(f"pdf 目录：{item}")
+
+
+    # 4、遍历para
+    for page in doc.pages(12, 14):
+        print(f'--------{page}---------')
+        print(page.get_text('text'))
+        # print(f'--------{page}---------')
+        # print(page.get_text('blocks'))
+        print(f'--------{page}---------')
+        # print(json.dumps(page.get_text('dict'), indent=2))
+        text_dict = page.get_text('dict')
+        blocks = text_dict['blocks']
+        for block in blocks:
+            # lines = block['lines']
+            lines = block.get('lines')
+            if lines:
+                for line in lines:
+                    spans = line['spans']
+                    for span in spans:
+                        text = span['text']
+                        print(f'【line】: {text}')
+
+        # print(f'--------{page}---------')
+        # print(page.get_text().encode('utf8'))
+        # print(f'--------{page}---------')
+        # print(page.get_text())
+
 def main_llm():
     doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
     # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.docx')
@@ -1054,7 +1110,8 @@ def main_llm():
 
 
 if __name__ == "__main__":
-    main_llm()
+    main_llm_pdf()
+    # main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
     # main_image()
