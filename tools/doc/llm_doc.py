@@ -1040,7 +1040,7 @@ def main_llm_pdf():
 
     # pix = doc[3].get_pixmap()
     # pix._writeIMG(f'page{3}.png')
-    print('==========================================================================')
+    print('==============================获取页面图片============================================')
     image_list =  doc[0].get_images()
     for img in image_list:
         print(f'img: {img}')
@@ -1050,7 +1050,7 @@ def main_llm_pdf():
             img_path = f'D:/server/life-agent/tools/doc/image{189}_{xref}.png'
             pix.save(img_path)
             print(f'D:/server/life-agent/tools/doc/image{189}_{xref}.png')
-    print('==========================================================================')
+    print('===============================页面转图片===========================================')
     # 设置缩放和旋转系数,zoom_x, zoom_y取相同值，表示等比例缩放
     page_index = 1
     zoom_x = zoom_y = 3
@@ -1059,7 +1059,21 @@ def main_llm_pdf():
     pm = doc[page_index].get_pixmap(matrix=trans, alpha=False)
     # 开始写图像
     pm.save(f'D:/server/life-agent/tools/doc/gen.png')  # 第1张图片名：1.png，以此类推
-    print('==========================================================================')
+    print('D:/server/life-agent/tools/doc/gen.png saved')  # 第1张图片名：1.png，以此类推
+    print('================================表格处理==========================================')
+    doc_tab_page = 289
+    tabs = doc[doc_tab_page].find_tables()
+    i = 0
+    for tab in tabs:
+        i += 1
+        print(f'---------------------table-{i} found.------------------------')
+        df = tab.to_pandas()
+        print(f'df: {df}')
+        df.to_excel(f'{doc_tab_page}-{i}.xlsx')
+        print(f'tab-{i} on page[{doc_tab_page}] saved.')
+
+    print('================================================================================')
+
 
     # 3、获取pdf 目录信息
     # llm = LLM_Qwen(
