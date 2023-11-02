@@ -463,11 +463,16 @@ class LLM_Doc():
                 # return self.doc_root.find(parent_name)
 
                 name_list = in_node_name.split('.')
+                dprint(f'========in_node_name: "{in_node_name}"========', end='')
+
                 while True:
                     # 循环pop()，直到找到parent_node，例如3.4后面突然出现3.4.1.1，这时候的parent_node就3.4而不是3.4.1
+                    if not name_list:   # 有可能 1.1之上没有1，要直接返回root
+                        return self.doc_root
+
                     name_list.pop()
                     parent_name = '.'.join(name_list)
-                    dprint(f'"{parent_name}"========')
+                    dprint(f'"parent_name: "{parent_name}" ========')
                     node = self.doc_root.find(parent_name)
                     if node:
                         return node
@@ -1019,21 +1024,27 @@ def main():
 
 def main_llm():
     doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
+    # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.docx')
     doc.llm.need_print = False
 
     doc.parse_all_docx()
 
     toc = doc.get_toc_md_string(2, in_show_md=False)
     print(toc)
+    # inout_text = []
+    # doc.get_text_from_doc_node(inout_text, 'root')
+    # print('\n'.join(inout_text))
+
     tables = doc.get_all_tables()
-    for table in tables:
-        print(f'table: {table.text}')
+    # for table in tables:
+    #     print(f'table: {table.text}')
 
     # question = '投资估算是多少？'
-    # question = '报告讲了什么？'
+    question = '报告讲了什么？'
     # question = '报告2.2.3讲了什么？'
     # question = '负荷预测表返回给我'
-    question = '今天天气如何？'
+    # question = '今天天气如何？'
+
     print(f'user: {question}')
     tool = doc.llm_classify_question(question)
     print(f'选择工具: {tool}')
