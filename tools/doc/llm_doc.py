@@ -1038,6 +1038,29 @@ def main_llm_pdf():
     metaData = doc.metadata
     print("pdf 元数据:", metaData)
 
+    # pix = doc[3].get_pixmap()
+    # pix._writeIMG(f'page{3}.png')
+    print('==========================================================================')
+    image_list =  doc[0].get_images()
+    for img in image_list:
+        print(f'img: {img}')
+        xref = img[0]
+        pix = fitz.Pixmap(doc, xref)
+        if str(fitz.csRGB) == str(pix.colorspace):
+            img_path = f'D:/server/life-agent/tools/doc/image{189}_{xref}.png'
+            pix.save(img_path)
+            print(f'D:/server/life-agent/tools/doc/image{189}_{xref}.png')
+    print('==========================================================================')
+    # 设置缩放和旋转系数,zoom_x, zoom_y取相同值，表示等比例缩放
+    page_index = 1
+    zoom_x = zoom_y = 3
+    rotation_angle = 0
+    trans = fitz.Matrix(zoom_x, zoom_y).prerotate(rotation_angle)
+    pm = doc[page_index].get_pixmap(matrix=trans, alpha=False)
+    # 开始写图像
+    pm.save(f'D:/server/life-agent/tools/doc/gen.png')  # 第1张图片名：1.png，以此类推
+    print('==========================================================================')
+
     # 3、获取pdf 目录信息
     # llm = LLM_Qwen(
     #     history=False,
@@ -1048,30 +1071,30 @@ def main_llm_pdf():
     #     need_print=False,
     # )
 
-    toc = doc.get_toc()
-    for item in toc:
-        print(f"pdf 目录：{item}")
+    # toc = doc.get_toc()
+    # for item in toc:
+    #     print(f"pdf 目录：{item}")
 
 
     # 4、遍历para
-    for page in doc.pages(12, 14):
-        print(f'--------{page}---------')
-        print(page.get_text('text'))
-        # print(f'--------{page}---------')
-        # print(page.get_text('blocks'))
-        print(f'--------{page}---------')
-        # print(json.dumps(page.get_text('dict'), indent=2))
-        text_dict = page.get_text('dict')
-        blocks = text_dict['blocks']
-        for block in blocks:
-            # lines = block['lines']
-            lines = block.get('lines')
-            if lines:
-                for line in lines:
-                    spans = line['spans']
-                    for span in spans:
-                        text = span['text']
-                        print(f'【line】: {text}')
+    # for page in doc.pages(12, 14):
+    #     print(f'--------{page}---------')
+    #     print(page.get_text('text'))
+    #     # print(f'--------{page}---------')
+    #     # print(page.get_text('blocks'))
+    #     print(f'--------{page}---------')
+    #     # print(json.dumps(page.get_text('dict'), indent=2))
+    #     text_dict = page.get_text('dict')
+    #     blocks = text_dict['blocks']
+    #     for block in blocks:
+    #         # lines = block['lines']
+    #         lines = block.get('lines')
+    #         if lines:
+    #             for line in lines:
+    #                 spans = line['spans']
+    #                 for span in spans:
+    #                     text = span['text']
+    #                     print(f'【line】: {text}')
 
         # print(f'--------{page}---------')
         # print(page.get_text().encode('utf8'))
