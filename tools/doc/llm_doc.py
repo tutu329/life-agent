@@ -93,6 +93,10 @@ class LLM_Doc():
         self.doc_root = None            # 存放doc层次化数据
         self.doc_root_parsed = False    # 是否已经解析为层次化数据
 
+        # for pdf
+        self.pdf_doc = None # pdf的pitz对象
+        self.pdf_toc = None # pdf的现成目录
+
         self.llm = in_llm
         if self.llm is None:
             self.llm = LLM_Qwen(
@@ -113,9 +117,12 @@ class LLM_Doc():
         ]
 
         try:
-            self.doc = Document(self.doc_name)
+            if 'docx' in self.doc_name:
+                self.doc = Document(self.doc_name)
+            elif 'pdf' in self.doc_name:
+                self.pdf_doc = fitz.open(self.doc_name)
         except Exception as e:
-            print(f'文件"{self.doc_name}" 未找到。')
+            print(f'打开文件"{self.doc_name}"失败。')
 
     # llm对user的提问进行分类，返回问题类型的index
     def llm_classify_question(self, in_question):
@@ -700,97 +707,98 @@ class LLM_Doc():
         last_is_table = False
         last_table_obj = None
 
-        # 递归遍历doc
-        # for para in self.doc.paragraphs:
-        for block in self.iter_block_items(self.doc):
-            if block.style.name == 'Normal Table':
-                #--------------------------------------------找到表格-----------------------------------------------------
-                table = block
-                inout_table_obj = Table_Data(obj=table)
-                self.get_table_head_from_text(last_para_text, inout_table_obj)  # 解析table的标题
-                # table_obj = Table_Data(head=self.get_table_head_from_text(last_para_text), obj=table)
-                # 添加内容(text、table、image等元素)
-                self.parse_node_data_callback(
-                    in_node_data_list_ref=current_node.node_data.data_list,
-                    in_data=Doc_Node_Data(type='table', table=inout_table_obj)
-                )  # 这里para.text是文本内容 Doc_Node_Data.data_list中的text
+        self.pdf_toc = self.pdf_doc.get_toc()
 
-                last_is_table = True
-                last_table_obj = inout_table_obj
+        # 递归遍历toc
+        for i in range(len(self.pdf_toc)):
+            # 当前为章节如1.1
+            item = self.pdf_toc[i]
+            next_item = self.pdf_toc[i+1 if i<len(self.pdf_toc)-1 else len(self.pdf_toc)-1] # 如果一共10个，i为9时，则i+1也取9
+            level = item[0]
+            head = item[1]
+            page_num = item[2]
+            next_item_page_num = next_item[2]
+            print(f'目录级别：{level} ', end='')
+            print(f'目录标题：{head} ', end='')
+            print(f'目录页码：{page_num}')
+
+            # ----------------------------------找到标题heading，处理Hierarchy层次结构-------------------------------
+            new_level = int(level)   # 目前节点的级别，如1、2、3
+
+            # 计算current_node_name, 如：'1.1.1'还是'1.2'
+            if current_node_name == 'root':
+                current_node_name = '.'.join(['1'] * new_level)  # 1级为'1', 如果直接为2级就是'1.1'
             else:
-                #--------------------------------------------找到标题head、文本text、图image等------------------------------
-                para = block
-                if last_is_table:
-                    self.get_table_annotate_from_text(self._patch_get_text(para), last_table_obj)
-                    # *******************测试para.text的bug************************
-                    # if '注：由于各配电变压器' in para.text:
-                    #     print(f'注：由于各配电变压器: [{self._patch_get_text(para)}]')
-                    #     print(f'注：由于各配电变压器: [{para.text}]')
-                        # print(f'注：由于各配电变压器: [{para._element.xml}]')
-                        # print(f'annotate: {last_table_obj.annotate}')
-                    # *******************测试para.text的bug************************
-
-                last_para_text = self._patch_get_text(para)
-                style = para.style.name                     # "Heading 1"
-                style_name  = style.split(' ')[0]           # 标题 "Heading
-
-                if style_name=='Heading':
-                    # ----------------------------------找到标题heading，处理Hierarchy层次结构-------------------------------
-                    new_level = int(style.split(' ')[1])    # 标题级别 1
-
-                    # 计算current_node_name, 如：'1.1.1'或'1.2'
-                    if current_node_name=='root':
-                        current_node_name = '.'.join(['1']*new_level)   # 1级为'1', 如果直接为2级就是'1.1'
+                if new_level == current_level:
+                    # 相同层级
+                    dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                    dprint(f'new_level: {new_level}')
+                    dprint(f'current_level: {current_level}')
+                    # ‘1.1.1’变为'1.1.2'
+                    new_node_list = current_node_name.split('.')  # ['1', '1', '1']
+                    last_num = int(new_node_list[-1]) + 1  # 2
+                    new_node_list.pop()  # ['1', '1']
+                    current_node_name = '.'.join(new_node_list) + '.' + str(last_num)  # '1.1.2'
+                    # current_node_name = current_node_name[:-1] + str(int(current_node_name[-1])+1)
+                elif new_level > current_level:
+                    # 上级
+                    dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                    dprint(f'new_level: {new_level}')
+                    dprint(f'current_level: {current_level}')
+                    # ‘1.1.1’变为'1.1.1.1.1'
+                    current_node_name += '.' + '.'.join(['1'] * (new_level - current_level))
+                elif new_level < current_level:
+                    # 下级
+                    dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
+                    dprint(f'new_level: {new_level}')
+                    dprint(f'current_level: {current_level}')
+                    # ‘1.1.1’变为'1.2' 或 ‘1.1.1’变为'2'
+                    new_node_list = current_node_name.split('.')  # ['1', '1', '1']
+                    for i in range(current_level - new_level):
+                        new_node_list.pop()  # ['1', '1']
+                    last_num = int(new_node_list[-1]) + 1  # 2
+                    new_node_list.pop()  # ['1']
+                    if len(new_node_list) > 0:
+                        current_node_name = '.'.join(new_node_list) + '.' + str(last_num)  # '1.2'
                     else:
-                        if new_level == current_level:
-                            dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
-                            dprint(f'new_level: {new_level}')
-                            dprint(f'current_level: {current_level}')
-                            # ‘1.1.1’变为'1.1.2'
-                            new_node_list = current_node_name.split('.')  # ['1', '1', '1']
-                            last_num = int(new_node_list[-1]) + 1  # 2
-                            new_node_list.pop()  # ['1', '1']
-                            current_node_name = '.'.join(new_node_list) + '.' + str(last_num)  # '1.1.2'
-                            # current_node_name = current_node_name[:-1] + str(int(current_node_name[-1])+1)
-                        elif new_level > current_level:
-                            dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
-                            dprint(f'new_level: {new_level}')
-                            dprint(f'current_level: {current_level}')
-                            # ‘1.1.1’变为'1.1.1.1.1'
-                            current_node_name += '.' + '.'.join(['1']*(new_level-current_level))
-                        elif new_level < current_level:
-                            dprint(f'----------------------------current_node_name: {current_node_name}----------------------------')
-                            dprint(f'new_level: {new_level}')
-                            dprint(f'current_level: {current_level}')
-                            # ‘1.1.1’变为'1.2' 或 ‘1.1.1’变为'2'
-                            new_node_list = current_node_name.split('.')    # ['1', '1', '1']
-                            for i in range(current_level-new_level):
-                                new_node_list.pop()                         # ['1', '1']
-                            last_num = int(new_node_list[-1]) +1                      # 2
-                            new_node_list.pop()                             # ['1']
-                            if len(new_node_list)>0:
-                                current_node_name = '.'.join(new_node_list) + '.' + str(last_num)   # '1.2'
-                            else:
-                                current_node_name = str(last_num)
-                            # current_node_name = current_node_name[:-1-2*(current_level-new_level)] + str(int(current_node_name[-1-2*(current_level-new_level)])+1)
-                    current_level = new_level
+                        current_node_name = str(last_num)
+                    # current_node_name = current_node_name[:-1-2*(current_level-new_level)] + str(int(current_node_name[-1-2*(current_level-new_level)])+1)
 
-                    # 找到parent节点，并添加new_node
-                    new_node = Hierarchy_Node(Doc_Node_Content(current_level, current_node_name, self._patch_get_text(para))) # 这里para.text是标题内容 Doc_Node_Data.heading
-                    parent_node = find_parent_node(current_node_name)
-                    parent_node.add_child(new_node)
+            # （1）添加节点（容器）：找到parent节点，并添加new_node
+            new_node = Hierarchy_Node(Doc_Node_Content(
+                level=level,                # 3
+                name=current_node_name,     # 1.1.3
+                heading=head                # 建设必要性
+            ))
+            # 在parent节点的位置添加new_node
+            parent_node = find_parent_node(current_node_name)
+            parent_node.add_child(new_node)
 
-                    # 刷新current状态
-                    current_node = new_node
-                else:
-                    # ------------------------------------------找到内容：text、image等------------------------------------
-                    self.parse_node_data_callback(
-                        in_node_data_list_ref=current_node.node_data.data_list,
-                        in_data=Doc_Node_Data(type='text', text=self._patch_get_text(para))
-                    )    # 这里para.text是文本内容 Doc_Node_Data.data_list中的text
+            # 刷新current节点状态
+            current_level = new_level
+            current_node = new_node
 
-                last_is_table = False
-                last_table_obj = None
+            # （2）添加节点内容：text、image等
+            text_to_add = []
+            for page in self.pdf_doc.pages(page_num-1,next_item_page_num-1):
+                # =====================整块获取text========================
+                text = page.get_text('text')
+                # =====================按line获取text========================
+                # for block in page.get_text('dict')['blocks']:
+                #     lines = block.get('lines')
+                #     if lines:
+                #         for line in lines:
+                #             spans = line['spans']
+                #             for span in spans:
+                #                 text = span['text']
+                #                 print(f'【line】: {text}')
+                text_to_add.append(text)
+            text_to_add = '\n'.join(text_to_add)
+            self.parse_node_data_callback(
+                in_node_data_list_ref=current_node.node_data.data_list,
+                in_data=Doc_Node_Data(type='text', text=text_to_add)
+            )
+
 
         self.doc_root_parsed = True
 
@@ -1070,56 +1078,72 @@ def main():
         print()
 
 def main_llm_pdf():
-    doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
+    # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
     # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.docx')
-    doc.parse_all_docx()
-    toc = doc.get_toc_md_string(2, in_show_md=False)
-    print(f'root: {doc.doc_root.node_data.heading}')
-    print(toc)
+    # doc.parse_all_docx()
+    # toc = doc.get_toc_md_string(2, in_show_md=False)
+    # print(f'root: {doc.doc_root.node_data.heading}')
+    # print(toc)
+
+    doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf')
+    doc.parse_all_pdf()
+
+    inout_text =[]
+    doc.get_text_from_doc_node(inout_text, doc.doc_root)
+    i = 0
+    for item in inout_text:
+        # if i<0:
+        #     continue
+        # if i>7:
+        #     break
+        # i += 1
+        print(item)
+
+
 
     doc = fitz.open("D:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf")
     # 获取Document 文档对象的属性和方法
     # 1、获取pdf 页数
-    pageCount = doc.page_count
-    print("pdf 页数", pageCount)
+    # pageCount = doc.page_count
+    # print("pdf 页数", pageCount)
 
     # 2、获取pdf 元数据
-    metaData = doc.metadata
-    print("pdf 元数据:", metaData)
+    # metaData = doc.metadata
+    # print("pdf 元数据:", metaData)
 
     # pix = doc[3].get_pixmap()
     # pix._writeIMG(f'page{3}.png')
     print('==============================获取页面图片============================================')
-    image_list =  doc[0].get_images()
-    for img in image_list:
-        print(f'img: {img}')
-        xref = img[0]
-        pix = fitz.Pixmap(doc, xref)
-        if str(fitz.csRGB) == str(pix.colorspace):
-            img_path = f'D:/server/life-agent/tools/doc/image{189}_{xref}.png'
-            pix.save(img_path)
-            print(f'D:/server/life-agent/tools/doc/image{189}_{xref}.png')
+    # image_list =  doc[0].get_images()
+    # for img in image_list:
+    #     print(f'img: {img}')
+    #     xref = img[0]
+    #     pix = fitz.Pixmap(doc, xref)
+    #     if str(fitz.csRGB) == str(pix.colorspace):
+    #         img_path = f'D:/server/life-agent/tools/doc/image{189}_{xref}.png'
+    #         pix.save(img_path)
+    #         print(f'D:/server/life-agent/tools/doc/image{189}_{xref}.png')
     print('===============================页面转图片===========================================')
     # 设置缩放和旋转系数,zoom_x, zoom_y取相同值，表示等比例缩放
-    page_index = 1
-    zoom_x = zoom_y = 3
-    rotation_angle = 0
-    trans = fitz.Matrix(zoom_x, zoom_y).prerotate(rotation_angle)
-    pm = doc[page_index].get_pixmap(matrix=trans, alpha=False)
+    # page_index = 1
+    # zoom_x = zoom_y = 3
+    # rotation_angle = 0
+    # trans = fitz.Matrix(zoom_x, zoom_y).prerotate(rotation_angle)
+    # pm = doc[page_index].get_pixmap(matrix=trans, alpha=False)
     # 开始写图像
-    pm.save(f'D:/server/life-agent/tools/doc/gen.png')  # 第1张图片名：1.png，以此类推
-    print('D:/server/life-agent/tools/doc/gen.png saved')  # 第1张图片名：1.png，以此类推
+    # pm.save(f'D:/server/life-agent/tools/doc/gen.png')  # 第1张图片名：1.png，以此类推
+    # print('D:/server/life-agent/tools/doc/gen.png saved')  # 第1张图片名：1.png，以此类推
     print('================================表格处理==========================================')
-    doc_tab_page = 289
-    tabs = doc[doc_tab_page].find_tables()
-    i = 0
-    for tab in tabs:
-        i += 1
-        print(f'---------------------table-{i} found.------------------------')
-        df = tab.to_pandas()
-        print(f'df: {df}')
-        df.to_excel(f'{doc_tab_page}-{i}.xlsx')
-        print(f'tab-{i} on page[{doc_tab_page}] saved.')
+    # doc_tab_page = 289
+    # tabs = doc[doc_tab_page].find_tables()
+    # i = 0
+    # for tab in tabs:
+    #     i += 1
+    #     print(f'---------------------table-{i} found.------------------------')
+    #     df = tab.to_pandas()
+    #     print(f'df: {df}')
+    #     df.to_excel(f'{doc_tab_page}-{i}.xlsx')
+    #     print(f'tab-{i} on page[{doc_tab_page}] saved.')
 
     print('================================================================================')
 
@@ -1140,7 +1164,7 @@ def main_llm_pdf():
 
 
     # 4、遍历para
-    # for page in doc.pages(12, 14):
+    # for page in doc.pages(0, 1):
     #     print(f'--------{page}---------')
     #     print(page.get_text('text'))
     #     # print(f'--------{page}---------')
