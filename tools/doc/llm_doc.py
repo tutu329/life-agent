@@ -402,11 +402,11 @@ class LLM_Doc():
         if type(in_node)==str:
             node_s = in_node
             # in_node = self.doc_root.find(node_s)
-            # 先通过node heading查找1.1.3
-            in_node = self.doc_root.find_by_head(node_s)
+            # 先通过node name查找1.1.3
+            in_node = self.doc_root.find(node_s)
             if in_node is None:
-                # 然后通过node name查找1.1.3
-                in_node = self.doc_root.find(node_s)
+                # 然后通过node heading查找1.1.3
+                in_node = self.doc_root.find_by_head(node_s)
                 if in_node is None:
                     dprint(f'节点"{node_s}"未找到.')
                     return
@@ -1235,8 +1235,8 @@ def main_llm():
     # for table in tables:
     #     print(f'table: {table.text}')
 
-    # question = '投资估算是多少？'
-    question = '报告讲了什么？'
+    question = '投资估算是多少？'
+    # question = '报告讲了什么？'
     # question = '报告2.2.3讲了什么？'
     # question = '负荷预测表返回给我'
     # question = '今天天气如何？'
@@ -1250,8 +1250,8 @@ def main_llm():
 
 
 if __name__ == "__main__":
-    main_llm_pdf()
-    # main_llm()
+    # main_llm_pdf()
+    main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
     # main_image()
