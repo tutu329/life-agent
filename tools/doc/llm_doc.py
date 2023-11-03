@@ -478,7 +478,9 @@ class LLM_Doc():
                         return node
 
         # 处理root
-        self.doc_root = Hierarchy_Node(Doc_Node_Content(0, 'root', 'root根'))
+        doc_name = os.path.splitext(os.path.basename(self.doc_name))[0]
+        print(f'===================doc_name : {doc_name}===================')
+        self.doc_root = Hierarchy_Node(Doc_Node_Content(0, 'root', doc_name))
 
         current_node = self.doc_root
         current_node_name = 'root'
@@ -1023,10 +1025,12 @@ def main():
         print()
 
 def main_llm_pdf():
-    # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf')
-    # doc.parse_all_pdf()
-    # toc = doc.get_toc_md_string(2, in_show_md=False)
-    # print(toc)
+    doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
+    # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.docx')
+    doc.parse_all_docx()
+    toc = doc.get_toc_md_string(2, in_show_md=False)
+    print(f'root: {doc.doc_root.node_data.heading}')
+    print(toc)
 
     doc = fitz.open("D:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf")
     # 获取Document 文档对象的属性和方法
