@@ -45,6 +45,20 @@ class Hierarchy_Node:
                 return res
         return None
 
+    def find_by_head(self, in_head_name):
+        dprint(f'查找节点: {self.node_data.heading}')
+        if in_head_name in self.node_data.heading:
+            dprint(f'--------找到了node: {self.node_data.heading}---------')
+            return self # 返回所找到的node对象
+
+        if self.children:
+            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.heading for child in self.children]) + ']')
+        for child in self.children:
+            res = child.find_by_head(in_head_name)
+            if res is not None:
+                return res
+        return None
+
     # 获取node下目录(table of content)的md格式
     def get_toc_md_string(self, inout_toc_md_list, in_node='root', in_max_level=3, in_show_md=False):
         if in_show_md:

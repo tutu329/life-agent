@@ -135,7 +135,7 @@ class LLM_Doc():
                 return i
         return -1
 
-    def call_tools(self, in_tool_index, in_question, in_toc, in_tables):
+    def call_tools(self, in_tool_index, in_question, in_toc, in_tables=None):
         content = ''
         answer = ''
         match in_tool_index:
@@ -184,19 +184,25 @@ class LLM_Doc():
                 print(f'call_tools[0] 最终问题:\n{question}')
                 answer = self.llm.ask_prepare(question).get_answer_generator()
             case 3: # 关于文档表格的提问
-                table_names = [f'"{table.head}"' for table in in_tables]
-                question = f'[{", ".join(table_names)}]. 以上是从文档中所有表格名称的清单，用户的提问是"{in_question}"，不要做任何解释，请直接返回提问相关的表格名称。'
-                table_name = self.llm.ask_prepare(question).get_answer_and_sync_print()
-                print(f'call_tools[0] 选择table_name raw: {table_name}')
-                table_name = re.search(r'".+"', table_name)
-                if table_name is not None:
-                    table_name = table_name.group(0)
-                print(f'call_tools[0] 选择table_name: {table_name}')
+                if in_tables is not None:
+                    table_names = [f'"{table.head}"' for table in in_tables]
+                    question = f'[{", ".join(table_names)}]. 以上是从文档中所有表格名称的清单，用户的提问是"{in_question}"，不要做任何解释，请直接返回提问相关的表格名称。'
+                    table_name = self.llm.ask_prepare(question).get_answer_and_sync_print()
+                    print(f'call_tools[0] 选择table_name raw: {table_name}')
+                    table_name = re.search(r'".+"', table_name)
+                    if table_name is not None:
+                        table_name = table_name.group(0)
+                    print(f'call_tools[0] 选择table_name: {table_name}')
 
-                content = self.get_table_content_by_head(table_name)
-                question = f'{content}. 以上是从文档中获取的表格内容，用户针对这块内容提出了问题"{in_question}"，请根据表格内容回答问题'
-                print(f'call_tools[0] 最终问题:\n{question}')
-                answer = self.llm.ask_prepare(question).get_answer_generator()
+                    content = self.get_table_content_by_head(table_name)
+                    question = f'{content}. 以上是从文档中获取的表格内容，用户针对这块内容提出了问题"{in_question}"，请根据表格内容回答问题'
+                    print(f'call_tools[0] 最终问题:\n{question}')
+                    answer = self.llm.ask_prepare(question).get_answer_generator()
+                else:
+                    # pdf暂时无法解析table
+                    question = f'文档无法解析出表格内容，用户针对这块内容提出了问题"{in_question}"，请回答该问题'
+                    print(f'call_tools[0] 最终问题:\n{question}')
+                    answer = self.llm.ask_prepare(question).get_answer_generator()
             case 4: # 与文档无关的问题
                 answer = self.llm.ask_prepare(in_question).get_answer_generator()
             case -1:
@@ -347,12 +353,19 @@ class LLM_Doc():
 
         return json.dumps(toc, indent=2, ensure_ascii=False)
 
-    # 用'1.1.3'这样的字符串查找node
+    # 用'1.1.3'这样的字符串查找node name
     def find_doc_node(self, in_node_s):
         if self.doc_root is None:
             return None
 
         return self.doc_root.find(in_node_s)
+
+    # 用'1.1.3'这样的字符串查找node head
+    def find_doc_node_by_head(self, in_node_s):
+        if self.doc_root is None:
+            return None
+
+        return self.doc_root.find_by_head(in_node_s)
 
     # 遍历打印node下的所有内容
     def print_from_doc_node(self, in_node='root'):   # in_node为'1.1.3'或者Hierarchy_Node对象
@@ -388,10 +401,15 @@ class LLM_Doc():
         # 如果输入'1.1.3'这样的字符串
         if type(in_node)==str:
             node_s = in_node
-            in_node = self.doc_root.find(node_s)
+            # in_node = self.doc_root.find(node_s)
+            # 先通过node heading查找1.1.3
+            in_node = self.doc_root.find_by_head(node_s)
             if in_node is None:
-                dprint(f'节点"{node_s}"未找到.')
-                return
+                # 然后通过node name查找1.1.3
+                in_node = self.doc_root.find(node_s)
+                if in_node is None:
+                    dprint(f'节点"{node_s}"未找到.')
+                    return
 
         # 如果输入Hierarchy_Node对象
         if in_node is None:
@@ -718,9 +736,9 @@ class LLM_Doc():
             head = item[1]
             page_num = item[2]
             next_item_page_num = next_item[2]
-            print(f'目录级别：{level} ', end='')
-            print(f'目录标题：{head} ', end='')
-            print(f'目录页码：{page_num}')
+            dprint(f'目录级别：{level} ', end='')
+            dprint(f'目录标题：{head} ', end='')
+            dprint(f'目录页码：{page_num}')
 
             # ----------------------------------找到标题heading，处理Hierarchy层次结构-------------------------------
             new_level = int(level)   # 目前节点的级别，如1、2、3
@@ -1087,21 +1105,33 @@ def main_llm_pdf():
 
     doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf')
     doc.parse_all_pdf()
+    tables = doc.get_all_tables()
 
-    inout_text =[]
-    doc.get_text_from_doc_node(inout_text, doc.doc_root)
-    i = 0
-    for item in inout_text:
-        # if i<0:
-        #     continue
-        # if i>7:
-        #     break
-        # i += 1
-        print(item)
+    # node = doc.find_doc_node_by_head('5.6')
+    # print(f'==============node found: {node} ============')
+    # inout_text = []
+    # doc.get_text_from_doc_node(inout_text, node)
+    # for item in inout_text:
+    #     print(item)
+
+    question = '报告讲了什么？'
+    # question = '报告2.2.3讲了什么？'
+    # question = '负荷预测表返回给我'
+    # question = '今天天气如何？'
+
+    toc = doc.get_toc_md_string(3, in_show_md=False)
+    print(f'toc: {toc}')
+
+    print(f'user: {question}')
+    tool = doc.llm_classify_question(question)
+    print(f'选择工具: {tool}')
+    answer = doc.call_tools(tool, question, toc, in_tables=None)
+    for chunk in answer:
+        print(chunk, end='', flush=True)
 
 
 
-    doc = fitz.open("D:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf")
+    # doc = fitz.open("D:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf")
     # 获取Document 文档对象的属性和方法
     # 1、获取pdf 页数
     # pageCount = doc.page_count

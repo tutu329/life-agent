@@ -79,6 +79,24 @@ def llm_answer(history, message):
                 print(chunk, end='', flush=True)
                 yield history, message
             print()
+        elif current_file != '' and 'pdf' in current_file:
+            # 已有pdf文件上传
+            doc = LLM_Doc(current_file)
+            doc.llm.need_print = False
+            doc.parse_all_pdf()
+            toc = doc.get_toc_md_string(2, in_show_md=False)
+            # tables = doc.get_all_tables()
+            tool = doc.llm_classify_question(message)
+            answer_gen = doc.call_tools(tool, message, toc)
+            # answer_gen = doc.call_tools(tool, message, toc, tables)
+            print('user: ', message)
+            history[-1][1] = ""
+            print('assistant: ', end='')
+            for chunk in answer_gen:
+                history[-1][1] += chunk
+                print(chunk, end='', flush=True)
+                yield history, message
+            print()
         else:
             print('user: ',message)
             history[-1][1] = ""
