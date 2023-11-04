@@ -67,10 +67,10 @@ def llm_answer(history, message):
             doc = LLM_Doc(current_file)
             doc.llm.need_print = False
             doc.parse_all_docx()
-            toc = doc.get_toc_md_for_tool(2, in_if_render=False)
-            tables = doc.get_all_tables()
+            toc = doc.get_toc_md_for_tool_by_node(doc.doc_root)
+            # tables = doc.get_all_tables()
             tool = doc.llm_classify_question(message)
-            answer_gen = doc.call_tools(tool, message, toc, tables)
+            answer_gen = doc.call_tools(tool, message, toc, in_tables=None)
             print('user: ', message)
             history[-1][1] = ""
             print('assistant: ', end='')
@@ -84,7 +84,7 @@ def llm_answer(history, message):
             doc = LLM_Doc(current_file)
             doc.llm.need_print = False
             doc.parse_all_pdf()
-            toc = doc.get_toc_md_for_tool(2, in_if_render=False)
+            toc = doc.get_toc_md_for_tool_by_node(doc.doc_root)
             # tables = doc.get_all_tables()
             tool = doc.llm_classify_question(message)
             answer_gen = doc.call_tools(tool, message, toc)

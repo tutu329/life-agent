@@ -83,8 +83,8 @@ class Doc_Node_Content():
 @dataclass
 class Prompt_Limitation():
     toc_max_len:int = 4096          # 返回目录(toc)字符串的最大长度
-    toc_nonsense_min_len:int = 100  # 返回目录(toc)内容太短从而无法进行总结的长度
-    context_max_len:int = 4096      # 返回文本(content)字符串的最大长度
+    toc_nonsense_min_len:int = 300  # 返回目录(toc)内容太短从而无法进行总结的长度
+    context_max_len:int = 8192      # 返回文本(content)字符串的最大长度
 
 # =========================================管理doc的层次化递归数据结构=================================================
 # docx: 采用python-docx解析文档，采用win32com解决页码问题
@@ -172,9 +172,11 @@ class LLM_Doc():
                 #     chapter = chapter.group(0)
                 # print(f'call_tools[0] 选择chapter: {chapter}')
 
+                print(f'---------------------------------定位的chapter为: -------------------------\n{chapter}')
                 content = self.get_text_from_doc_node(in_node_heading=chapter, in_if_similar_search=True)
+                print(f'---------------------------------返回内容content为: -------------------------\n{content}')
                 content = self.long_content_summary(content)
-                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
+                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容用中文回答问题，回复格式要层次清晰、便于理解，该换行的地方要换行，该编序号和缩进的地方要编制序号和缩进'
                 # print(f'call_tools[0] 最终问题:\n{question}')
                 answer = self.llm.ask_prepare(question).get_answer_generator()
 
@@ -184,16 +186,20 @@ class LLM_Doc():
                 # print(f'test toc: {test_toc}')
 
             case 1: # 关于文档细节的提问
-                question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在文档的哪个章节，请返回具体章节'
+                question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在这个目录的哪个章节中，请返回具体的章节标题，返回内容仅为"某章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
-                print(f'call_tools[0] 选择chapter raw: {chapter}')
-                chapter = re.search(r'\d+(.\d+)*', chapter)
-                if chapter is not None:
-                    chapter = chapter.group(0)
-                print(f'call_tools[0] 选择chapter: {chapter}')
+                # print(f'call_tools[0] 选择chapter raw: {chapter}')
+                # chapter = re.search(r'\d+(.\d+)*', chapter)
+                # if chapter is not None:
+                #     chapter = chapter.group(0)
+                # print(f'call_tools[0] 选择chapter: {chapter}')
 
-                content = self.get_text_from_doc_node(in_node_heading=chapter)
-                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
+                print(f'---------------------------------定位的chapter为: -------------------------\n{chapter}')
+                content = self.get_text_from_doc_node(in_node_heading=chapter, in_if_similar_search=True)
+                print(f'---------------------------------返回内容content为: -------------------------\n{content}')
+                # content = self.get_text_from_doc_node(in_node_heading=chapter)
+                content = self.long_content_summary(content)
+                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容用中文回答问题，回复格式要层次清晰、便于理解，该换行的地方要换行，该编序号和缩进的地方要编制序号和缩进'
                 print(f'call_tools[0] 最终问题:\n{question}')
                 answer = self.llm.ask_prepare(question).get_answer_generator()
             case 2: # 关于文档指定章节的问题
@@ -205,7 +211,8 @@ class LLM_Doc():
                 print(f'call_tools[0] 选择chapter: {chapter}')
 
                 content = self.get_text_from_doc_node(in_node_heading=chapter)
-                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
+                content = self.long_content_summary(content)
+                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容用中文回答问题，回复格式要层次清晰、便于理解，该换行的地方要换行，该编序号和缩进的地方要编制序号和缩进'
                 print(f'call_tools[0] 最终问题:\n{question}')
                 answer = self.llm.ask_prepare(question).get_answer_generator()
             case 3: # 关于文档表格的提问
@@ -220,6 +227,7 @@ class LLM_Doc():
                     print(f'call_tools[0] 选择table_name: {table_name}')
 
                     content = self.get_table_content_by_head(table_name)
+                    content = self.long_content_summary(content)
                     question = f'{content}. 以上是从文档中获取的表格内容，用户针对这块内容提出了问题"{in_question}"，请根据表格内容回答问题'
                     print(f'call_tools[0] 最终问题:\n{question}')
                     answer = self.llm.ask_prepare(question).get_answer_generator()
@@ -270,12 +278,6 @@ class LLM_Doc():
         final_answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
 
         return final_answer
-
-
-
-
-
-        return content
 
     def ask_docx(self, in_query, in_max_level=3):
         file = self.doc_name
@@ -1303,7 +1305,7 @@ def main_llm_pdf():
     # question = '今天天气如何？'
 
     # toc = doc.get_toc_md_for_tool(4)
-    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root, 4)
+    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root)
     print(f'toc: {toc}')
 
     print(f'user: {question}')
@@ -1407,7 +1409,8 @@ def main_llm():
         # for table in tables:
         #     print(f'table: {table.text}')
 
-        question = '投资估算是多少？'
+        question = '主要结论是多少？'
+        # question = '投资估算是多少？'
         # question = '报告讲了什么？'
         # question = '报告2.2.3讲了什么？'
         # question = '负荷预测表返回给我'
@@ -1441,8 +1444,8 @@ def main_llm():
 
 
 if __name__ == "__main__":
-    main_llm_pdf()
-    # main_llm()
+    # main_llm_pdf()
+    main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
     # main_image()

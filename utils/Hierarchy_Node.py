@@ -37,9 +37,9 @@ class Hierarchy_Node:
         # if self.node_data.heading == in_node_name:
         simi = wratio(self.node_data.heading, in_node_name)
         # simi = wratio(self.node_data.heading, in_node_name)
-        # print(f'--------node: "{self.node_data.heading}"-相似度: {simi}--------')
+        print(f'--------node: "{self.node_data.heading}"-相似度: {simi}--------')
         # if in_node_name.replace('"', '') in self.node_data.heading :
-        if simi>70:
+        if in_node_name.replace('"', '').replace("'", "") in self.node_data.heading or simi>=60 :
             dprint(f'--------找到了node: {self.node_data.heading}-相似度: {simi}--------')
             return self # 返回所找到的node对象
 
