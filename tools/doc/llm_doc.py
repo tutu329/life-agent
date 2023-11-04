@@ -82,7 +82,9 @@ class Doc_Node_Content():
 # 用于控制prompt长度的参数
 @dataclass
 class Prompt_Limitation():
-    toc_max_len:int = 4096  # 返回目录(toc)字符串的最大长度
+    toc_max_len:int = 4096          # 返回目录(toc)字符串的最大长度
+    toc_nonsense_min_len:int = 100  # 返回目录(toc)内容太短从而无法进行总结的长度
+    context_max_len:int = 4096      # 返回文本(content)字符串的最大长度
 
 # =========================================管理doc的层次化递归数据结构=================================================
 # docx: 采用python-docx解析文档，采用win32com解决页码问题
@@ -145,6 +147,7 @@ class LLM_Doc():
                 return i
         return -1
 
+    # 调用tools
     def call_tools(self, in_tool_index, in_question, in_toc, in_tables=None):
         content = ''
         answer = ''
@@ -160,7 +163,7 @@ class LLM_Doc():
 
         match in_tool_index:
             case 0: #关于文档总体的提问
-                question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回具体的章节标题，返回内容仅为"某章节标题"这样的字符串，没有其他任何解释、前缀或多余字符'
+                question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回具体的章节标题，返回内容仅为"某章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
                 print(f'question: {question}')
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
                 print(f'call_tools[0] 选择chapter raw: "{chapter}"')
@@ -170,12 +173,15 @@ class LLM_Doc():
                 # print(f'call_tools[0] 选择chapter: {chapter}')
 
                 content = self.get_text_from_doc_node(in_node_heading=chapter, in_if_similar_search=True)
+                content = self.long_content_summary(content)
                 question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
-                print(f'call_tools[0] 最终问题:\n{question}')
-                # answer = self.llm.ask_prepare(question).get_answer_generator()
+                # print(f'call_tools[0] 最终问题:\n{question}')
+                answer = self.llm.ask_prepare(question).get_answer_generator()
 
-                print(f'call_tools[0] 选择chapter raw: "{chapter}"')
-
+                # print(f'call_tools[0] 选择chapter raw: "{chapter}"')
+                # test_node = self.doc_root.find_similar_by_head('Overview and key findings')
+                # test_toc = self.get_toc_md_for_tool_by_node(test_node, 100)
+                # print(f'test toc: {test_toc}')
 
             case 1: # 关于文档细节的提问
                 question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在文档的哪个章节，请返回具体章节'
@@ -229,6 +235,47 @@ class LLM_Doc():
 
         print(f'----------------------------------call_tools()输出----------------------------------------')
         return answer
+
+    # 对超长文本进行精简
+    def long_content_summary(self, in_content):
+        print(f'==========long_content_summary(长度{len(in_content)}) =============')
+        content = in_content
+        if len(content) <= self.prompt_limit.context_max_len:
+            # 如果文本长度没有超过Prompt_Limitation.context_max_len(4096)，则直接返回
+            return content
+
+        # 如果文本长度超过Prompt_Limitation.context_max_len(4096)，进行分段精简并汇编
+        paras = content.split('\n')
+        para_len = 0
+        content_list_to_summary = []
+        one_content = ''
+        for para in paras:
+            one_content += para + '\n'
+            para_len += len(para)
+            if para_len >= self.prompt_limit.context_max_len:
+                content_list_to_summary.append(one_content)
+                one_content = ''
+                para_len = 0
+
+        answer_list = []
+        for content in content_list_to_summary:
+            print(f'==========需要总结的文本(长度{len(content)})为: =============\n{content}')
+            question = f'"{content}", 请对这些文字进行总结，字数不要超过200字，不要进行解释，直接返回总结后的文字'
+            answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+            answer_list.append(answer)
+
+        final_answer =''
+        answers = '\n'.join(answer_list)
+        question = f'"{answers}", 请对这些文字进行总结，字数不要超过1000字，不要进行解释，直接返回总结后的文字'
+        final_answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+
+        return final_answer
+
+
+
+
+
+        return content
 
     def ask_docx(self, in_query, in_max_level=3):
         file = self.doc_name
@@ -339,7 +386,7 @@ class LLM_Doc():
             if table_head in table.head :
                 return table.text
 
-    # 获取目录(table of content)的md格式
+    # 获取完整目录(table of content)的md格式
     def get_toc_md_for_tool(
             self,
             in_max_level='auto',    # 'auto' | 1 | 2 | 3 | ...
@@ -379,6 +426,51 @@ class LLM_Doc():
             toc = []
             # max_level直接用上面的结果
             self.doc_root.get_toc_md_for_tool(toc, self.doc_root, max_level, in_if_head_has_index=False, in_if_render=in_if_render)
+
+
+        return '\n'.join(toc)
+
+    # 获取某节点下的目录(table of content)的md格式
+    def get_toc_md_for_tool_by_node(
+            self,
+            in_node,
+            in_max_level='auto',    # 'auto' | 1 | 2 | 3 | ...
+            in_if_render=False
+    ):
+        toc = []
+        if in_node is None:
+            return []
+
+        max_level = 0
+        if in_max_level == 'auto':
+            max_level = 3
+            toc_max_len = self.prompt_limit.toc_max_len
+            self.doc_root.get_toc_md_for_tool(toc, in_node, in_max_level=max_level, in_if_render=in_if_render)
+            if len('\n'.join(toc)) > toc_max_len:
+                toc = []
+                max_level = 2
+                self.doc_root.get_toc_md_for_tool(toc, in_node, in_max_level=max_level, in_if_render=in_if_render)
+        else:
+            max_level = in_max_level
+            self.doc_root.get_toc_md_for_tool(toc, in_node, max_level, in_if_render=in_if_render)
+
+        # 统计toc标题中是否有1.1.3这样的数字
+        num_head_has_index = 0
+        for item in toc:
+           if re.search(r"\d+(.\d+)*", item) is not None:
+               num_head_has_index += 1
+
+        if num_head_has_index/len(toc) > 0.7:
+            # 表明该文档的目录标题中还有1.1.3这样的数字
+            print(f'文档"{self.doc_name}"的目录中有{num_head_has_index}个标题中包含数字，占比为{num_head_has_index/len(toc)*100:.2f}%')
+            print(f'判定文档"{self.doc_name}"的目录标题包含索引数字')
+        else:
+            # 表明该文档的目录标题中没有1.1.3这样的数字(如1.1.3在自动增长的域中)，此时需要设置in_if_head_has_index=False，生成专门的1.1.3
+            print(f'文档"{self.doc_name}"的目录中有{num_head_has_index}个标题中包含数字，占比为{num_head_has_index/len(toc)*100:.2f}%')
+            print(f'判定文档"{self.doc_name}"的目录标题不包含索引数字')
+            toc = []
+            # max_level直接用上面的结果
+            self.doc_root.get_toc_md_for_tool(toc, in_node, max_level, in_if_head_has_index=False, in_if_render=in_if_render)
 
 
         return '\n'.join(toc)
@@ -504,6 +596,21 @@ class LLM_Doc():
         inout_text_list = []
 
         _get_text_from_doc_node(inout_text_list, in_node_heading)
+        # -------------------------如果返回的content长度大于Prompt_Limitation.context_max_len(4096)-------------------------
+        length = len('\n'.join(inout_text_list))
+        if length > self.prompt_limit.context_max_len:
+            toc_node = self.doc_root.find_similar_by_head(in_node_heading)
+            toc = self.get_toc_md_for_tool_by_node(toc_node, 100)  # 100表示搜索所有子目录
+            print(f'warning: 返回content的长度为: {length} ,超过限制: Prompt_Limitation.context_max_len({self.prompt_limit.context_max_len})')
+            print(f'warning: 改为返回对应目录内容, 目录内容长度为: {len(toc)}')
+
+            if len(toc) < self.prompt_limit.toc_nonsense_min_len:
+                # -------------------------如果返回的content长度超限，但返回的目录toc又太短-------------------------
+                # ------则仍然返回content，并且后续进行逐段的总结，然后汇编总结------
+                return '\n'.join(inout_text_list)
+
+            return toc
+
         # print(f'------------------------------结束模糊查找------------------------------------------------')
         return '\n'.join(inout_text_list)
 
@@ -1195,7 +1302,8 @@ def main_llm_pdf():
     # question = '负荷预测表返回给我'
     # question = '今天天气如何？'
 
-    toc = doc.get_toc_md_for_tool(4)
+    # toc = doc.get_toc_md_for_tool(4)
+    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root, 4)
     print(f'toc: {toc}')
 
     print(f'user: {question}')
@@ -1204,7 +1312,6 @@ def main_llm_pdf():
     answer = doc.call_tools(tool, question, toc, in_tables=None)
     for chunk in answer:
         print(chunk, end='', flush=True)
-
 
 
     # doc = fitz.open("D:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf")
