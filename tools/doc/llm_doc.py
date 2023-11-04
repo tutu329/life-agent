@@ -97,6 +97,9 @@ class LLM_Doc():
         # 用于控制prompt长度的参数
         self.prompt_limit = Prompt_Limitation()
 
+        # doc文档的目录标题是否含有1.1.3这样的索引数字(有可能docx中，1.1.3仅出现在域中)，大部分情况下标题是有索引数字的
+        self.toc_heading_has_index = True
+
         self.win32_doc = None
         self.win32_doc_app = None
         self.win32_constant = None
@@ -119,6 +122,7 @@ class LLM_Doc():
                 url='http://127.0.0.1:8001/v1',
                 need_print=False,
             )
+            self.llm.set_role_prompt('你是文档问答助手，不管问你什么问题，都不做任何解释，直接按要求回复指定格式的内容')
 
         self.question_types = [
             '"关于文档总体的提问"',
@@ -163,7 +167,7 @@ class LLM_Doc():
 
         match in_tool_index:
             case 0: #关于文档总体的提问
-                question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回具体的章节标题，返回内容仅为"某章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
+                question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回唯一的章节标题，返回内容仅为"章节号 章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
                 print(f'question: {question}')
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
                 print(f'call_tools[0] 选择chapter raw: "{chapter}"')
@@ -181,18 +185,13 @@ class LLM_Doc():
                 answer = self.llm.ask_prepare(question).get_answer_generator()
 
                 # print(f'call_tools[0] 选择chapter raw: "{chapter}"')
-                # test_node = self.doc_root.find_similar_by_head('Overview and key findings')
+                # test_node = self.doc_root.find_similar_by_head(self.toc_heading_has_index, 'Overview and key findings')
                 # test_toc = self.get_toc_md_for_tool_by_node(test_node, 100)
                 # print(f'test toc: {test_toc}')
 
             case 1: # 关于文档细节的提问
-                question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在这个目录的哪个章节中，请返回具体的章节标题，返回内容仅为"某章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
+                question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在这个目录的哪个章节中，请返回唯一的章节标题，返回内容仅为"章节号 章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
-                # print(f'call_tools[0] 选择chapter raw: {chapter}')
-                # chapter = re.search(r'\d+(.\d+)*', chapter)
-                # if chapter is not None:
-                #     chapter = chapter.group(0)
-                # print(f'call_tools[0] 选择chapter: {chapter}')
 
                 print(f'---------------------------------定位的chapter为: -------------------------\n{chapter}')
                 content = self.get_text_from_doc_node(in_node_heading=chapter, in_if_similar_search=True)
@@ -228,7 +227,7 @@ class LLM_Doc():
 
                     content = self.get_table_content_by_head(table_name)
                     content = self.long_content_summary(content)
-                    question = f'{content}. 以上是从文档中获取的表格内容，用户针对这块内容提出了问题"{in_question}"，请根据表格内容回答问题'
+                    question = f'{content}. 以上是从文档中获取的表格内容，用户针对这块内容提出了问题"{in_question}"，请根据表格内容回答问题，回复格式要层次清晰、便于理解，该换行的地方要换行，该编序号和缩进的地方要编制序号和缩进'
                     print(f'call_tools[0] 最终问题:\n{question}')
                     answer = self.llm.ask_prepare(question).get_answer_generator()
                 else:
@@ -418,10 +417,12 @@ class LLM_Doc():
                num_head_has_index += 1
 
         if num_head_has_index/len(toc) > 0.7:
+            self.toc_heading_has_index = True
             # 表明该文档的目录标题中还有1.1.3这样的数字
             print(f'文档"{self.doc_name}"的目录中有{num_head_has_index}个标题中包含数字，占比为{num_head_has_index/len(toc)*100:.2f}%')
             print(f'判定文档"{self.doc_name}"的目录标题包含索引数字')
         else:
+            self.toc_heading_has_index = False
             # 表明该文档的目录标题中没有1.1.3这样的数字(如1.1.3在自动增长的域中)，此时需要设置in_if_head_has_index=False，生成专门的1.1.3
             print(f'文档"{self.doc_name}"的目录中有{num_head_has_index}个标题中包含数字，占比为{num_head_has_index/len(toc)*100:.2f}%')
             print(f'判定文档"{self.doc_name}"的目录标题不包含索引数字')
@@ -569,7 +570,7 @@ class LLM_Doc():
                 else:
                     # 输入的node字符串为模糊查找
                         node_s = in_node
-                        in_node = self.doc_root.find_similar_by_head(node_s)
+                        in_node = self.doc_root.find_similar_by_head(self.toc_heading_has_index, node_s)
                         if in_node is None:
                             dprint(f'节点"{in_node}"未找到.')
                             return
@@ -601,7 +602,11 @@ class LLM_Doc():
         # -------------------------如果返回的content长度大于Prompt_Limitation.context_max_len(4096)-------------------------
         length = len('\n'.join(inout_text_list))
         if length > self.prompt_limit.context_max_len:
-            toc_node = self.doc_root.find_similar_by_head(in_node_heading)
+            if in_if_similar_search==True:
+                toc_node = self.doc_root.find_similar_by_head(self.toc_heading_has_index, in_node_heading)
+            else:
+                toc_node = self.doc_root.find_by_head( in_node_heading)
+
             toc = self.get_toc_md_for_tool_by_node(toc_node, 100)  # 100表示搜索所有子目录
             print(f'warning: 返回content的长度为: {length} ,超过限制: Prompt_Limitation.context_max_len({self.prompt_limit.context_max_len})')
             print(f'warning: 改为返回对应目录内容, 目录内容长度为: {len(toc)}')
@@ -1299,10 +1304,10 @@ def main_llm_pdf():
     # for item in inout_text:
     #     print(item)
 
-    question = '报告讲了什么？'
+    # question = '报告讲了什么？'
     # question = '报告2.2.3讲了什么？'
     # question = '负荷预测表返回给我'
-    # question = '今天天气如何？'
+    question = '今天天气如何？'
 
     # toc = doc.get_toc_md_for_tool(4)
     toc = doc.get_toc_md_for_tool_by_node(doc.doc_root)
@@ -1314,6 +1319,7 @@ def main_llm_pdf():
     answer = doc.call_tools(tool, question, toc, in_tables=None)
     for chunk in answer:
         print(chunk, end='', flush=True)
+    print()
 
 
     # doc = fitz.open("D:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf")
@@ -1409,11 +1415,11 @@ def main_llm():
         # for table in tables:
         #     print(f'table: {table.text}')
 
-        question = '主要结论是多少？'
+        # question = '主要结论是多少？'
         # question = '投资估算是多少？'
         # question = '报告讲了什么？'
         # question = '报告2.2.3讲了什么？'
-        # question = '负荷预测表返回给我'
+        question = '负荷预测表返回给我'
         # question = '今天天气如何？'
 
         print(f'user: {question}')
@@ -1444,8 +1450,8 @@ def main_llm():
 
 
 if __name__ == "__main__":
-    # main_llm_pdf()
-    main_llm()
+    main_llm_pdf()
+    # main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
     # main_image()

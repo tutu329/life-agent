@@ -32,22 +32,31 @@ class Hierarchy_Node:
     def add_child(self, child):
         self.children.append(child)
 
-    def find_similar_by_head(self, in_node_name):
+    def find_similar_by_head(self, in_toc_heading_has_index, in_node_name):
         dprint(f'查找节点: {self.node_data.heading}')
         # if self.node_data.heading == in_node_name:
-        simi = wratio(self.node_data.heading, in_node_name)
+
+        # 通常这时已统计判断过self.toc_heading_has_index
+        if in_toc_heading_has_index == True:
+            simi = wratio(self.node_data.heading, in_node_name)
+            print(f'--------node: "{self.node_data.heading}"-相似度: {simi}--------')
+        else:
+            # head = self.node_data.name + ' ' + self.node_data.heading
+            # simi = like_match(head, in_node_name)
+            simi = wratio(self.node_data.heading, in_node_name) # 最后发现中文similar比较，"8 投资估算 8.2 投资概算"这样的标题和"8.2 投资概算"比较，不如和“投资概算”比较准确，且需要用wrato而不是simple_match
+            print(f'--------node: "{self.node_data.heading}"-相似度: {simi}--------')
+
         # simi = wratio(self.node_data.heading, in_node_name)
-        print(f'--------node: "{self.node_data.heading}"-相似度: {simi}--------')
         # if in_node_name.replace('"', '') in self.node_data.heading :
+        # if in_node_name.replace('"', '').replace("'", "") in self.node_data.heading :
         if in_node_name.replace('"', '').replace("'", "") in self.node_data.heading or simi>=60 :
-            dprint(f'--------找到了node: {self.node_data.heading}-相似度: {simi}--------')
             return self # 返回所找到的node对象
 
         if self.children:
             dprint(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
         for child in self.children:
             # print('##################################################################################')
-            res = child.find_similar_by_head(in_node_name)
+            res = child.find_similar_by_head(in_toc_heading_has_index, in_node_name)
             if res is not None:
                 return res
         return None
