@@ -78,12 +78,22 @@ class Doc_Node_Content():
     data_list:List[Doc_Node_Data] = field(default_factory=list)   # 元素包括(text:str, image:Image_Part, table:str)
     # text: str       # 如: '本项目建设是必要的...'
     # image: Image_Part
-# =========================================管理doc的层次化递归数据结构=================================================
 
-# LLM_Doc：采用python-docx解析文档，采用win32com解决页码问题
+# 用于控制prompt长度的参数
+@dataclass
+class Prompt_Limitation():
+    toc_max_len:int = 4096  # 返回目录(toc)字符串的最大长度
+
+# =========================================管理doc的层次化递归数据结构=================================================
+# docx: 采用python-docx解析文档，采用win32com解决页码问题
+# pdf:  采用pitz解析文档
 class LLM_Doc():
     def __init__(self, in_file_name, in_llm=None):
-        self.doc_name = in_file_name    # 文件名
+        self.doc_name = in_file_name    # 文件名: 如c:/xxx.docx
+        self.doc_base_name = os.path.splitext(os.path.basename(self.doc_name))[0] # 获取 c:/xxx.docx的xxx
+
+        # 用于控制prompt长度的参数
+        self.prompt_limit = Prompt_Limitation()
 
         self.win32_doc = None
         self.win32_doc_app = None
@@ -138,22 +148,35 @@ class LLM_Doc():
     def call_tools(self, in_tool_index, in_question, in_toc, in_tables=None):
         content = ''
         answer = ''
+        print(f'----------------------------------call_tools()输入----------------------------------------')
+        print(f'输入问题为: "{in_question}"')
+        print(f'所选择的工具编号为: {in_tool_index}')
+        print(f'获取的目录信息长度为: {len(in_toc)}')
+        if in_tables is not None:
+            print(f'已输入table信息')
+        else:
+            print(f'未输入table信息')
+        print(f'----------------------------------call_tools()输出----------------------------------------')
+
         match in_tool_index:
             case 0: #关于文档总体的提问
-                question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回具体章节'
+                question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回具体的章节标题，返回内容仅为"某章节标题"这样的字符串，没有其他任何解释、前缀或多余字符'
+                print(f'question: {question}')
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
-                print(f'call_tools[0] 选择chapter raw: {chapter}')
-                chapter = re.search(r'\d+(.\d+)*', chapter)
-                if chapter is not None:
-                    chapter = chapter.group(0)
-                print(f'call_tools[0] 选择chapter: {chapter}')
+                print(f'call_tools[0] 选择chapter raw: "{chapter}"')
+                # chapter = re.search(r'\d+(.\d+)*', chapter)
+                # if chapter is not None:
+                #     chapter = chapter.group(0)
+                # print(f'call_tools[0] 选择chapter: {chapter}')
 
-                inout_text_list = []
-                self.get_text_from_doc_node(inout_text_list, in_node=chapter)
-                content = '\n'.join(inout_text_list)
+                content = self.get_text_from_doc_node(in_node_heading=chapter, in_if_similar_search=True)
                 question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
                 print(f'call_tools[0] 最终问题:\n{question}')
-                answer = self.llm.ask_prepare(question).get_answer_generator()
+                # answer = self.llm.ask_prepare(question).get_answer_generator()
+
+                print(f'call_tools[0] 选择chapter raw: "{chapter}"')
+
+
             case 1: # 关于文档细节的提问
                 question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在文档的哪个章节，请返回具体章节'
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
@@ -163,9 +186,7 @@ class LLM_Doc():
                     chapter = chapter.group(0)
                 print(f'call_tools[0] 选择chapter: {chapter}')
 
-                inout_text_list = []
-                self.get_text_from_doc_node(inout_text_list, in_node=chapter)
-                content = '\n'.join(inout_text_list)
+                content = self.get_text_from_doc_node(in_node_heading=chapter)
                 question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
                 print(f'call_tools[0] 最终问题:\n{question}')
                 answer = self.llm.ask_prepare(question).get_answer_generator()
@@ -177,9 +198,7 @@ class LLM_Doc():
                     chapter = chapter.group(0)
                 print(f'call_tools[0] 选择chapter: {chapter}')
 
-                inout_text_list = []
-                self.get_text_from_doc_node(inout_text_list, in_node=chapter)
-                content = '\n'.join(inout_text_list)
+                content = self.get_text_from_doc_node(in_node_heading=chapter)
                 question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容回答问题'
                 print(f'call_tools[0] 最终问题:\n{question}')
                 answer = self.llm.ask_prepare(question).get_answer_generator()
@@ -208,6 +227,7 @@ class LLM_Doc():
             case -1:
                 print('call_tools(): 未匹配到tool')
 
+        print(f'----------------------------------call_tools()输出----------------------------------------')
         return answer
 
     def ask_docx(self, in_query, in_max_level=3):
@@ -320,14 +340,46 @@ class LLM_Doc():
                 return table.text
 
     # 获取目录(table of content)的md格式
-    def get_toc_md_string(self, in_max_level=3, in_show_md=False):
-        import json
+    def get_toc_md_for_tool(
+            self,
+            in_max_level='auto',    # 'auto' | 1 | 2 | 3 | ...
+            in_if_render=False
+    ):
         toc = []
-        # toc = [f'@[toc]({"报告目录"})']
         if self.doc_root is None:
             return []
 
-        self.doc_root.get_toc_md_string(toc, self.doc_root, in_max_level, in_show_md=in_show_md)
+        max_level = 0
+        if in_max_level == 'auto':
+            max_level = 3
+            toc_max_len = self.prompt_limit.toc_max_len
+            self.doc_root.get_toc_md_for_tool(toc, self.doc_root, in_max_level=max_level, in_if_render=in_if_render)
+            if len('\n'.join(toc)) > toc_max_len:
+                toc = []
+                max_level = 2
+                self.doc_root.get_toc_md_for_tool(toc, self.doc_root, in_max_level=max_level, in_if_render=in_if_render)
+        else:
+            max_level = in_max_level
+            self.doc_root.get_toc_md_for_tool(toc, self.doc_root, max_level, in_if_render=in_if_render)
+
+        # 统计toc标题中是否有1.1.3这样的数字
+        num_head_has_index = 0
+        for item in toc:
+           if re.search(r"\d+(.\d+)*", item) is not None:
+               num_head_has_index += 1
+
+        if num_head_has_index/len(toc) > 0.7:
+            # 表明该文档的目录标题中还有1.1.3这样的数字
+            print(f'文档"{self.doc_name}"的目录中有{num_head_has_index}个标题中包含数字，占比为{num_head_has_index/len(toc)*100:.2f}%')
+            print(f'判定文档"{self.doc_name}"的目录标题包含索引数字')
+        else:
+            # 表明该文档的目录标题中没有1.1.3这样的数字(如1.1.3在自动增长的域中)，此时需要设置in_if_head_has_index=False，生成专门的1.1.3
+            print(f'文档"{self.doc_name}"的目录中有{num_head_has_index}个标题中包含数字，占比为{num_head_has_index/len(toc)*100:.2f}%')
+            print(f'判定文档"{self.doc_name}"的目录标题不包含索引数字')
+            toc = []
+            # max_level直接用上面的结果
+            self.doc_root.get_toc_md_for_tool(toc, self.doc_root, max_level, in_if_head_has_index=False, in_if_render=in_if_render)
+
 
         return '\n'.join(toc)
 
@@ -397,38 +449,63 @@ class LLM_Doc():
             self.print_from_doc_node(child)
 
     # 遍历输出node下的所有内容
-    def get_text_from_doc_node(self, inout_text_list, in_node='root'):   # in_node为'1.1.3'或者Hierarchy_Node对象
-        # 如果输入'1.1.3'这样的字符串
-        if type(in_node)==str:
-            node_s = in_node
-            # in_node = self.doc_root.find(node_s)
-            # 先通过node name查找1.1.3
-            in_node = self.doc_root.find(node_s)
+    def get_text_from_doc_node(
+            self,
+            in_node_heading='root',
+            in_if_similar_search=False,
+    ):
+        def _get_text_from_doc_node(
+            inout_text_list,
+            in_node='root'
+        ):   # in_node为'1.1.3'或者Hierarchy_Node对象
+            # 如果输入'1.1.3'这样的字符串
+            if type(in_node) == str:
+                if in_if_similar_search==False:
+                    # 输入的node为精确查找
+                        node_s = in_node
+                        # in_node = self.doc_root.find(node_s)
+                        # 先通过node name查找1.1.3
+                        in_node = self.doc_root.find(node_s)
+                        if in_node is None:
+                            # 然后通过node heading查找1.1.3
+                            in_node = self.doc_root.find_by_head(node_s)
+                            if in_node is None:
+                                dprint(f'节点"{node_s}"未找到.')
+                                return
+                else:
+                    # 输入的node字符串为模糊查找
+                        node_s = in_node
+                        in_node = self.doc_root.find_similar_by_head(node_s)
+                        if in_node is None:
+                            dprint(f'节点"{in_node}"未找到.')
+                            return
+
+            # 如果输入Hierarchy_Node对象
             if in_node is None:
-                # 然后通过node heading查找1.1.3
-                in_node = self.doc_root.find_by_head(node_s)
-                if in_node is None:
-                    dprint(f'节点"{node_s}"未找到.')
-                    return
+                return
+            else:
+                node = in_node
 
-        # 如果输入Hierarchy_Node对象
-        if in_node is None:
-            return
-        else:
-            node = in_node
+            node_level = node.node_data.level
+            node_name = node.node_data.name
+            node_heading = node.node_data.heading
 
-        node_level = node.node_data.level
-        node_name = node.node_data.name
-        node_heading = node.node_data.heading
+            # 获取node文本
+            node_content = self.get_node_data_callback(node)
 
-        # 获取node文本
-        node_content = self.get_node_data_callback(node)
+            inout_text_list.append(f'{"-"*node_level}{node_name}-{node_heading}{"-"*(80-node_level-len(node_name)-len(node_heading))}')
+            inout_text_list.append(f'{node_content}')
 
-        inout_text_list.append(f'{"-"*node_level}{node_name}-{node_heading}{"-"*(80-node_level-len(node_name)-len(node_heading))}')
-        inout_text_list.append(f'{node_content}')
+            for child in node.children:
+                _get_text_from_doc_node(inout_text_list, child)
+                # print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
 
-        for child in node.children:
-            self.get_text_from_doc_node(inout_text_list, child)
+        # print(f'------------------------------开始模糊查找，node: "{in_node}"-----------------------------')
+        inout_text_list = []
+
+        _get_text_from_doc_node(inout_text_list, in_node_heading)
+        # print(f'------------------------------结束模糊查找------------------------------------------------')
+        return '\n'.join(inout_text_list)
 
     # 为table增加annotate'注: ...'
     def get_table_annotate_from_text(self, in_text, inout_table_obj):
@@ -503,9 +580,8 @@ class LLM_Doc():
                         return node
 
         # 处理root
-        doc_name = os.path.splitext(os.path.basename(self.doc_name))[0] # 获取c:/xxx.docx的xxx
-        print(f'===================doc_name : {doc_name}===================')
-        self.doc_root = Hierarchy_Node(Doc_Node_Content(0, 'root', doc_name))
+        print(f'===================doc_base_name : {self.doc_base_name}===================')
+        self.doc_root = Hierarchy_Node(Doc_Node_Content(0, 'root', self.doc_base_name))
 
         current_node = self.doc_root
         current_node_name = 'root'
@@ -1119,7 +1195,7 @@ def main_llm_pdf():
     # question = '负荷预测表返回给我'
     # question = '今天天气如何？'
 
-    toc = doc.get_toc_md_string(3, in_show_md=False)
+    toc = doc.get_toc_md_for_tool(4)
     print(f'toc: {toc}')
 
     print(f'user: {question}')
@@ -1219,39 +1295,47 @@ def main_llm_pdf():
         # print(page.get_text())
 
 def main_llm():
+    def call_llm():
+        tables = doc.get_all_tables()
+        # for table in tables:
+        #     print(f'table: {table.text}')
+
+        question = '投资估算是多少？'
+        # question = '报告讲了什么？'
+        # question = '报告2.2.3讲了什么？'
+        # question = '负荷预测表返回给我'
+        # question = '今天天气如何？'
+
+        print(f'user: {question}')
+        tool = doc.llm_classify_question(question)
+        print(f'选择工具: {tool}')
+        answer = doc.call_tools(tool, question, toc, tables)
+        for chunk in answer:
+            print(chunk, end='', flush=True)
+
     doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
     # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.docx')
     doc.llm.need_print = False
 
     doc.parse_all_docx()
 
-    toc = doc.get_toc_md_string(2, in_show_md=False)
+    toc = doc.get_toc_md_for_tool('auto', in_if_render=False)
+    # toc = doc.get_toc_md_for_tool(3, in_if_render=False)
     print(toc)
+    print(f'toc 长度: {len(toc)}')
+
+    call_llm()
+
     # inout_text = []
     # doc.get_text_from_doc_node(inout_text, 'root')
     # print('\n'.join(inout_text))
 
-    tables = doc.get_all_tables()
-    # for table in tables:
-    #     print(f'table: {table.text}')
 
-    question = '投资估算是多少？'
-    # question = '报告讲了什么？'
-    # question = '报告2.2.3讲了什么？'
-    # question = '负荷预测表返回给我'
-    # question = '今天天气如何？'
-
-    print(f'user: {question}')
-    tool = doc.llm_classify_question(question)
-    print(f'选择工具: {tool}')
-    answer = doc.call_tools(tool, question, toc, tables)
-    for chunk in answer:
-        print(chunk, end='', flush=True)
 
 
 if __name__ == "__main__":
-    # main_llm_pdf()
-    main_llm()
+    main_llm_pdf()
+    # main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
     # main_image()

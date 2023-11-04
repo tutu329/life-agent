@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from utils.Fuzzy_Search import like_match, wratio, partial_match
 
 Hierarchy_Node_DEBUG = False
 
@@ -31,6 +32,25 @@ class Hierarchy_Node:
     def add_child(self, child):
         self.children.append(child)
 
+    def find_similar_by_head(self, in_node_name):
+        dprint(f'查找节点: {self.node_data.heading}')
+        # if self.node_data.heading == in_node_name:
+        simi = wratio(self.node_data.heading, in_node_name)
+        # simi = wratio(self.node_data.heading, in_node_name)
+        # print(f'--------node: "{self.node_data.heading}"-相似度: {simi}--------')
+        # if in_node_name.replace('"', '') in self.node_data.heading :
+        if simi>70:
+            dprint(f'--------找到了node: {self.node_data.heading}-相似度: {simi}--------')
+            return self # 返回所找到的node对象
+
+        if self.children:
+            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
+        for child in self.children:
+            # print('##################################################################################')
+            res = child.find_similar_by_head(in_node_name)
+            if res is not None:
+                return res
+        return None
     def find(self, in_node_name):
         dprint(f'查找节点: {self.node_data.name}')
         if self.node_data.name == in_node_name:
@@ -60,8 +80,15 @@ class Hierarchy_Node:
         return None
 
     # 获取node下目录(table of content)的md格式
-    def get_toc_md_string(self, inout_toc_md_list, in_node='root', in_max_level=3, in_show_md=False):
-        if in_show_md:
+    def get_toc_md_for_tool(
+            self,
+            inout_toc_md_list,
+            in_node='root',
+            in_max_level=3,
+            in_if_head_has_index=True,  # 标题中是否有1.1.3
+            in_if_render=False,         # 是否输出缩进和高亮
+    ):
+        if in_if_render:
             blank_str = '&emsp;'
             highlight_mark = '<mark>'
             highlight_mark_end = '</mark>'
@@ -98,19 +125,30 @@ class Hierarchy_Node:
             else:
                 color_string = color_string_end = ''
 
-            inout_toc_md_list.append(
-                # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
-                '#'*node.node_data.level + ' ' + color_string + blank_str*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
-                node.node_data.name.strip() + ' ' +
-                node.node_data.heading.strip() + color_string_end
-                # node.node_data.heading.strip() + '</font>'
-            )
+            if in_if_head_has_index==True:
+                # 标题为"1.1.3 建设规模"
+                inout_toc_md_list.append(
+                    # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                    '#'*node.node_data.level + ' ' + color_string + blank_str*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                    # node.node_data.name.strip() + ' ' +
+                    node.node_data.heading.strip() + color_string_end
+                    # node.node_data.heading.strip() + '</font>'
+                )
+            else:
+                # 标题为"建设规模"
+                inout_toc_md_list.append(
+                    # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                    '#'*node.node_data.level + ' ' + color_string + blank_str*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                    node.node_data.name.strip() + ' ' +
+                    node.node_data.heading.strip() + color_string_end
+                    # node.node_data.heading.strip() + '</font>'
+                )
 
         if node.node_data.level < in_max_level:
             child_list = []
             # 遍历child node
             for child in node.children:
-                self.get_toc_md_string(child_list, child, in_max_level, in_show_md=in_show_md)
+                self.get_toc_md_for_tool(child_list, child, in_max_level, in_if_head_has_index=in_if_head_has_index, in_if_render=in_if_render)
             if child_list != []:
                 inout_toc_md_list += child_list    # 这里和get_toc_list_json（）的list1.append(list2)形成[1.1, 1.2, [1.2.1, 1.2.2]]不一样，这里是形成[#1.1, #1.2, ##1.2.1, ##1.2.2]
 

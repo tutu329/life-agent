@@ -67,7 +67,7 @@ def llm_answer(history, message):
             doc = LLM_Doc(current_file)
             doc.llm.need_print = False
             doc.parse_all_docx()
-            toc = doc.get_toc_md_string(2, in_show_md=False)
+            toc = doc.get_toc_md_for_tool(2, in_if_render=False)
             tables = doc.get_all_tables()
             tool = doc.llm_classify_question(message)
             answer_gen = doc.call_tools(tool, message, toc, tables)
@@ -84,7 +84,7 @@ def llm_answer(history, message):
             doc = LLM_Doc(current_file)
             doc.llm.need_print = False
             doc.parse_all_pdf()
-            toc = doc.get_toc_md_string(2, in_show_md=False)
+            toc = doc.get_toc_md_for_tool(2, in_if_render=False)
             # tables = doc.get_all_tables()
             tool = doc.llm_classify_question(message)
             answer_gen = doc.call_tools(tool, message, toc)
