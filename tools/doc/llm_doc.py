@@ -26,6 +26,20 @@ from docx.text.paragraph import Paragraph
 
 from enum import Enum, auto
 
+# ============================关于角色提示============================
+# 一、你希望llm了解哪些信息：
+# 1) where are you based?
+# 2) what do you do for work?
+# 3) what are your hobbies and interests?
+# 4) what subject can you talk about for hours?
+# 5) what are some goals you have?
+# 二、你希望llm怎样回复：
+# 1) how formal or casual should llm be?
+# 2) how long or short should responses generally be?
+# 3) how do you want to be addressed?
+# 4) should llm have opinions on topics or remain neutral?
+# ============================关于角色提示============================
+
 LLM_Doc_DEBUG = False
 def dprint(*args, **kwargs):
     if LLM_Doc_DEBUG:
@@ -118,7 +132,7 @@ class LLM_Doc():
                 history=False,
                 # history_max_turns=50,
                 # history_clear_method='pop',
-                temperature=0.7,
+                temperature=0,
                 url='http://127.0.0.1:8001/v1',
                 need_print=False,
             )
@@ -1080,19 +1094,6 @@ class LLM_Doc():
 
         return result_list
 
-# ============================关于角色提示============================
-# 一、你希望llm了解哪些信息：
-# 1) where are you based?
-# 2) what do you do for work?
-# 3) what are your hobbies and interests?
-# 4) what subject can you talk about for hours?
-# 5) what are some goals you have?
-# 二、你希望llm怎样回复：
-# 1) how formal or casual should llm be?
-# 2) how long or short should responses generally be?
-# 3) how do you want to be addressed?
-# 4) should llm have opinions on topics or remain neutral?
-# ============================关于角色提示============================
 def main1():
     llm = LLM_Qwen(
         url='http://116.62.63.204:8001/v1',

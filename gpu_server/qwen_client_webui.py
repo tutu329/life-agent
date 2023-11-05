@@ -3,7 +3,10 @@ import gradio as gr
 from tools.llm.api_client_qwen_openai import *
 from tools.doc.llm_doc import *
 
-llm = LLM_Qwen(need_print=False)
+llm = LLM_Qwen(
+    need_print=False,
+    # temperature=0,
+)
 # llm.set_role_prompt('你正在扮演一个女孩，你好笨笨。')
 
 # ============================关于角色提示============================
