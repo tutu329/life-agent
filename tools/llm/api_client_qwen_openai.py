@@ -317,6 +317,9 @@ class LLM_Qwen():
         self.url = url
         self.gen = None     # 返回结果的generator
         self.temperature = temperature
+        print(f'------------------------------------------------------------------------------------------')
+        print(f'LLM_Qwen(): temperature={self.temperature}')
+        print(f'------------------------------------------------------------------------------------------')
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
 
         # 记忆相关

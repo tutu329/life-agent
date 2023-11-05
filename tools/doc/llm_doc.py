@@ -127,7 +127,11 @@ class LLM_Doc():
         self.pdf_toc = None # pdf的现成目录
 
         self.llm = in_llm
+        print(f'------------------------------------------------------------------------------------------')
+        print(f'LLM_Doc(): self.llm={self.llm}')
+        print(f'------------------------------------------------------------------------------------------')
         if self.llm is None:
+
             self.llm = LLM_Qwen(
                 history=False,
                 # history_max_turns=50,
@@ -136,6 +140,9 @@ class LLM_Doc():
                 url='http://127.0.0.1:8001/v1',
                 need_print=False,
             )
+            print(f'------------------------------------------------------------------------------------------')
+            print(f'LLM_Doc(): temperature={self.llm.temperature}')
+            print(f'------------------------------------------------------------------------------------------')
             self.llm.set_role_prompt('你是文档问答助手，不管问你什么问题，都不做任何解释，直接按要求回复指定格式的内容')
 
         self.question_types = [
@@ -1416,11 +1423,12 @@ def main_llm():
         # for table in tables:
         #     print(f'table: {table.text}')
 
+        question = '负荷预测水平是多少？'
         # question = '主要结论是多少？'
         # question = '投资估算是多少？'
         # question = '报告讲了什么？'
         # question = '报告2.2.3讲了什么？'
-        question = '负荷预测表返回给我'
+        # question = '负荷预测表返回给我'
         # question = '今天天气如何？'
 
         print(f'user: {question}')
@@ -1451,8 +1459,8 @@ def main_llm():
 
 
 if __name__ == "__main__":
-    main_llm_pdf()
-    # main_llm()
+    # main_llm_pdf()
+    main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
     # main_image()
