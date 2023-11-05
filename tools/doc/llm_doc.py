@@ -485,10 +485,12 @@ class LLM_Doc():
                num_head_has_index += 1
 
         if num_head_has_index/len(toc) > 0.7:
+            self.toc_heading_has_index = True
             # 表明该文档的目录标题中还有1.1.3这样的数字
             print(f'文档"{self.doc_name}"的目录中有{num_head_has_index}个标题中包含数字，占比为{num_head_has_index/len(toc)*100:.2f}%')
             print(f'判定文档"{self.doc_name}"的目录标题包含索引数字')
         else:
+            self.toc_heading_has_index = False
             # 表明该文档的目录标题中没有1.1.3这样的数字(如1.1.3在自动增长的域中)，此时需要设置in_if_head_has_index=False，生成专门的1.1.3
             print(f'文档"{self.doc_name}"的目录中有{num_head_has_index}个标题中包含数字，占比为{num_head_has_index/len(toc)*100:.2f}%')
             print(f'判定文档"{self.doc_name}"的目录标题不包含索引数字')
