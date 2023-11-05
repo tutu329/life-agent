@@ -463,7 +463,7 @@ class LLM_Qwen():
         # self.ask_prepare(temp_question_last_turn).get_answer_and_sync_print()
 
     # 返回stream(generator)
-    def ask_prepare(self, in_question, in_max_tokens=2048, in_clear_history=False, in_retry=False, in_undo=False):
+    def ask_prepare(self, in_question, in_max_tokens=8192, in_clear_history=False, in_retry=False, in_undo=False):
         # self.__history_add_last_turn_msg()
 
         if in_clear_history:

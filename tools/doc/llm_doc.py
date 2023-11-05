@@ -578,6 +578,17 @@ class LLM_Doc():
             if type(in_node) == str:
                 if in_if_similar_search==False:
                     # 输入的node为精确查找
+                    if self.toc_heading_has_index==True:
+                        print(f'====================_get_text_from_doc_node() self.toc_heading_has_index={self.toc_heading_has_index}================================')
+                        # 搜索heading '1.1.3 建设必要性'，因为重新编码导致搜索name'1.19.2'是错的，而heading为'1.1.3 建设必要性'
+                        node_s = in_node
+                        in_node = self.doc_root.find_by_head(node_s)
+                        if in_node is None:
+                            dprint(f'节点"{node_s}"未找到.')
+                            return
+                    else:
+                        print(f'====================_get_text_from_doc_node() self.toc_heading_has_index={self.toc_heading_has_index}================================')
+                        # 搜索name '1.1.3' (heading='建设必要性')，因为没有重新编码将heading'1.1.3 建设必要性'编为name'1.19.2'
                         node_s = in_node
                         # in_node = self.doc_root.find(node_s)
                         # 先通过node name查找1.1.3
@@ -622,22 +633,22 @@ class LLM_Doc():
         _get_text_from_doc_node(inout_text_list, in_node_heading)
         # -------------------------如果返回的content长度大于Prompt_Limitation.context_max_len(4096)-------------------------
         length = len('\n'.join(inout_text_list))
-        if length > self.prompt_limit.context_max_len:
-            if in_if_similar_search==True:
-                toc_node = self.doc_root.find_similar_by_head(self.toc_heading_has_index, in_node_heading)
-            else:
-                toc_node = self.doc_root.find_by_head( in_node_heading)
-
-            toc = self.get_toc_md_for_tool_by_node(toc_node, 100)  # 100表示搜索所有子目录
-            print(f'warning: 返回content的长度为: {length} ,超过限制: Prompt_Limitation.context_max_len({self.prompt_limit.context_max_len})')
-            print(f'warning: 改为返回对应目录内容, 目录内容长度为: {len(toc)}')
-
-            if len(toc) < self.prompt_limit.toc_nonsense_min_len:
-                # -------------------------如果返回的content长度超限，但返回的目录toc又太短-------------------------
-                # ------则仍然返回content，并且后续进行逐段的总结，然后汇编总结------
-                return '\n'.join(inout_text_list)
-
-            return toc
+        # if length > self.prompt_limit.context_max_len:
+        #     if in_if_similar_search==True:
+        #         toc_node = self.doc_root.find_similar_by_head(self.toc_heading_has_index, in_node_heading)
+        #     else:
+        #         toc_node = self.doc_root.find_by_head( in_node_heading)
+        #
+        #     toc = self.get_toc_md_for_tool_by_node(toc_node, 100)  # 100表示搜索所有子目录
+        #     print(f'warning: 返回content的长度为: {length} ,超过限制: Prompt_Limitation.context_max_len({self.prompt_limit.context_max_len})')
+        #     print(f'warning: 改为返回对应目录内容, 目录内容长度为: {len(toc)}')
+        #
+        #     if len(toc) < self.prompt_limit.toc_nonsense_min_len:
+        #         # -------------------------如果返回的content长度超限，但返回的目录toc又太短-------------------------
+        #         # ------则仍然返回content，并且后续进行逐段的总结，然后汇编总结------
+        #         return '\n'.join(inout_text_list)
+        #
+        #     return toc
 
         # print(f'------------------------------结束模糊查找------------------------------------------------')
         return '\n'.join(inout_text_list)
