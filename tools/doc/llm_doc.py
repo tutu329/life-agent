@@ -188,7 +188,8 @@ class LLM_Doc():
 
         match in_tool_index:
             case 0: #关于文档总体的提问
-                question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回唯一的章节标题，返回内容仅为"章节号 章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
+                # question = f'{in_toc}. 以上是一个文档的目录结构，请问该文档的总体内容描述应该在这个目录中的哪个章节中，请返回唯一的章节标题，返回内容仅为"章节号 章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
+                question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在这个目录的哪个章节中，请返回唯一的章节标题，返回内容仅为"章节号 章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
                 print(f'question: {question}')
                 chapter = self.llm.ask_prepare(question).get_answer_and_sync_print()
                 print(f'call_tools[0] 选择chapter raw: "{chapter}"')
@@ -288,14 +289,29 @@ class LLM_Doc():
         answer_list = []
         for content in content_list_to_summary:
             print(f'==========需要总结的文本(长度{len(content)})为: =============\n{content}')
-            question = f'"{content}", 请对这些文字进行总结，字数不要超过200字，不要进行解释，直接返回总结后的文字'
-            answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+            question = f'"{content}", 请对这些文字进行总结，总结一定要简明扼要、要抓住重点、字数要少于100字，不要进行解释，直接返回总结后的文字'
+            gen = self.llm.ask_prepare(question).get_answer_generator()
+            print(f'--------------------------------该文本的总结结果--------------------------------\n')
+            answer = ''
+            for chunk in gen:
+                print(chunk, end='', flush=True)
+                answer += chunk
+            print()
+            print(f'-----------------------------------------------------------------------------\n')
+
             answer_list.append(answer)
 
         final_answer =''
         answers = '\n'.join(answer_list)
-        question = f'"{answers}", 请对这些文字进行总结，字数不要超过1000字，不要进行解释，直接返回总结后的文字'
-        final_answer = self.llm.ask_prepare(question).get_answer_and_sync_print()
+        question = f'"{answers}", 请对这些文字进行总结，总结一定要简明扼要、要抓住重点、字数要少于2000字，不要进行解释，直接返回总结后的文字'
+        print(f'==========需要总结的文本(长度{len(answers)})为: =============\n{answers}')
+        print(f'--------------------------------该文本的总结结果--------------------------------\n')
+        gen = self.llm.ask_prepare(question).get_answer_generator()
+        final_answer = ''
+        for chunk in gen:
+            print(chunk, end='', flush=True)
+            final_answer += chunk
+        print(f'-----------------------------------------------------------------------------\n')
 
         return final_answer
 
