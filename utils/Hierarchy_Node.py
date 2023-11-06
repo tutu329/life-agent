@@ -60,6 +60,43 @@ class Hierarchy_Node:
             if res is not None:
                 return res
         return None
+
+    def find_similar_node_by_head_and_ask_llm(self, in_toc_heading_has_index, in_node_name):
+        inout_similar_node_list = []
+        self._find_all_similar_nodes_by_head(
+            inout_similar_node_list,
+            in_toc_heading_has_index,
+            in_node_name
+        )
+
+        for node in inout_similar_node_list:
+            print(f'node: "{node.node_data.name + " " + node.node_data.heading}"--------')
+
+    def _find_all_similar_nodes_by_head(self, inout_similar_node_list, in_toc_heading_has_index, in_node_name):
+        # ===========将"一次性返回相似度>60的node"，改为"返回子字符串或者模糊相关度大于0的所有node"，然后再问llm选取chapter===========
+        dprint(f'查找节点: {self.node_data.name + " " + self.node_data.heading}')
+        # if self.node_data.heading == in_node_name:
+
+        # 通常这时已统计判断过self.toc_heading_has_index
+        if in_toc_heading_has_index == True:
+            simi = wratio(self.node_data.heading, in_node_name)
+            print(f'--------node: "{self.node_data.heading}"-相似度: {simi}--------')
+        else:
+            simi = wratio(self.node_data.name + " " + self.node_data.heading, in_node_name) # 最后发现中文similar比较，"8 投资估算 8.2 投资概算"这样的标题和"8.2 投资概算"比较，不如和“投资概算”比较准确，且需要用wrato而不是simple_match
+            print(f'--------node: "{self.node_data.name + " " + self.node_data.heading}"-相似度: {simi}--------')
+
+        if in_node_name.replace('"', '').replace("'", "") in self.node_data.heading or simi > 0 :
+            inout_similar_node_list.append(self)
+            # return self
+
+        if self.children:
+            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
+        for child in self.children:
+            # print('##################################################################################')
+            res = child._find_all_similar_nodes_by_head(inout_similar_node_list, in_toc_heading_has_index, in_node_name)
+            if res is not None:
+                return res
+        return None
     def find(self, in_node_name):
         dprint(f'查找节点: {self.node_data.name}')
         if self.node_data.name == in_node_name:

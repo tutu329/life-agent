@@ -200,16 +200,11 @@ class LLM_Doc():
 
                 print(f'---------------------------------定位的chapter为: -------------------------\n{chapter}')
                 content = self.get_text_from_doc_node(in_node_heading=chapter, in_if_similar_search=True)
-                print(f'---------------------------------返回内容content为: -------------------------\n{content}')
-                content = self.long_content_summary(content)
-                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容用中文回答问题，回复格式要层次清晰、便于理解，该换行的地方要换行，该编序号和缩进的地方要编制序号和缩进'
+                # print(f'---------------------------------返回内容content为: -------------------------\n{content}')
+                # content = self.long_content_summary(content)
+                # question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容用中文回答问题，回复格式要层次清晰、便于理解，该换行的地方要换行，该编序号和缩进的地方要编制序号和缩进'
                 # print(f'call_tools[0] 最终问题:\n{question}')
-                answer = self.llm.ask_prepare(question).get_answer_generator()
-
-                # print(f'call_tools[0] 选择chapter raw: "{chapter}"')
-                # test_node = self.doc_root.find_similar_by_head(self.toc_heading_has_index, 'Overview and key findings')
-                # test_toc = self.get_toc_md_for_tool_by_node(test_node, 100)
-                # print(f'test toc: {test_toc}')
+                # answer = self.llm.ask_prepare(question).get_answer_generator()
 
             case 1: # 关于文档细节的提问
                 question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在这个目录的哪个章节中，请返回唯一的章节标题，返回内容仅为"章节号 章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
@@ -425,7 +420,7 @@ class LLM_Doc():
                 return table.text
 
     # 获取完整目录(table of content)的md格式
-    def get_toc_md_for_tool(
+    def legacy_get_toc_md_for_tool(
             self,
             in_max_level='auto',    # 'auto' | 1 | 2 | 3 | ...
             in_if_render=False
@@ -595,7 +590,7 @@ class LLM_Doc():
             # 如果输入'1.1.3'这样的字符串
             if type(in_node) == str:
                 if in_if_similar_search==False:
-                    # 输入的node为精确查找
+                    # ====================对输入的node进行精确查找====================
                     if self.toc_heading_has_index==True:
                         print(f'====================_get_text_from_doc_node() self.toc_heading_has_index={self.toc_heading_has_index}================================')
                         # 搜索heading '1.1.3 建设必要性'，因为重新编码导致搜索name'1.19.2'是错的，而heading为'1.1.3 建设必要性'
@@ -618,7 +613,8 @@ class LLM_Doc():
                                 dprint(f'节点"{node_s}"未找到.')
                                 return
                 else:
-                    # 输入的node字符串为模糊查找
+                    # ====================对输入的node字符串进行模糊查找====================
+                    # 将"一次性的模糊查找结果"，改为"返回模糊相关度大于0的所有目录标题"，然后再问llm选取chapter
                         node_s = in_node
                         in_node = self.doc_root.find_similar_by_head(self.toc_heading_has_index, node_s)
                         if in_node is None:
@@ -1347,16 +1343,16 @@ def main_llm_pdf():
     question = '今天天气如何？'
 
     # toc = doc.get_toc_md_for_tool(4)
-    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root)
+    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root, 4)
     print(f'toc: {toc}')
 
-    print(f'user: {question}')
-    tool = doc.llm_classify_question(question)
-    print(f'选择工具: {tool}')
-    answer = doc.call_tools(tool, question, toc, in_tables=None)
-    for chunk in answer:
-        print(chunk, end='', flush=True)
-    print()
+    # print(f'user: {question}')
+    # tool = doc.llm_classify_question(question)
+    # print(f'选择工具: {tool}')
+    # answer = doc.call_tools(tool, question, toc, in_tables=None)
+    # for chunk in answer:
+    #     print(chunk, end='', flush=True)
+    # print()
 
 
     # doc = fitz.open("D:/server/life-agent/tools/doc/WorldEnergyOutlook2023.pdf")
@@ -1473,23 +1469,19 @@ def main_llm():
 
     doc.parse_all_docx()
 
-    toc = doc.get_toc_md_for_tool('auto', in_if_render=False)
+    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root,'auto', in_if_render=False)
     # toc = doc.get_toc_md_for_tool(3, in_if_render=False)
     print(toc)
     print(f'toc 长度: {len(toc)}')
 
-    call_llm()
+    node_to_find = '2.1.2 负荷预测'
+    doc.doc_root.find_similar_node_by_head_and_ask_llm(doc.toc_heading_has_index, node_to_find)
 
-    # inout_text = []
-    # doc.get_text_from_doc_node(inout_text, 'root')
-    # print('\n'.join(inout_text))
-
-
-
+    # call_llm()
 
 if __name__ == "__main__":
-    # main_llm_pdf()
-    main_llm()
+    main_llm_pdf()
+    # main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
     # main_image()
