@@ -200,11 +200,11 @@ class LLM_Doc():
 
                 print(f'---------------------------------定位的chapter为: -------------------------\n{chapter}')
                 content = self.get_text_from_doc_node(in_node_heading=chapter, in_if_similar_search=True)
-                # print(f'---------------------------------返回内容content为: -------------------------\n{content}')
-                # content = self.long_content_summary(content)
-                # question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容用中文回答问题，回复格式要层次清晰、便于理解，该换行的地方要换行，该编序号和缩进的地方要编制序号和缩进'
-                # print(f'call_tools[0] 最终问题:\n{question}')
-                # answer = self.llm.ask_prepare(question).get_answer_generator()
+                print(f'---------------------------------返回内容content为: -------------------------\n{content}')
+                content = self.long_content_summary(content)
+                question = f'{content}. 以上是从文档中获取的具体内容，用户针对这块内容提出了问题"{in_question}"，请根据这块内容用中文回答问题，回复格式要层次清晰、便于理解，该换行的地方要换行，该编序号和缩进的地方要编制序号和缩进'
+                print(f'call_tools[0] 最终问题:\n{question}')
+                answer = self.llm.ask_prepare(question).get_answer_generator()
 
             case 1: # 关于文档细节的提问
                 question = f'{in_toc}. 以上是一个文档的目录结构，用户针对这个文档提出了问题"{in_question}"，请问所提问题涉及的内容最可能出现在这个目录的哪个章节中，请返回唯一的章节标题，返回内容仅为"章节号 章节标题"这样的字符串，不能返回其他任何解释、前缀或多余字符，而且，如果该文档目录为英文，则返回的章节标题也必须为英文'
