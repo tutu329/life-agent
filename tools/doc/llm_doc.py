@@ -1448,8 +1448,8 @@ def main_llm():
         # for table in tables:
         #     print(f'table: {table.text}')
 
-        question = '负荷预测水平是多少？'
-        # question = '主要结论是多少？'
+        # question = '负荷预测水平是多少？'
+        question = '主要结论是多少？'
         # question = '投资估算是多少？'
         # question = '报告讲了什么？'
         # question = '报告2.2.3讲了什么？'
@@ -1477,11 +1477,11 @@ def main_llm():
     node_to_find = '2.1.2 负荷预测'
     doc.doc_root.find_similar_node_by_head_and_ask_llm(doc.toc_heading_has_index, node_to_find)
 
-    # call_llm()
+    call_llm()
 
 if __name__ == "__main__":
-    main_llm_pdf()
-    # main_llm()
+    # main_llm_pdf()
+    main_llm()
     # main_table()
     # (? <= \s)\d + (?=\s)
     # main_image()
