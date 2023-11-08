@@ -23,10 +23,12 @@ class SearchResult:
         return json.dumps(self.dump())
 
 class Bing_Searcher():
-    def __init__(self):
+    def __init__(self, in_show_result_num=3):
         self.browser = None
         self.context = None
         self.results = {}
+
+        self.show_result_num = in_show_result_num
 
     async def start(self):
         p = await async_playwright().start()
@@ -98,14 +100,20 @@ class Bing_Searcher():
         search_results = await self.get_raw_pages(search_result_urls)
 
         results = []
+        num = 0
         for k,v in search_results.items():
             # ------每一个url对应的搜索结果------
             url = k
             response_status = v[0]
             response_text = v[1]
             content_para_list = self.html_2_text_paras(response_text)
+
             if response_status == 200:
+                if num > self.show_result_num:
+                    break
+
                 results.append((url, content_para_list))
+                num += 1
 
         return results  # [(url, content_para_list), (url, content_para_list), ...]
 
@@ -161,8 +169,10 @@ def search(in_question):
             results = await searcher.query_bing_and_get_results(question)
             return results
 
-    # loop = asyncio.new_event_loop() # 这个会报io的错
-    loop = asyncio.get_event_loop()
+    if __name__ == '__main__':
+        loop = asyncio.get_event_loop()     # 本文件main()调用search()，必须用这一行
+    else:
+        loop = asyncio.new_event_loop()     # gradio调用search()，必须用这一行
     res = loop.run_until_complete(search())
     return res
 

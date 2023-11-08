@@ -2,6 +2,7 @@ import gradio as gr
 
 from tools.llm.api_client_qwen_openai import *
 from tools.doc.llm_doc import *
+from tools.retriever.search import search
 
 llm = LLM_Qwen(
     need_print=False,
@@ -22,6 +23,14 @@ llm = LLM_Qwen(
 # 3) how do you want to be addressed?
 # 4) should llm have opinions on topics or remain neutral?
 # ============================关于角色提示============================
+
+class Shared():
+    internet = False
+
+    @staticmethod
+    def set_internet(flag):
+        Shared.internet = flag
+        print(f'Shared.internet: {Shared.internet}')
 
 def llm_async_ask(message, history):
     # gradio的典型对话格式： [['我叫土土', '你好，土土！很高兴认识你。'], [], []]
@@ -104,7 +113,7 @@ def llm_answer(history, message):
                 print(chunk, end='', flush=True)
                 yield history, message
             print()
-        else:
+        elif Shared.internet==False:
             print('user: ',message)
             history[-1][1] = ""
             print('assistant: ', end='')
@@ -113,6 +122,33 @@ def llm_answer(history, message):
                 print(chunk, end='', flush=True)
                 yield history, message
             print()
+        elif Shared.internet==True:
+            print('user: ',message)
+            history[-1][1] = ""
+            print('assistant: ', end='')
+
+            results = search(message)
+            url_idx = 0
+            for url, content_para_list in results:
+                # -------------界面上生成一个url对应的内容-------------
+                content = " ".join(content_para_list)
+                if len(content) < 5000:
+                    url_idx += 1
+
+                    prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{message}"，回复要简明扼要、层次清晰、采用markdown格式。'
+                    temp_llm = LLM_Qwen(history=False)
+                    gen = temp_llm.ask_prepare(prompt).get_answer_generator()
+
+                    for chunk in gen:
+                        history[-1][1] += chunk     # 输出llm结果
+                        print(chunk, end='', flush=True)
+                        yield history, message
+                    # history[-1][1] += f'\n## &nbsp; '  # 输出空行
+                    # yield history, message
+
+                    print(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
+                    history[-1][1] += f'\n#### 出处[{url_idx}]: ' + url + '\n## &nbsp; \n## &nbsp; ' # 输出url
+                    yield history, message
 
 def bot_add_text(history, text, role_prompt):
     llm.set_role_prompt(role_prompt)
@@ -203,13 +239,13 @@ def main():
             # line_breaks = False,
             # render_markdown=False,
             bubble_full_width=False,
-            height=550,
+            height=500,
             # avatar_images=(None, (os.path.join(os.path.dirname(__file__), "avatar.png"))),
         )
 
         with gr.Row():
             user_input = gr.Textbox(
-                lines=3,
+                lines=5,
                 max_lines=20,
                 autofocus=True,
                 scale=32,
@@ -217,7 +253,10 @@ def main():
                 placeholder="输入文本并按回车，或者上传文件",
                 container=False,
             )
+            with gr.Column(scale=1, min_width=80):
+                internet_cbx = gr.Checkbox(value=False, label="联网", min_width=80)
             submit_btn = gr.Button(value="提交", min_width=50, scale=1)
+
 
         with gr.Row():
             dark_mode_btn = gr.Button(
@@ -240,7 +279,8 @@ def main():
             clear_btn = gr.Button(value="清空", min_width=20,scale=6)
 
 
-        with gr.Row():
+        with gr.Accordion("高级设置", open=False):
+        # with gr.Row():
             role_prompt_tbx = gr.Textbox(
                 value='',
                 lines=10,
@@ -251,6 +291,11 @@ def main():
                 container=False,
             )
         # role_prompt.change(llm_on_role_prompt_change, role_prompt, None)
+
+        internet_cbx.change(
+            fn=Shared.set_internet,
+            inputs=internet_cbx,
+        )
 
         undo_btn.click(
             bot_undo,
