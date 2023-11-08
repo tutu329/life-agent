@@ -166,51 +166,23 @@ def search(in_question):
     res = loop.run_until_complete(search())
     return res
 
+
+from tools.llm.api_client_qwen_openai import *
 def main():
-    res = search('how to cook a cake?')
+
+    question = '杭州有哪些著名景点'
+
+    llm = LLM_Qwen(history=False)
+
+    res = search(question)
     for url, content_para_list in res:
         print(f'====================url: {url}====================')
-        print(f'====================返回文本(总长:{len(" ".join(content_para_list))}): {content_para_list}====================')
-    # async def search():
-    #     question = 'how to cook a cake?'
-    #     async with Bing_Searcher() as searcher:
-    #         results = await searcher.query_bing_and_get_results(question)
-    #         for url, content_para_list in results:
-    #             print(f'====================url: {url}====================')
-    #             print(f'====================返回文本(总长:{len(" ".join(content_para_list))}): {content_para_list}====================')
-    #
-    # # loop = asyncio.new_event_loop() # 这个会报io的错
-    # loop = asyncio.get_event_loop().run_until_complete(search())
+        content = " ".join(content_para_list)
+        print(f'====================返回文本(总长:{len(content)}): {content_para_list}====================')
 
-async def main1():
-    async with Bing_Searcher() as s:
-        res = await s.query_bing('how to cook a cake?')
-        urls = [result['url'] for result in res]
-        pages = await s.get_raw_pages(urls)
-
-
-        print(json.dumps(res, ensure_ascii=False, indent=4))
-        print(f'====================urls: {urls}====================')
-
-        for k,v in pages.items():
-            print(f'====================page url: {k}====================')
-            print(f'====================page status: {v[0]}====================')
-            # print(f'====================page text: {v[1]}====================')
-            page_raw_text = v[1]
-            paras = s.html_2_text_paras(page_raw_text)
-            for para in paras:
-                print(f'----------------------para: {para}----------------------')
-
-
-
-    # rtn = get_raw_pages(urls)
-    # print(rtn)
-
-    # with open('crawl.json', 'w', encoding='utf-8') as f:
-    #     json.dump(query_bing('how to cook a steak'), f, ensure_ascii=False, indent=4)
-
-    # exit(0)
-
+        if len(content)<5000:
+            prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{question}"。'
+            llm.ask_prepare(prompt).get_answer_and_sync_print()
 
 if __name__ == '__main__':
     main()
