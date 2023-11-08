@@ -47,3 +47,10 @@ class Url_Content_Fetcher():
     async def get_raw_pages(self, urls, close_browser=False):
         context = await self.get_context()
         await self.get_raw_pages_(context, urls)
+
+async def main():
+    pass
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
