@@ -1,11 +1,9 @@
-from playwright.sync_api import sync_playwright
-from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
 from typing import List, Dict, Tuple, Optional
 import json
 import re
 import asyncio
 
-from tools.retriever.fetch import *
 from tools.retriever.html2text import html2text
 
 class SearchResult:
