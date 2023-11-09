@@ -1,8 +1,9 @@
 import gradio as gr
+import asyncio
 
 from tools.llm.api_client_qwen_openai import *
 from tools.doc.llm_doc import *
-from tools.retriever.search import search, search_gen
+from tools.retriever.search import search, search_gen, Bing_Searcher
 
 llm = LLM_Qwen(
     need_print=False,
@@ -59,6 +60,9 @@ def llm_clear():
     llm.clear_history()
     llm.print_history()
 
+
+internet_search_finished = False
+internet_search_result = []
 def llm_answer(history, message, progress=gr.Progress()):
     print('---------------------执行llm_answer()---------------------')
     message = history[-1][0]
@@ -129,16 +133,55 @@ def llm_answer(history, message, progress=gr.Progress()):
             history[-1][1] = ""
             print('assistant: ', end='')
 
-            results = []
-            for res in progress.tqdm(search_gen(message), desc='正在调用搜索引擎中...'):
-                if res is not None:
-                    results = res
-            # results = search(message)
+            # for res in progress.tqdm(search_gen(message), desc='正在调用搜索引擎中...'):
+            #     print(f'-----------------------------"{res}"-------------------------------')
+            #     if type(res) is not str:
+            #         results = res
+
+
+
+            global internet_search_finished
+            global internet_search_result
+            internet_search_finished = False
+            internet_search_result = []
+
+            async def _show_progress():
+                for i in progress.tqdm(range(100), desc='正在调用搜索引擎中...'):
+                    await asyncio.sleep(0.1)
+                    if internet_search_finished:
+                        print('----------------------------1--------------------------------')
+                        break
+
+            async def _search():
+                async with Bing_Searcher() as searcher:
+                    global internet_search_finished
+                    global internet_search_result
+                    internet_search_result = await searcher.query_bing_and_get_results(message)
+                    internet_search_finished = True
+                    print('----------------------------2--------------------------------')
+                    print(f'results 2: {internet_search_result}')
+
+            async def await_taks():
+                t1 = asyncio.create_task(_show_progress())
+                t2 = asyncio.create_task(_search())
+                await asyncio.wait([t1, t2])
+
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(await_taks())
+
+            print('----------------------------3--------------------------------')
+            print(f'results: {internet_search_result}')
+
+            # tasks = []
+            # for url in urls:
+            #     tasks.append(asyncio.create_task(self._func_get_one_page(self.context, url)))
+            #
+            # await asyncio.wait(tasks, timeout=10)
 
             # progress.tqdm(results, desc='返回搜索内容并分析...')
 
             url_idx = 0
-            for url, content_para_list in results:
+            for url, content_para_list in internet_search_result:
                 # -------------界面上生成一个url对应的内容-------------
                 content = " ".join(content_para_list)
                 if len(content) < 5000:
@@ -354,42 +397,21 @@ def main():
             queue=False
         )
 
-        if Shared.internet==False:
-            # --------------未联网的对话-------------
-            print(f'进入：未联网的对话')
-            submit_btn.click(
-                bot_add_text,
-                [chatbot, user_input, role_prompt_tbx],
-                [chatbot, user_input],
-                queue=False
-            ).then(
-                llm_answer,
-                [chatbot, user_input],
-                [chatbot, user_input],
-            )
-        else:
-            # --------------联网的对话-------------
-            print(f'进入：联网的对话')
-            submit_btn.click(
-                bot_add_text,
-                [chatbot, user_input, role_prompt_tbx],
-                [chatbot, user_input],
-                queue=False
-            ).then(
-                search_before_llm_answer,
-                user_input,
-                user_input,
-            ).then(
-                llm_answer,
-                [chatbot, user_input],
-                [chatbot, user_input],
-            )
-    # ).then(
-        #     lambda: gr.update(interactive=True),
-        #     None,
-        #     [user_input],
-        #     queue=False
-        # )
+        submit_btn.click(
+            bot_add_text,
+            [chatbot, user_input, role_prompt_tbx],
+            [chatbot, user_input],
+            queue=False
+        ).then(
+            llm_answer,
+            [chatbot, user_input],
+            [chatbot, user_input],
+        ).then(
+            lambda: gr.update(interactive=True),
+            None,
+            [user_input],
+            queue=False
+        )
 
         txt_msg = user_input.submit(
             bot_add_text,
@@ -400,13 +422,12 @@ def main():
             llm_answer,
             [chatbot, user_input],
             [chatbot, user_input]
+        ).then(
+            lambda: gr.update(interactive=True),
+            None,
+            [user_input],
+            queue=False
         )
-        # ).then(
-        #     lambda: gr.update(interactive=True),
-        #     None,
-        #     [user_input],
-        #     queue=False
-        # )
 
         file_msg = upload_btn.upload(bot_on_upload, [chatbot, upload_btn], [chatbot], queue=False)
 
@@ -428,7 +449,7 @@ def main():
             api_name=False,
         )
 
-    demo.queue().launch()
+    demo.queue().launch(server_name='0.0.0.0')
 
 if __name__ == "__main__":
     main()
