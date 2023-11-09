@@ -162,6 +162,22 @@ class Bing_Searcher():
         except Exception as e:
             print(f'func_get_one_page(url={url}) error: {e}')
 
+def search_gen(in_question):
+    async def search():
+        question = in_question
+        yield None
+        async with Bing_Searcher() as searcher:
+            yield None
+            results = await searcher.query_bing_and_get_results(question)
+            yield results
+            # return results
+
+    if __name__ == '__main__':
+        loop = asyncio.get_event_loop()     # 本文件main()调用search()，必须用这一行
+    else:
+        loop = asyncio.new_event_loop()     # gradio调用search()，必须用这一行
+    gen = loop.run_until_complete(search())
+    return gen
 def search(in_question):
     async def search():
         question = in_question

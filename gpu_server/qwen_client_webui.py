@@ -2,7 +2,7 @@ import gradio as gr
 
 from tools.llm.api_client_qwen_openai import *
 from tools.doc.llm_doc import *
-from tools.retriever.search import search
+from tools.retriever.search import search, search_gen
 
 llm = LLM_Qwen(
     need_print=False,
@@ -59,7 +59,7 @@ def llm_clear():
     llm.clear_history()
     llm.print_history()
 
-def llm_answer(history, message):
+def llm_answer(history, message, progress=gr.Progress()):
     print('---------------------执行llm_answer()---------------------')
     message = history[-1][0]
     if '上传文件' in history[-1][0]:
@@ -75,7 +75,7 @@ def llm_answer(history, message):
         #     yield history, ''
     else:
         if current_file != '' and 'docx' in current_file:
-            # 已有docx文件上传
+            # -----------------已有docx文件上传----------------
             doc = LLM_Doc(current_file)
             doc.llm.need_print = False
             doc.parse_all_docx()
@@ -94,7 +94,7 @@ def llm_answer(history, message):
                 yield history, message
             print()
         elif current_file != '' and 'pdf' in current_file:
-            # 已有pdf文件上传
+            # -----------------已有pdf文件上传----------------
             doc = LLM_Doc(current_file)
             doc.llm.need_print = False
             doc.parse_all_pdf()
@@ -114,6 +114,7 @@ def llm_answer(history, message):
                 yield history, message
             print()
         elif Shared.internet==False:
+            # -----------------不搜索网络----------------
             print('user: ',message)
             history[-1][1] = ""
             print('assistant: ', end='')
@@ -123,11 +124,19 @@ def llm_answer(history, message):
                 yield history, message
             print()
         elif Shared.internet==True:
+            # -----------------搜索网络----------------
             print('user: ',message)
             history[-1][1] = ""
             print('assistant: ', end='')
 
-            results = search(message)
+            results = []
+            for res in progress.tqdm(search_gen(message), desc='正在调用搜索引擎中...'):
+                if res is not None:
+                    results = res
+            # results = search(message)
+
+            # progress.tqdm(results, desc='返回搜索内容并分析...')
+
             url_idx = 0
             for url, content_para_list in results:
                 # -------------界面上生成一个url对应的内容-------------
@@ -345,21 +354,42 @@ def main():
             queue=False
         )
 
-        submit_btn.click(
-            bot_add_text,
-            [chatbot, user_input, role_prompt_tbx],
-            [chatbot, user_input],
-            queue=False
-        ).then(
-            llm_answer,
-            [chatbot, user_input],
-            [chatbot, user_input],
-        ).then(
-            lambda: gr.update(interactive=True),
-            None,
-            [user_input],
-            queue=False
-        )
+        if Shared.internet==False:
+            # --------------未联网的对话-------------
+            print(f'进入：未联网的对话')
+            submit_btn.click(
+                bot_add_text,
+                [chatbot, user_input, role_prompt_tbx],
+                [chatbot, user_input],
+                queue=False
+            ).then(
+                llm_answer,
+                [chatbot, user_input],
+                [chatbot, user_input],
+            )
+        else:
+            # --------------联网的对话-------------
+            print(f'进入：联网的对话')
+            submit_btn.click(
+                bot_add_text,
+                [chatbot, user_input, role_prompt_tbx],
+                [chatbot, user_input],
+                queue=False
+            ).then(
+                search_before_llm_answer,
+                user_input,
+                user_input,
+            ).then(
+                llm_answer,
+                [chatbot, user_input],
+                [chatbot, user_input],
+            )
+    # ).then(
+        #     lambda: gr.update(interactive=True),
+        #     None,
+        #     [user_input],
+        #     queue=False
+        # )
 
         txt_msg = user_input.submit(
             bot_add_text,
@@ -370,13 +400,16 @@ def main():
             llm_answer,
             [chatbot, user_input],
             [chatbot, user_input]
-        ).then(
-            lambda: gr.update(interactive=True),
-            None,
-            [user_input],
-            queue=False
         )
+        # ).then(
+        #     lambda: gr.update(interactive=True),
+        #     None,
+        #     [user_input],
+        #     queue=False
+        # )
+
         file_msg = upload_btn.upload(bot_on_upload, [chatbot, upload_btn], [chatbot], queue=False)
+
         # file_msg = upload_btn.upload(bot_on_upload, [chatbot, upload_btn], [chatbot], queue=False).then(
         #     llm_answer, [chatbot, user_input], [chatbot, user_input]
         # )
