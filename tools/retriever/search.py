@@ -177,6 +177,7 @@ def search_gen(in_question):
     else:
         loop = asyncio.new_event_loop()     # gradio调用search()，必须用这一行
     gen = loop.run_until_complete(search())
+
     return gen
 def search(in_question):
     async def search():
