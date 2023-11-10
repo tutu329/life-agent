@@ -469,12 +469,20 @@ class LLM_Qwen():
         if in_clear_history:
             self.__history_clear()
 
-        msgs = self.__history_messages_with_question(in_question)
+        if type(in_question)==str:
+            # 输入仅为question字符串
+            msgs = self.__history_messages_with_question(in_question)
+        elif type(in_question)==list:
+            # 输入为history list([{"role": "user", "content":'xxx'}, ...])
+            msgs = in_question
+        else:
+            raise Exception('ask_prepare(): in_question must be str or list')
 
         # ==========================================================
         # print('发送到LLM的完整提示: ', msgs)
         print(f'------------------------------------------------------------------------------------------')
         print(f'ask_prepare(): temperature={self.temperature}')
+        print(f'ask_prepare(): messages={msgs}')
         print(f'------------------------------------------------------------------------------------------')
         # ==========================================================
 

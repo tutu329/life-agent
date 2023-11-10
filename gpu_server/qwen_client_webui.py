@@ -17,7 +17,7 @@ class One_Chat():
 class Session_Data():
     user_name: str = ''
     user_passwd: str = ''
-    ip: str = ''
+    id: str = ''
 
     # 需要存储的session状态
     chat_history: List[One_Chat] = field(default_factory=list)
@@ -25,26 +25,37 @@ class Session_Data():
     chat_using_internet = False
 
 g_session_data = {
-    'some_user_ip': Session_Data(), # 一个ip对应一个session_data
+    'some_user_id': Session_Data(), # 一个id对应一个session_data
 }
+
+def get_session_id(in_request_header):
+    session_id = ''
+    for k, v in in_request_header.headers.items():
+        # print(f'k: {k}, v: {v}')
+        if k!='cookie' and k!='sec-websocket-key':
+            session_id += v + ' '
+    return session_id
 def on_page_load(request:gr.Request):   # 注意：request参数不需要在调用时通过input注入
     global g_session_data
     print('------------------页面已启动------------------')
-    ip = request.client.host
-    user_session = g_session_data.get(ip)
+    # ip = request.client.host
+    session_id = get_session_id(request)
+    user_session = g_session_data.get(session_id)
 
     if user_session:
-        # 已有该ip对应的session
-        print(f'------------------读取session(ip="{ip}")------------------')
+        # 已有该id对应的session
+        print(f'------------------读取session------------------')
+        # print(f'------------------读取session(id="{session_id}")------------------')
         print(f'---chat history---')
         print(f'{user_session.chat_history}')
         print(f'---chat history导入chat bot---')
         # return user_session.chat_history
         return user_session.chat_history, user_session.chat_input, user_session.chat_using_internet
     else:
-        # 该ip新建session
-        print(f'------------------新建session(ip="{ip}")------------------')
-        g_session_data[ip] = Session_Data(ip=ip)
+        # 该id新建session
+        print(f'------------------新建session------------------')
+        # print(f'------------------新建session(id="{session_id}")------------------')
+        g_session_data[session_id] = Session_Data(id=session_id)
         return [], '', False
 
     # if request:
@@ -54,6 +65,7 @@ def on_page_load(request:gr.Request):   # 注意：request参数不需要在调�
 # ------------------------------------------------session管理------------------------------------------------
 
 llm = LLM_Qwen(
+    history=False,  # 这里要关掉server侧llm的history，对话历史由用户session控制
     need_print=False,
     # temperature=0,
 )
@@ -79,16 +91,36 @@ class Shared():
     @staticmethod
     def set_internet(flag, request:gr.Request):
         Shared.internet = flag
-        ip = request.client.host
-        g_session_data[ip].chat_using_internet = Shared.internet
+        # ip = request.client.host
+        session_id = get_session_id(request)
+        g_session_data[session_id].chat_using_internet = Shared.internet
         print(f'Shared.internet: {Shared.internet}')
 
-def llm_async_ask(message, history):
+def llm_async_ask(message, history, request:gr.Request):
     # gradio的典型对话格式： [['我叫土土', '你好，土土！很高兴认识你。'], [], []]
+    session_id = get_session_id(request)
+    print(g_session_data[session_id].chat_history)
 
-    for item in llm.ask_prepare(message).get_answer_generator():
+    history_with_current_message = []
+    for one_chat in g_session_data[session_id].chat_history:
+        msg = {"role": "user", "content": one_chat[0]}
+        history_with_current_message.append(msg)
+        msg = {"role": "assistant", "content": one_chat[1]}
+        history_with_current_message.append(msg)
+    current_msg = {"role": "user", "content": message}
+    history_with_current_message.append(current_msg)
+
+    # print(f'---------------history_with_current_message: ------------------------------------------')
+    # print(f'{history_with_current_message}')
+
+    for item in llm.ask_prepare(history_with_current_message).get_answer_generator():
+    # for item in llm.ask_prepare(message).get_answer_generator():
         yield item
-    llm.print_history()
+
+    # llm.print_history()
+    print()
+    print('-------------对话历史--------------')
+
 
 def llm_undo():
     print('执行llm_undo()')
@@ -115,8 +147,9 @@ internet_search_finished = False
 internet_search_result = []
 def llm_answer(history, message, request:gr.Request, progress=gr.Progress()):   # 注意：request参数不需要在调用时通过input注入
     print('---------------------执行llm_answer()---------------------')
-    ip = request.client.host
-    print(f'----------ip: {ip}----------')
+    # ip = request.client.host
+    session_id = get_session_id(request)
+    print(f'----------session id: {session_id}----------')
     message = history[-1][0]
     if '上传文件' in history[-1][0]:
         filename = history[-1][0][0]
@@ -174,11 +207,11 @@ def llm_answer(history, message, request:gr.Request, progress=gr.Progress()):   
             print('user: ',message)
             history[-1][1] = ""
             print('assistant: ', end='')
-            for chunk in llm_async_ask(message, history):
+            for chunk in llm_async_ask(message, history, request):
                 history[-1][1] += chunk
                 print(chunk, end='', flush=True)
-                g_session_data[ip].chat_history = history
-                g_session_data[ip].chat_input = message
+                g_session_data[session_id].chat_history = history
+                g_session_data[session_id].chat_input = message
                 # g_session_data[ip].chat_using_internet = Shared.internet
                 yield history, message
             print()
