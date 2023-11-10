@@ -5,6 +5,54 @@ from tools.llm.api_client_qwen_openai import *
 from tools.doc.llm_doc import *
 from tools.retriever.search import search, search_gen, Bing_Searcher
 
+
+# ------------------------------------------------session管理------------------------------------------------
+# 一次对话的数据(user_text, assistant_text)
+@dataclass
+class One_Chat():
+    chat: Tuple=('', '')
+
+# 用户的session状态
+@dataclass
+class Session_Data():
+    user_name: str = ''
+    user_passwd: str = ''
+    ip: str = ''
+
+    # 需要存储的session状态
+    chat_history: List[One_Chat] = field(default_factory=list)
+    chat_input = ''
+    chat_using_internet = False
+
+g_session_data = {
+    'some_user_ip': Session_Data(), # 一个ip对应一个session_data
+}
+def on_page_load(request:gr.Request):   # 注意：request参数不需要在调用时通过input注入
+    global g_session_data
+    print('------------------页面已启动------------------')
+    ip = request.client.host
+    user_session = g_session_data.get(ip)
+
+    if user_session:
+        # 已有该ip对应的session
+        print(f'------------------读取session(ip="{ip}")------------------')
+        print(f'---chat history---')
+        print(f'{user_session.chat_history}')
+        print(f'---chat history导入chat bot---')
+        # return user_session.chat_history
+        return user_session.chat_history, user_session.chat_input, user_session.chat_using_internet
+    else:
+        # 该ip新建session
+        print(f'------------------新建session(ip="{ip}")------------------')
+        g_session_data[ip] = Session_Data(ip=ip)
+        return [], '', False
+
+    # if request:
+    #     print("Request headers dictionary:", request.headers)
+    #     print("IP address:", request.client.host)
+    #     print("Query parameters:", dict(request.query_params))
+# ------------------------------------------------session管理------------------------------------------------
+
 llm = LLM_Qwen(
     need_print=False,
     # temperature=0,
@@ -29,8 +77,10 @@ class Shared():
     internet = False
 
     @staticmethod
-    def set_internet(flag):
+    def set_internet(flag, request:gr.Request):
         Shared.internet = flag
+        ip = request.client.host
+        g_session_data[ip].chat_using_internet = Shared.internet
         print(f'Shared.internet: {Shared.internet}')
 
 def llm_async_ask(message, history):
@@ -63,8 +113,10 @@ def llm_clear():
 
 internet_search_finished = False
 internet_search_result = []
-def llm_answer(history, message, progress=gr.Progress()):
+def llm_answer(history, message, request:gr.Request, progress=gr.Progress()):   # 注意：request参数不需要在调用时通过input注入
     print('---------------------执行llm_answer()---------------------')
+    ip = request.client.host
+    print(f'----------ip: {ip}----------')
     message = history[-1][0]
     if '上传文件' in history[-1][0]:
         filename = history[-1][0][0]
@@ -125,6 +177,9 @@ def llm_answer(history, message, progress=gr.Progress()):
             for chunk in llm_async_ask(message, history):
                 history[-1][1] += chunk
                 print(chunk, end='', flush=True)
+                g_session_data[ip].chat_history = history
+                g_session_data[ip].chat_input = message
+                # g_session_data[ip].chat_using_internet = Shared.internet
                 yield history, message
             print()
         elif Shared.internet==True:
@@ -146,8 +201,9 @@ def llm_answer(history, message, progress=gr.Progress()):
             internet_search_result = []
 
             async def _show_progress():
-                for i in progress.tqdm(range(100), desc='正在调用搜索引擎中...'):
-                    await asyncio.sleep(0.1)
+                estimated_time = 15 # 预估需要15秒
+                for i in progress.tqdm(range(estimated_time), desc='正在调用搜索引擎中...'):    # progress.tqdm 会自动将进度信息输出到本函数的所有输出控件中
+                    await asyncio.sleep(1)
                     if internet_search_finished:
                         print('----------------------------1--------------------------------')
                         break
@@ -449,7 +505,21 @@ def main():
             api_name=False,
         )
 
-    demo.queue().launch(server_name='0.0.0.0')
+        gr.Blocks.load(
+            demo,
+            fn=on_page_load,
+            inputs=None,
+        #     outputs=None,
+            # outputs=chatbot,
+            outputs=[chatbot, user_input, internet_cbx],
+        )
+        # ).then(
+        #     lambda: gr.update(interactive=True),
+        #     None,
+        #     None,
+        #     queue=False
+        # )
+    demo.queue().launch()
 
 if __name__ == "__main__":
     main()
