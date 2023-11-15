@@ -43,7 +43,7 @@ class Exllama_Wrapper:
         self.generator = ExLlamaV2StreamingGenerator(self.model, cache, self.tokenizer)
 
         self.settings = ExLlamaV2Sampler.Settings()
-
+        print("Exllama_Wrapper loading model finished.")
 
     def generate(
             self,
@@ -54,6 +54,7 @@ class Exllama_Wrapper:
             repetition_penalty=1.1,
             max_new_tokens=2048,
     ):
+        print(f'-----------------Exllama_Wrapper.generate() invoked------------------------')
         input_ids = self.tokenizer.encode(prompt)
         prompt_tokens = input_ids.shape[-1]
 

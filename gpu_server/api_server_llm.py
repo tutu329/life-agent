@@ -7,6 +7,8 @@ import torch
 from tqdm import tqdm
 import time
 
+from gpu_server.exllama_wrapper import *
+
 class Keywords_Stopping_Criteria(StoppingCriteria):
     def __init__(self, keywords_ids:list):
         self.keywords = keywords_ids
@@ -222,13 +224,52 @@ class LLM_Model_Wrapper():
         return streamer
 
 class Llama_Chat_Wrapper(LLM_Model_Wrapper):
-    def __init__(self, in_model_path, in_model_name='llama-chat'):
+    def __init__(self, in_model_path, in_model_name='llama-chat', in_use_exllamav2=True):
         super().__init__()
-        self.model_name = in_model_name
-        self.model_path = in_model_path
+        self.use_exllamav2 = in_use_exllamav2
+        if self.use_exllamav2:
+            self.exllama = Exllama_Wrapper(in_model_path)
+        else:
+            self.model_name = in_model_name
+            self.model_path = in_model_path
 
     def init(self):
-        super().init(in_prompt_template=Llama_Chat_Prompt_Template(), in_model_path=self.model_path)
+        if self.use_exllamav2:
+            self.exllama.init()
+        else:
+            super().init(in_prompt_template=Llama_Chat_Prompt_Template(), in_model_path=self.model_path)
+
+    def generate(
+            self,
+            message,
+            # history,
+            temperature=0.7,
+            top_p=0.9,
+            top_k=10,
+            repetition_penalty=1.1,
+            max_new_tokens=2048,
+            stop=["</s>"],
+    ):
+        if self.use_exllamav2:
+            gen = self.exllama.generate(
+                message,
+                temperature,
+                top_p,
+                top_k,
+                repetition_penalty,
+                max_new_tokens,
+            )
+            return gen
+        else:
+            super().generate(
+                message,
+                temperature,
+                top_p,
+                top_k,
+                repetition_penalty,
+                max_new_tokens,
+                stop,
+            )
 
 class Wizardcoder_Wrapper(LLM_Model_Wrapper):
     def __init__(self):
