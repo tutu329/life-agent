@@ -21,6 +21,7 @@ from sse_starlette.sse import EventSourceResponse
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers.generation import GenerationConfig
 
+# from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 from gpu_server.api_server_llm import *
 
 
@@ -443,8 +444,14 @@ async def predict(
     # -----------------------------------stream生成--------------------------------------
     model_type = args.model_type
     if model_type=='llama':
-        # 其他llama的generate的生成结果为多个chunk，需要连接
         global llm
+
+        print(f'----------llama的history----------')
+        print(f'{history}')
+        print(f'----------llama的history----------')
+        query = llm.make_prompt_with_history(query, history)
+
+        # 其他llama的generate的生成结果为多个chunk，需要连接
         response_generator = llm.generate(query)
 
         for new_response in response_generator:
@@ -524,12 +531,15 @@ def _get_args():
     return args
 
 
+# ---------------------------------全局变量---------------------------------
+# llama类模型的全局变量
 llm = None
+# qwen模型的全局变量
 model = None
 tokenizer = None
-from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 
 args = _get_args()
+
 def main():
     global llm, model, tokenizer
 

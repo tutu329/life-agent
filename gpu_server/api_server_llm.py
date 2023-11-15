@@ -65,42 +65,16 @@ class Wizardcoder_Prompt_Template():
 
 class Llama_Chat_Prompt_Template():
     def __init__(self):
-        self.prompt_template = '''
-        以下是用户和人工智能助手之间的对话。用户以Human开头，人工智能助手以Assistant开头，会对人类提出的问题给出有帮助、高质量、详细和礼貌的回答，并且总是拒绝参与 与不道德、不安全、有争议、政治敏感等相关的话题、问题和指示。
-
-        Human:
-        {prompt}
-
-        Assistant:
-        '''
+        self.prompt_template = '''以下是用户和人工智能助手之间的对话。用户以Human开头，人工智能助手以Assistant开头，会对用户提出的问题给出有帮助、高质量的回答。\n{prompt}\n'''
     def get_prompt(self, prompt):
         res = self.prompt_template.format(prompt=prompt)
-        return res
-
-class CausalLM_Prompt_Template():
-    def __init__(self):
-        self.prompt_template = '''
-        <|im_start|>system
-        {system_message}<|im_end|>
-        <|im_start|>user
-        {prompt}<|im_end|>
-        <|im_start|>assistant
-        '''
-    def get_prompt(self, prompt, system_message=''):
-        res = self.prompt_template.format(prompt=prompt, system_message=system_message)
         return res
 
 class Wizardlm_Prompt_Template():
     def __init__(self):
         self.prompt_template = '''
         A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful and detailed answers to the user's questions. 
-        USER: Hi
-        ASSISTANT: Hello.</s>
-        USER: Who are you? 
-        ASSISTANT: I am WizardLM.</s>
-        ......
-        USER: {prompt}
-        ASSISTANT:
+        {prompt}
         '''
     def get_prompt(self, prompt):
         res = self.prompt_template.format(prompt=prompt)
@@ -112,10 +86,7 @@ class Phind_Prompt_Template():
         ### System Prompt
         {system_message}
         
-        ### User Message
         {prompt}
-
-        ### Assistant
         '''
     def get_prompt(self, prompt, system_message=''):
         res = self.prompt_template.format(prompt=prompt, system_message=system_message)
@@ -125,10 +96,13 @@ class LLM_Model_Wrapper():
     def __int__(self):
         self.model_name_or_path = ''
         self.model = None
+        self.model_name = ''
         self.tokenizer = None
         self.task = None
 
         self.prompt_template = None     # Wizard_Prompt_Template()等实例
+
+        self.not_support_stream = False # 有些模型不支持stream输出
 
     def init(self,
              in_prompt_template,
@@ -190,6 +164,19 @@ class LLM_Model_Wrapper():
     def get_prompt(self, prompt):
         return self.prompt_template.get_prompt(prompt)
 
+    def make_prompt_with_history(self, prompt, history):
+        rtn_prompt = ''
+        for one_chat in history:
+            user_text = one_chat[0]
+            assistant_text = one_chat[1]
+            rtn_prompt += 'Human:' + user_text + '\n'
+            rtn_prompt += 'Assistant:' + assistant_text + '\n'
+
+        rtn_prompt += 'Human:' + prompt + '\n'
+        rtn_prompt += 'Assistant:'
+
+        return rtn_prompt
+
     def generate(
             self,
             message,
@@ -206,13 +193,10 @@ class LLM_Model_Wrapper():
         print(message)
         print('\n==========================msg sent to llm==========================')
 
-        input_ids = self.tokenizer(message, return_tensors='pt').input_ids.cuda()
         streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
-
         stop_criteria = Keywords_Stopping_Criteria.get_stop_criteria(self.tokenizer, stop)
 
-        if temperature==0.0:
-            temperature=0.0001
+        input_ids = self.tokenizer(message, return_tensors='pt').input_ids.cuda()
         generation_kwargs = dict(
             inputs=input_ids,
             streamer=streamer,
@@ -226,20 +210,16 @@ class LLM_Model_Wrapper():
             repetition_penalty=repetition_penalty,
             max_new_tokens=max_new_tokens,
         )
+
+        if temperature==0.0:
+            temperature=0.0001
+
         # print(f'temperature: {temperature}')
         # print(f'repetition_penalty: {repetition_penalty}')
         # print(f'max_new_tokens: {max_new_tokens}')
         self.task = Thread(target=self.model.generate, kwargs=generation_kwargs)
         self.task.start()
         return streamer
-
-class CausalLM_Wrapper(LLM_Model_Wrapper):
-    def __init__(self):
-        super().__init__()
-        self.model_name = 'CausalLM-14B-GPTQ'
-
-    def init(self, in_model_path="d:/models/CausalLM-14B-GPTQ"):
-        super().init(in_prompt_template=CausalLM_Prompt_Template(), in_model_path=in_model_path)
 
 class Llama_Chat_Wrapper(LLM_Model_Wrapper):
     def __init__(self, in_model_path, in_model_name='llama-chat'):
