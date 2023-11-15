@@ -63,6 +63,20 @@ class Wizardcoder_Prompt_Template():
         res = self.prompt_template.format(prompt=prompt)
         return res
 
+class Llama_Chat_Prompt_Template():
+    def __init__(self):
+        self.prompt_template = '''
+        以下是用户和人工智能助手之间的对话。用户以Human开头，人工智能助手以Assistant开头，会对人类提出的问题给出有帮助、高质量、详细和礼貌的回答，并且总是拒绝参与 与不道德、不安全、有争议、政治敏感等相关的话题、问题和指示。
+
+        Human:
+        {prompt}
+
+        Assistant:
+        '''
+    def get_prompt(self, prompt):
+        res = self.prompt_template.format(prompt=prompt)
+        return res
+
 class CausalLM_Prompt_Template():
     def __init__(self):
         self.prompt_template = '''
@@ -165,8 +179,13 @@ class LLM_Model_Wrapper():
         # 报错：RuntimeError: The temp_state buffer is too small in the exllama backend. Please call the exllama_set_max_input_length function to increase the buffer size. Example:
         # from auto_gptq import exllama_set_max_input_length
         # model = exllama_set_max_input_length(model, 4096)
-        from auto_gptq import exllama_set_max_input_length
-        self.model = exllama_set_max_input_length(self.model, 8192)
+        try:
+            from auto_gptq import exllama_set_max_input_length
+            max_innput_length = 8192
+            self.model = exllama_set_max_input_length(self.model, max_innput_length)
+
+        except Exception as e:
+            print(f'LLM_Model_Wrapper初始化, exllama_set_max_input_length({max_innput_length}) warning: {e}')
 
     def get_prompt(self, prompt):
         return self.prompt_template.get_prompt(prompt)
@@ -221,6 +240,15 @@ class CausalLM_Wrapper(LLM_Model_Wrapper):
 
     def init(self, in_model_path="d:/models/CausalLM-14B-GPTQ"):
         super().init(in_prompt_template=CausalLM_Prompt_Template(), in_model_path=in_model_path)
+
+class Llama_Chat_Wrapper(LLM_Model_Wrapper):
+    def __init__(self, in_model_path, in_model_name='llama-chat'):
+        super().__init__()
+        self.model_name = in_model_name
+        self.model_path = in_model_path
+
+    def init(self):
+        super().init(in_prompt_template=Llama_Chat_Prompt_Template(), in_model_path=self.model_path)
 
 class Wizardcoder_Wrapper(LLM_Model_Wrapper):
     def __init__(self):
