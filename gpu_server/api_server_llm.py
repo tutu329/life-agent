@@ -102,7 +102,7 @@ class LLM_Model_Wrapper():
 
         self.prompt_template = None     # Wizard_Prompt_Template()等实例
 
-        self.not_support_stream = False # 有些模型不支持stream输出
+        # self.not_support_stream = False # 有些模型不支持stream输出
 
     def init(self,
              in_prompt_template,
