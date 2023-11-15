@@ -443,28 +443,42 @@ async def predict(
     # -----------------------------------stream生成--------------------------------------
     model_type = args.model_type
     if model_type=='llama':
+        # 其他llama的generate的生成结果为多个chunk，需要连接
         global llm
         response_generator = llm.generate(query)
+
+        for new_response in response_generator:
+            new_text = new_response
+            choice_data = ChatCompletionResponseStreamChoice(
+                index=0, delta=DeltaMessage(content=new_text), finish_reason=None
+            )
+            chunk = ChatCompletionResponse(
+                model=model_id, choices=[choice_data], object="chat.completion.chunk"
+            )
+            yield "{}".format(chunk.model_dump_json(exclude_unset=True))
     else:
+        # qwen的chat_stream生成结果为不断刷新的完整字符串，而非chunk
         response_generator = model.chat_stream(
             tokenizer, query, history=history, stop_words_ids=stop_words_ids, **gen_kwargs
         )
+
+        for new_response in response_generator:
+            if len(new_response) == current_length:
+                continue
+
+            new_text = new_response[current_length:]
+            current_length = len(new_response)
+
+            choice_data = ChatCompletionResponseStreamChoice(
+                index=0, delta=DeltaMessage(content=new_text), finish_reason=None
+            )
+            chunk = ChatCompletionResponse(
+                model=model_id, choices=[choice_data], object="chat.completion.chunk"
+            )
+            yield "{}".format(chunk.model_dump_json(exclude_unset=True))
     # -----------------------------------stream生成--------------------------------------
 
-    for new_response in response_generator:
-        if len(new_response) == current_length:
-            continue
 
-        new_text = new_response[current_length:]
-        current_length = len(new_response)
-
-        choice_data = ChatCompletionResponseStreamChoice(
-            index=0, delta=DeltaMessage(content=new_text), finish_reason=None
-        )
-        chunk = ChatCompletionResponse(
-            model=model_id, choices=[choice_data], object="chat.completion.chunk"
-        )
-        yield "{}".format(chunk.model_dump_json(exclude_unset=True))
 
     choice_data = ChatCompletionResponseStreamChoice(
         index=0, delta=DeltaMessage(), finish_reason="stop"
@@ -511,11 +525,13 @@ def _get_args():
 
 
 llm = None
+model = None
+tokenizer = None
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 
 args = _get_args()
 def main():
-    global llm
+    global llm, model, tokenizer
 
 
     print(f'--------------模型路径为: "{args.checkpoint_path}"-------------')
