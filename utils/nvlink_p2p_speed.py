@@ -48,3 +48,4 @@ def nvlink_p2p_speed(gpu_num=2):
 
 if __name__ == '__main__':
     nvlink_p2p_speed(gpu_num=2)
+
