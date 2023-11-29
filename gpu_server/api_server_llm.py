@@ -248,20 +248,26 @@ class Llama_Chat_Wrapper(LLM_Model_Wrapper):
             top_k=10,
             repetition_penalty=1.1,
             max_new_tokens=2048,
-            stop=["</s>"],
+            stop=None,
+            # stop=["</s>"],
     ):
+        if stop is None:
+            stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
+
         if self.use_exllamav2:
+            print(f'[use_exllamav2]Llama_Chat_Wrapper.generate(): stop={stop}')
             gen = self.exllama.generate(
                 message,
-                temperature,
-                top_p,
-                top_k,
-                repetition_penalty,
-                max_new_tokens,
-                stop,
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
+                repetition_penalty=repetition_penalty,
+                max_new_tokens=max_new_tokens,
+                stop=stop,
             )
             return gen
         else:
+            print(f'[no_use_exllamav2]Llama_Chat_Wrapper.generate(): stop={stop}')
             super().generate(
                 message,
                 temperature,

@@ -66,8 +66,10 @@ class Exllama_Wrapper:
         time_begin_prompt = time.time()
 
         if stop is None:
+            print(f'Exllama_Wrapper.generate(): stop = {None}')
             self.generator.set_stop_conditions([])
         else:
+            print(f'Exllama_Wrapper.generate(): stop = {stop}')
             self.generator.set_stop_conditions(stop)
 
         self.settings.temperature = temperature

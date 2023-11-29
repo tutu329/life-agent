@@ -452,6 +452,8 @@ async def predict(
         query = llm.make_prompt_with_history(query, history)
 
         # 其他llama的generate的生成结果为多个chunk，需要连接
+        print(f'----------llama的predict(): stop_words = {stop_words}----------')
+        print(f'----------llama的predict(): stop_words_ids = {stop_words_ids}----------')
         response_generator = llm.generate(query, stop=stop_words_ids)
 
         for new_response in response_generator:
