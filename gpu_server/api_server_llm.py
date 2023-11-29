@@ -252,7 +252,7 @@ class Llama_Chat_Wrapper(LLM_Model_Wrapper):
             # stop=["</s>"],
     ):
         if stop is None:
-            stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
+            stop = ['</s>', '人类', 'user', 'User',  'human', 'Human', 'assistant', 'Assistant']
 
         if self.use_exllamav2:
             print(f'[use_exllamav2]Llama_Chat_Wrapper.generate(): stop={stop}')
