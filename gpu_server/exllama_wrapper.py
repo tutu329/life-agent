@@ -100,7 +100,7 @@ class Exllama_Wrapper:
         time_prompt = time_begin_stream - time_begin_prompt
         time_tokens = time_end - time_begin_stream
 
-        print(f"Prompt processed in {time_prompt:.2f} seconds, {prompt_tokens} tokens, {prompt_tokens / time_prompt:.2f} tokens/second")
+        # print(f"Prompt processed in {time_prompt:.2f} seconds, {prompt_tokens} tokens, {prompt_tokens / time_prompt:.2f} tokens/second")
         print(f"Response generated in {time_tokens:.2f} seconds, {generated_tokens} tokens, {generated_tokens / time_tokens:.2f} tokens/second")
 
 def main():
