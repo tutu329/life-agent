@@ -452,7 +452,7 @@ async def predict(
         query = llm.make_prompt_with_history(query, history)
 
         # 其他llama的generate的生成结果为多个chunk，需要连接
-        response_generator = llm.generate(query)
+        response_generator = llm.generate(query, stop=stop_words_ids)
 
         for new_response in response_generator:
             new_text = new_response

@@ -53,6 +53,7 @@ class Exllama_Wrapper:
             top_k=10,
             repetition_penalty=1.1,
             max_new_tokens=2048,
+            stop=None,
     ):
         print(f'-----------------Exllama_Wrapper.generate() invoked------------------------')
         input_ids = self.tokenizer.encode(prompt)
@@ -64,7 +65,10 @@ class Exllama_Wrapper:
         # Send prompt to generator to begin stream
         time_begin_prompt = time.time()
 
-        self.generator.set_stop_conditions([])
+        if stop is None:
+            self.generator.set_stop_conditions([])
+        else:
+            self.generator.set_stop_conditions(stop)
 
         self.settings.temperature = temperature
         self.settings.top_k = top_k

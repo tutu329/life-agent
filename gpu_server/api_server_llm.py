@@ -258,6 +258,7 @@ class Llama_Chat_Wrapper(LLM_Model_Wrapper):
                 top_k,
                 repetition_penalty,
                 max_new_tokens,
+                stop,
             )
             return gen
         else:

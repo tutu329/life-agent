@@ -463,7 +463,7 @@ class LLM_Qwen():
         # self.ask_prepare(temp_question_last_turn).get_answer_and_sync_print()
 
     # 返回stream(generator)
-    def ask_prepare(self, in_question, in_max_tokens=8192, in_clear_history=False, in_retry=False, in_undo=False):
+    def ask_prepare(self, in_question, in_max_tokens=8192, in_clear_history=False, in_retry=False, in_undo=False, in_stop=None):
         # self.__history_add_last_turn_msg()
 
         if in_clear_history:
@@ -489,6 +489,12 @@ class LLM_Qwen():
         if self.need_print:
             print('User: \n\t', msgs[-1]['content'])
         openai.api_base = self.url
+        if in_stop is None:
+            stop = ['</s>', 'human', 'Human', 'assistant', 'Assistant']
+            # stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
+        else:
+            stop = in_stop
+
         gen = openai.ChatCompletion.create(
             model="Qwen",
             temperature=self.temperature,
@@ -496,6 +502,7 @@ class LLM_Qwen():
             messages=msgs,
             stream=True,
             max_tokens=in_max_tokens,
+            # stop=stop,
             # Specifying stop words in streaming output format is not yet supported and is under development.
         )
         self.gen = gen
