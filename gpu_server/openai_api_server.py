@@ -444,17 +444,17 @@ async def predict(
     # -----------------------------------stream生成--------------------------------------
     model_type = args.model_type
     if model_type=='llama':
-        global llm
+        global llama
 
         print(f'----------llama的history----------')
         print(f'{history}')
         print(f'----------llama的history----------')
-        query = llm.make_prompt_with_history(query, history)
+        query = llama.make_prompt_with_history(query, history)
 
         # 其他llama的generate的生成结果为多个chunk，需要连接
         print(f'----------llama的predict(): stop_words = {stop_words}----------')
         print(f'----------llama的predict(): stop_words_ids = {stop_words_ids}----------')
-        response_generator = llm.generate(query, stop=stop_words_ids)
+        response_generator = llama.generate(query, stop=stop_words_ids)
 
         for new_response in response_generator:
             new_text = new_response
@@ -535,7 +535,7 @@ def _get_args():
 
 # ---------------------------------全局变量---------------------------------
 # llama类模型的全局变量
-llm = None
+llama = None
 # qwen模型的全局变量
 model = None
 tokenizer = None
@@ -543,7 +543,7 @@ tokenizer = None
 args = _get_args()
 
 def main():
-    global llm, model, tokenizer
+    global llama, model, tokenizer
 
 
     print(f'--------------模型路径为: "{args.checkpoint_path}"-------------')
@@ -579,12 +579,12 @@ def main():
 
         case 'llama':
             print(f'--------------初始化"{args.model_type}"模型-------------')
-            llm = Llama_Chat_Wrapper(in_model_name=os.path.basename(args.checkpoint_path), in_model_path=args.checkpoint_path)
-            llm.init()
+            llama = Llama_Chat_Wrapper(in_model_name=os.path.basename(args.checkpoint_path), in_model_path=args.checkpoint_path)
+            llama.init()
             # print(f'Assistant: ', end='', flush=True)
-            # res = llm.generate('who are you?')
+            # res = llama.generate('who are you?')
             # for chunk in res:
-            # for chunk in llm.generate('写一首爱情诗'):
+            # for chunk in llama.generate('写一首爱情诗'):
                 # print(chunk, end='', flush=True)
             # print()
 

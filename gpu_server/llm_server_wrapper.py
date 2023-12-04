@@ -7,13 +7,6 @@ import torch
 from tqdm import tqdm
 import time
 
-try:
-    from gpu_server.exllama_wrapper import Exllama_Wrapper
-except Exception as e:
-    print(f'exllama环境未找到，如需要exllama，请运行"conda activate exllama"')
-
-
-
 class Keywords_Stopping_Criteria(StoppingCriteria):
     def __init__(self, keywords_ids:list):
         self.keywords = keywords_ids
@@ -56,47 +49,11 @@ class Progress_Task(Thread):
     def set_finished(self):
         self.__task_finished = True
 
-class Wizardcoder_Prompt_Template():
-    def __init__(self):
-        self.prompt_template = '''
-        Below is an instruction that describes a task. Write a response that appropriately completes the request.
-
-        ### Instruction:
-        {prompt}
-
-        ### Response:
-        '''
-    def get_prompt(self, prompt):
-        res = self.prompt_template.format(prompt=prompt)
-        return res
-
 class Llama_Chat_Prompt_Template():
     def __init__(self):
         self.prompt_template = '''以下是用户和人工智能助手之间的对话。用户以Human开头，人工智能助手以Assistant开头，会对用户提出的问题给出有帮助、高质量的回答。\n{prompt}\n'''
     def get_prompt(self, prompt):
         res = self.prompt_template.format(prompt=prompt)
-        return res
-
-class Wizardlm_Prompt_Template():
-    def __init__(self):
-        self.prompt_template = '''
-        A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful and detailed answers to the user's questions. 
-        {prompt}
-        '''
-    def get_prompt(self, prompt):
-        res = self.prompt_template.format(prompt=prompt)
-        return res
-
-class Phind_Prompt_Template():
-    def __init__(self):
-        self.prompt_template = '''
-        ### System Prompt
-        {system_message}
-        
-        {prompt}
-        '''
-    def get_prompt(self, prompt, system_message=''):
-        res = self.prompt_template.format(prompt=prompt, system_message=system_message)
         return res
 
 class LLM_Model_Wrapper():
@@ -107,7 +64,7 @@ class LLM_Model_Wrapper():
         self.tokenizer = None
         self.task = None
 
-        self.prompt_template = None     # Wizard_Prompt_Template()等实例
+        self.prompt_template = None  # Wizard_Prompt_Template()等实例
 
         # self.not_support_stream = False # 有些模型不支持stream输出
 
@@ -122,17 +79,18 @@ class LLM_Model_Wrapper():
              revision='main'):
         self.prompt_template = in_prompt_template
 
-        print('-'*80)
+        print('-' * 80)
         self.model_name_or_path = in_model_path
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=use_fast)
-        quantization_config = GPTQConfig(bits=gptq_bits, disable_exllama=not gptq_use_exllama)     # 只有4bit的才可以用exllama
+        quantization_config = GPTQConfig(bits=gptq_bits, disable_exllama=not gptq_use_exllama)  # 只有4bit的才可以用exllama
         print(f'设置模型路径: \t\t"{self.model_name_or_path}"', flush=True)
         print(f'设置tokenizer: \t\t"use_fast={use_fast}"', flush=True)
         print(f'设置quantization_config:"bits={gptq_bits} disable_exllama={not gptq_use_exllama}"', flush=True)
-        print(f'设置model: \t\t"device_map={device_map} trust_remote_code={trust_remote_code} revision={revision}"', flush=True)
+        print(f'设置model: \t\t"device_map={device_map} trust_remote_code={trust_remote_code} revision={revision}"',
+              flush=True)
 
         # 读取model并显示进度条
-        print('-'*80)
+        print('-' * 80)
         p_task = Progress_Task()
         p_task.start()
 
@@ -146,16 +104,14 @@ class LLM_Model_Wrapper():
             trust_remote_code=trust_remote_code,
             revision=revision)
 
-
-
         p_task.set_finished()
-        time.sleep(1)   # 解决进度条显示问题
+        time.sleep(1)  # 解决进度条显示问题
 
         self.model.generation_config = GenerationConfig.from_pretrained(self.model_name_or_path)
         # self.model.generation_config.do_sample = True
         print(f'设置generation_config: \tgeneration_config={self.model.generation_config}', flush=True)
         # print(f'设置其他参数: \t\t"do_sample={self.model.generation_config.do_sample}"', flush=True)
-        print('-'*80)
+        print('-' * 80)
 
         # 报错：RuntimeError: The temp_state buffer is too small in the exllama backend. Please call the exllama_set_max_input_length function to increase the buffer size. Example:
         # from auto_gptq import exllama_set_max_input_length
@@ -218,8 +174,8 @@ class LLM_Model_Wrapper():
             max_new_tokens=max_new_tokens,
         )
 
-        if temperature==0.0:
-            temperature=0.0001
+        if temperature == 0.0:
+            temperature = 0.0001
 
         # print(f'temperature: {temperature}')
         # print(f'repetition_penalty: {repetition_penalty}')
@@ -231,6 +187,12 @@ class LLM_Model_Wrapper():
 class Llama_Chat_Wrapper(LLM_Model_Wrapper):
     def __init__(self, in_model_path, in_model_name='llama-chat', in_use_exllamav2=True):
         super().__init__()
+
+        try:
+            from gpu_server.exllama_wrapper import Exllama_Wrapper
+        except Exception as e:
+            print(f'exllama环境未找到，如需要exllama，请运行"conda activate exllama"')
+
         self.use_exllamav2 = in_use_exllamav2
         if self.use_exllamav2:
             self.exllama = Exllama_Wrapper(in_model_path)
@@ -257,7 +219,7 @@ class Llama_Chat_Wrapper(LLM_Model_Wrapper):
             # stop=["</s>"],
     ):
         if stop is None:
-            stop = ['</s>', '人类', 'user', 'User',  'human', 'Human', 'assistant', 'Assistant']
+            stop = ['</s>', '人类', 'user', 'User', 'human', 'Human', 'assistant', 'Assistant']
 
         if self.use_exllamav2:
             print(f'[use_exllamav2]Llama_Chat_Wrapper.generate(): stop={stop}')
@@ -283,35 +245,71 @@ class Llama_Chat_Wrapper(LLM_Model_Wrapper):
                 stop,
             )
 
-class Wizardcoder_Wrapper(LLM_Model_Wrapper):
+class Legacy_Wizardcoder_Prompt_Template():
+    def __init__(self):
+        self.prompt_template = '''
+        Below is an instruction that describes a task. Write a response that appropriately completes the request.
+
+        ### Instruction:
+        {prompt}
+
+        ### Response:
+        '''
+    def get_prompt(self, prompt):
+        res = self.prompt_template.format(prompt=prompt)
+        return res
+
+class Legacy_Wizardlm_Prompt_Template():
+    def __init__(self):
+        self.prompt_template = '''
+        A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful and detailed answers to the user's questions. 
+        {prompt}
+        '''
+    def get_prompt(self, prompt):
+        res = self.prompt_template.format(prompt=prompt)
+        return res
+
+class Legacy_Phind_Prompt_Template():
+    def __init__(self):
+        self.prompt_template = '''
+        ### System Prompt
+        {system_message}
+        
+        {prompt}
+        '''
+    def get_prompt(self, prompt, system_message=''):
+        res = self.prompt_template.format(prompt=prompt, system_message=system_message)
+        return res
+
+class Legacy_Wizardcoder_Wrapper(LLM_Model_Wrapper):
     def __init__(self):
         super().__init__()
         self.model_name = 'WizardCoder-Python-34B-V1.0-GPTQ'
 
     def init(self, in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ"):
-        super().init(in_prompt_template=Wizardcoder_Prompt_Template(), in_model_path=in_model_path)
+        super().init(in_prompt_template=Legacy_Wizardcoder_Prompt_Template(), in_model_path=in_model_path)
 
-class Wizardlm_Wrapper(LLM_Model_Wrapper):
+class Legacy_Wizardlm_Wrapper(LLM_Model_Wrapper):
     def __init__(self):
         super().__init__()
         self.model_name = 'WizardLM-70B-V1.0-GPTQ'
 
     def init(self, in_model_path="d:/models/WizardLM-70B-V1.0-GPTQ", revision='gptq-4bit-64g-actorder_True'):
-        super().init(in_prompt_template=Wizardlm_Prompt_Template(), in_model_path=in_model_path)
+        super().init(in_prompt_template=Legacy_Wizardlm_Prompt_Template(), in_model_path=in_model_path)
 
-class Phind_Codellama_Wrapper(LLM_Model_Wrapper):
+class Legacy_Phind_Codellama_Wrapper(LLM_Model_Wrapper):
     def __init__(self):
         super().__init__()
         self.model_name = 'Phind-CodeLlama-34B-v2-GPTQ'
 
     def init(self, in_model_path="d:/models/Phind-CodeLlama-34B-v2-GPTQ", revision='gptq-4bit-64g-actorder_True'):
-        super().init(in_prompt_template=Phind_Prompt_Template(), in_model_path=in_model_path, revision=revision)
+        super().init(in_prompt_template=Legacy_Phind_Prompt_Template(), in_model_path=in_model_path, revision=revision)
 def main():
     # CUDA_VISIBLE_DEVICES=1,2,3,4 python wizardcoder_demo.py \
     #    --base_model "WizardLM/WizardCoder-Python-34B-V1.0" \
     #    --n_gpus 4
     # llm = LLM_Model_Wrapper()
-    llm = Wizardcoder_Wrapper()
+    llm = Legacy_Wizardcoder_Wrapper()
     # llm.init(in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ")
     llm.init()
     while True:
@@ -355,13 +353,13 @@ def main_gr():
     import gradio as gr
 
     if args.model=='wizard':
-        llm = Wizardcoder_Wrapper()
+        llm = Legacy_Wizardcoder_Wrapper()
         llm.init(in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ")
     elif args.model=='phind':
-        llm = Phind_Codellama_Wrapper()
+        llm = Legacy_Phind_Codellama_Wrapper()
         llm.init(in_model_path="d:/models/Phind-CodeLlama-34B-v2-GPTQ", revision='gptq-4bit-64g-actorder_True')
     elif args.model=='wizard70':
-        llm = Wizardlm_Wrapper()
+        llm = Legacy_Wizardlm_Wrapper()
         llm.init(in_model_path="d:/models/WizardLM-70B-V1.0-GPTQ", revision='gptq-4bit-64g-actorder_True')
     elif args.model=='causallm':
         llm = CausalLM_Wrapper()

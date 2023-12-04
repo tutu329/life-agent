@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
 import asyncio
 
-from llm_server_wrapper import Wizardcoder_Wrapper
+from llm_server_wrapper import Legacy_Wizardcoder_Wrapper
 
 from pydantic import BaseModel
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -27,7 +27,7 @@ class Stream_Response(BaseModel):
 
 class Wizardcoder_Fastapi_Server():
     def __init__(self) -> None:
-        self.llm = Wizardcoder_Wrapper()
+        self.llm = Legacy_Wizardcoder_Wrapper()
 
     def init(self):
         self.llm.init()
@@ -156,7 +156,7 @@ def start_server(model_wrapper, http_address: str, port: int):
     uvicorn.run(app=app, host=http_address, port=port, workers=1)
 
 def main():
-    model_wrapper = Wizardcoder_Wrapper()
+    model_wrapper = Legacy_Wizardcoder_Wrapper()
     model_wrapper.init()
     print(model_wrapper.get_prompt('{}'))
 

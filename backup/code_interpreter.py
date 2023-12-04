@@ -108,7 +108,7 @@ def main2():
 from gpu_server.llm_server_wrapper import *
 
 def main5():
-    llm = Wizardcoder_Wrapper()
+    llm = Legacy_Wizardcoder_Wrapper()
     llm.init(in_model_path="C:/Users/tutu/models/WizardCoder-Python-34B-V1.0-GPTQ")
 
     import interpreter
