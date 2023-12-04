@@ -22,7 +22,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers.generation import GenerationConfig
 
 # from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
-from gpu_server.api_server_llm import *
+from gpu_server.llm_server_wrapper import *
 
 
 def _gc(forced: bool = False):

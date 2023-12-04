@@ -105,7 +105,7 @@ def main2():
     # interpreter.chat('draw a green circle.')
 
 
-from gpu_server.api_server_llm import *
+from gpu_server.llm_server_wrapper import *
 
 def main5():
     llm = Wizardcoder_Wrapper()

@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
 import asyncio
 
-from api_server_llm import Phind_Codellama_Wrapper
+from llm_server_wrapper import Phind_Codellama_Wrapper
 
 from pydantic import BaseModel
 from typing import Any, Dict, List, Literal, Optional, Union
