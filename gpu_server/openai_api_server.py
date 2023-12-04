@@ -86,6 +86,7 @@ class ChatCompletionRequest(BaseModel):
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     max_length: Optional[int] = None
+    max_new_tokens: Optional[int] = None
     stream: Optional[bool] = False
     stop: Optional[List[str]] = None
 
@@ -366,6 +367,10 @@ async def create_chat_completion(request: ChatCompletionRequest):
     global model, tokenizer
 
     gen_kwargs = {}
+
+    # gen_kwargs['max_length'] = request.max_length
+    gen_kwargs['max_new_tokens'] = request.max_new_tokens
+
     if request.temperature is not None:
         if request.temperature < 0.01:
             gen_kwargs['top_k'] = 1  # greedy decoding
@@ -380,6 +385,8 @@ async def create_chat_completion(request: ChatCompletionRequest):
         stop_words = stop_words or []
         if "Observation:" not in stop_words:
             stop_words.append("Observation:")
+
+    print(f'/v1/chat/completions: gen_kwargs = {gen_kwargs}')
 
     query, history = parse_messages(request.messages, request.functions)
 
@@ -467,6 +474,23 @@ async def predict(
             yield "{}".format(chunk.model_dump_json(exclude_unset=True))
     else:
         # qwen的chat_stream生成结果为不断刷新的完整字符串，而非chunk
+
+        # qwen的chat_stream的主要参数：
+        #     temperature           # 温度
+        #     repetition_penalty    # 重复惩罚
+        #     max_length            # input prompt +`max_new_tokens`
+        #     max_new_tokens        # 新生成最大长度
+
+        # openai api的参数：
+        # model: str
+        # messages: List[ChatMessage]
+        # functions: Optional[List[Dict]] = None
+        # temperature: Optional[float] = None
+        # top_p: Optional[float] = None
+        # max_length: Optional[int] = None
+        # stream: Optional[bool] = False
+        # stop: Optional[List[str]] = None
+
         response_generator = model.chat_stream(
             tokenizer, query, history=history, stop_words_ids=stop_words_ids, **gen_kwargs
         )

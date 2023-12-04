@@ -463,7 +463,17 @@ class LLM_Qwen():
         # self.ask_prepare(temp_question_last_turn).get_answer_and_sync_print()
 
     # 返回stream(generator)
-    def ask_prepare(self, in_question, in_max_tokens=8192, in_clear_history=False, in_retry=False, in_undo=False, in_stop=None):
+    def ask_prepare(
+            self,
+            in_question,
+            in_temperature=0.7,
+            in_max_new_tokens=2048,
+            in_clear_history=False,
+            in_stream=True,
+            in_retry=False,
+            in_undo=False,
+            in_stop=None,
+    ):
         # self.__history_add_last_turn_msg()
 
         if in_clear_history:
@@ -497,11 +507,11 @@ class LLM_Qwen():
 
         gen = openai.ChatCompletion.create(
             model="Qwen",
-            temperature=self.temperature,
+            temperature=in_temperature,
             # top_k=self.top_k,
             messages=msgs,
-            stream=True,
-            max_tokens=in_max_tokens,
+            stream=in_stream,
+            max_new_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
             # stop=stop,
             # Specifying stop words in streaming output format is not yet supported and is under development.
         )

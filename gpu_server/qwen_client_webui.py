@@ -96,7 +96,7 @@ class Shared():
         g_session_data[session_id].chat_using_internet = Shared.internet
         print(f'Shared.internet: {Shared.internet}')
 
-def llm_async_ask(message, history, request:gr.Request):
+def llm_async_ask(message, history, temperature, max_new_tokens, request:gr.Request):
     # gradio的典型对话格式： [['我叫土土', '你好，土土！很高兴认识你。'], [], []]
     session_id = get_session_id(request)
     print(g_session_data[session_id].chat_history)
@@ -113,7 +113,7 @@ def llm_async_ask(message, history, request:gr.Request):
     # print(f'---------------history_with_current_message: ------------------------------------------')
     # print(f'{history_with_current_message}')
 
-    for item in llm.ask_prepare(history_with_current_message).get_answer_generator():
+    for item in llm.ask_prepare(history_with_current_message, in_temperature=temperature, in_max_new_tokens=max_new_tokens).get_answer_generator():
     # for item in llm.ask_prepare(message).get_answer_generator():
         yield item
 
@@ -145,7 +145,7 @@ def llm_clear():
 
 internet_search_finished = False
 internet_search_result = []
-def llm_answer(history, message, request:gr.Request, progress=gr.Progress()):   # 注意：request参数不需要在调用时通过input注入
+def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request, progress=gr.Progress()):   # 注意：request参数不需要在调用时通过input注入
     print('---------------------执行llm_answer()---------------------')
     # ip = request.client.host
     session_id = get_session_id(request)
@@ -207,7 +207,7 @@ def llm_answer(history, message, request:gr.Request, progress=gr.Progress()):   
             print('user: ',message)
             history[-1][1] = ""
             print('assistant: ', end='')
-            for chunk in llm_async_ask(message, history, request):
+            for chunk in llm_async_ask(message, history, temperature, max_new_tokens, request):
                 history[-1][1] += chunk
                 print(chunk, end='', flush=True)
                 g_session_data[session_id].chat_history = history
@@ -370,6 +370,12 @@ qwen_theme = Qwen_Theme()
 def main():
     # gr.themes.builder()
     # pass
+
+    # 控件的提前定义（用于向布局在上方的控件传参），block中通过render()渲染
+    slider_temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, label='temperature', show_label=True)
+    # slider_repetition_penalty = gr.Slider(minimum=1.0, maximum=1.5, value=1.1, step=0.05, label='repetition penalty', show_label=True)
+    slider_max_new_tokens = gr.Slider(minimum=50, maximum=8192, value=2048, step=1, label='max new tokens', show_label=True)
+
     with gr.Blocks(theme=qwen_theme) as demo:
         chatbot = gr.Chatbot(
             [],
@@ -380,7 +386,7 @@ def main():
             # line_breaks = False,
             # render_markdown=False,
             bubble_full_width=False,
-            height=500,
+            height=650,
             # avatar_images=(None, (os.path.join(os.path.dirname(__file__), "avatar.png"))),
         )
 
@@ -421,17 +427,21 @@ def main():
 
 
         with gr.Accordion("高级设置", open=False):
-        # with gr.Row():
-            role_prompt_tbx = gr.Textbox(
-                value='',
-                lines=10,
-                max_lines=20,
-                # scale=16,
-                show_label=False,
-                placeholder="输入角色提示语",
-                container=False,
-            )
-        # role_prompt.change(llm_on_role_prompt_change, role_prompt, None)
+            with gr.Row():
+                role_prompt_tbx = gr.Textbox(
+                    value='',
+                    lines=10,
+                    max_lines=20,
+                    scale=2,
+                    show_label=False,
+                    placeholder="输入角色提示语",
+                    container=False,
+                )
+                # role_prompt.change(llm_on_role_prompt_change, role_prompt, None)
+
+                with gr.Column(scale=1):
+                    slider_temperature.render()
+                    slider_max_new_tokens.render()
 
         internet_cbx.change(
             fn=Shared.set_internet,
@@ -493,7 +503,7 @@ def main():
             queue=False
         ).then(
             llm_answer,
-            [chatbot, user_input],
+            [chatbot, user_input, slider_temperature, slider_max_new_tokens],
             [chatbot, user_input],
         ).then(
             lambda: gr.update(interactive=True),
@@ -509,7 +519,7 @@ def main():
             queue=False
         ).then(
             llm_answer,
-            [chatbot, user_input],
+            [chatbot, user_input, slider_temperature, slider_max_new_tokens],
             [chatbot, user_input]
         ).then(
             lambda: gr.update(interactive=True),
