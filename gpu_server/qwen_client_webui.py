@@ -137,11 +137,15 @@ def llm_retry(history, message):
             yield history, message
     llm.print_history()
 
-def llm_clear():
+def llm_clear(request:gr.Request):
     print('执行llm_clear()')
+
     llm.clear_history()
     llm.print_history()
 
+    print('清除g_session_data[session_id].chat_history')
+    session_id = get_session_id(request)
+    g_session_data[session_id].chat_history.clear()
 
 internet_search_finished = False
 internet_search_result = []
@@ -373,6 +377,7 @@ def main():
 
     # 控件的提前定义（用于向布局在上方的控件传参），block中通过render()渲染
     slider_temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, label='temperature', show_label=True)
+    slider_top_p = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, label='temperature', show_label=True)
     # slider_repetition_penalty = gr.Slider(minimum=1.0, maximum=1.5, value=1.1, step=0.05, label='repetition penalty', show_label=True)
     slider_max_new_tokens = gr.Slider(minimum=50, maximum=8192, value=2048, step=1, label='max new tokens', show_label=True)
 
