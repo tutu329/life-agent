@@ -67,7 +67,7 @@ def on_page_load(request:gr.Request):   # 注意：request参数不需要在调�
 llm = LLM_Qwen(
     history=False,  # 这里要关掉server侧llm的history，对话历史由用户session控制
     need_print=False,
-    # temperature=0,
+    temperature=0,
 )
 # llm.set_role_prompt('你正在扮演一个女孩，你好笨笨。')
 

@@ -7,7 +7,10 @@ import torch
 from tqdm import tqdm
 import time
 
-from gpu_server.exllama_wrapper import *
+try:
+    from gpu_server.exllama_wrapper import *
+except Exception as e:
+    print(f'exllama环境未找到，如需要exllama，请运行"conda activate exllama"')
 
 class Keywords_Stopping_Criteria(StoppingCriteria):
     def __init__(self, keywords_ids:list):
