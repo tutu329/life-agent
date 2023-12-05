@@ -470,7 +470,8 @@ class LLM_Doc():
             self,
             in_node,
             in_max_level='auto',    # 'auto' | 1 | 2 | 3 | ...
-            in_if_render=False
+            in_if_render=False,
+            in_if_md_head=True,
     ):
         toc = []
         if in_node is None:
@@ -480,14 +481,14 @@ class LLM_Doc():
         if in_max_level == 'auto':
             max_level = 3
             toc_max_len = self.prompt_limit.toc_max_len
-            self.doc_root.get_toc_md_for_tool(toc, in_node, in_max_level=max_level, in_if_render=in_if_render)
+            self.doc_root.get_toc_md_for_tool(toc, in_node, in_max_level=max_level, in_if_render=in_if_render, in_if_md_head=in_if_md_head)
             if len('\n'.join(toc)) > toc_max_len:
                 toc = []
                 max_level = 2
-                self.doc_root.get_toc_md_for_tool(toc, in_node, in_max_level=max_level, in_if_render=in_if_render)
+                self.doc_root.get_toc_md_for_tool(toc, in_node, in_max_level=max_level, in_if_render=in_if_render, in_if_md_head=in_if_md_head)
         else:
             max_level = in_max_level
-            self.doc_root.get_toc_md_for_tool(toc, in_node, max_level, in_if_render=in_if_render)
+            self.doc_root.get_toc_md_for_tool(toc, in_node, max_level, in_if_render=in_if_render, in_if_md_head=in_if_md_head)
 
         # 统计toc标题中是否有1.1.3这样的数字
         num_head_has_index = 0
@@ -507,7 +508,7 @@ class LLM_Doc():
             print(f'判定文档"{self.doc_name}"的目录标题不包含索引数字')
             toc = []
             # max_level直接用上面的结果
-            self.doc_root.get_toc_md_for_tool(toc, in_node, max_level, in_if_head_has_index=False, in_if_render=in_if_render)
+            self.doc_root.get_toc_md_for_tool(toc, in_node, max_level, in_if_head_has_index=False, in_if_render=in_if_render, in_if_md_head=in_if_md_head)
 
 
         return '\n'.join(toc)
@@ -1343,8 +1344,9 @@ def main_llm_pdf():
     question = '今天天气如何？'
 
     # toc = doc.get_toc_md_for_tool(4)
-    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root, 4)
-    print(f'toc: {toc}')
+    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root, 3, in_if_render=False)
+    print(toc)
+    print(f'toc 长度: {len(toc)}')
 
     # print(f'user: {question}')
     # tool = doc.llm_classify_question(question)
@@ -1469,20 +1471,26 @@ def main_llm():
 
     doc.parse_all_docx()
 
-    toc = doc.get_toc_md_for_tool_by_node(doc.doc_root,'auto', in_if_render=False)
+    toc = doc.get_toc_md_for_tool_by_node(
+        doc.doc_root,
+        # in_max_level='auto',
+        in_max_level=2,
+        in_if_md_head=False
+    )
     # toc = doc.get_toc_md_for_tool(3, in_if_render=False)
     print(toc)
     print(f'toc 长度: {len(toc)}')
 
-    node_to_find = '2.1.2 负荷预测'
-    doc.doc_root.find_similar_node_by_head_and_ask_llm(doc.toc_heading_has_index, node_to_find)
+    # node_to_find = '2.1.2 负荷预测'
+    # doc.doc_root.find_similar_node_by_head_and_ask_llm(doc.toc_heading_has_index, node_to_find)
 
-    call_llm()
+    # call_llm()
 
 if __name__ == "__main__":
     # main_llm_pdf()
     main_llm()
     # main_table()
+
     # (? <= \s)\d + (?=\s)
     # main_image()
     # match_unit = re.search(r'\s*(?<=注[:：]).*', ' 注：由于各配电变压器均只有一条631或632线路支线作为进线，各支线的潮流与流入配电变压器的功率相等，简化起见，在表中有功、无功和视在功率统一表示。')

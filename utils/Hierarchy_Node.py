@@ -133,6 +133,7 @@ class Hierarchy_Node:
             in_max_level=3,
             in_if_head_has_index=True,  # 标题中是否有1.1.3
             in_if_render=False,         # 是否输出缩进和高亮
+            in_if_md_head=True,         # 是否增加'### '
     ):
         if in_if_render:
             blank_str = '&emsp;'
@@ -171,11 +172,16 @@ class Hierarchy_Node:
             else:
                 color_string = color_string_end = ''
 
+            if in_if_md_head==True:
+                md_index_head = '#'*node.node_data.level + ' '
+            else:
+                md_index_head = ''
+
             if in_if_head_has_index==True:
                 # 标题为"1.1.3 建设规模"
                 inout_toc_md_list.append(
                     # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
-                    '#'*node.node_data.level + ' ' + color_string + blank_str*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                    md_index_head + color_string + blank_str*(node.node_data.level-1) +        # 注意md_index_head的那个空格' '必须有。'&emsp;'用于写入硬的空格
                     # node.node_data.name.strip() + ' ' +
                     node.node_data.heading.strip() + color_string_end
                     # node.node_data.heading.strip() + '</font>'
@@ -184,7 +190,7 @@ class Hierarchy_Node:
                 # 标题为"建设规模"
                 inout_toc_md_list.append(
                     # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
-                    '#'*node.node_data.level + ' ' + color_string + blank_str*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
+                    md_index_head + color_string + blank_str*(node.node_data.level-1) +        # 注意md_index_head的那个空格' '必须有。'&emsp;'用于写入硬的空格
                     node.node_data.name.strip() + ' ' +
                     node.node_data.heading.strip() + color_string_end
                     # node.node_data.heading.strip() + '</font>'
