@@ -355,6 +355,9 @@ def main_gr():
     if args.model=='wizard':
         llm = Legacy_Wizardcoder_Wrapper()
         llm.init(in_model_path="d:/models/WizardCoder-Python-34B-V1.0-GPTQ")
+    elif args.model == 'xwin':
+        llm = Legacy_Wizardcoder_Wrapper()
+        llm.init(in_model_path="d:/models/Xwin-LM-70B-V0.1-GPTQ")
     elif args.model=='phind':
         llm = Legacy_Phind_Codellama_Wrapper()
         llm.init(in_model_path="d:/models/Phind-CodeLlama-34B-v2-GPTQ", revision='gptq-4bit-64g-actorder_True')
@@ -364,7 +367,9 @@ def main_gr():
     elif args.model=='causallm':
         llm = CausalLM_Wrapper()
         llm.init(in_model_path="d:/models/CausalLM-14B-GPTQ")
-
+    else:
+        llm = Legacy_Wizardcoder_Wrapper()
+        llm.init(in_model_path=args.model)
     def ask_llm(
             message,
             history,
