@@ -1,3 +1,5 @@
+from config import Prompt_Limitation
+
 import gradio as gr
 import asyncio
 
@@ -274,10 +276,13 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
             # progress.tqdm(results, desc='返回搜索内容并分析...')
 
             url_idx = 0
+            found = False
             for url, content_para_list in internet_search_result:
+                found = True
                 # -------------界面上生成一个url对应的内容-------------
                 content = " ".join(content_para_list)
-                if len(content) < 5000:
+                if len(content) < Prompt_Limitation.context_max_len and content != '':
+                    print(f'============================================== content length = 【{len(content)}】 ==============================================')
                     url_idx += 1
 
                     prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{message}"，回复要简明扼要、层次清晰、采用markdown格式。'
@@ -294,6 +299,10 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
                     print(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
                     history[-1][1] += f'\n#### 出处[{url_idx}]: ' + url + '\n## &nbsp; \n## &nbsp; ' # 输出url
                     yield history, message
+
+            if not found:
+                history[-1][1] += '搜索引擎的搜索结果为空。'
+                yield history, message
 
 def bot_add_text(history, text, role_prompt):
     llm.set_role_prompt(role_prompt)
