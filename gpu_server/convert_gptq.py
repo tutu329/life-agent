@@ -2,7 +2,7 @@ from transformers import AutoTokenizer, TextGenerationPipeline
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 import logging
 
-# 1、修改原有模型文件夹中的modeling_qwen.py
+# 1、视情况将原有模型文件夹中的modeling_qwen.py修改为下述代码（适用于qwen-14b-chat）
 # =====================把modeling_qwen.py中的apply_rotary_pos_emb（）改为==================================================
 # def apply_rotary_pos_emb(t, freqs):
 #     cos, sin = freqs
@@ -35,7 +35,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-pretrained_model_dir = "D:/models/Qwen-14B-Chat"
+pretrained_model_dir = "D:/models/Qwen-72B-Chat"
 # pretrained_model_dir = "facebook/opt-125m"
 quantized_model_dir = "D:/models/Qwen-72B-Chat-gptq"
 # quantized_model_dir = "opt-125m-4bit"
