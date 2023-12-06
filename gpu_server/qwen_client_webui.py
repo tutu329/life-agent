@@ -152,6 +152,9 @@ def llm_clear(request:gr.Request):
 internet_search_finished = False
 internet_search_result = []
 def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request, progress=gr.Progress()):   # 注意：request参数不需要在调用时通过input注入
+    if history is None:
+        history = []
+
     print('---------------------执行llm_answer()---------------------')
     # ip = request.client.host
     session_id = get_session_id(request)
@@ -301,10 +304,15 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
                     yield history, message
 
             if not found:
+                print('=====搜索引擎的搜索结果为空=====')
                 history[-1][1] += '搜索引擎的搜索结果为空。'
                 yield history, message
 
+
 def bot_add_text(history, text, role_prompt):
+    if history is None:
+        history = []
+
     llm.set_role_prompt(role_prompt)
     history = history + [(text, None)]
     print('bot add text: ',text)
