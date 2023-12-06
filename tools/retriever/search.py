@@ -161,6 +161,7 @@ class Bing_Searcher():
             self.results[url] = (response.status, await response.text())
         except Exception as e:
             print(f'func_get_one_page(url={url}) error: {e}')
+            self.results[url] = []
 
 # search的生成器（必须进行同步化改造，否则progress.tqdm(search_gen(message), desc='正在调用搜索引擎中...')报错！）
 def search_gen(in_question):
