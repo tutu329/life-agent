@@ -2,6 +2,7 @@ from transformers import AutoTokenizer, TextGenerationPipeline
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 import logging
 
+
 # 1、视情况将原有模型文件夹中的modeling_qwen.py修改为下述代码（适用于qwen-14b-chat）
 # =====================把modeling_qwen.py中的apply_rotary_pos_emb（）改为==================================================
 # def apply_rotary_pos_emb(t, freqs):
@@ -27,6 +28,10 @@ import logging
 # =====================然后运行即可成功将模型量化为gptq======================================================================
 # 2、生成safetensors文件，改名为model.safetensors，其他文件都删除。
 # 3、将其他gptq中的qwen文件copy过来。即可运行
+# 4、set CUDA_VISIBLE_DEVICES=0,1,3,2
+# 5、set PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:32
+# 6、conda activate qwen
+# 7、python convert_gptq.py
 
 import torch
 device=torch.device("cpu")
@@ -54,10 +59,23 @@ quantize_config = BaseQuantizeConfig(
 )
 
 # load un-quantized model, by default, the model will always be loaded into CPU memory
-model = AutoGPTQForCausalLM.from_pretrained(pretrained_model_dir, quantize_config, low_cpu_mem_usage=True, trust_remote_code=True, device_map='auto')
+model = AutoGPTQForCausalLM.from_pretrained(
+    pretrained_model_dir,
+    quantize_config,
+    low_cpu_mem_usage=True,
+    trust_remote_code=True,
+    max_memory={ 0: '22GiB', 1: '22GiB', 2: '22GiB', 3: '22GiB', 'cpu': '55GiB'},
+    # max_memory={ 0: '22GiB', 1: '22GiB', 2: '22GiB', 3: '22GiB', 'cpu': '55GiB', 'disk':'100GiB'},
+    device_map='auto'
+)
 
 # quantize model, the examples should be list of dict whose keys can only be "input_ids" and "attention_mask"
-model.quantize(examples)
+model.quantize(
+    examples,
+    use_triton=False,
+    batch_size=1,
+    cache_examples_on_gpu=False,
+)
 
 # save quantized model
 model.save_quantized(quantized_model_dir)
