@@ -33,7 +33,9 @@ class Bing_Searcher():
     async def start(self):
         p = await async_playwright().start()
         # p = sync_playwright().start()
+        print('启动chrome中...')
         self.browser = await p.chromium.launch(channel="chrome", headless=True)   # 启动chrome
+        print('启动chrome完毕.')
         self.context = await self.browser.new_context()
 
     async def __aenter__(self):

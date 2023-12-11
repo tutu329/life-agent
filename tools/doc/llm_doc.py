@@ -5,7 +5,7 @@ from typing import List, Any
 import copy
 import json
 
-from tools.llm.api_client_qwen_openai import *
+from tools.llm.api_client_qwen_openai_vllm_gptq import *
 import openai
 openai.api_base = "http://116.62.63.204:8001/v1"
 
