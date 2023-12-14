@@ -488,7 +488,8 @@ async def predict(
         # stop: Optional[List[str]] = None
 
         response_generator = model.chat_stream(
-            tokenizer, query, history=history, stop_words_ids=stop_words_ids, **gen_kwargs
+            tokenizer, query, history=history, stop_words_ids=stop_words_ids,
+            **gen_kwargs
         )
 
         for new_response in response_generator:
