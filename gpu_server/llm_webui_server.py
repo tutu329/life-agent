@@ -123,8 +123,13 @@ def llm_async_ask(message, history, temperature, max_new_tokens, request:gr.Requ
 
     # llm.print_history()
     print()
-    print('-------------对话历史--------------')
-
+    print('--------------------------对话历史---------------------------')
+    for chat in history:
+        user_text = chat[0]
+        assit_text = chat[1]
+        print(f'【User】 {user_text}')
+        print(f'【Assistant】 {assit_text}')
+    print('------------------------------------------------------------')
 
 def llm_undo():
     print('执行llm_undo()')
