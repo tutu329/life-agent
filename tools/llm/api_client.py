@@ -1,9 +1,3 @@
-from openai import OpenAI
-# openai.api_base = "http://powerai.cc:8000/v1"
-# openai.api_base = "http://localhost:8000/v1"
-# openai.api_base = "http://127.0.0.1:8000/v1"
-# openai.api_base = "http://116.62.63.204:8000/v1"
-# openai.api_key = "xxxxx"
 from copy import deepcopy
 import numpy as np
 import os, requests
@@ -18,6 +12,19 @@ from typing import Collection, Dict, List, Set, Tuple, Union, Any, Callable, Opt
 import random
 import re
 
+import sys
+import platform
+
+
+
+if sys.platform.startswith('win'):      # win下用的是qwen的openai api
+    import openai
+    openai.api_base = ''
+    openai.api_key = "EMPTY"
+elif sys.platform.startswith('linux'):  # linux下用的是vllm的openai api
+    from openai import OpenAI
+else:
+    raise Exception('无法识别的操作系统！')
 # ============================================关于qwen-vl中图片path的可访问性===============================================
 # 1、本地文件系统方式【可行】，必须用反斜杠"\"，如：img_path = 'D:\\server\\static\\1.png'
 # 2、远程方式【可行】，如：img_path = 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg'
@@ -312,16 +319,25 @@ import re
 #     def get_output(self):
 #         return self.output
 
-class LLM_Qwen():
+class LLM_Client():
     def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', need_print=True):
-        self.openai = OpenAI(
-            api_key='EMPTY',
-            base_url=url,
-        )
-        models = self.openai.models.list()
-        self.model = models.data[0].id
-        print(f'model: {self.model}')
-        
+        if sys.platform.startswith('win'):          # win下用的是qwen的openai api
+            openai.api_key = "EMPTY"
+            openai.api_base = url
+            self.model = 'qwen'
+            print(f'os: windows. openai api for qwen used.')
+            print(f'model: {self.model}')
+        elif sys.platform.startswith('linux'):      # linux下用的是vllm的openai api
+            self.openai = OpenAI(
+                api_key='EMPTY',
+                base_url=url,
+            )
+            self.model = self.openai.models.list().data[0].id
+            print(f'os: linux. openai api for vllm used.')
+            print(f'model: {self.model}')
+        else:
+            raise Exception('无法识别的操作系统！')
+
         self.url = url
         self.gen = None     # 返回结果的generator
         self.temperature = temperature
@@ -523,19 +539,33 @@ class LLM_Qwen():
             stop = in_stop
             
         print(f'ask_prepare(): stop={stop}')
-            
-        # gen = openai.ChatCompletion.create(
-        gen = self.openai.chat.completions.create(
-            model=self.model,
-            temperature=in_temperature,
-            # top_k=self.top_k,
-            messages=msgs,
-            stream=in_stream,
-            # max_new_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-            max_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-            stop=stop,
-            # Specifying stop words in streaming output format is not yet supported and is under development.
-        )
+
+
+        if sys.platform.startswith('win'):
+            gen = openai.ChatCompletion.create(
+                model=self.model,
+                temperature=in_temperature,
+                # top_k=self.top_k,
+                messages=msgs,
+                stream=in_stream,
+                max_new_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                # max_length=in_max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                # stop=stop,    # win下为openai 0.28.1，不支持stop
+                # Specifying stop words in streaming output format is not yet supported and is under development.
+            )
+        elif sys.platform.startswith('linux'):
+            gen = self.openai.chat.completions.create(
+                model=self.model,
+                temperature=in_temperature,
+                # top_k=self.top_k,
+                messages=msgs,
+                stream=in_stream,
+                # max_new_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                max_tokens=in_max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                stop=stop,
+                # Specifying stop words in streaming output format is not yet supported and is under development.
+            )
+
         self.gen = gen
 
         self.question_last_turn = in_question
@@ -602,7 +632,7 @@ class LLM_Qwen():
         self.__history_add_last_turn_msg()
 
 def main99():
-    llm = LLM_Qwen(history=True, history_max_turns=20, history_clear_method='pop')
+    llm = LLM_Client(history=True, history_max_turns=20, history_clear_method='pop')
 
     prompt = '不管发你什么，都直接翻译为英文，不解释。'
     llm.set_role_prompt(prompt)
@@ -628,7 +658,7 @@ def main1():
     table_content = '\n'.join(table_content)
     print(table_content)
 
-    llm = LLM_Qwen()
+    llm = LLM_Client()
     question = f"你是电力系统专家，请总结这个表格'{table_content}' 的内容，并返回markdown格式的结果"
     print("user: ", question)
     print("Qwen: ", end='')
@@ -716,7 +746,7 @@ def main():
     # print(f'openai.api_version: {openai.api_version}')
     # print(f'openai.api_type: {openai.api_type}')
 
-    llm = LLM_Qwen(
+    llm = LLM_Client(
         history=True,
         history_max_turns=50,
         history_clear_method='pop',

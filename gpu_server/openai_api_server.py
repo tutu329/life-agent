@@ -1,8 +1,4 @@
-# coding=utf-8
-# Implements API for Qwen-7B in OpenAI's format. (https://platform.openai.com/docs/api-reference/chat)
-# Usage: python openai_api_server.py
-# Visit http://localhost:8000/docs for documents.
-
+# ==================该文件仅支持openai 0.28.1==================
 import os
 import re
 import copy

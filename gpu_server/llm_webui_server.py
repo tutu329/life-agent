@@ -3,10 +3,12 @@ from config import Prompt_Limitation
 import gradio as gr
 import asyncio
 
-from tools.llm.api_client_qwen_openai import *
+from tools.llm.api_client import LLM_Client
 from tools.doc.llm_doc import *
 from tools.retriever.search import search, search_gen, Bing_Searcher
 
+import sys
+import platform
 
 # ------------------------------------------------session管理------------------------------------------------
 # 一次对话的数据(user_text, assistant_text)
@@ -66,7 +68,7 @@ def on_page_load(request:gr.Request):   # 注意：request参数不需要在调�
     #     print("Query parameters:", dict(request.query_params))
 # ------------------------------------------------session管理------------------------------------------------
 
-llm = LLM_Qwen(
+llm = LLM_Client(
     history=False,  # 这里要关掉server侧llm的history，对话历史由用户session控制
     need_print=False,
     temperature=0,
@@ -153,6 +155,7 @@ internet_search_finished = False
 internet_search_result = []
 def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request, progress=gr.Progress()):   # 注意：request参数不需要在调用时通过input注入
     if history is None:
+        print('llm_answer()的输入history为None')
         history = []
 
     print('---------------------执行llm_answer()---------------------')
@@ -289,7 +292,7 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
                     url_idx += 1
 
                     prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{message}"，回复要简明扼要、层次清晰、采用markdown格式。'
-                    temp_llm = LLM_Qwen(history=False)
+                    temp_llm = LLM_Client(history=False)
                     gen = temp_llm.ask_prepare(prompt).get_answer_generator()
 
                     for chunk in gen:
@@ -302,6 +305,18 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
                     print(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
                     history[-1][1] += f'\n#### 出处[{url_idx}]: ' + url + '\n## &nbsp; \n## &nbsp; ' # 输出url
                     yield history, message
+                elif len(content) > Prompt_Limitation.context_max_len:
+                    print(f'搜索结果长度超过Prompt_Limitation.context_max_len({Prompt_Limitation.context_max_len})')
+                    history[-1][1] += f'搜索结果长度过长({len(content)}>{Prompt_Limitation.context_max_len})\n'
+                    yield history, message
+                elif content == '':
+                    print(f'搜索结果为空')
+                    history[-1][1] += f'搜索结果为空。\n'
+                    yield history, message
+                else:
+                    print(f'llm_answer()搜索解读过程中出现未知错误。')
+                    history[-1][1] += f'llm_answer()搜索解读过程中出现未知错误。\n'
+                    yield history, message    
 
             if not found:
                 print('=====搜索引擎的搜索结果为空=====')
@@ -311,6 +326,7 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
 
 def bot_add_text(history, text, role_prompt):
     if history is None:
+        print('bot_add_text()的输入history为None')
         history = []
 
     llm.set_role_prompt(role_prompt)
@@ -556,19 +572,31 @@ def main():
         #     llm_answer, [chatbot, user_input], [chatbot, user_input]
         # )
 
-        dark_mode_btn.click(
-            None,
-            None,
-            None,
-            _js="""() => {
+        javascript = """() => {
             if (document.querySelectorAll('.dark').length) {
                 document.querySelectorAll('.dark').forEach(el => el.classList.remove('dark'));
             } else {
                 document.querySelector('body').classList.add('dark');
             }
-        }""",
-            api_name=False,
-        )
+        }"""
+        if sys.platform.startswith('win'):
+            dark_mode_btn.click(
+                None,
+                None,
+                None,
+                _js=javascript,
+                api_name=False,
+            )
+        elif sys.platform.startswith('linux'):
+            dark_mode_btn.click(
+                None,
+                None,
+                None,
+                js=javascript,
+                api_name=False,
+            )
+        else:
+            raise Exception('无法识别的操作系统！')
 
         gr.Blocks.load(
             demo,

@@ -5,7 +5,7 @@ from typing import List, Any
 import copy
 import json
 
-from tools.llm.api_client_qwen_openai_vllm_gptq import *
+from tools.llm.api_client import *
 import openai
 openai.api_base = "http://116.62.63.204:8001/v1"
 
@@ -134,7 +134,7 @@ class LLM_Doc():
         print(f'------------------------------------------------------------------------------------------')
         if self.llm is None:
 
-            self.llm = LLM_Qwen(
+            self.llm = LLM_Client(
                 history=False,
                 # history_max_turns=50,
                 # history_clear_method='pop',
@@ -1130,7 +1130,7 @@ class LLM_Doc():
         return result_list
 
 def main1():
-    llm = LLM_Qwen(
+    llm = LLM_Client(
         url='http://116.62.63.204:8001/v1',
         history=False,
         history_max_turns=50,
@@ -1163,7 +1163,7 @@ def main1():
         print(f'第{jj}段检查结果：\n {item}')
 
 def main_toc():
-    llm = LLM_Qwen(
+    llm = LLM_Client(
         url='http://116.62.63.204:8001/v1',
         history=False,
         history_max_turns=50,
@@ -1226,7 +1226,7 @@ def main_image():
     # print(doc.get_toc_json_string(in_max_level=3))
 
 def ask_docx(in_filename='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx'):
-    llm = LLM_Qwen(
+    llm = LLM_Client(
         history=False,
         # history_max_turns=50,
         # history_clear_method='pop',
