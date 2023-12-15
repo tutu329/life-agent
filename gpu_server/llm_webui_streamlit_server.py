@@ -10,7 +10,6 @@ def llm_init():
         need_print=False,
         temperature=0,
     )
-
 def streamlit_main():
     llm = llm_init()
 
