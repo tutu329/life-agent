@@ -10,6 +10,7 @@ def llm_init():
         need_print=False,
         temperature=0,
     )
+
 def main():
     llm = llm_init()
 
