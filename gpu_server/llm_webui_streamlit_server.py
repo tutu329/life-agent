@@ -3,14 +3,13 @@ from tools.llm.api_client import LLM_Client
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py
 
-@st.cache_resource
+@st.cache_resource  # cache_resource主要用于访问db connection等仅调用一次的资源
 def llm_init():
     return LLM_Client(
         history=True,  # 这里要关掉server侧llm的history，对话历史由用户session控制
         need_print=False,
         temperature=0,
     )
-
 def streamlit_main():
     llm = llm_init()
 
