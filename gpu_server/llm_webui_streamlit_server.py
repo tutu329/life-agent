@@ -20,7 +20,7 @@ def streamlit_main():
         with st.chat_message(message['role']):
             st.markdown(message['content'])
 
-    if prompt := st.chat_input("Say something"):
+    if prompt := st.chat_input("请在这里输入您的指令"):
         st.session_state.messages.append({
             'role': 'user',
             'content': prompt
