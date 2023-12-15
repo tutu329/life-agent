@@ -28,29 +28,27 @@ else:
 
 class LLM_Client():
     def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', need_print=True):
+        print(f'【LLM_Client】 LLM_Client() inited.')
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
             openai.api_key = "EMPTY"
             openai.api_base = url
             self.model = 'local model'
-            print(f'os: windows. openai api for qwen used.')
-            print(f'model: {self.model}')
+            print(f'【LLM_Client】 os: windows. openai api for qwen used.')
+            print(f'【LLM_Client】 model: {self.model}')
         elif sys.platform.startswith('linux'):      # linux下用的是vllm的openai api
             self.openai = OpenAI(
                 api_key='EMPTY',
                 base_url=url,
             )
             self.model = self.openai.models.list().data[0].id
-            print(f'os: linux. openai api for vllm used.')
-            print(f'model: {self.model}')
+            print(f'【LLM_Client】 os: linux. openai api for vllm used.')
+            print(f'【LLM_Client】 model: {self.model}')
         else:
             raise Exception('无法识别的操作系统！')
 
         self.url = url
         self.gen = None     # 返回结果的generator
         self.temperature = temperature
-        print(f'------------------------------------------------------------------------------------------')
-        print(f'LLM_Client(): temperature={self.temperature}')
-        print(f'------------------------------------------------------------------------------------------')
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
 
         # 记忆相关
@@ -177,11 +175,11 @@ class LLM_Client():
         return msgs
 
     def print_history(self):
-        print('\n\t================对话历史================')
+        print('\n\t================【LLM_Client】 对话历史================')
         # print(f'system提示: {self.role_prompt}')
         for item in self.history_list:
             print(f"\t {item['role']}: {item['content']}")
-        print('\t=======================================')
+        print('\t==================【LLM_Client】 =====================')
 
     # Undo: 删除上一轮对话
     def undo(self):
@@ -245,13 +243,15 @@ class LLM_Client():
 
         # ==========================================================
         # print('发送到LLM的完整提示: ', msgs)
-        print(f'------------------------------------------------------------------------------------------')
-        print(f'ask_prepare(): temperature={self.temperature}')
-        print(f'ask_prepare(): messages={msgs}')
-        print(f'ask_prepare(): stream={in_stream}')
-        print(f'ask_prepare(): max_tokens={in_max_new_tokens}')
+        # print(f'------------------------------------------------------------------------------------------')
+        print(f'{"-"*80}')
+        print(f'【LLM_Client】 ask_prepare(): temperature={self.temperature}')
+        print(f'【LLM_Client】 ask_prepare(): messages')
+        for chat in msgs:
+            print(f'{chat}')
+        print(f'【LLM_Client】 ask_prepare(): stream={in_stream}')
+        print(f'【LLM_Client】 ask_prepare(): max_tokens={in_max_new_tokens}')
 
-        print(f'------------------------------------------------------------------------------------------')
         # ==========================================================
 
         if self.need_print:
@@ -262,7 +262,7 @@ class LLM_Client():
         else:
             stop = in_stop
             
-        print(f'ask_prepare(): stop={stop}')
+        print(f'【LLM_Client】 ask_prepare(): stop={stop}')
 
 
         if sys.platform.startswith('win'):

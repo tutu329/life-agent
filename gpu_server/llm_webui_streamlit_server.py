@@ -2,16 +2,45 @@ import streamlit as st
 from tools.llm.api_client import LLM_Client
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py
-def main():
-    llm = LLM_Client(
+
+@st.cache_resource
+def llm_init():
+    return LLM_Client(
         history=True,  # 这里要关掉server侧llm的history，对话历史由用户session控制
         need_print=False,
         temperature=0,
     )
-    prompt = st.chat_input("Say something")
-    if prompt:
-        st.write(f"User: {prompt}")
-        st.write(f"Assistant: {llm.ask_prepare(prompt).get_answer_and_sync_print()}")
+def main():
+    llm = llm_init()
+
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
+
+    for message in st.session_state.messages:
+        with st.chat_message(message['role']):
+            st.markdown(message['content'])
+
+    if prompt := st.chat_input("Say something"):
+        st.session_state.messages.append({
+            'role': 'user',
+            'content': prompt
+        })
+        with st.chat_message('user'):
+            st.markdown(prompt)
+
+        with st.chat_message('assistant'):
+            message_placeholder = st.empty()
+            full_response = ''
+            llm.set_role_prompt('你是甄嬛，并用甄嬛口气和我说话')
+            for res in llm.ask_prepare(prompt).get_answer_generator():
+                full_response += res
+                message_placeholder.markdown(full_response + '| ')
+            message_placeholder.markdown(full_response)
+
+        st.session_state.messages.append({
+            'role': 'assistant',
+            'content': full_response
+        })
 
 if __name__ == "__main__" :
     main()
