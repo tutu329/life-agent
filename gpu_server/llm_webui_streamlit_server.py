@@ -10,7 +10,7 @@ def llm_init():
         need_print=False,
         temperature=0,
     )
-def main():
+def streamlit_main():
     llm = llm_init()
 
     if 'messages' not in st.session_state:
@@ -31,10 +31,11 @@ def main():
         with st.chat_message('assistant'):
             message_placeholder = st.empty()
             full_response = ''
-            llm.set_role_prompt('你是甄嬛，并用甄嬛口气和我说话')
+            llm.set_role_prompt('不论发送什么文字给你，你都直接翻译为英文，不要以"answer"这类此开头')
+            llm.set_role_prompt('你正在模拟linux终端控制台')
             for res in llm.ask_prepare(prompt).get_answer_generator():
                 full_response += res
-                message_placeholder.markdown(full_response + '| ')
+                message_placeholder.markdown(full_response + '█ ')
             message_placeholder.markdown(full_response)
 
         st.session_state.messages.append({
@@ -43,7 +44,7 @@ def main():
         })
 
 if __name__ == "__main__" :
-    main()
+    streamlit_main()
 
 # import numpy as np
 #
