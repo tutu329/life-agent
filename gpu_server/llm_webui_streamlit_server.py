@@ -3,7 +3,7 @@ from tools.llm.api_client import LLM_Client
 
 import time
 
-# 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py
+# 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
 # 配置(必须第一个调用)
 st.set_page_config(
