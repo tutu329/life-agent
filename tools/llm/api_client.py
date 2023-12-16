@@ -283,7 +283,7 @@ class LLM_Client():
                 model=self.model,
                 temperature=in_temperature,
                 # top_k=self.top_k,
-                system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
+                # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
                 messages=msgs,
                 stream=in_stream,
                 # max_new_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
