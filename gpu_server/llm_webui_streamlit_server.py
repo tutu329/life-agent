@@ -5,6 +5,11 @@ import time
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py
 
+# 配置(必须第一个调用)
+st.set_page_config(
+    initial_sidebar_state="collapsed",
+    page_title="Qwen-72B",
+)
 @st.cache_resource  # cache_resource主要用于访问db connection等仅调用一次的全局资源
 def llm_init():
     return LLM_Client(
@@ -12,28 +17,53 @@ def llm_init():
         need_print=False,
         temperature=0,
     )
-def streamlit_refresh_loop():
-    llm = llm_init()
 
+llm = llm_init()
+# response_canceled = False
+
+def on_clear_history():
+    st.session_state.messages = []
+    llm.clear_history()
+
+def on_cancel_response():
+    llm.cancel_response()
+
+def llm_response(prompt, role_prompt, connecting_internet):
+    llm.set_role_prompt(role_prompt)
+
+    if connecting_internet:
+        pass
+
+    gen = llm.ask_prepare(prompt).get_answer_generator()
+    return gen
+
+def streamlit_refresh_loop():
     # =============================侧栏==============================
     with st.sidebar:
-        add_selectbox = st.selectbox(
-            "How would you like to be contacted?",
-            ("Email", "Home phone", "Mobile phone")
-        )
-        add_radio = st.radio(
-            "Choose a shipping method",
-            ("Standard (5-15 days)", "Express (2-5 days)")
-        )
+        role_prompt = st.text_area(label="请输入您的角色提示语:", value="")
+        # add_selectbox = st.selectbox(
+        #     "How would you like to be contacted?",
+        #     ("Email", "Home phone", "Mobile phone")
+        # )
+        # add_radio = st.radio(
+        #     "Choose a shipping method",
+        #     ("Standard (5-15 days)", "Express (2-5 days)")
+        # )
 
     # =======================所有chat历史的显示========================
+    col0, col1, col2, col3 = st.columns([4, 1, 1, 1])
+    col1.button("Clear", on_click=on_clear_history)
+    col2.button("Cancel", on_click=on_cancel_response)
+    connecting_internet = col3.checkbox('联网')
+
     if 'messages' not in st.session_state:
         st.session_state.messages = []
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
             st.markdown(message['content'])
 
-    if prompt := st.chat_input("请在这里输入您的指令"):
+    prompt = st.chat_input("请在这里输入您的指令")
+    if prompt:
         # =======================user输入的显示=======================
         with st.chat_message('user'):
             st.markdown(prompt)
@@ -47,9 +77,7 @@ def streamlit_refresh_loop():
         with st.chat_message('assistant'):
             message_placeholder = st.empty()
             full_response = ''
-            llm.set_role_prompt('不论发送什么文字给你，你都直接翻译为英文，不要以"answer"这类此开头')
-            llm.set_role_prompt('你正在模拟linux终端控制台')
-            for res in llm.ask_prepare(prompt).get_answer_generator():
+            for res in llm_response(prompt, role_prompt, connecting_internet):
                 full_response += res
                 message_placeholder.markdown(full_response + '█ ')
             message_placeholder.markdown(full_response)
@@ -59,63 +87,63 @@ def streamlit_refresh_loop():
             'content': full_response
         })
 
-    st.button("Reset", type="primary")
-    if st.button('Say hello'):
-        st.write('Why hello there')
-    else:
-        st.write('Goodbye')
-
-
-
-
-    placeholder = st.empty()
-
-    # Replace the placeholder with some text:
-    placeholder.text("你正在模拟linux终端控制台")
-
-    # Replace the text with a chart:
-    placeholder.line_chart({"data": [1, 5, 2, 6]})
-
-    # Replace the chart with several elements:
-    with placeholder.container():
-        st.write("This is one element")
-        st.write("This is another")
-
-    # Clear all those elements:
-    placeholder.empty()
-
-
-
-
-    from io import StringIO
-    uploaded_file = st.file_uploader("Choose a file")
-    if uploaded_file is not None:
-        # To read file as bytes:
-        bytes_data = uploaded_file.getvalue()
-        st.write(bytes_data)
-
-        # # To convert to a string based IO:
-        # stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
-        # st.write(stringio)
-        #
-        # # To read file as string:
-        # string_data = stringio.read()
-        # st.write(string_data)
-        #
-        # # Can be used wherever a "file-like" object is accepted:
-        # dataframe = pd.read_csv(uploaded_file)
-        # st.write(dataframe)
-
-    with st.status("Downloading data...", expanded=True) as status:
-        st.write("Searching for data...")
-        time.sleep(2)
-        st.write("Found URL.")
-        time.sleep(1)
-        st.write("Downloading data...")
-        time.sleep(1)
-        status.update(label="Download complete!", state="complete", expanded=False)
-
-    st.button('Rerun')
+    # st.button("Reset", type="primary")
+    # if st.button('Say hello'):
+    #     st.write('Why hello there')
+    # else:
+    #     st.write('Goodbye')
+    #
+    #
+    #
+    #
+    # placeholder = st.empty()
+    #
+    # # Replace the placeholder with some text:
+    # placeholder.text("你正在模拟linux终端控制台")
+    #
+    # # Replace the text with a chart:
+    # placeholder.line_chart({"data": [1, 5, 2, 6]})
+    #
+    # # Replace the chart with several elements:
+    # with placeholder.container():
+    #     st.write("This is one element")
+    #     st.write("This is another")
+    #
+    # # Clear all those elements:
+    # placeholder.empty()
+    #
+    #
+    #
+    #
+    # from io import StringIO
+    # uploaded_file = st.file_uploader("Choose a file")
+    # if uploaded_file is not None:
+    #     # To read file as bytes:
+    #     bytes_data = uploaded_file.getvalue()
+    #     st.write(bytes_data)
+    #
+    #     # # To convert to a string based IO:
+    #     # stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
+    #     # st.write(stringio)
+    #     #
+    #     # # To read file as string:
+    #     # string_data = stringio.read()
+    #     # st.write(string_data)
+    #     #
+    #     # # Can be used wherever a "file-like" object is accepted:
+    #     # dataframe = pd.read_csv(uploaded_file)
+    #     # st.write(dataframe)
+    #
+    # with st.status("Downloading data...", expanded=True) as status:
+    #     st.write("Searching for data...")
+    #     time.sleep(2)
+    #     st.write("Found URL.")
+    #     time.sleep(1)
+    #     st.write("Downloading data...")
+    #     time.sleep(1)
+    #     status.update(label="Download complete!", state="complete", expanded=False)
+    #
+    # st.button('Rerun')
 
 if __name__ == "__main__" :
     streamlit_refresh_loop()

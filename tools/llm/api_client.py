@@ -48,6 +48,7 @@ class LLM_Client():
 
         self.url = url
         self.gen = None     # 返回结果的generator
+        self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
 
@@ -87,24 +88,25 @@ class LLM_Client():
             self.role_prompt = in_role_prompt
 
             # qwen-72b和qwen-1.8b
-            if self.has_role_prompt and len(self.history_list)>0 :
-                # 之前已经设置role_prompt
-                self.history_list[0] = {"role": "system", "content": self.role_prompt}
-            else:
-                # 之前没有设置role_prompt
-                self.history_list.insert(0, {"role": "system", "content": self.role_prompt})
-                self.has_role_prompt = True
-
-            # 早期qwen版本或其他llm
-            # if self.has_role_prompt and len(self.history_list)>0 :
-            #     # 之前已经设置role_prompt
-            #     self.history_list[0] = {"role": "user", "content": self.role_prompt}
-            #     self.history_list[1] = {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'}
-            # else:
-            #     # 之前没有设置role_prompt
-            #     self.history_list.insert(0, {"role": "user", "content": self.role_prompt})
-            #     self.history_list.insert(1, {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
-            #     self.has_role_prompt = True
+            if sys.platform.startswith('win'):          # win下用的是qwen的openai api
+                if self.has_role_prompt and len(self.history_list)>0 :
+                    # 之前已经设置role_prompt
+                    self.history_list[0] = {"role": "system", "content": self.role_prompt}
+                else:
+                    # 之前没有设置role_prompt
+                    self.history_list.insert(0, {"role": "system", "content": self.role_prompt})
+                    self.has_role_prompt = True
+            elif sys.platform.startswith('linux'):  # linux下用的是vllm的openai api
+                # 早期qwen版本或其他llm
+                if self.has_role_prompt and len(self.history_list)>0 :
+                    # 之前已经设置role_prompt
+                    self.history_list[0] = {"role": "user", "content": self.role_prompt}
+                    self.history_list[1] = {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'}
+                else:
+                    # 之前没有设置role_prompt
+                    self.history_list.insert(0, {"role": "user", "content": self.role_prompt})
+                    self.history_list.insert(1, {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
+                    self.has_role_prompt = True
         else:
             # 删除role_prompt
             if self.has_role_prompt:
@@ -227,6 +229,7 @@ class LLM_Client():
             in_undo=False,
             in_stop=None,
     ):
+        self.response_canceled = False
         # self.__history_add_last_turn_msg()
 
         if in_clear_history:
@@ -283,7 +286,7 @@ class LLM_Client():
                 model=self.model,
                 temperature=in_temperature,
                 # top_k=self.top_k,
-                # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
+                # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
                 messages=msgs,
                 stream=in_stream,
                 # max_new_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
@@ -349,6 +352,9 @@ class LLM_Client():
         if self.need_print:
             print('Assistant: \n\t', end='')
         for chunk in self.gen:
+            if self.response_canceled:
+                break
+
             # print(f'chunk: {chunk}')
             if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
                 if self.need_print:
@@ -366,6 +372,9 @@ class LLM_Client():
     def get_answer_generator(self):
         answer = ''
         for chunk in self.gen:
+            if self.response_canceled:
+                break
+
             if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
                 # print(chunk.choices[0].delta.content, end="", flush=True)
                 answer += chunk.choices[0].delta.content
@@ -373,6 +382,10 @@ class LLM_Client():
 
         self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
+
+    # 取消正在进行的stream
+    def cancel_response(self):
+        self.response_canceled = True
 
 def main():
     llm = LLM_Client(
