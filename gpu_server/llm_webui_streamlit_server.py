@@ -2,6 +2,8 @@ import streamlit as st
 from tools.llm.api_client import LLM_Client
 
 import time
+import asyncio
+from tools.retriever.search import Bing_Searcher
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
@@ -19,7 +21,7 @@ def llm_init():
     )
 
 llm = llm_init()
-# response_canceled = False
+internet_search_result = []
 
 def on_clear_history():
     st.session_state.messages = []
@@ -31,11 +33,44 @@ def on_cancel_response():
 def llm_response(prompt, role_prompt, connecting_internet):
     llm.set_role_prompt(role_prompt)
 
+    # =================================搜索并llm=================================
     if connecting_internet:
-        pass
+        # =================================搜索=================================
+        with st.status("Searching via internet...", expanded=True) as status:
+            st.write("Searching in bing.com...")
 
-    gen = llm.ask_prepare(prompt).get_answer_generator()
-    return gen
+            async def _search(prompt):
+                # async with Bing_Searcher() as searcher:
+                #     global internet_search_result
+                #     internet_search_result = await searcher.query_bing_and_get_results(prompt)
+                global internet_search_result
+                searcher = Bing_Searcher()
+                await searcher.start()
+                internet_search_result = await searcher.query_bing_and_get_results(prompt)
+
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(_search(prompt))
+
+            status.update(label="Searching completed.", state="complete", expanded=False)
+        # =================================llm=================================
+        url_idx = 0
+        found = False
+        for url, content_para_list in internet_search_result:
+            found = True
+            url_idx += 1
+
+            content = " ".join(content_para_list)
+            prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{prompt}"，回复要简明扼要、层次清晰、采用markdown格式。'
+            temp_llm = LLM_Client(history=False, need_print=False, temperature=0)
+            gen = temp_llm.ask_prepare(prompt).get_answer_generator()
+            for chunk in gen:
+                yield chunk
+            st.write(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
+    else:
+    # =================================仅llm=================================
+        gen = llm.ask_prepare(prompt).get_answer_generator()
+        for chunk in gen:
+            yield chunk
 
 def streamlit_refresh_loop():
     # =============================侧栏==============================
@@ -86,6 +121,7 @@ def streamlit_refresh_loop():
             'role': 'assistant',
             'content': full_response
         })
+
 
     # st.button("Reset", type="primary")
     # if st.button('Say hello'):
