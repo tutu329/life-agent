@@ -31,9 +31,10 @@ class Bing_Searcher():
         self.show_result_num = in_show_result_num
 
     async def start(self):
+        print('启动chrome中1...')
         p = await async_playwright().start()
         # p = sync_playwright().start()
-        print('启动chrome中...')
+        print('启动chrome中2...')
         self.browser = await p.chromium.launch(channel="chrome", headless=True)   # 启动chrome
         print('启动chrome完毕.')
         self.context = await self.browser.new_context()
