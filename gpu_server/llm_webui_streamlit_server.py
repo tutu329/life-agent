@@ -20,7 +20,15 @@ def llm_init():
         temperature=0,
     )
 
+@st.cache_resource
+def search_init():
+    import sys, platform
+    fix_streamlit_in_win = True if sys.platform.startswith('win') else False
+    return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
+
+# asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 llm = llm_init()
+# searcher = search_init()
 internet_search_result = []
 
 def on_clear_history():
@@ -35,23 +43,38 @@ def llm_response(prompt, role_prompt, connecting_internet):
 
     # =================================搜索并llm=================================
     if connecting_internet:
+        global internet_search_result
+        # import nest_asyncio
+        # nest_asyncio.apply()
         # =================================搜索=================================
-        with st.status("Searching via internet...", expanded=True) as status:
-            st.write("Searching in bing.com...")
 
-            async def _search(prompt):
-                # async with Bing_Searcher() as searcher:
-                #     global internet_search_result
-                #     internet_search_result = await searcher.query_bing_and_get_results(prompt)
-                global internet_search_result
-                searcher = Bing_Searcher()
-                await searcher.start()
-                internet_search_result = await searcher.query_bing_and_get_results(prompt)
 
-            loop = asyncio.new_event_loop()
-            loop.run_until_complete(_search(prompt))
 
-            status.update(label="Searching completed.", state="complete", expanded=False)
+        # with st.status("Searching via internet...", expanded=True) as status:
+        st.write("Searching in bing.com...")
+
+        print('======================1=======================')
+        async def _search(prompt):
+            global internet_search_result
+            internet_search_result = await searcher.query_bing_and_get_results(prompt)
+
+        print('======================2=======================')
+        searcher, loop = search_init()
+        loop.run_until_complete(_search(prompt))
+        print(f'internet_search_result: {internet_search_result}')
+        print('======================3=======================')
+        # ProactorEventLoop
+        # loop = asyncio.get_event_loop()
+        # loop = asyncio.new_event_loop()
+        # loop.run_until_complete(_search(prompt))
+        # loop.call_soon(_search(prompt))
+        # loop.call_soon_threadsafe(_search(prompt))
+
+
+            # status.update(label="Searching completed.", state="complete", expanded=False)
+
+
+
         # =================================llm=================================
         url_idx = 0
         found = False

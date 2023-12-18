@@ -30,6 +30,35 @@ class Bing_Searcher():
 
         self.show_result_num = in_show_result_num
 
+    # fix_streamlit_windows_proactor_eventloop_problem()必须在任何async调用之前运行
+    @staticmethod
+    def fix_streamlit_windows_proactor_eventloop_problem():
+        # -------------------------------------解决streamlit调用playwright的async代码的NotImplementedError问题-------------------------------------
+        # https://github.com/streamlit/streamlit/issues/7825
+        # Playwright requires the Proactor event loop on Windows to run its driver in a subprocess, as the Selector event loop does not support async subprocesses. The Proactor event loop has replaced the Selector event loop as the default event loop on Windows starting with Python 3.8.
+        # WindowsProactorEventLoopPolicy(这是目前windows 支持的EventLoop)
+        # WindowsSelectorEventLoopPolicy(目前windows不支持这个EventLoop)
+        print(f'asyncio.get_event_loop_policy(): {type(asyncio.get_event_loop_policy())}')
+        from asyncio import (WindowsProactorEventLoopPolicy, WindowsSelectorEventLoopPolicy)
+        asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
+        print(f'asyncio.get_event_loop_policy(): {type(asyncio.get_event_loop_policy())}')
+        # -------------------------------------- -----------------------------------------------------------------------------------------------
+
+    # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
+    @staticmethod
+    def create_searcher_and_loop(fix_streamlit_in_win=False):
+        if fix_streamlit_in_win:
+            Bing_Searcher.fix_streamlit_windows_proactor_eventloop_problem()
+
+        searcher = Bing_Searcher()
+
+        async def _start():
+            await searcher.start()
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(_start())
+        return searcher, loop  # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
+
     async def start(self):
         print('启动chrome中1...')
         p = await async_playwright().start()
@@ -59,19 +88,24 @@ class Bing_Searcher():
     async def _get_bing_search_raw_page(self, question: str):
         results = []
         # context = self.browser.new_context()
+        print('--------------------------3.1.1-----------------------------')
         page = await self.context.new_page()
+        print('--------------------------3.1.10-----------------------------')
         try:
             await page.goto(f"https://www.bing.com/search?q={question}")
+            print('--------------------------3.1.2-----------------------------')
         except:
             await page.goto(f"https://www.bing.com")
             await page.fill('input[name="q"]', question)
             await page.press('input[name="q"]', 'Enter')
         try:
             await page.wait_for_load_state('networkidle', timeout=3000)
+            print('--------------------------3.1.3-----------------------------')
         except:
             pass
         # page.wait_for_load_state('networkidle')
         search_results = await page.query_selector_all('.b_algo h2')
+        print('--------------------------3.1.4-----------------------------')
         for result in search_results:
             title = await result.inner_text()
             a_tag = await result.query_selector('a')
@@ -83,6 +117,7 @@ class Bing_Searcher():
                 'title': title,
                 'url': url
             })
+        print('--------------------------3.1.5-----------------------------')
         return results
 
     async def query_bing(self, question, max_tries=3):
@@ -98,12 +133,15 @@ class Bing_Searcher():
 
     # 通过bing搜索，并返回结果
     async def query_bing_and_get_results(self, in_question, max_tries=3):
+        print('--------------------------3-----------------------------')
         res = await self.query_bing(in_question, max_tries=max_tries)
+        print('--------------------------3.1-----------------------------')
         search_result_urls = [result['url'] for result in res]
         search_results = await self.get_raw_pages(search_result_urls)
 
         results = []
         num = 0
+        print('--------------------------4-----------------------------')
         for k,v in search_results.items():
             # ------每一个url对应的搜索结果------
             url = k
@@ -118,6 +156,7 @@ class Bing_Searcher():
                 results.append((url, content_para_list))
                 num += 1
 
+        print('--------------------------5-----------------------------')
         return results  # [(url, content_para_list), (url, content_para_list), ...]
 
     def html_2_text_paras(self, html: str) -> List[str]:
