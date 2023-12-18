@@ -5,7 +5,7 @@ import asyncio
 
 from tools.llm.api_client import LLM_Client
 from tools.doc.llm_doc import *
-from tools.retriever.search import search, search_gen, Bing_Searcher
+from tools.retriever.search import simple_search, simple_search_gen, Bing_Searcher
 
 import sys
 import platform
@@ -262,7 +262,7 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
                 async with Bing_Searcher() as searcher:
                     global internet_search_finished
                     global internet_search_result
-                    internet_search_result = await searcher.query_bing_and_get_results(message)
+                    internet_search_result = await searcher._query_bing_and_get_results(message)
                     internet_search_finished = True
                     print('----------------------------2--------------------------------')
                     print(f'results 2: {internet_search_result}')

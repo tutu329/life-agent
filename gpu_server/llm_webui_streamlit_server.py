@@ -20,6 +20,7 @@ def llm_init():
         temperature=0,
     )
 
+# 返回searcher及其loop
 @st.cache_resource
 def search_init():
     import sys, platform
@@ -28,8 +29,7 @@ def search_init():
 
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 llm = llm_init()
-# searcher = search_init()
-internet_search_result = []
+searcher = search_init()
 
 def on_clear_history():
     st.session_state.messages = []
@@ -44,36 +44,15 @@ def llm_response(prompt, role_prompt, connecting_internet):
     # =================================搜索并llm=================================
     if connecting_internet:
         global internet_search_result
-        # import nest_asyncio
-        # nest_asyncio.apply()
         # =================================搜索=================================
+        with st.status("Searching via internet...", expanded=True) as status:
+            st.write("Searching in bing.com...")
 
-
-
-        # with st.status("Searching via internet...", expanded=True) as status:
-        st.write("Searching in bing.com...")
-
-        print('======================1=======================')
-        async def _search(prompt):
-            global internet_search_result
-            internet_search_result = await searcher.query_bing_and_get_results(prompt)
-
-        print('======================2=======================')
-        searcher, loop = search_init()
-        loop.run_until_complete(_search(prompt))
-        print(f'internet_search_result: {internet_search_result}')
-        print('======================3=======================')
-        # ProactorEventLoop
-        # loop = asyncio.get_event_loop()
-        # loop = asyncio.new_event_loop()
-        # loop.run_until_complete(_search(prompt))
-        # loop.call_soon(_search(prompt))
-        # loop.call_soon_threadsafe(_search(prompt))
-
-
-            # status.update(label="Searching completed.", state="complete", expanded=False)
-
-
+            print('======================1=======================')
+            internet_search_result = searcher.search_long_time(prompt)
+            print(f'internet_search_result: {internet_search_result}')
+            print('======================3=======================')
+            status.update(label="Searching completed.", state="complete", expanded=False)
 
         # =================================llm=================================
         url_idx = 0
