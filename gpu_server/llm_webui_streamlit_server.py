@@ -23,7 +23,8 @@ def llm_init():
     )
 
 # 返回searcher及其loop
-@st.cache_resource
+# 这里不能用@st.cache_resource，否则每次搜索结果都不变
+# @st.cache_resource
 def search_init():
     import sys, platform
     fix_streamlit_in_win = True if sys.platform.startswith('win') else False
@@ -31,7 +32,6 @@ def search_init():
 
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 llm = llm_init()
-searcher = search_init()
 
 def on_clear_history():
     st.session_state.messages = []
@@ -45,33 +45,37 @@ def llm_response(prompt, role_prompt, connecting_internet):
 
     # =================================搜索并llm=================================
     if connecting_internet:
-        global internet_search_result
         # =================================搜索=================================
-        with st.status("Searching via internet...", expanded=True) as status:
-            st.write("Searching in bing.com...")
+        with st.status("启动联网解读任务...", expanded=True) as status:
+            st.write("搜索引擎bing.com调用中...")
 
-            print('======================1=======================')
+            print(f'==================================================================1\prompt: {prompt}===================================================================')
+            searcher = search_init()
             internet_search_result = searcher.search_long_time(prompt)
             print(f'internet_search_result: {internet_search_result}')
             print('======================3=======================')
-            status.update(label="Searching completed.", state="complete", expanded=False)
 
         # =================================llm=================================
-        url_idx = 0
-        found = False
-        for url, content_para_list in internet_search_result:
-            found = True
-            url_idx += 1
+            st.write("搜索引擎bing.com调用完毕.")
+            url_idx = 0
+            found = False
+            for url, content_para_list in internet_search_result:
+                url_idx += 1
+                st.write(f"搜索结果[{url_idx}]解读中...")
+                found = True
 
-            temp_llm = LLM_Client(history=False, need_print=False, temperature=0)
-            content = " ".join(content_para_list)
-            # prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{prompt}"，回复要简明扼要、层次清晰、采用markdown格式。'
-            gen = long_content_summary(temp_llm, content)
-            # gen = temp_llm.ask_prepare(prompt).get_answer_generator()
-            for chunk in gen:
-                yield chunk
-            yield f'\n\n出处[{url_idx}]: ' + url + '\n\n'
-            # st.write(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
+                temp_llm = LLM_Client(history=False, need_print=False, temperature=0)
+                content = " ".join(content_para_list)
+                prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{prompt}"，回复要简明扼要、层次清晰、采用markdown格式。'
+                gen = long_content_summary(temp_llm, prompt)
+                # gen = temp_llm.ask_prepare(prompt).get_answer_generator()
+                st.write(f"搜索结果[{url_idx}]解读完毕.")
+                for chunk in gen:
+                    yield chunk
+                yield f'\n\n出处[{url_idx}]: ' + url + '\n\n'
+                # st.write(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
+
+            status.update(label="联网解读任务完成.", state="complete", expanded=False)
     else:
     # =================================仅llm=================================
         gen = llm.ask_prepare(prompt).get_answer_generator()
