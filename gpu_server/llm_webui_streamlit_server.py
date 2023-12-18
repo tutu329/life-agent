@@ -5,6 +5,8 @@ import time
 import asyncio
 from tools.retriever.search import Bing_Searcher
 
+from utils.long_content_summary import long_content_summary
+
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
 # 配置(必须第一个调用)
@@ -61,13 +63,15 @@ def llm_response(prompt, role_prompt, connecting_internet):
             found = True
             url_idx += 1
 
-            content = " ".join(content_para_list)
-            prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{prompt}"，回复要简明扼要、层次清晰、采用markdown格式。'
             temp_llm = LLM_Client(history=False, need_print=False, temperature=0)
-            gen = temp_llm.ask_prepare(prompt).get_answer_generator()
+            content = " ".join(content_para_list)
+            # prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{prompt}"，回复要简明扼要、层次清晰、采用markdown格式。'
+            gen = long_content_summary(temp_llm, content)
+            # gen = temp_llm.ask_prepare(prompt).get_answer_generator()
             for chunk in gen:
                 yield chunk
-            st.write(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
+            yield f'\n\n出处[{url_idx}]: ' + url + '\n\n'
+            # st.write(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
     else:
     # =================================仅llm=================================
         gen = llm.ask_prepare(prompt).get_answer_generator()
