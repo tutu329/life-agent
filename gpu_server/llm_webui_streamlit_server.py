@@ -13,7 +13,15 @@ from utils.long_content_summary import long_content_summary
 st.set_page_config(
     initial_sidebar_state="collapsed",
     page_title="Qwen-72B",
+    layout="wide",
 )
+# st.set_page_config(
+#     page_title=None,
+#     page_icon=None,
+#     layout="centered",
+#     initial_sidebar_state="auto",
+#     menu_items=None
+# )
 @st.cache_resource  # cache_resource主要用于访问db connection等仅调用一次的全局资源
 def llm_init():
     return LLM_Client(
@@ -46,8 +54,9 @@ def llm_response(prompt, role_prompt, connecting_internet):
     # =================================搜索并llm=================================
     if connecting_internet:
         # =================================搜索=================================
-        with st.status("启动联网解读任务...", expanded=True) as status:
-            st.write("搜索引擎bing.com调用中...")
+        with st.status(":green[启动联网解读任务...]", expanded=True) as status:
+            st.markdown("{搜索引擎bing.com调用中...}")
+            # st.write("<搜索引擎bing.com调用中...>")
 
             print(f'==================================================================1\prompt: {prompt}===================================================================')
             searcher = search_init()
@@ -56,12 +65,12 @@ def llm_response(prompt, role_prompt, connecting_internet):
             print('======================3=======================')
 
         # =================================llm=================================
-            st.write("搜索引擎bing.com调用完毕.")
+            st.markdown("{搜索引擎bing.com调用完毕.}")
             url_idx = 0
             found = False
             for url, content_para_list in internet_search_result:
                 url_idx += 1
-                st.write(f"搜索结果[{url_idx}]解读中...")
+                st.markdown(f"<搜索结果[{url_idx}]解读中...>")
                 found = True
 
                 temp_llm = LLM_Client(history=False, need_print=False, temperature=0)
@@ -69,7 +78,7 @@ def llm_response(prompt, role_prompt, connecting_internet):
                 prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{prompt}"，回复要简明扼要、层次清晰、采用markdown格式。'
                 gen = long_content_summary(temp_llm, prompt)
                 # gen = temp_llm.ask_prepare(prompt).get_answer_generator()
-                st.write(f"搜索结果[{url_idx}]解读完毕.")
+                st.markdown(f"<搜索结果[{url_idx}]解读完毕.>")
                 for chunk in gen:
                     yield chunk
                 yield f'\n\n出处[{url_idx}]: ' + url + '\n\n'
@@ -96,100 +105,46 @@ def streamlit_refresh_loop():
         # )
 
     # =======================所有chat历史的显示========================
-    col0, col1, col2, col3 = st.columns([4, 1, 1, 1])
-    col1.button("Clear", on_click=on_clear_history)
-    col2.button("Cancel", on_click=on_cancel_response)
-    connecting_internet = col3.checkbox('联网')
-
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
-    for message in st.session_state.messages:
-        with st.chat_message(message['role']):
-            st.markdown(message['content'])
-
     prompt = st.chat_input("请在这里输入您的指令")
-    if prompt:
-        # =======================user输入的显示=======================
-        with st.chat_message('user'):
-            st.markdown(prompt)
-        # =====================user输入的状态存储======================
-        st.session_state.messages.append({
-            'role': 'user',
-            'content': prompt
-        })
+    page_left, page_right = st.columns([3, 1])
+    with page_right:
+        st.text_area("请输入")
+    with page_left:
+        col0, col1, col2, col3 = st.columns([4, 1, 1, 1])
+        col1.button("Clear", on_click=on_clear_history)
+        col2.button("Cancel", on_click=on_cancel_response)
+        connecting_internet = col3.checkbox('联网')
 
-        # ====================assistant输出的显示=====================
-        with st.chat_message('assistant'):
-            message_placeholder = st.empty()
-            full_response = ''
-            for res in llm_response(prompt, role_prompt, connecting_internet):
-                full_response += res
-                message_placeholder.markdown(full_response + '█ ')
-            message_placeholder.markdown(full_response)
-        # ==================assistant输出的状态存储====================
-        st.session_state.messages.append({
-            'role': 'assistant',
-            'content': full_response
-        })
+        if 'messages' not in st.session_state:
+            st.session_state.messages = []
+        for message in st.session_state.messages:
+            with st.chat_message(message['role']):
+                st.markdown(message['content'])
 
+        if prompt:
+            # =======================user输入的显示=======================
+            with st.chat_message('user'):
+                st.markdown(prompt)
+            # =====================user输入的状态存储======================
+            st.session_state.messages.append({
+                'role': 'user',
+                'content': prompt
+            })
 
-    # st.button("Reset", type="primary")
-    # if st.button('Say hello'):
-    #     st.write('Why hello there')
-    # else:
-    #     st.write('Goodbye')
-    #
-    #
-    #
-    #
-    # placeholder = st.empty()
-    #
-    # # Replace the placeholder with some text:
-    # placeholder.text("你正在模拟linux终端控制台")
-    #
-    # # Replace the text with a chart:
-    # placeholder.line_chart({"data": [1, 5, 2, 6]})
-    #
-    # # Replace the chart with several elements:
-    # with placeholder.container():
-    #     st.write("This is one element")
-    #     st.write("This is another")
-    #
-    # # Clear all those elements:
-    # placeholder.empty()
-    #
-    #
-    #
-    #
-    # from io import StringIO
-    # uploaded_file = st.file_uploader("Choose a file")
-    # if uploaded_file is not None:
-    #     # To read file as bytes:
-    #     bytes_data = uploaded_file.getvalue()
-    #     st.write(bytes_data)
-    #
-    #     # # To convert to a string based IO:
-    #     # stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
-    #     # st.write(stringio)
-    #     #
-    #     # # To read file as string:
-    #     # string_data = stringio.read()
-    #     # st.write(string_data)
-    #     #
-    #     # # Can be used wherever a "file-like" object is accepted:
-    #     # dataframe = pd.read_csv(uploaded_file)
-    #     # st.write(dataframe)
-    #
-    # with st.status("Downloading data...", expanded=True) as status:
-    #     st.write("Searching for data...")
-    #     time.sleep(2)
-    #     st.write("Found URL.")
-    #     time.sleep(1)
-    #     st.write("Downloading data...")
-    #     time.sleep(1)
-    #     status.update(label="Download complete!", state="complete", expanded=False)
-    #
-    # st.button('Rerun')
+            # ====================assistant输出的显示=====================
+            with st.chat_message('assistant'):
+                message_placeholder = st.empty()
+                full_response = ''
+                for res in llm_response(prompt, role_prompt, connecting_internet):
+                    full_response += res
+                    message_placeholder.markdown(full_response + '█ ')
+                message_placeholder.markdown(full_response)
+            # ==================assistant输出的状态存储====================
+            st.session_state.messages.append({
+                'role': 'assistant',
+                'content': full_response
+            })
+
 
 if __name__ == "__main__" :
     streamlit_refresh_loop()
