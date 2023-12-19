@@ -11,7 +11,7 @@ from utils.long_content_summary import long_content_summary
 
 # 配置(必须第一个调用)
 st.set_page_config(
-    initial_sidebar_state="collapsed",
+    # initial_sidebar_state="collapsed",
     page_title="Qwen-72B",
     layout="wide",
 )
@@ -28,7 +28,7 @@ def llm_init():
         history=True,  # 这里要关掉server侧llm的history，对话历史由用户session控制
         need_print=False,
         temperature=0,
-    )
+    ), ''
 
 # 返回searcher及其loop
 # 这里不能用@st.cache_resource，否则每次搜索结果都不变
@@ -39,14 +39,7 @@ def search_init():
     return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
 
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
-llm = llm_init()
-
-def on_clear_history():
-    st.session_state.messages = []
-    llm.clear_history()
-
-def on_cancel_response():
-    llm.cancel_response()
+llm, user_query = llm_init()
 
 def llm_response(prompt, role_prompt, connecting_internet):
     llm.set_role_prompt(role_prompt)
@@ -91,10 +84,56 @@ def llm_response(prompt, role_prompt, connecting_internet):
         for chunk in gen:
             yield chunk
 
+
+def on_clear_history():
+    st.session_state.messages = []
+    llm.clear_history()
+
+def on_cancel_response():
+    llm.cancel_response()
+
+# def on_confirm_response(user_query, role_prompt, connecting_internet):
+#     if 'messages' not in st.session_state:
+#         st.session_state.messages = []
+#     for message in st.session_state.messages:
+#         with st.chat_message(message['role']):
+#             st.markdown(message['content'])
+#
+#     if user_query:
+#         # =======================user输入的显示=======================
+#         with st.chat_message('user'):
+#             st.markdown(user_query)
+#         # =====================user输入的状态存储======================
+#         st.session_state.messages.append({
+#             'role': 'user',
+#             'content': user_query
+#         })
+#
+#         # ====================assistant输出的显示=====================
+#         with st.chat_message('assistant'):
+#             message_placeholder = st.empty()
+#             full_response = ''
+#             for res in llm_response(user_query, role_prompt, connecting_internet):
+#                 full_response += res
+#                 message_placeholder.markdown(full_response + '█ ')
+#             message_placeholder.markdown(full_response)
+#         # ==================assistant输出的状态存储====================
+#         st.session_state.messages.append({
+#             'role': 'assistant',
+#             'content': full_response
+#         })
+
+# user_query = ''
 def streamlit_refresh_loop():
     # =============================侧栏==============================
     with st.sidebar:
         role_prompt = st.text_area(label="请输入您的角色提示语:", value="")
+        connecting_internet = st.checkbox('联网')
+        tx = st.text_area(label="请输入您的指令:", value="")
+        col0, col1, col2 = st.columns([2, 1, 1])
+        col1.button("清空", on_click=on_clear_history)
+        col2.button("取消", on_click=on_cancel_response)
+        # col3.button("确认", on_click=on_confirm_response, args=[tx, role_prompt, connecting_internet])
         # add_selectbox = st.selectbox(
         #     "How would you like to be contacted?",
         #     ("Email", "Home phone", "Mobile phone")
@@ -106,44 +145,36 @@ def streamlit_refresh_loop():
 
     # =======================所有chat历史的显示========================
     prompt = st.chat_input("请在这里输入您的指令")
-    page_left, page_right = st.columns([3, 1])
-    with page_right:
-        st.text_area("请输入")
-    with page_left:
-        col0, col1, col2, col3 = st.columns([4, 1, 1, 1])
-        col1.button("Clear", on_click=on_clear_history)
-        col2.button("Cancel", on_click=on_cancel_response)
-        connecting_internet = col3.checkbox('联网')
 
-        if 'messages' not in st.session_state:
-            st.session_state.messages = []
-        for message in st.session_state.messages:
-            with st.chat_message(message['role']):
-                st.markdown(message['content'])
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
+    for message in st.session_state.messages:
+        with st.chat_message(message['role']):
+            st.markdown(message['content'])
 
-        if prompt:
-            # =======================user输入的显示=======================
-            with st.chat_message('user'):
-                st.markdown(prompt)
-            # =====================user输入的状态存储======================
-            st.session_state.messages.append({
-                'role': 'user',
-                'content': prompt
-            })
+    if prompt:
+        # =======================user输入的显示=======================
+        with st.chat_message('user'):
+            st.markdown(prompt)
+        # =====================user输入的状态存储======================
+        st.session_state.messages.append({
+            'role': 'user',
+            'content': prompt
+        })
 
-            # ====================assistant输出的显示=====================
-            with st.chat_message('assistant'):
-                message_placeholder = st.empty()
-                full_response = ''
-                for res in llm_response(prompt, role_prompt, connecting_internet):
-                    full_response += res
-                    message_placeholder.markdown(full_response + '█ ')
-                message_placeholder.markdown(full_response)
-            # ==================assistant输出的状态存储====================
-            st.session_state.messages.append({
-                'role': 'assistant',
-                'content': full_response
-            })
+        # ====================assistant输出的显示=====================
+        with st.chat_message('assistant'):
+            message_placeholder = st.empty()
+            full_response = ''
+            for res in llm_response(prompt, role_prompt, connecting_internet):
+                full_response += res
+                message_placeholder.markdown(full_response + '█ ')
+            message_placeholder.markdown(full_response)
+        # ==================assistant输出的状态存储====================
+        st.session_state.messages.append({
+            'role': 'assistant',
+            'content': full_response
+        })
 
 
 if __name__ == "__main__" :
