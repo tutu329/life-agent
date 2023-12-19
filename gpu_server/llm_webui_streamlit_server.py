@@ -129,10 +129,10 @@ def streamlit_refresh_loop():
     with st.sidebar:
         role_prompt = st.text_area(label="请输入您的角色提示语:", value="")
         connecting_internet = st.checkbox('联网')
-        tx = st.text_area(label="请输入您的指令:", value="")
+        # tx = st.text_area(label="请输入您的指令:", value="")
         col0, col1, col2 = st.columns([2, 1, 1])
-        col1.button("清空", on_click=on_clear_history)
-        col2.button("取消", on_click=on_cancel_response)
+        col1.button("清空记录", on_click=on_clear_history)
+        col2.button("中止回复", on_click=on_cancel_response)
         # col3.button("确认", on_click=on_confirm_response, args=[tx, role_prompt, connecting_internet])
         # add_selectbox = st.selectbox(
         #     "How would you like to be contacted?",
