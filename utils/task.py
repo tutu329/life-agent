@@ -159,8 +159,7 @@ class Flicker_Task(Task_Base):
                 break
 
             self.__flicker()
-            
-            # print('================1=====================')
+
             # t = threading.Timer(self.interval, self.__flicker)
             #t.start()
             time.sleep(self.interval)
