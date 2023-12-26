@@ -165,6 +165,7 @@ class Flicker_Task(Task_Base):
             time.sleep(self.interval)
             # t.join()    # 等待Timer执行完成
 
+
     def start(self):
         super().start()
 
