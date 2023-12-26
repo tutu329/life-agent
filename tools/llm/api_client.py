@@ -12,9 +12,15 @@ from typing import Collection, Dict, List, Set, Tuple, Union, Any, Callable, Opt
 import random
 import re
 
-import sys
+import sys, time
 import platform
 
+import asyncio
+import threading
+from streamlit.runtime.scriptrunner import add_script_run_ctx
+
+from utils.long_content_summary import long_content_summary
+from utils.task import Flicker_Task
 
 
 if sys.platform.startswith('win'):      # win下用的是qwen的openai api (openai==0.28.1)
@@ -221,8 +227,8 @@ class LLM_Client():
     def ask_prepare(
             self,
             in_question,
-            in_temperature=0.7,
-            in_max_new_tokens=2048,
+            in_temperature=None,
+            in_max_new_tokens=512,
             in_clear_history=False,
             in_stream=True,
             in_retry=False,
@@ -247,8 +253,15 @@ class LLM_Client():
         # ==========================================================
         # print('发送到LLM的完整提示: ', msgs)
         # print(f'------------------------------------------------------------------------------------------')
+        if in_temperature is None:
+            run_temperature = self.temperature
+        else:
+            run_temperature = in_temperature
+            
         print(f'{"-"*80}')
-        print(f'【LLM_Client】 ask_prepare(): temperature={self.temperature}')
+        print(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
+        print(f'【LLM_Client】 ask_prepare(): self.temperature={self.temperature}')
+        print(f'【LLM_Client】 ask_prepare(): 最终选择run_temperature={run_temperature}')
         print(f'【LLM_Client】 ask_prepare(): messages')
         for chat in msgs:
             print(f'{chat}')
@@ -267,11 +280,10 @@ class LLM_Client():
             
         print(f'【LLM_Client】 ask_prepare(): stop={stop}')
 
-
         if sys.platform.startswith('win'):
             gen = openai.ChatCompletion.create(
                 model=self.model,
-                temperature=in_temperature,
+                temperature=run_temperature,
                 # top_k=self.top_k,
                 system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
                 messages=msgs,
@@ -284,7 +296,7 @@ class LLM_Client():
         elif sys.platform.startswith('linux'):
             gen = self.openai.chat.completions.create(
                 model=self.model,
-                temperature=in_temperature,
+                temperature=run_temperature,
                 # top_k=self.top_k,
                 # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
                 messages=msgs,
@@ -386,6 +398,221 @@ class LLM_Client():
     # 取消正在进行的stream
     def cancel_response(self):
         self.response_canceled = True
+
+# async的非联网llm调用
+class Async_LLM():
+    def __init__(self):
+        
+        self.llm = None
+        self.stream_buf_callback = None
+        self.task = None
+        self.prompt = ''
+        self.extra_suffix = ''
+        self.final_response = ''
+        self.run_in_streamlit = False
+        
+        self.complete = False
+
+        self.flicker = None
+
+        self.getting_chunk = False
+        self.chunk = ''
+
+    def init(self, in_stream_buf_callback, in_prompt, in_extra_suffix='', in_streamlit=False):
+        self.complete = False
+        
+        self.llm = LLM_Client(history=True, need_print=False, temperature=0)
+        self.stream_buf_callback = in_stream_buf_callback
+        self.prompt = in_prompt
+        self.extra_suffix = in_extra_suffix # 输出的额外内容
+        self.run_in_streamlit = in_streamlit
+
+        self.flicker = Flicker_Task()
+
+    def run(self):
+        print(f'Async_LLM._stream_output_process() invoked.')
+        gen = self.llm.ask_prepare(self.prompt).get_answer_generator()
+        full_response = ''
+
+        # 将for chunk in gen的同步next(gen)改造为异步，从而在stream暂时没有数据时，从而让光标闪烁等事件能够被响应。
+        self.chunk = ''
+        self.getting_chunk = False
+        while not self.complete:
+            def get_chunk():
+                if not self.getting_chunk:
+                    self.getting_chunk = True
+                    try:
+                        self.chunk=next(gen)
+                    except StopIteration as e:
+                        self.complete = True
+                    self.getting_chunk = False
+            if not self.getting_chunk:
+                full_response += self.chunk
+                t = threading.Thread(target=get_chunk)
+                t.start()
+                #chunk = next(gen)    
+                    
+            self.stream_buf_callback(full_response + self.flicker.get_flicker())
+            time.sleep(0.05)
+
+        # 注意：vllm并行query刚开始时，这行代码这里会卡死2-3秒钟。因此需要改造为异步，从而让光标闪烁等事件能够被响应。
+        # for chunk in gen:
+        #     full_response += chunk
+        #     self.stream_buf_callback(full_response + self.flicker.get_flicker())
+        
+        print(f'self.extra_suffix: {self.extra_suffix}')
+        full_response += self.extra_suffix
+        self.stream_buf_callback(full_response)
+
+        self.final_response = full_response
+
+        print(f'Async_LLM.run() completed. final_response="{self.final_response}"')
+
+    def start(self):
+        # 由于streamlit对thread支持不好，这里必须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext
+        t = threading.Thread(target=self.run)
+        if self.run_in_streamlit:
+            add_script_run_ctx(t)
+        
+        t.start()
+        self.flicker.init(flicker1='█ ', flicker2='  ').start()
+
+    async def wrong_run(self):
+        print(f'Async_LLM._stream_output_process() invoked.')
+        gen = self.llm.ask_prepare(self.prompt).get_answer_generator()
+        full_response = ''
+        for chunk in gen:
+            full_response += chunk
+            self.full_response = full_response
+            self.stream_buf_callback(full_response)
+
+    def wrong_start(self):
+        # 创建async任务
+        new_loop = asyncio.new_event_loop()  # 子线程下新建时间循环
+        asyncio.set_event_loop(new_loop)
+        self.task = asyncio.ensure_future(self.wrong_run())
+        # loop = asyncio.new_event_loop()
+        # self.task = loop.create_task(self._stream_output_process())    # create_task()没有方便的非阻塞运行方式 
+        # self.task = asyncio.create_task(self._stream_output_process())    # 该行在streamlit下报错：no running event loop
+        new_loop.run_until_complete(self.task)    # 改行是阻塞等待task完成
+        print(f'Async_LLM.start() invoked.')
+    
+# 通过多个llm的client，对model进行并发访问，同步返回多个stream
+class Concurrent_LLMs():
+    def __init__(self):
+        self.prompts = []
+        self.role_prompts = []
+        self.contents = []
+        
+        self.stream_buf_callback = None
+        self.llms = []
+        self.llms_post_processed = []
+
+        self.cursor = ''
+        self.flicker = None
+
+    def init(
+        self,
+        in_prompts,             # 输入的多个prompt
+        in_contents,            # 输入的多个长文本(需要分别嵌入prompt进行解读)
+        in_stream_buf_callbacks,# 用于执行stream输出的回调函数list(该回调函数list可以是[streamlit.empty[].markdown, ...])
+        in_role_prompts=None,   # 输入的多个role prompt
+        in_extra_suffixes=None, # 输出的额外内容(维度同上)
+        in_cursor='█ ',         # 输出未完成时显示用的光标
+    ):
+        self.prompts = in_prompts
+        self.contents = in_contents
+        self.stream_buf_callbacks = in_stream_buf_callbacks
+        self.role_prompts = in_role_prompts
+        self.cursor = in_cursor
+        self.extra_suffixes = in_extra_suffixes
+
+        # 初始化所有llm
+        for prompt in self.prompts:
+            self.llms.append(LLM_Client(history=False, need_print=False, temperature=0))
+            self.llms_post_processed.append(False)
+        self.llms_num = len(self.llms)
+
+        self.flicker = Flicker_Task()
+        self.flicker.init(flicker1='█ ', flicker2='  ').start()
+
+    # 用于yield返回状态：
+    # status = {
+    #     'status_type'         : 'complete/running',         # 对应streamlit中的status.update中的state参数(complete, running)
+    #     'canceled'            : False,                      # 整个任务是否canceled
+    #     'status_describe'     : '状态描述',                  # 对应streamlit中的status.update
+    #     'status_detail'       : '状态细节',                  # 对应streamlit中的status.write或status.markdown
+    #     'llms_complete'       : [False ， ...]              # 所有llm的完成状态(False, True)
+    #     'llms_full_responses' : [''， ...]                  # 所有llm的返回文本
+    # }
+    def start_and_get_status(self):
+        llm_num = self.llms_num
+
+        # 整体状态和所有llm的状态
+        status = {
+            'type'                : 'running',
+            'canceled'            : False,
+            'describe'            : '启动解读任务...', 
+            'detail'              : f'所有llm已完成初始化，llm数量为{llm_num}.',
+            'llms_complete'       : [False]*llm_num,
+            'llms_full_responses' : ['']*llm_num,
+        }
+        yield status
+
+        # 启动所有llm，并注册llms_gens
+        llms_gens = []
+        for i in range(llm_num):
+            # 返回联网分析结果
+            llms_gens.append(long_content_summary(self.llms[i], self.contents[i], self.prompts[i]))
+
+        status['detail'] = '所有llm的文本解读已启动...'
+        yield status
+
+        while True:
+            if all(status['llms_complete']):
+                # 所有llm均已完成回复stream，则退出
+                status['type'] = 'complete'
+                status['describe'] = '解读任务已完成.'
+                status['detail'] = '所有llm的文本解读任务已完成.'
+                yield status
+                break
+
+            i = 0
+            for gen in llms_gens:
+                # 遍历每一个llm的回复stream的chunk
+                try:
+                    chunk = next(gen)
+                    status['llms_full_responses'][i] += chunk
+
+                    # 测试输出
+                    if i==0:
+                        print(chunk, end='')
+                        
+                except StopIteration as e:
+                    # 如果next引发StopIteration异常，则设置finished为True
+                    status['llms_complete'][i] = True
+
+                # 向外部stream接口输出当前llm的stream chunk
+                if status['llms_complete'][i] :
+                    # 该llm已经完成
+
+                    # 每一个llm的后处理
+                    if not self.llms_post_processed[i]:                   
+                        extra_suffixes = self.extra_suffixes if self.extra_suffixes else ''
+                        status['llms_full_responses'][i] += extra_suffixes[i]
+                        self.llms_post_processed[i] = True
+                        
+                    self.stream_buf_callbacks[i](status['llms_full_responses'][i])
+                else:
+                    # 该llm尚未完成
+                    if len(status['llms_full_responses'][i])>5:
+                        # print('self.stream_buf_callbacks:', self.stream_buf_callbacks)
+                        self.stream_buf_callbacks[i](status['llms_full_responses'][i] + self.flicker.get_flicker() + '\n\n')
+                    else:
+                        # vllm有个初始化过程，会先返回1、2个字符，然后卡几秒钟，然后才会全速并发输出stream
+                        pass
+                
+                i += 1
 
 def main():
     llm = LLM_Client(

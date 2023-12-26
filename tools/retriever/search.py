@@ -23,13 +23,13 @@ class SearchResult:
         return json.dumps(self.dump())
 
 class Bing_Searcher():
-    def __init__(self, in_show_result_num=3):
+    def __init__(self, in_search_num=3):
         self.loop = None    # searcher实例对应的loop(主要用于win下streamlit等特定场景)
         self.browser = None
         self.context = None
         self.results = {}
 
-        self.show_result_num = in_show_result_num
+        self.search_num = in_search_num
 
     # fix_streamlit_windows_proactor_eventloop_problem()必须在任何async调用之前运行
     @staticmethod
@@ -54,11 +54,11 @@ class Bing_Searcher():
 
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
     @staticmethod
-    def create_searcher_and_loop(fix_streamlit_in_win=False):
+    def create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3):
         if fix_streamlit_in_win:
             Bing_Searcher._fix_streamlit_windows_proactor_eventloop_problem()
 
-        searcher = Bing_Searcher()
+        searcher = Bing_Searcher(in_search_num=in_search_num)
 
         async def _searcher_start():
             await searcher._start()
@@ -94,14 +94,14 @@ class Bing_Searcher():
     #     if self.browser:
     #         self.browser.close()
 
-    async def _get_bing_search_raw_page(self, question: str):
+    async def _get_bing_search_raw_page(self, question: str, show_results_in_one_page=50):
         results = []
         # context = self.browser.new_context()
         # print('--------------------------3.1.1-----------------------------')
         page = await self.context.new_page()
         # print('--------------------------3.1.10-----------------------------')
         try:
-            await page.goto(f"https://www.bing.com/search?q={question}")
+            await page.goto(f"https://www.bing.com/search?q={question}&count={show_results_in_one_page}")
             # print('--------------------------3.1.2-----------------------------')
         except:
             await page.goto(f"https://www.bing.com")
@@ -115,7 +115,12 @@ class Bing_Searcher():
         # page.wait_for_load_state('networkidle')
         search_results = await page.query_selector_all('.b_algo h2')
         # print('--------------------------3.1.4-----------------------------')
+        i = 0
         for result in search_results:
+            i += 1
+            if i > self.search_num*3:    # 很多网页搜索结果为空，因此需要增加搜索空间
+                break
+                
             title = await result.inner_text()
             a_tag = await result.query_selector('a')
             if not a_tag: continue
@@ -159,11 +164,13 @@ class Bing_Searcher():
             content_para_list = self._html_2_text_paras(response_text)
 
             if response_status == 200:
-                if num > self.show_result_num:
-                    break
+                if ''.join(content_para_list) != '' :
+                    # 如果content_para_list内容不为空，才添加到结果
+                    results.append((url, content_para_list))
+                    num += 1
 
-                results.append((url, content_para_list))
-                num += 1
+                if num >= self.search_num:
+                    break
 
         # print('--------------------------5-----------------------------')
         return results  # [(url, content_para_list), (url, content_para_list), ...]
@@ -197,7 +204,7 @@ class Bing_Searcher():
         for url in urls:
             tasks.append(asyncio.create_task(self._func_get_one_page(self.context, url)))
 
-        await asyncio.wait(tasks, timeout=5)
+        await asyncio.wait(tasks, timeout=10)
 
         return self.results
 
@@ -212,7 +219,8 @@ class Bing_Searcher():
             self.results[url] = (response.status, await response.text())
         except Exception as e:
             print(f'func_get_one_page(url={url}) error: {e}')
-            self.results[url] = (404, None)   # (response_status, response_html_text)
+            self.results[url] = (response.status, '')
+            # self.results[url] = (404, None)   # (response_status, response_html_text)
 
 # search的生成器（必须进行同步化改造，否则progress.tqdm(search_gen(message), desc='正在调用搜索引擎中...')报错！）
 def simple_search_gen(in_question):
