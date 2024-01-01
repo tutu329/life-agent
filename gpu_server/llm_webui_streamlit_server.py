@@ -61,32 +61,58 @@ def search_init(concurrent_num=3):
     return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win, in_search_num=concurrent_num)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
 
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
-llm = streamlit_init()
+mem_llm = streamlit_init()
 
-def llm_response_concurrently(prompt, role_prompt, connecting_internet, concurrent_num):
-    llm.set_role_prompt(role_prompt)
+def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', in_concurrent_num=3):
+    cols = in_st.columns([1]*in_concurrent_num)
+    async_llms = []
+    i = 0
+    for col in cols:
+        i += 1
+        suffix = ' ${}^{【local' + f'-{i}' + '】}$ \n\n'
+        async_llm = Async_LLM()
+        async_llms.append(async_llm)
+        async_llm.init(
+            col.empty().markdown, 
+            # col.container(border=True).empty().markdown, 
+            in_prompt, 
+            in_role_prompt=in_role_prompt,
+            in_extra_suffix=suffix,
+            in_streamlit=True,
+            in_temperature= st.session_state.local_llm_temperature,
+        )
+        async_llm.start()
+    return async_llms
 
+def llm_response_concurrently(prompt, role_prompt, connecting_internet):
     # =================================搜索并llm=================================
     if connecting_internet:
         # =================================搜索=================================
         status = st.status(label=":green[启动联网解读任务...]", expanded=False)
 
         assistant = st.chat_message('assistant')
-        # 非联网llm调用，用于和联网llm解读结果对比
-        async_llm = Async_LLM()
-        async_llm.init(
-            assistant.empty().markdown, 
-            prompt, 
-            in_extra_suffix=' ${}^{【local】}$ \n\n',
-            in_streamlit=True
+        if not st.session_state.get('local_llm_concurrent_num'):
+            st.session_state.local_llm_concurrent_num = 3
+        async_llms = async_llm_local_response_concurrently(
+            in_st=assistant,
+            in_prompt=prompt,
+            in_role_prompt=role_prompt,
+            in_concurrent_num=st.session_state.local_llm_concurrent_num,
         )
-        async_llm.start()
-        # async_llm.wrong_start()
-        # non_internet_placeholder.markdown('等着 non_internet llm 输出')
+        # 非联网llm调用，用于和联网llm解读结果对比
+        #async_llm = Async_LLM()
+        #async_llm.init(
+        #    assistant.empty().markdown, 
+        #    prompt, 
+        #    in_role_prompt=role_prompt,
+        #    in_extra_suffix=' ${}^{【local】}$ \n\n',
+        #    in_streamlit=True
+        #)
+        #async_llm.start()
         
         status.markdown("搜索引擎bing.com调用中...")
 
-        searcher = search_init(concurrent_num)
+        searcher = search_init(st.session_state.concurrent_num)
         internet_search_result = searcher.search_long_time(prompt)
         # print(f'internet_search_result: {internet_search_result}')
 
@@ -130,29 +156,31 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, concurre
 
         # 将完整的输出结果，返回
         final_answer = ''
-        final_answer += async_llm.final_response
+        # final_answer += async_llm.final_response
         for answer in task_status['llms_full_responses']:
             # 这里task_status是llms.start_and_get_status()结束后的最终状态
             final_answer += answer
-        return final_answer
+        return async_llms, final_answer
     else:
         # =================================local llm=================================
-        with st.chat_message('assistant'):
-            gen = llm.ask_prepare(prompt).get_answer_generator()
-            message_placeholder = st.empty()
-            full_response = ''
-            for chunk in gen:
-                full_response += chunk
-                message_placeholder.markdown(full_response + '█ ')
-            message_placeholder.markdown(full_response)
-        return full_response
+        place_holder = st.chat_message('assistant').empty()
+        mem_llm.set_role_prompt(role_prompt)
+        full_res = ''
+        for res in mem_llm.ask_prepare(
+            in_question=prompt, 
+            in_temperature=st.session_state.local_llm_temperature,
+            in_max_new_tokens=st.session_state.local_llm_max_new_token,
+        ).get_answer_generator():
+            full_res += res
+            place_holder.markdown(full_res)
+        return None, full_res
 
 def on_clear_history():
     st.session_state.messages = []
-    llm.clear_history()
+    mem_llm.clear_history()
 
 def on_cancel_response():
-    llm.cancel_response()
+    mem_llm.cancel_response()
     st.session_state.processing = False
     st.session_state.prompt = ''
 
@@ -187,7 +215,9 @@ def streamlit_refresh_loop():
     col1.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
     col2.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
     col3.button("发送", on_click=on_chat_input_submit, args=(multi_line_prompt,), disabled=st.session_state.processing, key='confirm_button')
-    concurrent_num = exp1.slider('并发数量:', 2, 10, 3, disabled=st.session_state.processing)
+    st.session_state.local_llm_temperature = exp1.slider('temperature:', 0.0, 1.0, 0.0, step=0.1, format='%.1f', disabled=st.session_state.processing)
+    st.session_state.local_llm_max_new_token = exp1.slider('max_new_tokens:', 256, 2048, 512, step=256, disabled=st.session_state.processing)
+    st.session_state.concurrent_num = exp1.slider('联网并发数量:', 2, 10, 3, disabled=st.session_state.processing)
 
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)
@@ -213,8 +243,18 @@ def streamlit_refresh_loop():
         st.session_state.prompt = chat_input_prompt
 
     for message in st.session_state.messages:
-        with st.chat_message(message['role']):
-            st.markdown(message['content'])
+        if type(message)==dict:
+            with st.chat_message(message['role']):
+                st.markdown(message['content'])
+        elif type(message)==list:
+            with st.chat_message('assistant'):
+                num = len(message)
+                cols = st.columns([1]*num)
+                i=0
+                for col in cols:
+                    col.markdown(message[i])
+                    # col.container(border=True).markdown(message[i])
+                    i += 1
 
     if st.session_state.prompt and st.session_state.processing:
         # =======================user输入的显示=======================
@@ -227,13 +267,17 @@ def streamlit_refresh_loop():
         })
 
         # with st.chat_message('assistant'):
-        completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, concurrent_num)
+        async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet)
 
         # ==================assistant输出的状态存储====================
-        st.session_state.messages.append({
-            'role': 'assistant',
+        if async_llms:
+            num = len(async_llms)
+            st.session_state.messages.append([async_llms[i].get_final_response() for i in range(num)])
+        if completed_answer:
+            st.session_state.messages.append({
+                'role': 'assistant',
             'content': completed_answer
-        })
+            })
 
         # ===================完成输出任务后，通过rerun来刷新一些按钮的状态========================
         print('=======================任务完成后的刷新( st.rerun() )==============================')

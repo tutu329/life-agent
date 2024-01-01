@@ -266,7 +266,7 @@ class LLM_Client():
         for chat in msgs:
             print(f'{chat}')
         print(f'【LLM_Client】 ask_prepare(): stream={in_stream}')
-        print(f'【LLM_Client】 ask_prepare(): max_tokens={in_max_new_tokens}')
+        print(f'【LLM_Client】 ask_prepare(): max_new_tokens={in_max_new_tokens}')
 
         # ==========================================================
 
@@ -407,6 +407,7 @@ class Async_LLM():
         self.stream_buf_callback = None
         self.task = None
         self.prompt = ''
+        self.role_prompt = ''
         self.extra_suffix = ''
         self.final_response = ''
         self.run_in_streamlit = False
@@ -418,19 +419,32 @@ class Async_LLM():
         self.getting_chunk = False
         self.chunk = ''
 
-    def init(self, in_stream_buf_callback, in_prompt, in_extra_suffix='', in_streamlit=False):
+        self.temperature = None
+
+    def init(self, in_stream_buf_callback, in_prompt, in_role_prompt='', in_extra_suffix='', in_streamlit=False, in_temperature=0.7):
         self.complete = False
         
-        self.llm = LLM_Client(history=True, need_print=False, temperature=0)
+        self.llm = LLM_Client(history=True, need_print=False, temperature=in_temperature)
+        self.llm.set_role_prompt(in_role_prompt)
         self.stream_buf_callback = in_stream_buf_callback
         self.prompt = in_prompt
+        self.role_prompt = in_role_prompt
         self.extra_suffix = in_extra_suffix # 输出的额外内容
         self.run_in_streamlit = in_streamlit
 
         self.flicker = Flicker_Task()
 
+        self.temperature = in_temperature
+        
+    def get_final_response(self):
+        return self.final_response
+
+    def join(self):
+        if self.task:
+            self.task.join()
+
     def run(self):
-        print(f'Async_LLM._stream_output_process() invoked.')
+        # print(f'【Async_LLM】run(temperature={self.temperature}) invoked.')
         gen = self.llm.ask_prepare(self.prompt).get_answer_generator()
         full_response = ''
 
@@ -448,6 +462,7 @@ class Async_LLM():
                     self.getting_chunk = False
             if not self.getting_chunk:
                 full_response += self.chunk
+                self.final_response = full_response
                 t = threading.Thread(target=get_chunk)
                 t.start()
                 #chunk = next(gen)    
@@ -460,21 +475,21 @@ class Async_LLM():
         #     full_response += chunk
         #     self.stream_buf_callback(full_response + self.flicker.get_flicker())
         
-        print(f'self.extra_suffix: {self.extra_suffix}')
+        # print(f'【Async_LLM】extra_suffix= {self.extra_suffix}')
         full_response += self.extra_suffix
         self.stream_buf_callback(full_response)
 
         self.final_response = full_response
 
-        print(f'Async_LLM.run() completed. final_response="{self.final_response}"')
+        print(f'【Async_LLM】run() completed. temperature={self.temperature}, final_response="{self.final_response}"')
 
     def start(self):
         # 由于streamlit对thread支持不好，这里必须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext
-        t = threading.Thread(target=self.run)
+        self.task = threading.Thread(target=self.run)
         if self.run_in_streamlit:
-            add_script_run_ctx(t)
+            add_script_run_ctx(self.task)
         
-        t.start()
+        self.task.start()
         self.flicker.init(flicker1='█ ', flicker2='  ').start()
 
     async def wrong_run(self):
@@ -628,5 +643,3 @@ def main():
 
 if __name__ == "__main__" :
     main()
-
-
