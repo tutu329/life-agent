@@ -32,23 +32,31 @@ elif sys.platform.startswith('linux'):  # linux下用的是vllm的openai api (op
 else:
     raise Exception('无法识别的操作系统！')
 
+DEBUG = False
+
+def dprint(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
+    else:
+        pass
+
 class LLM_Client():
     def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', need_print=True):
-        print(f'【LLM_Client】 LLM_Client() inited.')
+        dprint(f'【LLM_Client】 LLM_Client() inited.')
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
             openai.api_key = "EMPTY"
             openai.api_base = url
             self.model = 'local model'
-            print(f'【LLM_Client】 os: windows. openai api for qwen used.')
-            print(f'【LLM_Client】 model: {self.model}')
+            dprint(f'【LLM_Client】 os: windows. openai api for qwen used.')
+            dprint(f'【LLM_Client】 model: {self.model}')
         elif sys.platform.startswith('linux'):      # linux下用的是vllm的openai api
             self.openai = OpenAI(
                 api_key='EMPTY',
                 base_url=url,
             )
             self.model = self.openai.models.list().data[0].id
-            print(f'【LLM_Client】 os: linux. openai api for vllm used.')
-            print(f'【LLM_Client】 model: {self.model}')
+            dprint(f'【LLM_Client】 os: linux. openai api for vllm used.')
+            dprint(f'【LLM_Client】 model: {self.model}')
         else:
             raise Exception('无法识别的操作系统！')
 
@@ -258,27 +266,27 @@ class LLM_Client():
         else:
             run_temperature = in_temperature
             
-        print(f'{"-"*80}')
-        print(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
-        print(f'【LLM_Client】 ask_prepare(): self.temperature={self.temperature}')
-        print(f'【LLM_Client】 ask_prepare(): 最终选择run_temperature={run_temperature}')
-        print(f'【LLM_Client】 ask_prepare(): messages')
+        dprint(f'{"-"*80}')
+        dprint(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
+        dprint(f'【LLM_Client】 ask_prepare(): self.temperature={self.temperature}')
+        dprint(f'【LLM_Client】 ask_prepare(): 最终选择run_temperature={run_temperature}')
+        dprint(f'【LLM_Client】 ask_prepare(): messages')
         for chat in msgs:
-            print(f'{chat}')
-        print(f'【LLM_Client】 ask_prepare(): stream={in_stream}')
-        print(f'【LLM_Client】 ask_prepare(): max_new_tokens={in_max_new_tokens}')
+            dprint(f'{chat}')
+        dprint(f'【LLM_Client】 ask_prepare(): stream={in_stream}')
+        dprint(f'【LLM_Client】 ask_prepare(): max_new_tokens={in_max_new_tokens}')
 
         # ==========================================================
 
         if self.need_print:
-            print('User: \n\t', msgs[-1]['content'])
+            print('【User】\n', msgs[-1]['content'])
         if in_stop is None:
             stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant']
             # stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
         else:
             stop = in_stop
             
-        print(f'【LLM_Client】 ask_prepare(): stop={stop}')
+        dprint(f'【LLM_Client】 ask_prepare(): stop={stop}')
 
         if sys.platform.startswith('win'):
             gen = openai.ChatCompletion.create(
@@ -320,7 +328,7 @@ class LLM_Client():
 
         msgs = self.__history_messages_with_question(in_question)
         if self.need_print:
-            print('User:\n\t', msgs[0]['content'])
+            print('【User】\n\t', msgs[0]['content'])
         # openai.api_base = self.url
 
         if sys.platform.startswith('win'):
@@ -362,7 +370,7 @@ class LLM_Client():
     def get_answer_and_sync_print(self):
         result = ''
         if self.need_print:
-            print('Assistant: \n\t', end='')
+            print('【Assistant】\n', end='')
         for chunk in self.gen:
             if self.response_canceled:
                 break
@@ -481,7 +489,7 @@ class Async_LLM():
 
         self.final_response = full_response
 
-        print(f'【Async_LLM】run() completed. temperature={self.temperature}, final_response="{self.final_response}"')
+        dprint(f'【Async_LLM】run() completed. temperature={self.temperature}, final_response="{self.final_response}"')
 
     def start(self):
         # 由于streamlit对thread支持不好，这里必须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext
@@ -493,7 +501,7 @@ class Async_LLM():
         self.flicker.init(flicker1='█ ', flicker2='  ').start()
 
     async def wrong_run(self):
-        print(f'Async_LLM._stream_output_process() invoked.')
+        dprint(f'Async_LLM._stream_output_process() invoked.')
         gen = self.llm.ask_prepare(self.prompt).get_answer_generator()
         full_response = ''
         for chunk in gen:
@@ -510,7 +518,7 @@ class Async_LLM():
         # self.task = loop.create_task(self._stream_output_process())    # create_task()没有方便的非阻塞运行方式 
         # self.task = asyncio.create_task(self._stream_output_process())    # 该行在streamlit下报错：no running event loop
         new_loop.run_until_complete(self.task)    # 改行是阻塞等待task完成
-        print(f'Async_LLM.start() invoked.')
+        dprint(f'Async_LLM.start() invoked.')
     
 # 通过多个llm的client，对model进行并发访问，同步返回多个stream
 class Concurrent_LLMs():
@@ -601,7 +609,7 @@ class Concurrent_LLMs():
 
                     # 测试输出
                     if i==0:
-                        print(chunk, end='')
+                        dprint(chunk, end='')
                         
                 except StopIteration as e:
                     # 如果next引发StopIteration异常，则设置finished为True

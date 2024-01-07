@@ -15,7 +15,7 @@ from utils.long_content_summary import long_content_summary
 
 # 配置(必须第一个调用)
 st.set_page_config(
-    # initial_sidebar_state="collapsed",
+    initial_sidebar_state="collapsed",
     page_title="Qwen-72B",
     layout="wide",
 )
@@ -28,12 +28,12 @@ st.set_page_config(
 # )
 @st.cache_resource  # cache_resource主要用于访问db connection等仅调用一次的全局资源
 def streamlit_init():
-    llm = LLM_Client(
+    mem_llm = LLM_Client(
         history=True,  # 这里要关掉server侧llm的history，对话历史由用户session控制
         need_print=False,
         temperature=0,
     )
-    return llm
+    return mem_llm
 
 def session_state_init():
     # 状态的初始化
@@ -154,6 +154,10 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet):
             status.update(label=f":green[{task_status['describe']}]", state=task_status['type'], expanded=False)
             status.markdown(task_status['detail'])
 
+
+        for llm in async_llms:
+            llm.join()
+
         # 将完整的输出结果，返回
         final_answer = ''
         # final_answer += async_llm.final_response
@@ -215,7 +219,7 @@ def streamlit_refresh_loop():
     col1.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
     col2.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
     col3.button("发送", on_click=on_chat_input_submit, args=(multi_line_prompt,), disabled=st.session_state.processing, key='confirm_button')
-    st.session_state.local_llm_temperature = exp1.slider('temperature:', 0.0, 1.0, 0.0, step=0.1, format='%.1f', disabled=st.session_state.processing)
+    st.session_state.local_llm_temperature = exp1.slider('temperature:', 0.0, 1.0, 0.7, step=0.1, format='%.1f', disabled=st.session_state.processing)
     st.session_state.local_llm_max_new_token = exp1.slider('max_new_tokens:', 256, 2048, 512, step=256, disabled=st.session_state.processing)
     st.session_state.concurrent_num = exp1.slider('联网并发数量:', 2, 10, 3, disabled=st.session_state.processing)
 
