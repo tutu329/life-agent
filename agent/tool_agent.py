@@ -1,6 +1,7 @@
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 from agent.tool_agent_prompts import PROMPT_REACT
 from agent.tool_agent_prompts import Search_Tool, Code_Tool
+from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 
 class Tool_Agent():
     def __init__(self, in_query, in_tool_classes):
@@ -11,9 +12,10 @@ class Tool_Agent():
         self.tool_names=[]
 
         self.tool_classes = in_tool_classes
+        self.stop = ['观察']
 
     def init(self):
-        self.llm = LLM_Client(temperature=0)
+        self.llm = LLM_Client(temperature=0, history=False, need_print=False)
         self.prompt = PROMPT_REACT
 
         # 将所有工具转换为{tool_descs}和{tool_names}
@@ -39,16 +41,46 @@ class Tool_Agent():
 
     def run(self):
         # print(f'【prompt】\n{self.prompt}')
-        res = self.llm.ask_prepare(self.prompt, in_stop=['Observation:']).get_answer_and_sync_print()
+        # res = self.llm.ask_prepare(self.prompt, in_stop=['Observation:']).get_answer_and_sync_print()
+        res = self.llm.ask_prepare(self.prompt, in_stop=self.stop).get_answer_and_sync_print()
         return res
 
 def main():
     tools=[Search_Tool, Code_Tool]
-    print(tools)
-    agent = Tool_Agent(in_query='今天是几号？', in_tool_classes=tools)
-    agent.init()
-    result = agent.run()
-    # print(result)
+    # tools=[Code_Tool]   
+    # print(tools)
+    exit = False
+    while True:
+        print("请输入多行数据，输入结束后使用Ctrl+D（Unix/Linux）或Ctrl+Z（Windows）结束：")
+        query = ''
+        lines = []
+        while True:
+            try:
+                line = input()
+                if line=='exit':
+                    exit = True
+                    break
+                lines.append(line)
+            except EOFError:
+                query = '\n'.join(lines)
+                break
+        if exit:
+            break
+            
+        agent = Tool_Agent(in_query=query, in_tool_classes=tools)
+        agent.init()
+        result = agent.run()
 
+        code_list = result.split('"""')
+        code = ''
+        res = ''
+        if len(code_list)>=2:
+            code = code_list[-2]
+            
+        # print(f'生成代码为: \n----------------------------------------------------------\n{code}\n----------------------------------------------------------')
+        if code:
+            res = execute_python_code_in_docker(code)
+        print(f"运行结果:\n'{res}'")
+            
 if __name__ == "__main__":
     main()

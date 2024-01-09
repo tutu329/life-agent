@@ -1,6 +1,6 @@
 from typing import Dict, List, Union
 
-PROMPT_REACT = """Answer the following questions as best you can. You have access to the following tools:
+PROMPT_REACT0 = """Answer the following questions as best you can. You have access to the following tools:
 
 {tool_descs}Use the following format:
 
@@ -17,6 +17,32 @@ Begin!
 
 Question: {query}"""
 
+PROMPT_REACT = """你必须回答接下来的问题，而且系统已经为你准备了以下这些工具，你可以直接访问这些工具:
+{tool_descs}
+
+回复格式具体如下:
+
+问题: 需要你回答的问题。
+思考: 这里写你的思考过程，关于如何才能更好的回答这个问题。
+工具调用: 这里写{{
+    'tool_invoke':'no'或者'yes',
+    'tool_name':你所要调用的工具的名称,
+    'tool_parameters':[
+        {{'name':参数名称, 'value':参数值}}, （注意：如果'value'值为代码字符串，则代码字符串必须顶格，不能有额外缩进。）
+        ... , 
+    ],
+}}。(注意工具名称必须是这些名称之一 [{tool_names}] 。)
+观察: 这里不需要你写，系统会自动在这里提供工具调用的结果信息。
+
+... (这个 思考/工具调用/工具调用的输入/观察 的流程，可以被重复0次或多次)
+
+思考: 这里写你对最终答复的思考过程。
+最终答复: 这里写你需要回答的问题的最终答复。
+
+现在开始!
+
+问题: {query}"""
+
 class Base_Tool():
     name: str
     description: str
@@ -27,7 +53,7 @@ class Base_Tool():
 
 class Search_Tool(Base_Tool):
     name='search_tool'
-    description='通过bing进行网页搜索的工具'
+    description='通过bing进行网页搜索的工具.'
     parameters=[
         {
             'name': 'query',
@@ -41,7 +67,14 @@ class Search_Tool(Base_Tool):
 
 class Code_Tool(Base_Tool):
     name='code_tool'
-    description='通过python进行编程的工具'
+    description=\
+'''通过python进行编程的工具，该工具的具体要求包括，
+1)输入的python代码必须以"""和"""囊括起来，绝对不能用```或\'\'\'；代码内部的引号用\'对或用\'\'\'对。
+2)为了获取代码运行结果，代码中必须用print将结果打印出来，打印格式为以下json格式：
+print({
+    'name':'返回内容的名称',
+    'value':需要返回的所有内容数据都放在这里,
+})'''
     parameters=[
         {
             'name': 'code',

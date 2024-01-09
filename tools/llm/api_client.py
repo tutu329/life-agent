@@ -41,7 +41,7 @@ def dprint(*args, **kwargs):
         pass
 
 class LLM_Client():
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', need_print=True):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', need_print=True, print_output=True):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
             openai.api_key = "EMPTY"
@@ -82,6 +82,7 @@ class LLM_Client():
 
         self.external_last_history = []     # 用于存放外部格式独特的history
         self.need_print = need_print
+        self.print_output = print_output
 
     # 动态修改role_prompt
     # def set_role_prompt(self, in_role_prompt):
@@ -284,7 +285,7 @@ class LLM_Client():
             stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant']
             # stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
         else:
-            stop = in_stop
+            stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant'] + in_stop
             
         dprint(f'【LLM_Client】 ask_prepare(): stop={stop}')
 
@@ -363,13 +364,13 @@ class LLM_Client():
             )
         result = res['choices'][0]['message']['content']
         if self.need_print:
-            print(f'Qwen:\n\t{result}')
+            print(f'【Assistant】\n\t{result}')
         return res
 
     # 方式1：直接输出结果
     def get_answer_and_sync_print(self):
         result = ''
-        if self.need_print:
+        if self.print_output:
             print('【Assistant】\n', end='')
         for chunk in self.gen:
             if self.response_canceled:
@@ -377,11 +378,11 @@ class LLM_Client():
 
             # print(f'chunk: {chunk}')
             if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
-                if self.need_print:
+                if self.print_output:
                     print(chunk.choices[0].delta.content, end="", flush=True)
                 result += chunk.choices[0].delta.content
                 # yield chunk.choices[0].delta.content
-        if self.need_print:
+        if self.print_output:
             print()
         self.answer_last_turn = result
         self.__history_add_last_turn_msg()
