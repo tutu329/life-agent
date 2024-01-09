@@ -41,7 +41,7 @@ def dprint(*args, **kwargs):
         pass
 
 class LLM_Client():
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', need_print=True, print_output=True):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', print_input=True, print_output=True):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
             openai.api_key = "EMPTY"
@@ -81,7 +81,7 @@ class LLM_Client():
         self.has_role_prompt = False
 
         self.external_last_history = []     # 用于存放外部格式独特的history
-        self.need_print = need_print
+        self.print_input = print_input
         self.print_output = print_output
 
     # 动态修改role_prompt
@@ -279,7 +279,7 @@ class LLM_Client():
 
         # ==========================================================
 
-        if self.need_print:
+        if self.print_input:
             print('【User】\n', msgs[-1]['content'])
         if in_stop is None:
             stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant']
@@ -328,7 +328,7 @@ class LLM_Client():
             self.__history_clear()
 
         msgs = self.__history_messages_with_question(in_question)
-        if self.need_print:
+        if self.print_input:
             print('【User】\n\t', msgs[0]['content'])
         # openai.api_base = self.url
 
@@ -363,7 +363,7 @@ class LLM_Client():
                 # Specifying stop words in streaming output format is not yet supported and is under development.
             )
         result = res['choices'][0]['message']['content']
-        if self.need_print:
+        if self.print_input:
             print(f'【Assistant】\n\t{result}')
         return res
 
@@ -433,7 +433,7 @@ class Async_LLM():
     def init(self, in_stream_buf_callback, in_prompt, in_role_prompt='', in_extra_suffix='', in_streamlit=False, in_temperature=0.7):
         self.complete = False
         
-        self.llm = LLM_Client(history=True, need_print=False, temperature=in_temperature)
+        self.llm = LLM_Client(history=True, print_input=False, temperature=in_temperature)
         self.llm.set_role_prompt(in_role_prompt)
         self.stream_buf_callback = in_stream_buf_callback
         self.prompt = in_prompt
@@ -553,7 +553,7 @@ class Concurrent_LLMs():
 
         # 初始化所有llm
         for prompt in self.prompts:
-            self.llms.append(LLM_Client(history=False, need_print=False, temperature=0))
+            self.llms.append(LLM_Client(history=False, print_input=False, temperature=0))
             self.llms_post_processed.append(False)
         self.llms_num = len(self.llms)
 

@@ -70,7 +70,7 @@ def on_page_load(request:gr.Request):   # 注意：request参数不需要在调�
 
 llm = LLM_Client(
     history=False,  # 这里要关掉server侧llm的history，对话历史由用户session控制
-    need_print=False,
+    print_input=False,
     temperature=0,
 )
 # llm.set_role_prompt('你正在扮演一个女孩，你好笨笨。')
@@ -183,7 +183,7 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
         if current_file != '' and 'docx' in current_file:
             # -----------------已有docx文件上传----------------
             doc = LLM_Doc(current_file)
-            doc.llm.need_print = False
+            doc.llm.print_input = False
             doc.parse_all_docx()
             toc = doc.get_toc_md_for_tool_by_node(doc.doc_root)
             print(f'-----------------------toc----------------------------------')
@@ -202,7 +202,7 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
         elif current_file != '' and 'pdf' in current_file:
             # -----------------已有pdf文件上传----------------
             doc = LLM_Doc(current_file)
-            doc.llm.need_print = False
+            doc.llm.print_input = False
             doc.parse_all_pdf()
             toc = doc.get_toc_md_for_tool_by_node(doc.doc_root)
             print(f'-----------------------toc----------------------------------')

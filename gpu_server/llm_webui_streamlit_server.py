@@ -30,7 +30,7 @@ st.set_page_config(
 def streamlit_init():
     mem_llm = LLM_Client(
         history=True,  # 这里要关掉server侧llm的history，对话历史由用户session控制
-        need_print=False,
+        print_input=False,
         temperature=0,
     )
     return mem_llm

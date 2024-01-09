@@ -15,7 +15,7 @@ class Tool_Agent():
         self.stop = ['观察']
 
     def init(self):
-        self.llm = LLM_Client(temperature=0, history=False, need_print=False)
+        self.llm = LLM_Client(temperature=0, history=False, print_input=False)
         self.prompt = PROMPT_REACT
 
         # 将所有工具转换为{tool_descs}和{tool_names}

@@ -140,7 +140,7 @@ class LLM_Doc():
                 # history_clear_method='pop',
                 temperature=0,
                 url='http://127.0.0.1:8001/v1',
-                need_print=False,
+                print_input=False,
             )
             print(f'------------------------------------------------------------------------------------------')
             print(f'LLM_Doc(): temperature={self.llm.temperature}')
@@ -324,7 +324,7 @@ class LLM_Doc():
         请问这个问题"{query}"涉及的内容应该在具体的哪个章节中，不解释，请直接以"章节编号"形式返回。
         '''
         prompt = prompt.format(toc=toc, query=in_query)
-        self.llm.need_print = False         # 关闭print输出
+        self.llm.print_input = False         # 关闭print输出
         res = self.llm.ask_prepare(prompt).get_answer_and_sync_print()
 
         # --------------将'1.1.3 some章节'转换为'1.1.3'----------------------
@@ -1232,7 +1232,7 @@ def ask_docx(in_filename='d:/server/life-agent/tools/doc/南麂岛离网型微�
         # history_clear_method='pop',
         temperature=0.7,
         url='http://127.0.0.1:8001/v1',
-        need_print=False,
+        print_input=False,
     )
 
     file = in_filename
@@ -1273,7 +1273,7 @@ def ask_docx(in_filename='d:/server/life-agent/tools/doc/南麂岛离网型微�
         '''
 
         prompt2 = prompt2.format(text_got=text_got, query=query)
-        llm.need_print = True
+        llm.print_input = True
         res = llm.ask_prepare(prompt2).get_answer_and_sync_print()
 
 # Color枚举类
@@ -1469,7 +1469,7 @@ def main_llm():
 
     doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/南麂岛离网型微网示范工程-总报告.docx')
     # doc = LLM_Doc(in_file_name='d:/server/life-agent/tools/doc/WorldEnergyOutlook2023.docx')
-    doc.llm.need_print = False
+    doc.llm.print_input = False
 
     doc.parse_all_docx()
 
