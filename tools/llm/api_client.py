@@ -40,9 +40,22 @@ def dprint(*args, **kwargs):
     else:
         pass
 
+LLM_SERVER = 'http://127.0.0.1:8001/v1'
+def Set_All_LLM_Server(in_url):
+    global LLM_SERVER
+    LLM_SERVER = in_url
+
+def Get_All_LLM_Server():
+    return LLM_SERVER
+
 class LLM_Client():
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url='http://127.0.0.1:8001/v1', print_input=True, print_output=True):
+    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
+
+        if not url:
+            url = Get_All_LLM_Server()
+        print(f'LLM_Client.__init__(): url = "{url}"')
+            
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
             openai.api_key = "EMPTY"
             openai.api_base = url
@@ -64,6 +77,7 @@ class LLM_Client():
         self.gen = None     # 返回结果的generator
         self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
+        self.max_new_tokens = max_new_tokens
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
 
         # 记忆相关
@@ -237,13 +251,17 @@ class LLM_Client():
             self,
             in_question,
             in_temperature=None,
-            in_max_new_tokens=512,
+            in_max_new_tokens=None,
             in_clear_history=False,
             in_stream=True,
             in_retry=False,
             in_undo=False,
             in_stop=None,
     ):
+        if not in_max_new_tokens:
+            max_new_tokens = self.max_new_tokens
+        else:
+            max_new_tokens = in_max_new_tokens
         self.response_canceled = False
         # self.__history_add_last_turn_msg()
 
@@ -275,12 +293,12 @@ class LLM_Client():
         for chat in msgs:
             dprint(f'{chat}')
         dprint(f'【LLM_Client】 ask_prepare(): stream={in_stream}')
-        dprint(f'【LLM_Client】 ask_prepare(): max_new_tokens={in_max_new_tokens}')
+        dprint(f'【LLM_Client】 ask_prepare(): max_new_tokens={max_new_tokens}')
 
         # ==========================================================
 
         if self.print_input:
-            print('【User】\n', msgs[-1]['content'])
+            print('<User>\n', msgs[-1]['content'])
         if in_stop is None:
             stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant']
             # stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
@@ -297,8 +315,8 @@ class LLM_Client():
                 system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
                 messages=msgs,
                 stream=in_stream,
-                max_new_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                # max_length=in_max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                # max_length=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
                 # stop=stop,    # win下为openai 0.28.1，不支持stop
                 # Specifying stop words in streaming output format is not yet supported and is under development.
             )
@@ -310,8 +328,8 @@ class LLM_Client():
                 # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
                 messages=msgs,
                 stream=in_stream,
-                # max_new_tokens=in_max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                max_tokens=in_max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
                 stop=stop,
                 # Specifying stop words in streaming output format is not yet supported and is under development.
             )
@@ -321,7 +339,12 @@ class LLM_Client():
         self.question_last_turn = in_question
         return self
 
-    def ask_block(self, in_question, in_clear_history=False, in_max_new_tokens=2048, in_retry=False, in_undo=False):
+    def ask_block(self, in_question, in_clear_history=False, in_max_new_tokens=None, in_retry=False, in_undo=False):
+        if not in_max_new_tokens:
+            max_new_tokens = self.max_new_tokens
+        else:
+            max_new_tokens = in_max_new_tokens
+            
         # self.__history_add_last_turn_msg()
 
         if in_clear_history:
@@ -338,7 +361,7 @@ class LLM_Client():
                 temperature=self.temperature,
                 messages=msgs,
                 stream=False,
-                max_tokens=in_max_new_tokens,
+                max_tokens=max_new_tokens,
                 functions=[
                     {
                         'name':'run_code',
@@ -353,7 +376,7 @@ class LLM_Client():
                 temperature=self.temperature,
                 messages=msgs,
                 stream=False,
-                max_tokens=in_max_new_tokens,
+                max_tokens=max_new_tokens,
                 functions=[
                     {
                         'name':'run_code',
@@ -364,14 +387,14 @@ class LLM_Client():
             )
         result = res['choices'][0]['message']['content']
         if self.print_input:
-            print(f'【Assistant】\n\t{result}')
+            print(f'<Assistant>\n\t{result}')
         return res
 
     # 方式1：直接输出结果
     def get_answer_and_sync_print(self):
         result = ''
         if self.print_output:
-            print('【Assistant】\n', end='')
+            print('<Assistant>\n', end='')
         for chunk in self.gen:
             if self.response_canceled:
                 break

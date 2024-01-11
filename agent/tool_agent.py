@@ -1,7 +1,9 @@
-from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
+from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM, Set_All_LLM_Server
 from agent.tool_agent_prompts import PROMPT_REACT
 from agent.tool_agent_prompts import Search_Tool, Code_Tool
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker
+from utils.extract import extract_code, extract_dict_string
+import torch
 
 class Tool_Agent():
     def __init__(self, in_query, in_tool_classes):
@@ -12,10 +14,11 @@ class Tool_Agent():
         self.tool_names=[]
 
         self.tool_classes = in_tool_classes
-        self.stop = ['观察']
+        self.action_stop = ['【观察】']
+        self.observation_stop = ['【观察】']
 
     def init(self):
-        self.llm = LLM_Client(temperature=0, history=False, print_input=False)
+        self.llm = LLM_Client(temperature=0, history=False, print_input=False, max_new_tokens=1048)
         self.prompt = PROMPT_REACT
 
         # 将所有工具转换为{tool_descs}和{tool_names}
@@ -39,13 +42,63 @@ class Tool_Agent():
 
         self.prompt = self.prompt.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
 
-    def run(self):
-        # print(f'【prompt】\n{self.prompt}')
-        # res = self.llm.ask_prepare(self.prompt, in_stop=['Observation:']).get_answer_and_sync_print()
-        res = self.llm.ask_prepare(self.prompt, in_stop=self.stop).get_answer_and_sync_print()
-        return res
+    def run(self, in_max_retry=3):
+        for i in range(in_max_retry):
+            # 1、思考
+            thoughts = self.thinking()
+            if '【最终答复】' in thoughts:
+                return True
+
+            # 2、行动
+            action_result = self.action(in_thoughts=thoughts)
+            # 3、观察
+            self.observation(in_action_result=action_result)
+            
+        return False
+
+    def thinking(self):
+        thoughts = self.llm.ask_prepare(self.prompt, in_stop=self.action_stop).get_answer_and_sync_print()
+        if '【最终答复】' in thoughts:
+            return thoughts
+            
+        self.prompt += '\n' + thoughts + '】'
+        print(f'============================prompt start============================\n')
+        print(f'{self.prompt}\n------------------------prompt end------------------------')
+        return thoughts
+
+    def action(self, in_thoughts):
+        # --------------------------- call tool ---------------------------
+        action_result = ''
+        dict_string = extract_dict_string(in_thoughts)
+        if not dict_string:
+            action_result = '【错误】工具参数未写完整！'
+            return action_result
+        if 'code_tool' in dict_string:
+            print('选择了【code_tool】')
+            code = extract_code(dict_string)
+            if code:
+                print(f'【code_tool】输入的程序为：\n{code}\n')
+                action_result = execute_python_code_in_docker(code)
+                if action_result=='':
+                    action_result = 'code_tool未输出有效信息，可能是因为没有用print输出结果。'
+        elif 'search_tool' in dict_string:
+            print('选择了【search_tool】')
+        else:
+            print('未选择任何工具。')
+        # --------------------------- call tool ---------------------------
+
+        print(f'【行动结果】\n{action_result}')
+        return action_result
+
+    def observation(self, in_action_result=''):
+        self.prompt += '工具调用结果为：' + in_action_result
+        # print(f'============================prompt start============================\n')
+        # print(f'{self.prompt}\n------------------------prompt end------------------------')
 
 def main():
+    # torch.cuda.manual_seed_all(20000)
+    # Set_All_LLM_Server('http://127.0.0.1:8002/v1')
+    Set_All_LLM_Server('http://127.0.0.1:8001/v1')
     tools=[Search_Tool, Code_Tool]
     # tools=[Code_Tool]   
     # print(tools)
@@ -69,18 +122,11 @@ def main():
             
         agent = Tool_Agent(in_query=query, in_tool_classes=tools)
         agent.init()
-        result = agent.run()
-
-        code_list = result.split('"""')
-        code = ''
-        res = ''
-        if len(code_list)>=2:
-            code = code_list[-2]
-            
-        # print(f'生成代码为: \n----------------------------------------------------------\n{code}\n----------------------------------------------------------')
-        if code:
-            res = execute_python_code_in_docker(code)
-        print(f"运行结果:\n'{res}'")
+        success = agent.run()
+        if success:
+            print(f"【运行结果】成功。")
+        else:
+            print(f"【运行结果】失败，请进一步优化问题的描述。")
             
 if __name__ == "__main__":
     main()
