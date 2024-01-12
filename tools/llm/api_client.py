@@ -40,20 +40,13 @@ def dprint(*args, **kwargs):
     else:
         pass
 
-LLM_SERVER = 'http://127.0.0.1:8001/v1'
-def Set_All_LLM_Server(in_url):
-    global LLM_SERVER
-    LLM_SERVER = in_url
-
-def Get_All_LLM_Server():
-    return LLM_SERVER
-
 class LLM_Client():
+    LLM_SERVER = 'http://127.0.0.1:8001/v1'
     def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
         if not url:
-            url = Get_All_LLM_Server()
+            url = LLM_Client.Get_All_LLM_Server()
         print(f'LLM_Client.__init__(): url = "{url}"')
             
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
@@ -110,6 +103,13 @@ class LLM_Client():
     #     else:
     #         self.history_list.append({"role": "user", "content": self.role_prompt})
     #         self.history_list.append({"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
+    @classmethod
+    def Set_All_LLM_Server(cls, in_url):
+        cls.LLM_SERVER = in_url
+
+    @classmethod
+    def Get_All_LLM_Server(cls):
+        return cls.LLM_SERVER
 
     def set_role_prompt(self, in_role_prompt):
         if in_role_prompt!='':

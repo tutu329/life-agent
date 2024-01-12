@@ -1,5 +1,5 @@
 import streamlit as st
-from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM, Set_All_LLM_Server, Get_All_LLM_Server
+from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
 import time
 import asyncio
@@ -28,7 +28,7 @@ st.set_page_config(
 # )
 @st.cache_resource  # cache_resource主要用于访问db connection等仅调用一次的全局资源
 def streamlit_init():
-    Set_All_LLM_Server('http://127.0.0.1:8001/v1')
+    LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
     print(f'llm_webui_streamlit_server:streamlit_init:Get_All_LLM_Server() = "{Get_All_LLM_Server()}"')
     mem_llm = LLM_Client(
         history=True,  # 这里要关掉server侧llm的history，对话历史由用户session控制
