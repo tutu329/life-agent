@@ -32,7 +32,7 @@ elif sys.platform.startswith('linux'):  # linux下用的是vllm的openai api (op
 else:
     raise Exception('无法识别的操作系统！')
 
-DEBUG = False
+DEBUG = True
 
 def dprint(*args, **kwargs):
     if DEBUG:
