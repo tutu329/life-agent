@@ -145,8 +145,105 @@ def main1():
 
     io = gr.Interface(echo, "textbox", "textbox").launch()
 
+def mix():
+    from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
+    model_name_or_path = "D:\models\Mixtral_34Bx2_MoE_60B-GPTQ"
+    # To use a different branch, change revision
+    # For example: revision="gptq-4bit-128g-actorder_True"
+    model = AutoModelForCausalLM.from_pretrained(model_name_or_path,
+                                                 device_map="auto",
+                                                 trust_remote_code=False,
+                                                 revision="main")
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=True)
+
+    prompt = "Write a story about llamas"
+    system_message = "You are a story writing assistant"
+    prompt_template = f'''{prompt}
+    '''
+
+    print("\n\n*** Generate:")
+
+    input_ids = tokenizer(prompt_template, return_tensors='pt').input_ids.cuda()
+    output = model.generate(inputs=input_ids, temperature=0.7, do_sample=True, top_p=0.95, top_k=40, max_new_tokens=512)
+    print(tokenizer.decode(output[0]))
+
+    # Inference can also be done using transformers' pipeline
+
+    print("*** Pipeline:")
+    pipe = pipeline(
+        "text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        max_new_tokens=512,
+        do_sample=True,
+        temperature=0.7,
+        top_p=0.95,
+        top_k=40,
+        repetition_penalty=1.1
+    )
+
+    print(pipe(prompt_template)[0]['generated_text'])
+
+def autogptq1():
+    print("==============1================")
+    model_dir = "D:\models\Mixtral_34Bx2_MoE_60B-GPTQ"
+    # model_dir = "D:/models/Qwen-72B-Chat-Int4"
+    pretrained_model_dir = model_dir
+    quantized_model_dir = model_dir
+
+    from transformers import AutoTokenizer, pipeline, logging, AutoModelForCausalLM
+    from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
+    import argparse
+
+    model_name_or_path = model_dir
+    model_basename = "openbuddy-llama2-70B-v13.2-GPTQ-4bit.act-order"
+
+    use_triton = False
+
+    print("==============2================")
+    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=True, trust_remote_code=True)
+    print("==============3================")
+
+    model = AutoModelForCausalLM.from_pretrained(model_name_or_path,
+                                                 device_map="auto",
+                                                 trust_remote_code=False,
+                                                 revision="main")
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=True)
+
+    print("==============4================")
+    prompt = "Tell me about AI"
+    prompt_template = f'''### Human: {prompt}
+    ### Assistant:'''
+
+    print("\n\n*** Generate:")
+
+    input_ids = tokenizer(prompt_template, return_tensors='pt').input_ids.cuda()
+    output = model.generate(inputs=input_ids, temperature=0.7, max_new_tokens=512)
+    print(tokenizer.decode(output[0]))
+
+    # Inference can also be done using transformers' pipeline
+
+    # Prevent printing spurious transformers error when using pipeline with AutoGPTQ
+    logging.set_verbosity(logging.CRITICAL)
+
+    print("*** Pipeline:")
+    pipe = pipeline(
+        "text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        max_new_tokens=512,
+        temperature=0.7,
+        top_p=0.95,
+        repetition_penalty=1.15
+    )
+
+    print(pipe(prompt_template)[0]['generated_text'])
 
 if __name__ == '__main__':
     # main1()
     # p2p_speed()
-    autogptq()
+    autogptq1()
+    # mix()
