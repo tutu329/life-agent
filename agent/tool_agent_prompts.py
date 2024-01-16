@@ -1,5 +1,9 @@
 from typing import Dict, List, Union
 
+from tools.exec_code.exec_python_linux import execute_python_code_in_docker
+from utils.extract import extract_code, extract_dict_string
+import json5
+
 PROMPT_REACT0 = """Answer the following questions as best you can. You have access to the following tools:
 
 {tool_descs}Use the following format:
@@ -51,6 +55,35 @@ class Base_Tool():
     def __init__(self):
         pass
 
+    def call(self):
+        pass
+
+    @classmethod
+    def extract_tool_name(cls, in_thoughts):
+        dict_string = extract_dict_string(in_thoughts)
+        if not dict_string:
+            return ''
+        # print('+++++++++++++++++++++')
+        
+        # print(f'dict_string:')
+        # print(f'{dict_string}')
+        
+        # print(f'dict:')
+        # 过滤掉可能存在的代码
+        code = extract_code(dict_string)
+        dict_string__ = dict_string.replace(code, "")
+        dict_string__ = dict_string__.replace('""""""', "''")
+        # print(f'code:')
+        # print(f'{code}')
+        # print(f'dict_string__:')
+        # print(f'{dict_string__}')
+        dict = json5.loads(dict_string__)
+        # print(f'{dict}')
+        
+        # print('+++++++++++++++++++++')
+        
+        return dict['tool_name']
+
 class Search_Tool(Base_Tool):
     name='search_tool'
     description='通过bing进行网页搜索的工具.'
@@ -89,3 +122,9 @@ print({
     ]
     def __init__(self):
         pass
+
+    def call(self, in_thoughts):
+        dict_string = extract_dict_string(in_thoughts)
+        code = extract_code(dict_string)
+        action_result = execute_python_code_in_docker(code)
+        return action_result

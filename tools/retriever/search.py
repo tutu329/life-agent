@@ -6,6 +6,8 @@ import asyncio
 
 from tools.retriever.html2text import html2text
 
+SEARCH_TIME_OUT = 3000    # 超时ms
+
 class SearchResult:
     def __init__(self, title, url, snip) -> None:
         self.title = title
@@ -69,10 +71,10 @@ class Bing_Searcher():
         return searcher
 
     async def _start(self):
-        print('启动chrome中1...')
+        print('启动chrome: await async_playwright().start()')
         p = await async_playwright().start()
         # p = sync_playwright().start()
-        print('启动chrome中2...')
+        print('启动chrome: await p.chromium.launch(channel="chrome", headless=True)')
         self.browser = await p.chromium.launch(channel="chrome", headless=True)   # 启动chrome
         print('启动chrome完毕.')
         self.context = await self.browser.new_context()
@@ -108,7 +110,7 @@ class Bing_Searcher():
             await page.fill('input[name="q"]', question)
             await page.press('input[name="q"]', 'Enter')
         try:
-            await page.wait_for_load_state('networkidle', timeout=3000)
+            await page.wait_for_load_state('networkidle', timeout=SEARCH_TIME_OUT)
             # print('--------------------------3.1.3-----------------------------')
         except:
             pass
@@ -214,7 +216,7 @@ class Bing_Searcher():
         # 进入子页面
         try:
             self.results[url] = [None, None]
-            response = await context.request.get(url, timeout=5000)
+            response = await context.request.get(url, timeout=SEARCH_TIME_OUT)
             # 等待子页面加载完毕
             self.results[url] = (response.status, await response.text())
         except Exception as e:
@@ -249,14 +251,15 @@ def simple_search(in_question):
     res = loop.run_until_complete(search())
     return res
 
-from tools.llm.api_client_qwen_openai import *
 def main():
+    from tools.llm.api_client import LLM_Client
 
     question = '杭州有哪些著名景点'
 
-    llm = LLM_Qwen(history=False)
+    llm = LLM_Client(history=False, url='http://127.0.0.1:8002/v1')
 
     res = simple_search(question)
+    print(f'====================开始搜索，question: {question}, res: {res}====================')
     for url, content_para_list in res:
         print(f'====================url: {url}====================')
         content = " ".join(content_para_list)
@@ -266,5 +269,13 @@ def main():
             prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{question}"。'
             llm.ask_prepare(prompt).get_answer_and_sync_print()
 
+def main_linux():
+    # prompt = '杭州有哪些著名景点'
+    prompt = '李白是谁？'
+    print(f'prompt: {prompt}')
+    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3)
+    internet_search_result = searcher.search_long_time(prompt)
+    print(f'internet_search_result: {internet_search_result}')
+
 if __name__ == '__main__':
-    main()
+    main_linux()

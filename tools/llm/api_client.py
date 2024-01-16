@@ -32,7 +32,7 @@ elif sys.platform.startswith('linux'):  # linux下用的是vllm的openai api (op
 else:
     raise Exception('无法识别的操作系统！')
 
-DEBUG = True
+DEBUG = False
 
 def dprint(*args, **kwargs):
     if DEBUG:
@@ -60,7 +60,12 @@ class LLM_Client():
                 api_key='EMPTY',
                 base_url=url,
             )
-            self.model = self.openai.models.list().data[0].id
+            try: 
+                self.model = self.openai.models.list().data[0].id
+            except Exception as e:
+                print(f'【LLM_Client异常】__init__(): "{e}"')
+                print(f'【LLM_Client异常】__init__(): 可能是IP或Port设置错误，当前url为: {url}')
+                
             dprint(f'【LLM_Client】 os: linux. openai api for vllm used.')
             dprint(f'【LLM_Client】 model: {self.model}')
         else:
@@ -307,32 +312,35 @@ class LLM_Client():
             
         dprint(f'【LLM_Client】 ask_prepare(): stop={stop}')
 
-        if sys.platform.startswith('win'):
-            gen = openai.ChatCompletion.create(
-                model=self.model,
-                temperature=run_temperature,
-                # top_k=self.top_k,
-                system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
-                messages=msgs,
-                stream=in_stream,
-                max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                # max_length=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                # stop=stop,    # win下为openai 0.28.1，不支持stop
-                # Specifying stop words in streaming output format is not yet supported and is under development.
-            )
-        elif sys.platform.startswith('linux'):
-            gen = self.openai.chat.completions.create(
-                model=self.model,
-                temperature=run_temperature,
-                # top_k=self.top_k,
-                # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
-                messages=msgs,
-                stream=in_stream,
-                # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                stop=stop,
-                # Specifying stop words in streaming output format is not yet supported and is under development.
-            )
+        try:
+            if sys.platform.startswith('win'):
+                gen = openai.ChatCompletion.create(
+                    model=self.model,
+                    temperature=run_temperature,
+                    # top_k=self.top_k,
+                    system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
+                    messages=msgs,
+                    stream=in_stream,
+                    max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    # max_length=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    # stop=stop,    # win下为openai 0.28.1，不支持stop
+                    # Specifying stop words in streaming output format is not yet supported and is under development.
+                )
+            elif sys.platform.startswith('linux'):
+                gen = self.openai.chat.completions.create(
+                    model=self.model,
+                    temperature=run_temperature,
+                    # top_k=self.top_k,
+                    # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
+                    messages=msgs,
+                    stream=in_stream,
+                    # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    stop=stop,
+                    # Specifying stop words in streaming output format is not yet supported and is under development.
+                )
+        except Exception as e:
+            print(f'【LLM_Client异常】ask_prepare(): {e}')
 
         self.gen = gen
 
