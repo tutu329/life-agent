@@ -74,6 +74,7 @@ class Tool_Agent():
         print(f'{self.prompt}\n------------------------prompt end------------------------')
         return thoughts
 
+
     def action0(self, in_thoughts):
         # --------------------------- call tool ---------------------------
         action_result = ''
