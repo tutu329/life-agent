@@ -1,1 +1,1 @@
-nohup frp/frpc -c frp/frpc.ini &
+nohup /home/tutu/frp/frpc -c /home/tutu/frp/frpc.ini &
