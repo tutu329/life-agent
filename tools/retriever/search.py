@@ -5,6 +5,8 @@ import re
 import asyncio
 
 from tools.retriever.html2text import html2text
+from utils.print_tools import print_long_content_with_urls
+from utils.long_content_summary import long_content_qa, long_content_qa_concurrently
 
 SEARCH_TIME_OUT = 3000    # 超时ms
 
@@ -25,11 +27,12 @@ class SearchResult:
         return json.dumps(self.dump())
 
 class Bing_Searcher():
-    def __init__(self, in_search_num=3):
+    def __init__(self, in_search_num=3, in_llm_api_url='http://127.0.0.1:8001/v1'):
         self.loop = None    # searcher实例对应的loop(主要用于win下streamlit等特定场景)
         self.browser = None
         self.context = None
         self.results = {}
+        self.llm_api_url = in_llm_api_url
 
         self.search_num = in_search_num
 
@@ -47,20 +50,36 @@ class Bing_Searcher():
         print(f'asyncio.get_event_loop_policy(): {type(asyncio.get_event_loop_policy())}')
         # -------------------------------------- -----------------------------------------------------------------------------------------------
 
-    def search_long_time(self, in_question):
+    def search(self, in_question):
         async def _search(in_question):
             return await self._query_bing_and_get_results(in_question)
 
         res = self.loop.run_until_complete(_search(in_question))
         return res
 
+    def search_and_ask(self, in_question):
+        prompt = in_question
+        internet_search_resultes = self.search(prompt)  # [(url, content_para_list), (url, content_para_list), ...]
+        print_long_content_with_urls(internet_search_resultes)
+
+        contents = []
+        for result in internet_search_resultes:
+            web_url = result[0]
+            content_list = result[1]
+            contents.append('\n'.join(content_list))
+        answer = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_url=self.llm_api_url)
+        return answer
+
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
     @staticmethod
-    def create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3):
+    def create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3, in_llm_api_url='http://127.0.0.1:8001/v1'):
         if fix_streamlit_in_win:
             Bing_Searcher._fix_streamlit_windows_proactor_eventloop_problem()
 
-        searcher = Bing_Searcher(in_search_num=in_search_num)
+        searcher = Bing_Searcher(
+            in_search_num=in_search_num,
+            in_llm_api_url=in_llm_api_url,
+        )
 
         async def _searcher_start():
             await searcher._start()
@@ -274,37 +293,12 @@ def main_linux():
     prompt = '李白是谁？'
     print(f'prompt: {prompt}')
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3)
-    internet_search_resultes = searcher.search_long_time(prompt)
+    internet_search_resultes = searcher.search(prompt)
     print(f'internet_search_result: {internet_search_resultes}')
 
 def main_search_and_summery():
-    from utils.print_tools import print_long_content_with_urls
-    from utils.long_content_summary import long_content_qa, long_content_qa_concurrently
-    prompt = '2024年有什么大新闻？'
-    # prompt = '李白成名之时是几岁？'
-    print(f'prompt: {prompt}')
-    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5)
-    internet_search_resultes = searcher.search_long_time(prompt)    # [(url, content_para_list), (url, content_para_list), ...]
-    print_long_content_with_urls(internet_search_resultes)
-
-    from tools.llm.api_client import LLM_Client
-    # llm = LLM_Client(
-    #     temperature=0,
-    #     history=False,
-    #     url='http://127.0.0.1:8002/v1',
-    #     print_input=False,
-    #     print_output=True,
-    #     max_new_tokens=1024
-    # )
-    # gen = long_content_summary(in_llm=llm, in_content='\n'.join(internet_search_resultes[0][1]), in_prompt=prompt, in_concurrent=False)
-    # for ch in gen:
-    #     print(ch, end='', flush=True)
-    # print()
-
-    contents = []
-    for result in internet_search_resultes:
-        contents.append('\n'.join(result[1]))
-    answer = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_url='http://127.0.0.1:8001/v1')
+    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
+    searcher.search_and_ask('2024年有什么大新闻？')
 
 if __name__ == '__main__':
     main_search_and_summery()

@@ -115,7 +115,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet):
         status.markdown("搜索引擎bing.com调用中...")
 
         searcher = search_init(st.session_state.concurrent_num)
-        internet_search_result = searcher.search_long_time(prompt)
+        internet_search_result = searcher.search(prompt)
         # print(f'internet_search_result: {internet_search_result}')
 
         status.markdown("搜索引擎bing.com调用完毕.")
