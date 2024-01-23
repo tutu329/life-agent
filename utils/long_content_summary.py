@@ -1,5 +1,5 @@
 from config import Prompt_Limitation
-def long_content_summary(in_llm, in_content, in_prompt):
+def long_content_summary(in_llm, in_content, in_prompt, in_concurrent=False):
     print(f'==========long_content_summary(长度{len(in_content)}) =============')
     if len(in_content)==0:
         print('********************异常: 输入文本长度为0********************')
@@ -69,7 +69,7 @@ def long_content_summary(in_llm, in_content, in_prompt):
     elif Prompt_Limitation.context_max_len<=6000:
         ratio = 1.2
         
-    if len(answers) >= Prompt_Limitation.context_max_len*ratio:
+    if len(answers) >= Prompt_Limitation.context_max_len * ratio:
         print(f'************************************** warning：需要总结的文本长度超过Prompt_Limitation.context_max_len({Prompt_Limitation.context_max_len})的{ratio}倍({Prompt_Limitation.context_max_len*{ratio}})。建议调整策略。**************************************')
         # assert(0)
         return []
