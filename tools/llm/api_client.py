@@ -574,7 +574,7 @@ class Concurrent_LLMs():
         self,
         in_prompts,             # 输入的多个prompt
         in_contents,            # 输入的多个长文本(需要分别嵌入prompt进行解读)
-        in_stream_buf_callbacks,# 用于执行stream输出的回调函数list(该回调函数list可以是[streamlit.empty[].markdown, ...])
+        in_stream_buf_callbacks=None,# 用于执行stream输出的回调函数list(该回调函数list可以是[streamlit.empty[].markdown, ...])
         in_role_prompts=None,   # 输入的多个role prompt
         in_extra_suffixes=None, # 输出的额外内容(维度同上)
         in_cursor='█ ',         # 输出未完成时显示用的光标
@@ -609,6 +609,8 @@ class Concurrent_LLMs():
         for status in in_gen:
             st = status['type']
             print(f'[Concurrent_LLMs]: status is "{st}"')
+
+        return status
 
     def start_and_get_status(self):
         llm_num = self.llms_num
@@ -669,13 +671,15 @@ class Concurrent_LLMs():
                         # extra_suffixes = self.extra_suffixes if self.extra_suffixes else ''
                         status['llms_full_responses'][i] += extra_suffixes[i]
                         self.llms_post_processed[i] = True
-                        
-                    self.stream_buf_callbacks[i](status['llms_full_responses'][i])
+
+                    if self.stream_buf_callbacks:
+                        self.stream_buf_callbacks[i](status['llms_full_responses'][i])
                 else:
                     # 该llm尚未完成
                     if len(status['llms_full_responses'][i])>5:
                         # print('self.stream_buf_callbacks:', self.stream_buf_callbacks)
-                        self.stream_buf_callbacks[i](status['llms_full_responses'][i] + self.flicker.get_flicker() + '\n\n')
+                        if self.stream_buf_callbacks:
+                            self.stream_buf_callbacks[i](status['llms_full_responses'][i] + self.flicker.get_flicker() + '\n\n')
                     else:
                         # vllm有个初始化过程，会先返回1、2个字符，然后卡几秒钟，然后才会全速并发输出stream
                         pass

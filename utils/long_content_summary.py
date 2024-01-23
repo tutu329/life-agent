@@ -91,7 +91,12 @@ def long_content_summary_concurrently(in_contents, in_prompt, in_port='8001'):
     llms.init(
         in_prompts=[in_prompt]*num,
         in_contents=in_contents,
-        in_stream_buf_callbacks=[print]*num,
+        # in_stream_buf_callbacks=None,
     )
     status = llms.start_and_get_status()
-    llms.join_all(status)
+    results = llms.join_all(status)
+    i = 0
+    for response in results['llms_full_responses']:
+        i += 1
+        result_string = response.replace('\n', '')[:50]
+        print(f"result[{i}]: '{result_string}...'")
