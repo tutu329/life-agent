@@ -274,8 +274,24 @@ def main_linux():
     prompt = '李白是谁？'
     print(f'prompt: {prompt}')
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3)
-    internet_search_result = searcher.search_long_time(prompt)
-    print(f'internet_search_result: {internet_search_result}')
+    internet_search_resultes = searcher.search_long_time(prompt)
+    print(f'internet_search_result: {internet_search_resultes}')
+
+def main_search_and_summery():
+    from utils.print_tools import print_long_content_with_urls
+    from utils.long_content_summary import long_content_summary
+    prompt = '李白成名之时是几岁？'
+    print(f'prompt: {prompt}')
+    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3)
+    internet_search_resultes = searcher.search_long_time(prompt)    # [(url, content_para_list), (url, content_para_list), ...]
+    print_long_content_with_urls(internet_search_resultes)
+
+    from tools.llm.api_client import LLM_Client
+    llm = LLM_Client(history=False, url='http://127.0.0.1:8002/v1', print_input=False, print_output=True, max_new_tokens=1024)
+    gen = long_content_summary(in_llm=llm, in_content='\n'.join(internet_search_resultes[0][1]), in_prompt=prompt, in_concurrent=False)
+    for ch in gen:
+        print(ch, end='', flush=True)
+    print()
 
 if __name__ == '__main__':
-    main_linux()
+    main_search_and_summery()
