@@ -1,8 +1,8 @@
 from config import Prompt_Limitation
-def long_content_summary(in_llm, in_content, in_prompt, in_concurrent=False):
-    print(f'==========long_content_summary(长度{len(in_content)}) =============')
+def long_content_summary(in_llm, in_content, in_prompt):
+    print(f'[long_content_summary()]: 文本长度为 {len(in_content)})')
     if len(in_content)==0:
-        print('********************异常: 输入文本长度为0********************')
+        print('[long_content_summary()]: 异常: 输入文本长度为0')
         assert(0)
     content = in_content
     if len(content) > Prompt_Limitation.context_max_len:
@@ -32,16 +32,15 @@ def long_content_summary(in_llm, in_content, in_prompt, in_concurrent=False):
         answer_list = []
         if Prompt_Limitation.context_max_paragraphs > 1:
             for content in content_list_to_summary:
-                print(f'==========需要总结的文本(长度{len(content)})为: =============\n{content}')
+                print(f'[long_content_summary()]: 需要总结的文本(长度{len(content)})为: "{content[:50]}"')
                 question = f'"{content}", 请根据这些文字，并结合问题"{in_prompt}"对文字进行总结，总结一定要简明扼要、要抓住重点、字数要少于100字，不要进行解释，直接返回总结后的文字'
                 gen = in_llm.ask_prepare(question).get_answer_generator()
-                print(f'--------------------------------该文本的总结结果--------------------------------\n')
                 answer = ''
                 for chunk in gen:
-                    print(chunk, end='', flush=True)
+                    # print(chunk, end='', flush=True)
                     answer += chunk
-                print()
-                print(f'-----------------------------------------------------------------------------\n')
+                # print()
+                print(f'[long_content_summary()]: 对文本的总结结果为 "{answer[:50]}"')
 
                 answer_list.append(answer)
         elif Prompt_Limitation.context_max_paragraphs == 1:
@@ -59,7 +58,8 @@ def long_content_summary(in_llm, in_content, in_prompt, in_concurrent=False):
 
 
     question = f'"{answers}", 请根据这些文字，并结合问题"{in_prompt}"对文字进行总结，总结要简明扼要、逻辑合理、重点突出、一定不能有写了一半的句子，尽可能用markdown格式把总结的文字以层次清晰的方式展现出来，字数要少于1000字，不要进行解释，直接返回总结后的文字。'
-    print(f'==========需要总结的文本(长度{len(answers)})为: =============\n{answers}')
+    answers_to_print = answers.replace('\n', '')[:50]
+    print(f'[long_content_summary()]: "{answers_to_print}...", 请根据这些文字，并结合问题"{in_prompt}"对文字进行总结，总结要简明扼要、逻辑合理、重点突出、一定不能有写了一半的句子，尽可能用markdown格式把总结的文字以层次清晰的方式展现出来，字数要少于1000字，不要进行解释，直接返回总结后的文字。')
     if Prompt_Limitation.context_max_len<=1000:
         ratio = 3.0
     elif Prompt_Limitation.context_max_len<=2000:
@@ -70,10 +70,10 @@ def long_content_summary(in_llm, in_content, in_prompt, in_concurrent=False):
         ratio = 1.2
         
     if len(answers) >= Prompt_Limitation.context_max_len * ratio:
-        print(f'************************************** warning：需要总结的文本长度超过Prompt_Limitation.context_max_len({Prompt_Limitation.context_max_len})的{ratio}倍({Prompt_Limitation.context_max_len*{ratio}})。建议调整策略。**************************************')
+        print(f'[long_content_summary()]: warning：需要总结的文本长度超过Prompt_Limitation.context_max_len({Prompt_Limitation.context_max_len})的{ratio}倍({Prompt_Limitation.context_max_len*{ratio}})。建议调整策略。')
         # assert(0)
         return []
-    print(f'--------------------------------该文本的总结结果--------------------------------\n')
+    print(f'[long_content_summary()]: 该文本的总结结果为, \n')
     gen = in_llm.ask_prepare(question).get_answer_generator()
     return gen
     # final_answer = ''
@@ -83,3 +83,15 @@ def long_content_summary(in_llm, in_content, in_prompt, in_concurrent=False):
     # print(f'-----------------------------------------------------------------------------\n')
     #
     # return final_answer
+
+def long_content_summary_concurrently(in_contents, in_prompt, in_port='8001'):
+    from tools.llm.api_client import Concurrent_LLMs
+    llms = Concurrent_LLMs(in_port=in_port)
+    num = len(in_contents)
+    llms.init(
+        in_prompts=[in_prompt]*num,
+        in_contents=in_contents,
+        in_stream_buf_callbacks=[print]*num,
+    )
+    status = llms.start_and_get_status()
+    llms.join_all(status)

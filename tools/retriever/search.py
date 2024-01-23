@@ -279,7 +279,7 @@ def main_linux():
 
 def main_search_and_summery():
     from utils.print_tools import print_long_content_with_urls
-    from utils.long_content_summary import long_content_summary
+    from utils.long_content_summary import long_content_summary, long_content_summary_concurrently
     prompt = '李白成名之时是几岁？'
     print(f'prompt: {prompt}')
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3)
@@ -287,11 +287,23 @@ def main_search_and_summery():
     print_long_content_with_urls(internet_search_resultes)
 
     from tools.llm.api_client import LLM_Client
-    llm = LLM_Client(history=False, url='http://127.0.0.1:8002/v1', print_input=False, print_output=True, max_new_tokens=1024)
-    gen = long_content_summary(in_llm=llm, in_content='\n'.join(internet_search_resultes[0][1]), in_prompt=prompt, in_concurrent=False)
-    for ch in gen:
-        print(ch, end='', flush=True)
-    print()
+    # llm = LLM_Client(
+    #     temperature=0,
+    #     history=False,
+    #     url='http://127.0.0.1:8002/v1',
+    #     print_input=False,
+    #     print_output=True,
+    #     max_new_tokens=1024
+    # )
+    # gen = long_content_summary(in_llm=llm, in_content='\n'.join(internet_search_resultes[0][1]), in_prompt=prompt, in_concurrent=False)
+    # for ch in gen:
+    #     print(ch, end='', flush=True)
+    # print()
+
+    contents = []
+    for result in internet_search_resultes:
+        contents.append('\n'.join(result[1]))
+    long_content_summary_concurrently(in_contents=contents, in_prompt=prompt, in_port='8002')
 
 if __name__ == '__main__':
     main_search_and_summery()

@@ -554,7 +554,7 @@ class Async_LLM():
     
 # 通过多个llm的client，对model进行并发访问，同步返回多个stream
 class Concurrent_LLMs():
-    def __init__(self):
+    def __init__(self, in_port='8001'):
         self.prompts = []
         self.role_prompts = []
         self.contents = []
@@ -565,6 +565,10 @@ class Concurrent_LLMs():
 
         self.cursor = ''
         self.flicker = None
+
+        self.port = in_port
+
+        self.all_finished = False
 
     def init(
         self,
@@ -584,7 +588,7 @@ class Concurrent_LLMs():
 
         # 初始化所有llm
         for prompt in self.prompts:
-            self.llms.append(LLM_Client(history=False, print_input=False, temperature=0))
+            self.llms.append(LLM_Client(history=False, print_input=False, temperature=0, url=f'http://127.0.0.1:{self.port}/v1'))
             self.llms_post_processed.append(False)
         self.llms_num = len(self.llms)
 
@@ -600,8 +604,15 @@ class Concurrent_LLMs():
     #     'llms_complete'       : [False ， ...]              # 所有llm的完成状态(False, True)
     #     'llms_full_responses' : [''， ...]                  # 所有llm的返回文本
     # }
+
+    def join_all(self, in_gen):
+        for status in in_gen:
+            st = status['type']
+            print(f'[Concurrent_LLMs]: status is "{st}"')
+
     def start_and_get_status(self):
         llm_num = self.llms_num
+        extra_suffixes = self.extra_suffixes if self.extra_suffixes else [''] * llm_num
 
         # 整体状态和所有llm的状态
         status = {
@@ -629,6 +640,8 @@ class Concurrent_LLMs():
                 status['type'] = 'complete'
                 status['describe'] = '解读任务已完成.'
                 status['detail'] = '所有llm的文本解读任务已完成.'
+
+                self.all_finished = True
                 yield status
                 break
 
@@ -653,7 +666,7 @@ class Concurrent_LLMs():
 
                     # 每一个llm的后处理
                     if not self.llms_post_processed[i]:                   
-                        extra_suffixes = self.extra_suffixes if self.extra_suffixes else ''
+                        # extra_suffixes = self.extra_suffixes if self.extra_suffixes else ''
                         status['llms_full_responses'][i] += extra_suffixes[i]
                         self.llms_post_processed[i] = True
                         
