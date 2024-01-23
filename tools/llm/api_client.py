@@ -19,7 +19,7 @@ import asyncio
 import threading
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
-from utils.long_content_summary import long_content_summary
+from utils.long_content_summary import long_content_qa
 from utils.task import Flicker_Task
 
 
@@ -47,7 +47,7 @@ class LLM_Client():
 
         if not url:
             url = LLM_Client.Get_All_LLM_Server()
-        print(f'LLM_Client.__init__(): url = "{url}"')
+        # print(f'LLM_Client.__init__(): url = "{url}"')
             
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
             openai.api_key = "EMPTY"
@@ -394,7 +394,7 @@ class LLM_Client():
                 # Specifying stop words in streaming output format is not yet supported and is under development.
             )
         result = res['choices'][0]['message']['content']
-        if self.print_input:
+        if self.print_output:
             print(f'<Assistant>\n\t{result}')
         return res
 
@@ -607,7 +607,7 @@ class Concurrent_LLMs():
 
     def join_all(self, in_gen):
         for status in in_gen:
-            st = status['type']
+            st = status['detail']
             print(f'[Concurrent_LLMs]: status is "{st}"')
 
         return status
@@ -631,7 +631,7 @@ class Concurrent_LLMs():
         llms_gens = []
         for i in range(llm_num):
             # 返回联网分析结果
-            llms_gens.append(long_content_summary(self.llms[i], self.contents[i], self.prompts[i]))
+            llms_gens.append(long_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
 
         status['detail'] = '所有llm的文本解读已启动...'
         yield status

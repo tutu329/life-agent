@@ -279,10 +279,11 @@ def main_linux():
 
 def main_search_and_summery():
     from utils.print_tools import print_long_content_with_urls
-    from utils.long_content_summary import long_content_summary, long_content_summary_concurrently
-    prompt = '李白成名之时是几岁？'
+    from utils.long_content_summary import long_content_qa, long_content_qa_concurrently
+    prompt = '2024年有什么大新闻？'
+    # prompt = '李白成名之时是几岁？'
     print(f'prompt: {prompt}')
-    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3)
+    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5)
     internet_search_resultes = searcher.search_long_time(prompt)    # [(url, content_para_list), (url, content_para_list), ...]
     print_long_content_with_urls(internet_search_resultes)
 
@@ -303,7 +304,7 @@ def main_search_and_summery():
     contents = []
     for result in internet_search_resultes:
         contents.append('\n'.join(result[1]))
-    long_content_summary_concurrently(in_contents=contents, in_prompt=prompt, in_url='http://127.0.0.1:8002/v1')
+    answer = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_url='http://127.0.0.1:8001/v1')
 
 if __name__ == '__main__':
     main_search_and_summery()

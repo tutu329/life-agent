@@ -9,7 +9,7 @@ from pathlib import Path
 import tempfile
 
 from tools.retriever.search import Bing_Searcher
-from utils.long_content_summary import long_content_summary
+from utils.long_content_summary import long_content_qa
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
