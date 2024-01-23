@@ -554,7 +554,7 @@ class Async_LLM():
     
 # 通过多个llm的client，对model进行并发访问，同步返回多个stream
 class Concurrent_LLMs():
-    def __init__(self, in_port='8001'):
+    def __init__(self, in_url='http://127.0.0.1:8001/v1'):
         self.prompts = []
         self.role_prompts = []
         self.contents = []
@@ -566,7 +566,7 @@ class Concurrent_LLMs():
         self.cursor = ''
         self.flicker = None
 
-        self.port = in_port
+        self.url = in_url
 
         self.all_finished = False
 
@@ -588,7 +588,7 @@ class Concurrent_LLMs():
 
         # 初始化所有llm
         for prompt in self.prompts:
-            self.llms.append(LLM_Client(history=False, print_input=False, temperature=0, url=f'http://127.0.0.1:{self.port}/v1'))
+            self.llms.append(LLM_Client(history=False, print_input=False, temperature=0, url=self.url))
             self.llms_post_processed.append(False)
         self.llms_num = len(self.llms)
 

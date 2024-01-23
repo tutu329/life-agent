@@ -303,7 +303,7 @@ def main_search_and_summery():
     contents = []
     for result in internet_search_resultes:
         contents.append('\n'.join(result[1]))
-    long_content_summary_concurrently(in_contents=contents, in_prompt=prompt, in_port='8002')
+    long_content_summary_concurrently(in_contents=contents, in_prompt=prompt, in_url='http://127.0.0.1:8002/v1')
 
 if __name__ == '__main__':
     main_search_and_summery()

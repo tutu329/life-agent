@@ -85,9 +85,9 @@ def long_content_summary(in_llm, in_content, in_prompt):
     # return final_answer
 
 
-def long_content_summary_concurrently(in_contents, in_prompt, in_port='8001'):
+def long_content_summary_concurrently(in_contents, in_prompt, in_url='http://127.0.0.1:8001/v1'):
     from tools.llm.api_client import Concurrent_LLMs
-    llms = Concurrent_LLMs(in_port=in_port)
+    llms = Concurrent_LLMs(in_url=in_url)
     num = len(in_contents)
     llms.init(
         in_prompts=[in_prompt]*num,
