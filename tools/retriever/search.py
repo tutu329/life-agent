@@ -298,10 +298,16 @@ def main_linux():
     internet_search_resultes = searcher.search(prompt)
     print(f'internet_search_result: {internet_search_resultes}')
 
-def main_search_and_summery():
+def main_search_and_summery(question='李白和杜甫关系如何'):
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
-    searcher.search_and_ask('李白和杜甫关系如何')
+    searcher.search_and_ask(question)
     # searcher.search_and_ask('2024年有什么大新闻？')
 
 if __name__ == '__main__':
-    main_search_and_summery()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--q", help="question")
+    args = parser.parse_args()
+
+    main_search_and_summery(args.q)
