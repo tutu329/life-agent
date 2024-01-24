@@ -63,11 +63,13 @@ class Bing_Searcher():
         print_long_content_with_urls(internet_search_resultes)
 
         contents = []
+        search_urls = []
         for result in internet_search_resultes:
             web_url = result[0]
+            search_urls.append(web_url)
             content_list = result[1]
             contents.append('\n'.join(content_list))
-        answer = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_url=self.llm_api_url)
+        answer = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
         return answer
 
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
@@ -298,7 +300,8 @@ def main_linux():
 
 def main_search_and_summery():
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
-    searcher.search_and_ask('2024年有什么大新闻？')
+    searcher.search_and_ask('李白和杜甫关系如何')
+    # searcher.search_and_ask('2024年有什么大新闻？')
 
 if __name__ == '__main__':
     main_search_and_summery()

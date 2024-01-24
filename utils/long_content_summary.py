@@ -85,9 +85,9 @@ def long_content_qa(in_llm, in_content, in_prompt):
     # return final_answer
 
 
-def long_content_qa_concurrently(in_contents, in_prompt, in_url='http://127.0.0.1:8001/v1'):
+def long_content_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.0.0.1:8001/v1', in_search_urls=None):
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
-    llms = Concurrent_LLMs(in_url=in_url)
+    llms = Concurrent_LLMs(in_url=in_api_url)
     num = len(in_contents)
     llms.init(
         in_prompts=[in_prompt]*num,
@@ -101,19 +101,24 @@ def long_content_qa_concurrently(in_contents, in_prompt, in_url='http://127.0.0.
     answers = ''
 
     for summary in summaries:
-        answers += f'小结[{i}]: \n' + summary + '\n'
-        i += 1
+        if in_search_urls:
+            answers += f'小结[{i}]: ' + summary + '\n' + f'小结[{i}]的来源: ' + in_search_urls[i] + '\n'
+        else:
+            answers += f'小结[{i}]: \n' + summary + '\n'
         result_string = summary.replace('\n', '')[:50]
+
+        i += 1
         print(f"result[{i}]: '{result_string}...'")
 
+    print(f'answers: \n{answers}')
     llm = LLM_Client(
-        url=in_url,
+        url=in_api_url,
         temperature=0,
         print_input=False,
         history=False,
     )
 
-    final_question = f'"{answers}", 请综合考虑上述小结内容，回答问题"{in_prompt}"，回答一定要简明扼要，不要进行解释，直接返回回答的文字。'
+    final_question = f'"{answers}", 请综合考虑上述小结内容及其来源可信度，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
 
     final_answer = llm.ask_prepare(
         in_question=final_question,
