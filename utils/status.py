@@ -9,6 +9,7 @@ class Status_Base:
         #     'llms_complete'       : [False ， ...]                                # 所有llm的完成状态(False, True)
         #     'llms_full_responses' : [''， ...]                                    # 所有llm的返回文本
         # }
+        pass
 
 def main():
     print()
