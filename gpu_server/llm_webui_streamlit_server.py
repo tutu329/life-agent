@@ -158,7 +158,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet):
 
 
         for llm in async_llms:
-            llm.join()
+            llm.wait()
 
         # 将完整的输出结果，返回
         final_answer = ''

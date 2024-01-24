@@ -95,7 +95,7 @@ def long_content_qa_concurrently(in_contents, in_prompt, in_url='http://127.0.0.
         # in_stream_buf_callbacks=None,
     )
     status = llms.start_and_get_status()
-    results = llms.join_all(status)
+    results = llms.wait_all(status)
     summaries = results['llms_full_responses']
     i = 0
     answers = ''

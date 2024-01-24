@@ -479,9 +479,9 @@ class Async_LLM():
     def get_final_response(self):
         return self.final_response
 
-    def join(self):
+    def wait(self):
         if self.task:
-            self.task.join()
+            self.task.wait()
 
     def run(self):
         # print(f'【Async_LLM】run(temperature={self.temperature}) invoked.')
@@ -605,7 +605,7 @@ class Concurrent_LLMs():
     #     'llms_full_responses' : [''， ...]                  # 所有llm的返回文本
     # }
 
-    def join_all(self, in_gen):
+    def wait_all(self, in_gen):
         for status in in_gen:
             st = status['detail']
             print(f'[Concurrent_LLMs]: status is "{st}"')
