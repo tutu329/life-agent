@@ -57,10 +57,10 @@ def session_state_init():
 # 返回searcher及其loop
 # 这里不能用@st.cache_resource，否则每次搜索结果都不变
 # @st.cache_resource
-def search_init(concurrent_num=3):
+def search_init(in_stream_buf_callback=None, concurrent_num=3):
     import sys, platform
     fix_streamlit_in_win = True if sys.platform.startswith('win') else False
-    return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win, in_search_num=concurrent_num)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
+    return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win, in_stream_buf_callback=in_stream_buf_callback, in_search_num=concurrent_num)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
 
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 mem_llm = streamlit_init()
@@ -86,15 +86,42 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
         async_llm.start()
     return async_llms
 
-def llm_response_concurrently(prompt, role_prompt, connecting_internet):
+def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail):
     # =================================搜索并llm=================================
     if connecting_internet:
         # =================================搜索=================================
         status = st.status(label=":green[启动联网解读任务...]", expanded=False)
-
+        status.markdown("搜索引擎bing.com调用中...")
         assistant = st.chat_message('assistant')
+
+
+        if not connecting_internet_detail:
+            # 不包含明细的联网搜索和解读
+            placeholder = assistant.empty()
+            searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder.markdown)
+            rtn, search_urls = searcher.search_and_ask(prompt)
+
+            final_answer = ''
+            for chunk in rtn.get_answer_generator():
+                final_answer += chunk
+                placeholder.markdown(final_answer + searcher.flicker.get_flicker())
+            placeholder.markdown('\n\n')
+            final_answer += '\n\n'
+            i = 0
+            print(f'-------------------------------{search_urls}+++++++++++++')
+            for search_url in search_urls:
+                i += 1
+                url_md = f'[{search_url[:30]}...]({search_url} "{search_url}")'
+                url_string = f'【{i}】{url_md} \n\n'
+                final_answer += url_string
+                placeholder.markdown(url_string)
+
+            return None, final_answer
+
+        searcher = search_init(concurrent_num=st.session_state.concurrent_num)
+
         if not st.session_state.get('local_llm_concurrent_num'):
-            st.session_state.local_llm_concurrent_num = 3
+            st.session_state.local_llm_concurrent_num = 2
         async_llms = async_llm_local_response_concurrently(
             in_st=assistant,
             in_prompt=prompt,
@@ -112,14 +139,9 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet):
         #)
         #async_llm.start()
         
-        status.markdown("搜索引擎bing.com调用中...")
-
-        searcher = search_init(st.session_state.concurrent_num)
         internet_search_result = searcher.search(prompt)
         # print(f'internet_search_result: {internet_search_result}')
-
         status.markdown("搜索引擎bing.com调用完毕.")
-
 
         # 为调用Concurrent_LLMs准备输入参数
         num = len(internet_search_result)
@@ -216,8 +238,9 @@ def streamlit_refresh_loop():
     exp1 =  sidebar.expander("对话参数", expanded=True)
     multi_line_prompt = exp1.text_area(label="多行指令:", label_visibility='collapsed', placeholder="请在这里输入您的多行指令", value="", disabled=st.session_state.processing)
     
-    col0, col1, col2, col3 = exp1.columns([2, 1, 1, 1])
+    col0, col01, col1, col2, col3 = exp1.columns([1, 1, 1, 1, 1])
     connecting_internet = col0.checkbox('联网', value=True, disabled=st.session_state.processing)
+    connecting_internet_detail = col01.checkbox('明细', value=True, disabled=st.session_state.processing)
     col1.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
     col2.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
     col3.button("发送", on_click=on_chat_input_submit, args=(multi_line_prompt,), disabled=st.session_state.processing, key='confirm_button')
@@ -273,7 +296,7 @@ def streamlit_refresh_loop():
         })
 
         # with st.chat_message('assistant'):
-        async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet)
+        async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail)
 
         # ==================assistant输出的状态存储====================
         if async_llms:

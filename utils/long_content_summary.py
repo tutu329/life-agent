@@ -120,7 +120,7 @@ def long_content_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.
 
     final_question = f'"{answers}", 请综合考虑上述小结内容及其来源可信度，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
 
-    final_answer = llm.ask_prepare(
+    llm = llm.ask_prepare(
         in_question=final_question,
-    ).get_answer_and_sync_print()
-    return final_answer
+    )
+    return llm

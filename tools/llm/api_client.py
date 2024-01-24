@@ -481,7 +481,7 @@ class Async_LLM():
 
     def wait(self):
         if self.task:
-            self.task.wait()
+            self.task.join()
 
     def run(self):
         # print(f'【Async_LLM】run(temperature={self.temperature}) invoked.')

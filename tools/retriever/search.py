@@ -7,6 +7,7 @@ import asyncio
 from tools.retriever.html2text import html2text
 from utils.print_tools import print_long_content_with_urls
 from utils.long_content_summary import long_content_qa, long_content_qa_concurrently
+from utils.task import Flicker_Task
 
 SEARCH_TIME_OUT = 3000    # 超时ms
 
@@ -27,7 +28,11 @@ class SearchResult:
         return json.dumps(self.dump())
 
 class Bing_Searcher():
-    def __init__(self, in_search_num=3, in_llm_api_url='http://127.0.0.1:8001/v1'):
+    def __init__(self,
+                 in_search_num=3,
+                 in_llm_api_url='http://127.0.0.1:8001/v1',
+                 in_stream_buf_callback=None,
+                 ):
         self.loop = None    # searcher实例对应的loop(主要用于win下streamlit等特定场景)
         self.browser = None
         self.context = None
@@ -35,6 +40,9 @@ class Bing_Searcher():
         self.llm_api_url = in_llm_api_url
 
         self.search_num = in_search_num
+
+        self.flicker = None # 闪烁的光标
+        self.stream_buf_callback = in_stream_buf_callback
 
     # fix_streamlit_windows_proactor_eventloop_problem()必须在任何async调用之前运行
     @staticmethod
@@ -69,18 +77,24 @@ class Bing_Searcher():
             search_urls.append(web_url)
             content_list = result[1]
             contents.append('\n'.join(content_list))
-        answer = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
-        return answer
+        llm = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
+        return llm, search_urls
 
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
     @staticmethod
-    def create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3, in_llm_api_url='http://127.0.0.1:8001/v1'):
+    def create_searcher_and_loop(
+            fix_streamlit_in_win=False,
+            in_search_num=3,
+            in_llm_api_url='http://127.0.0.1:8001/v1',
+            in_stream_buf_callback = None,
+    ):
         if fix_streamlit_in_win:
             Bing_Searcher._fix_streamlit_windows_proactor_eventloop_problem()
 
         searcher = Bing_Searcher(
             in_search_num=in_search_num,
             in_llm_api_url=in_llm_api_url,
+            in_stream_buf_callback=in_stream_buf_callback,
         )
 
         async def _searcher_start():
@@ -93,6 +107,9 @@ class Bing_Searcher():
 
     async def _start(self):
         print('启动chrome: await async_playwright().start()')
+        self.flicker = Flicker_Task(in_stream_buf_callback=self.stream_buf_callback)
+        self.flicker.init(flicker1='█ ', flicker2='  ').start()
+
         p = await async_playwright().start()
         # p = sync_playwright().start()
         print('启动chrome: await p.chromium.launch(channel="chrome", headless=True)')
@@ -300,7 +317,7 @@ def main_linux():
 
 def main_search_and_summery(question='李白和杜甫关系如何'):
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
-    searcher.search_and_ask(question)
+    searcher.search_and_ask(question).get_answer_and_sync_print()
     # searcher.search_and_ask('2024年有什么大新闻？')
 
 if __name__ == '__main__':

@@ -120,7 +120,7 @@ class Task(Task_Base):
         super().start()
 
 class Flicker_Task(Task_Base):
-    def __init__(self):
+    def __init__(self, in_stream_buf_callback=None):
         super().__init__()
         self.flicker1 = None
         self.flicker2 = None
@@ -129,6 +129,8 @@ class Flicker_Task(Task_Base):
         self.flicker_timer = None
         self.interval = None
         self.stop = False
+
+        self.stream_buf_callback = in_stream_buf_callback
 
     def init(self, 
              *in_callback_func_args, 
@@ -163,6 +165,8 @@ class Flicker_Task(Task_Base):
             # t = threading.Timer(self.interval, self.__flicker)
             #t.start()
             time.sleep(self.interval)
+            if self.stream_buf_callback:
+                self.stream_buf_callback(self.get_flicker())
             # t.join()    # 等待Timer执行完成
 
 
