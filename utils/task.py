@@ -38,6 +38,8 @@ class Task_Base():
 
         self.timeout_timer = None    # 用于在timeout后设置cancel标识
 
+        self.run_in_streamlit = False
+
     def terminate(self, in_signal, in_frame):    # in_signal, in_frame 这两个参数是必须要的
         if in_signal==signal.SIGINT:
             dprint(f'\nCtrl+C captured. Main thread terminated.')
@@ -48,8 +50,10 @@ class Task_Base():
              *in_callback_func_args, 
              in_name='task', 
              in_timeout=None,    # timeout秒之后，设置cancel标识
+             in_streamlit=False,
              **in_callback_func_kwargs
             ):
+        self.run_in_streamlit = in_streamlit
         self.task_info['status'] = Status.Initializing
         
         self.task_info['task_name'] = in_name
@@ -59,6 +63,9 @@ class Task_Base():
         
         dprint(f"{self.task_info['task_name']}.init()")
         self.thread = threading.Thread(target=self.run, daemon=True)    # daemon==True时，主线程退出则该线程也马上退出（可以有效响应ctrl+c）
+        if self.run_in_streamlit:
+            from streamlit.runtime.scriptrunner import add_script_run_ctx
+            add_script_run_ctx(self.thread)
 
         self.callback = in_callback_func
         self.callback_args = in_callback_func_args
@@ -106,6 +113,7 @@ class Task(Task_Base):
              *in_callback_func_args, 
              in_name='task', 
              in_timeout=None,    # timeout秒之后，设置cancel标识
+             in_streamlit=False,
              **in_callback_func_kwargs
             ):
         super().init(
@@ -113,6 +121,7 @@ class Task(Task_Base):
              *in_callback_func_args, 
              in_name=in_name, 
              in_timeout=in_timeout,
+             in_streamlit=in_streamlit,
              **in_callback_func_kwargs            
         )
 
@@ -135,9 +144,10 @@ class Flicker_Task(Task_Base):
     def init(self, 
              *in_callback_func_args, 
              in_callback_func=None,
-             flicker1='flicker1', flicker2='flicker2', interval=1,
+             flicker1='█ ', flicker2='  ', interval=1,
              in_name='task', 
              in_timeout=None,    # timeout秒之后，设置cancel标识
+             in_streamlit=False,
              **in_callback_func_kwargs
             ):
         super().init(
@@ -145,6 +155,7 @@ class Flicker_Task(Task_Base):
              *in_callback_func_args, 
              in_name=in_name, 
              in_timeout=in_timeout,
+            in_streamlit=in_streamlit,
              **in_callback_func_kwargs            
         )
         
@@ -158,6 +169,7 @@ class Flicker_Task(Task_Base):
     def run(self):
         while True:
             if self.stop:
+                self._stream_output('')
                 break
 
             self.__flicker()
@@ -165,10 +177,16 @@ class Flicker_Task(Task_Base):
             # t = threading.Timer(self.interval, self.__flicker)
             #t.start()
             time.sleep(self.interval)
-            if self.stream_buf_callback:
-                self.stream_buf_callback(self.get_flicker())
-            # t.join()    # 等待Timer执行完成
+            self._stream_output(self.flicker)
 
+    def _stream_output(self, in_str):
+        if self.stream_buf_callback:
+            # 由于streamlit对thread支持不好，这里必须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext
+            try:
+                self.stream_buf_callback(in_str)
+            except Exception as e:
+                print(f'[Flicker_Task.run()]错误: {e}')
+                print('由于streamlit对thread支持不好，须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext')
 
     def start(self):
         super().start()
@@ -176,7 +194,7 @@ class Flicker_Task(Task_Base):
     def get_flicker(self):
         return self.flicker
 
-    def stop(self):
+    def set_stop(self):
         self.stop = True
 
     def __flicker(self):

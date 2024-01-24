@@ -500,6 +500,7 @@ class Async_LLM():
                     except StopIteration as e:
                         self.complete = True
                     self.getting_chunk = False
+
             if not self.getting_chunk:
                 full_response += self.chunk
                 self.final_response = full_response

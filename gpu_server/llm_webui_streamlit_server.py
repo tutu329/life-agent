@@ -57,7 +57,7 @@ def session_state_init():
 # 返回searcher及其loop
 # 这里不能用@st.cache_resource，否则每次搜索结果都不变
 # @st.cache_resource
-def search_init(in_stream_buf_callback=None, concurrent_num=3):
+def search_init(concurrent_num=3, in_stream_buf_callback=None):
     import sys, platform
     fix_streamlit_in_win = True if sys.platform.startswith('win') else False
     return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win, in_stream_buf_callback=in_stream_buf_callback, in_search_num=concurrent_num)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
@@ -97,15 +97,19 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
 
         if not connecting_internet_detail:
             # 不包含明细的联网搜索和解读
-            placeholder = assistant.empty()
-            searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder.markdown)
+            placeholder1 = assistant.empty()
+            # searcher = search_init(concurrent_num=st.session_state.concurrent_num)
+            # print(f'********1 placeholder.markdown: {placeholder.markdown}')
+            searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.columns([1])[0].empty().markdown)
             rtn, search_urls = searcher.search_and_ask(prompt)
 
             final_answer = ''
+            placeholder2 = assistant.empty()
+            # print(f'********2 placeholder.markdown: {placeholder.markdown}')
             for chunk in rtn.get_answer_generator():
                 final_answer += chunk
-                placeholder.markdown(final_answer + searcher.flicker.get_flicker())
-            placeholder.markdown('\n\n')
+                placeholder2.markdown(final_answer + searcher.flicker.get_flicker())
+            placeholder2.markdown('\n\n')
             final_answer += '\n\n'
             i = 0
             print(f'-------------------------------{search_urls}+++++++++++++')
@@ -114,7 +118,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
                 url_md = f'[{search_url[:30]}...]({search_url} "{search_url}")'
                 url_string = f'【{i}】{url_md} \n\n'
                 final_answer += url_string
-                placeholder.markdown(url_string)
+                placeholder2.markdown(url_string)
 
             return None, final_answer
 

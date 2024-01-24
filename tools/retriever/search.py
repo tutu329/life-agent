@@ -67,6 +67,9 @@ class Bing_Searcher():
 
     def search_and_ask(self, in_question):
         prompt = in_question
+        self.flicker = Flicker_Task(in_stream_buf_callback=self.stream_buf_callback)
+        self.flicker.init(in_streamlit=True).start()
+
         internet_search_resultes = self.search(prompt)  # [(url, content_para_list), (url, content_para_list), ...]
         print_long_content_with_urls(internet_search_resultes)
 
@@ -78,6 +81,7 @@ class Bing_Searcher():
             content_list = result[1]
             contents.append('\n'.join(content_list))
         llm = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
+        self.flicker.set_stop()
         return llm, search_urls
 
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
@@ -107,8 +111,6 @@ class Bing_Searcher():
 
     async def _start(self):
         print('启动chrome: await async_playwright().start()')
-        self.flicker = Flicker_Task(in_stream_buf_callback=self.stream_buf_callback)
-        self.flicker.init(flicker1='█ ', flicker2='  ').start()
 
         p = await async_playwright().start()
         # p = sync_playwright().start()
