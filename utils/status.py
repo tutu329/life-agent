@@ -12,7 +12,7 @@ class Status_Base:
         pass
 
 def main():
-    print()
+    print("heihei")
 
 if __name__ == "__main__" :
     main()

@@ -37,5 +37,6 @@ export PATH=$PATH:/usr/local/cuda/bin
 export CUDA_HOME=/usr/local/cuda
 alias p='ps aux | grep -v "grep" | grep $1'
 alias s='systemctl list-unit-files | grep $1'
+alias d='du -sh .; df -h .'
 
 
