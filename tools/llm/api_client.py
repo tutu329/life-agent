@@ -305,10 +305,10 @@ class LLM_Client():
         if self.print_input:
             print('<User>\n', msgs[-1]['content'])
         if in_stop is None:
-            stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant']
+            stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>']
             # stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
         else:
-            stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant'] + in_stop
+            stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>'] + in_stop
             
         dprint(f'【LLM_Client】 ask_prepare(): stop={stop}')
 
