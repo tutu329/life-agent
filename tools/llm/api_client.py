@@ -42,7 +42,7 @@ def dprint(*args, **kwargs):
 
 class LLM_Client():
     LLM_SERVER = 'http://127.0.0.1:8001/v1'
-    def __init__(self, history=True, history_max_turns=50, history_clear_method='pop', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
+    def __init__(self, history=True, history_max_turns=50, model=None, top_p=0.8, history_clear_method='pop', api_key='EMPTY', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
         if not url:
@@ -50,18 +50,24 @@ class LLM_Client():
         # print(f'LLM_Client.__init__(): url = "{url}"')
             
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
-            openai.api_key = "EMPTY"
+            openai.api_key = api_key
             openai.api_base = url
-            self.model = 'local model'
+            if model is None:
+                self.model = 'local model'
+            else:
+                self.model = model
             dprint(f'【LLM_Client】 os: windows. openai api for qwen used.')
             dprint(f'【LLM_Client】 model: {self.model}')
         elif sys.platform.startswith('linux'):      # linux下用的是vllm的openai api
             self.openai = OpenAI(
-                api_key='EMPTY',
+                api_key=api_key,
                 base_url=url,
             )
-            try: 
-                self.model = self.openai.models.list().data[0].id
+            try:
+                if model is None:
+                    self.model = self.openai.models.list().data[0].id
+                else:
+                    self.model = model
             except Exception as e:
                 print(f'【LLM_Client异常】__init__(): "{e}"')
                 print(f'【LLM_Client异常】__init__(): 可能是IP或Port设置错误，当前url为: {url}')
@@ -75,6 +81,7 @@ class LLM_Client():
         self.gen = None     # 返回结果的generator
         self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
+        self.top_p = top_p
         self.max_new_tokens = max_new_tokens
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
 
@@ -257,6 +264,7 @@ class LLM_Client():
             in_question,
             in_temperature=None,
             in_max_new_tokens=None,
+            in_top_p=None,
             in_clear_history=False,
             in_stream=True,
             in_retry=False,
@@ -290,6 +298,11 @@ class LLM_Client():
         else:
             run_temperature = in_temperature
             
+        if in_top_p is None:
+            run_top_p = self.top_p
+        else:
+            run_top_p = in_top_p
+
         dprint(f'{"-"*80}')
         dprint(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
         dprint(f'【LLM_Client】 ask_prepare(): self.temperature={self.temperature}')
@@ -318,6 +331,7 @@ class LLM_Client():
                     model=self.model,
                     temperature=run_temperature,
                     # top_k=self.top_k,
+                    top_p = run_top_p,
                     system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
                     messages=msgs,
                     stream=in_stream,
@@ -331,6 +345,7 @@ class LLM_Client():
                     model=self.model,
                     temperature=run_temperature,
                     # top_k=self.top_k,
+                    top_p = run_top_p,
                     # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
                     messages=msgs,
                     stream=in_stream,
@@ -699,5 +714,181 @@ def main():
         query = input('User: ')
         llm.ask_prepare(query, in_max_new_tokens=500).get_answer_and_sync_print()
 
+question="""
+以下是一个文档的目录结构：
+# World Energy Outlook 2023
+## Foreword
+## Acknowledgements
+## Table of Contents
+## Executive Summary
+## Chapter 1. Overview and key findings
+### Introduction
+### 1.1 A peak by 2030 for each of the fossil fuels
+#### 1.1.1 Coal: Scaling up clean power hastens the decline
+#### 1.1.2 Oil: End of the “ICE age” turns prospects around
+#### 1.1.3 Natural gas: Energy crisis marks the end of the “Golden Age”
+### 1.2 A slowdown in economic growth in China would have huge implications for energy markets
+#### 1.2.1 China’s growth has defined the energy world in recent decades
+#### 1.2.2 Integrating a slowdown in China’s economy into the STEPS
+#### 1.2.3 Sensitivities in the Outlook
+### 1.3 A boom of solar manufacturing could be a boon for the world
+#### 1.3.1 Solar module manufacturing and trade
+#### 1.3.2 Solar PV deployment could scale up faster to accelerate transitions
+### 1.4 The pathway to a 1.5 °C limit on global warming is very tough, but it remains open
+#### 1.4.1 Four reasons for hope
+#### 1.4.2 Four areas requiring urgent attention
+### 1.5 Capital flows are gaining pace, but not reaching the areas of greatest need
+#### 1.5.1 Fossil fuels
+#### 1.5.2 Clean energy
+### 1.6 Transitions have to be affordable
+#### 1.6.1 Affordability for households
+#### 1.6.2 Affordability for industry
+#### 1.6.3 Affordability for governments
+### 1.7 Risks on the road to a more electrified future
+#### 1.7.1 Managing risks for rapid electrification
+#### 1.7.2 Critical minerals underpin electrification
+### 1.8 A new, lower carbon pathway for emerging market and developing economies is taking shape
+### 1.9 Geopolitical tensions undermine energy security and prospects for rapid, affordable transitions
+#### 1.9.1 Clean energy in a low-trust world
+#### 1.9.2 Fossil fuels in a low-trust world
+#### 1.9.3 Risks of new dividing lines
+### 1.10 As the facts change, so do our projections
+#### 1.10.1 Solar PV and wind generation
+#### 1.10.2 Natural gas
+## Chapter 2. Setting the scene
+### 2.1 New context for the World Energy Outlook
+#### 2.1.1 New clean energy economy
+#### 2.1.2 Uneasy balance for oil, natural gas and coal markets
+#### 2.1.3 Key challenges for secure and just clean energy transitions
+### 2.2 WEO Scenarios
+#### 2.2.1 Policies
+#### 2.2.2 Economic and demographic assumptions
+#### 2.2.3 Energy, critical mineral and carbon prices
+#### 2.2.4 Technology costs
+## Chapter 3. Pathways for the energy mix
+### 3.1 Introduction
+### 3.2 Overview
+### 3.3 Total final energy consumption
+#### 3.3.1 Industry
+#### 3.3.2 Transport
+#### 3.3.3 Buildings
+### 3.4 Electricity
+### 3.5 Fuels
+#### 3.5.1 Oil
+#### 3.5.2 Natural gas
+#### 3.5.3 Coal
+#### 3.5.4 Modern bioenergy
+### 3.6 Key clean energy technology trends
+## Chapter 4. Secure and people-centred energy transitions
+### 4.1 Introduction
+### 4.2 Environment and climate
+#### 4.2.1 Emissions trajectory and temperature outcomes
+#### 4.2.2 Methane abatement
+#### 4.2.3 Air quality
+### 4.3 Secure energy transitions
+#### 4.3.1 Fuel security and trade
+#### 4.3.2 Electricity security
+#### 4.3.3 Clean energy supply chains and critical minerals
+### 4.4 People-centred transitions
+#### 4.4.1 Energy access
+#### 4.4.2 Energy affordability
+#### 4.4.3 Energy employment
+#### 4.4.4 Behavioural change
+### 4.5 Investment and finance needs
+## Chapter 5. Regional insights
+### 5.1 Introduction
+### 5.2 United States
+#### 5.2.1 Key energy and emissions trends
+#### 5.2.2 How much have the US Inflation Reduction Act and other recent policies changed the picture for clean energy transitions?
+### 5.3 Latin America and the Caribbean
+#### 5.3.1 Key energy and emissions trends
+#### 5.3.2 What role for Latin America and the Caribbean in maintaining traditional oil and gas security through energy transitions?
+#### 5.3.3 Do critical minerals open new avenues for Latin America and the Caribbean’s natural resources?
+### 5.4 European Union
+#### 5.4.1 Key energy and emissions trends
+#### 5.4.2 Can the European Union deliver on its clean energy and critical materials targets?
+#### 5.4.3 What next for the natural gas balance in the European Union?
+### 5.5 Africa
+#### 5.5.1 Key energy and emissions trends
+#### 5.5.2 Recharging progress towards universal energy access
+#### 5.5.3 What can be done to enhance energy investment in Africa?
+### 5.6 Middle East
+#### 5.6.1 Key energy and emissions trends
+#### 5.6.2 Shifting fortunes for energy exports
+#### 5.6.3 How is the desalination sector changing in times of increasing water needs and the energy transition?
+### 5.7 Eurasia
+#### 5.7.1 Key energy and emissions trends
+#### 5.7.2 What’s next for oil and gas exports from Eurasia?
+### 5.8 China
+#### 5.8.1 Key energy and emissions trends
+#### 5.8.2 How soon will coal use peak in China?
+### 5.9 India
+#### 5.9.1 Key energy and emissions trends
+#### 5.9.2 Impact of air conditioners on electricity demand in India
+#### 5.9.3 Will domestic solar PV module manufacturing keep pace with solar capacity growth in India?
+### 5.10 Japan and Korea
+#### 5.10.1 Key energy and emissions trends
+#### 5.10.2 Challenges and opportunities of nuclear and offshore wind
+#### 5.10.3 What role can hydrogen play in the energy mix and how can the governments deploy it?
+### 5.11 Southeast Asia
+#### 5.11.1 Key energy and emissions trends
+#### 5.11.2 How can international finance accelerate clean energy transitions in Southeast Asia?
+#### 5.11.3 How can regional integration help integrate more renewables?
+## Annexes
+### Annex A: Tables for scenario projections
+### Annex B: Design of the scenarios
+#### B.1 Population
+#### B.2 CO2 prices
+#### B.3 Fossil fuel resources
+#### B.4 Electricity generation technology costs
+#### B.5 Other key technology costs
+#### B.6 Policies
+### Annex C: Definitions
+#### Units
+#### General conversion factors for energy
+#### Currency conversions
+#### Definitions
+#### Regional and country groupings
+#### Abbreviations and acronyms
+### Annex D: References
+#### Chapter 1: Overview and key findings
+#### Chapter 2: Setting the scene
+#### Chapter 3: Pathways for the energy mix
+#### Chapter 4: Secure and people-centred energy transitions
+#### Chapter 5: Regional insights
+#### Annex B: Design of the scenarios
+### Annex E: Inputs to the Global Energy and Climate Model
+#### General note
+#### IEA databases and publications
+
+用户现在问了一个关于该报告的问题: "报告有没有涉及投资、日韩问题、生物质的分析"，请问该问题的答案可能在报告哪个具体的章节中，请根据所提供目录结构信息，返回对应的章节标题，不要解释，直接返回如下格式：
+[
+    {
+        'chapter_index':'x.x.x1',
+        'chapter_title':'xxx1',
+    },
+    {
+        'chapter_index':'x.x.x2',
+        'chapter_title':'xxx2',
+    },
+]
+"""
+def main_call():
+    print('main_call()')
+    llm = LLM_Client(
+        history=True,
+        history_max_turns=50,
+        history_clear_method='pop',
+        model='glm-4',
+        temperature=0.7,
+        top_p=0.6,
+        api_key='sk-6zcUSkVMPIR2WIhjC73a27B4D7584e8cBf1f1991Cf512626',
+        url='http://ai.epochaudio.cn:6006/v1'
+    )
+    # print('models: ', openai.models.list().data)
+    llm.ask_prepare('你是谁？', in_top_p=0.6, in_max_new_tokens=500).get_answer_and_sync_print()
+    # llm.ask_prepare(question, in_max_new_tokens=500).get_answer_and_sync_print()
+
 if __name__ == "__main__" :
-    main()
+    # main()
+    main_call()
