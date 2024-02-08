@@ -42,7 +42,7 @@ def dprint(*args, **kwargs):
 
 class LLM_Client():
     LLM_SERVER = 'http://127.0.0.1:8001/v1'
-    def __init__(self, history=True, history_max_turns=50, model=None, top_p=0.8, history_clear_method='pop', api_key='EMPTY', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
+    def __init__(self, history=True, history_max_turns=50, model=None, history_clear_method='pop', api_key='EMPTY', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
         if not url:
@@ -81,7 +81,7 @@ class LLM_Client():
         self.gen = None     # 返回结果的generator
         self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
-        self.top_p = top_p
+        # self.top_p = top_p
         self.max_new_tokens = max_new_tokens
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
 
@@ -264,7 +264,7 @@ class LLM_Client():
             in_question,
             in_temperature=None,
             in_max_new_tokens=None,
-            in_top_p=None,
+            # in_top_p=None,
             in_clear_history=False,
             in_stream=True,
             in_retry=False,
@@ -298,10 +298,10 @@ class LLM_Client():
         else:
             run_temperature = in_temperature
             
-        if in_top_p is None:
-            run_top_p = self.top_p
-        else:
-            run_top_p = in_top_p
+        # if in_top_p is None:
+        #     run_top_p = self.top_p
+        # else:
+        #     run_top_p = in_top_p
 
         dprint(f'{"-"*80}')
         dprint(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
@@ -331,7 +331,7 @@ class LLM_Client():
                     model=self.model,
                     temperature=run_temperature,
                     # top_k=self.top_k,
-                    top_p = run_top_p,
+                    # top_p = run_top_p,
                     system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
                     messages=msgs,
                     stream=in_stream,
@@ -345,7 +345,7 @@ class LLM_Client():
                     model=self.model,
                     temperature=run_temperature,
                     # top_k=self.top_k,
-                    top_p = run_top_p,
+                    # top_p = run_top_p,
                     # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
                     messages=msgs,
                     stream=in_stream,
@@ -881,14 +881,22 @@ def main_call():
         history_clear_method='pop',
         model='glm-4',
         temperature=0.7,
-        top_p=0.6,
         api_key='sk-6zcUSkVMPIR2WIhjC73a27B4D7584e8cBf1f1991Cf512626',
         url='http://ai.epochaudio.cn:6006/v1'
     )
     # print('models: ', openai.models.list().data)
-    llm.ask_prepare('你是谁？', in_top_p=0.6, in_max_new_tokens=500).get_answer_and_sync_print()
+    llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
     # llm.ask_prepare(question, in_max_new_tokens=500).get_answer_and_sync_print()
 
 if __name__ == "__main__" :
+    llm = LLM_Client(
+        history=True,
+        history_max_turns=50,
+        history_clear_method='pop',
+        temperature=0.7,
+        url='http://localhost:8001/v1'
+    )
+    # print('models: ', openai.models.list().data)
+    llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
     # main()
-    main_call()
+    # main_call()
