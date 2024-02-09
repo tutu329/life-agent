@@ -42,7 +42,7 @@ def dprint(*args, **kwargs):
 
 class LLM_Client():
     LLM_SERVER = 'http://127.0.0.1:8001/v1'
-    def __init__(self, history=True, history_max_turns=50, model=None, history_clear_method='pop', api_key='EMPTY', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
+    def __init__(self, history=True, history_max_turns=50, model=None, history_clear_method='pop', api_key='b1ad5dac212f563be4765b646543ca1b', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
         if not url:
@@ -318,10 +318,10 @@ class LLM_Client():
         if self.print_input:
             print('<User>\n', msgs[-1]['content'])
         if in_stop is None:
-            stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>']
+            stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>']
             # stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
         else:
-            stop = ['<|im_end|>', '<|im_start|>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>'] + in_stop
+            stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>'] + in_stop
             
         dprint(f'【LLM_Client】 ask_prepare(): stop={stop}')
 
@@ -911,10 +911,11 @@ def main_call():
         history=True,
         history_max_turns=50,
         history_clear_method='pop',
-        model='glm-4',
+        model='miqu-1-70b-sf-GPTQ',
         temperature=0.7,
-        api_key='sk-6zcUSkVMPIR2WIhjC73a27B4D7584e8cBf1f1991Cf512626',
-        url='http://ai.epochaudio.cn:6006/v1'
+        api_key='b1ad5dac212f563be4765b646543ca1b',
+        # api_key='sk-6zcUSkVMPIR2WIhjC73a27B4D7584e8cBf1f1991Cf512626',
+        url='http://116.62.63.204:8001/v1'
     )
     # print('models: ', openai.models.list().data)
     llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
@@ -931,5 +932,5 @@ if __name__ == "__main__" :
     # # print('models: ', openai.models.list().data)
     # llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
     # main()
-    # main_call()
-    miqu_generate_stream('你是谁？')
+    main_call()
+    # miqu_generate_stream('你是谁？')
