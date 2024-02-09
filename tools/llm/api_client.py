@@ -873,6 +873,38 @@ question="""
     },
 ]
 """
+
+def miqu_generate_stream(in_query):
+    import requests
+    import json
+
+    # 定义请求的URL和数据
+    url = "http://127.0.0.1:8001/generate_stream"
+    data = {
+        "inputs": in_query,
+        "parameters": {"max_new_tokens": 512}
+    }
+    headers = {'Content-Type': 'application/json'}
+
+    # 发送POST请求，并以流式方式处理响应
+    response = requests.post(url, data=json.dumps(data), headers=headers, stream=True)
+
+    # 检查请求是否成功
+    if response.status_code == 200:
+        for line in response.iter_lines():
+            # 打印每一行输出
+            if line:
+                line_string = line.decode('utf-8')
+                # print(f'line_string: {line_string}')
+                if line_string is not None:
+                    obj = json.loads(line_string[5:])
+                    print(obj['token']['text'], end='', flush=True)
+                    # print(line.decode('utf-8'))
+    else:
+        print(f"请求失败，状态码：{response.status_code}")
+    print()
+
+
 def main_call():
     print('main_call()')
     llm = LLM_Client(
@@ -889,14 +921,15 @@ def main_call():
     # llm.ask_prepare(question, in_max_new_tokens=500).get_answer_and_sync_print()
 
 if __name__ == "__main__" :
-    llm = LLM_Client(
-        history=True,
-        history_max_turns=50,
-        history_clear_method='pop',
-        temperature=0.7,
-        url='http://localhost:8001/v1'
-    )
-    # print('models: ', openai.models.list().data)
-    llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
+    # llm = LLM_Client(
+    #     history=True,
+    #     history_max_turns=50,
+    #     history_clear_method='pop',
+    #     temperature=0.7,
+    #     url='http://localhost:8001/v1'
+    # )
+    # # print('models: ', openai.models.list().data)
+    # llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
     # main()
     # main_call()
+    miqu_generate_stream('你是谁？')
