@@ -667,8 +667,14 @@ class Concurrent_LLMs():
             for gen in llms_gens:
                 # 遍历每一个llm的回复stream的chunk
                 try:
-                    chunk = next(gen)
-                    status['llms_full_responses'][i] += chunk
+                    if gen == []:
+                        # 出现超限等问题时返回的[]
+                        status['llms_full_responses'][i] = 'llm输入长度超限.'
+                        status['llms_complete'][i] = True
+                    else:
+                        # 正常返回stream
+                        chunk = next(gen)
+                        status['llms_full_responses'][i] += chunk
 
                     # 测试输出
                     if i==0:

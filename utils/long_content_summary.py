@@ -61,16 +61,17 @@ def long_content_qa(in_llm, in_content, in_prompt):
     answers_to_print = answers.replace('\n', '')[:50]
     # print(f'[long_content_summary()]: "{answers_to_print}...", 请根据这些文字，并结合问题"{in_prompt}"对文字进行总结，总结要简明扼要、逻辑合理、重点突出、一定不能有写了一半的句子，尽可能用markdown格式把总结的文字以层次清晰的方式展现出来，字数要少于1000字，不要进行解释，直接返回总结后的文字。')
     if Prompt_Limitation.context_max_len<=1000:
-        ratio = 3.0
+        ratio = 8.0
     elif Prompt_Limitation.context_max_len<=2000:
-        ratio = 2.0
+        ratio = 4.0
     elif Prompt_Limitation.context_max_len<=4000:
-        ratio = 1.5
+        ratio = 2.0
     elif Prompt_Limitation.context_max_len<=6000:
-        ratio = 1.2
+        ratio = 1.5
         
     if len(answers) >= Prompt_Limitation.context_max_len * ratio:
-        print(f'[long_content_summary()]: warning：需要总结的文本长度超过Prompt_Limitation.context_max_len({Prompt_Limitation.context_max_len})的{ratio}倍({Prompt_Limitation.context_max_len*{ratio}})。建议调整策略。')
+        total = Prompt_Limitation.context_max_len*ratio
+        print(f'[long_content_summary()]: warning：需要总结的文本长度超过Prompt_Limitation.context_max_len({Prompt_Limitation.context_max_len})的{ratio}倍({total})。建议调整策略。')
         # assert(0)
         return []
     # print(f'[long_content_summary()]: 该文本的总结结果为, \n')
