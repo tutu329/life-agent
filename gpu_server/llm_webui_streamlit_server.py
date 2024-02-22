@@ -105,7 +105,6 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         status.markdown("搜索引擎bing.com调用中...")
         assistant = st.chat_message('assistant')
 
-
         if not connecting_internet_detail:
             # 不包含明细的联网搜索和解读
             placeholder1 = assistant.empty()
