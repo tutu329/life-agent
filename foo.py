@@ -1,4 +1,4 @@
-
+abc=100
 yy=44
 class my_class():
     def __init__(self):
