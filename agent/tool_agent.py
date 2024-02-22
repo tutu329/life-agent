@@ -130,8 +130,8 @@ class Tool_Agent():
 
 def main():
     # torch.cuda.manual_seed_all(20000)
-    LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8002/v1')
-    # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
+    # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8002/v1')
+    LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
     tools=[Search_Tool, Code_Tool]
     # tools=[Code_Tool]   
     # print(tools)
