@@ -134,12 +134,8 @@ def long_content_qa_concurrently_yield(
         in_api_url='http://127.0.0.1:8001/v1',
         in_max_new_tokens=2048,
         in_search_urls=None,
-        in_stream_buf_callback=None,
 ):
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
-
-    flicker = Flicker_Task(in_stream_buf_callback=in_stream_buf_callback)
-    flicker.init(in_streamlit=True).start()
 
     llms = Concurrent_LLMs(in_url=in_api_url)
     num = len(in_contents)
@@ -154,8 +150,6 @@ def long_content_qa_concurrently_yield(
     summaries = results['llms_full_responses']
     i = 0
     answers = ''
-
-    flicker.set_stop()
 
     for summary in summaries:
         line = f'{80*"-"}\n\n'

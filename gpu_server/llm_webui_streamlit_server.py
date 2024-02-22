@@ -91,17 +91,46 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
     if is_agent:
         final_answer = ''
         assistant = st.chat_message('assistant')
-        placeholder0 = assistant.empty()
-        searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder0.markdown)
-        placeholder0 = assistant.empty()
-        gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024, in_stream_buf_callback=placeholder0.markdown)
-        placeholder0 = assistant.empty()
-        flicker = Flicker_Task()
-        flicker.init(in_streamlit=True).start()
-        for result in gen:
-            final_answer += result
-            placeholder0.markdown(final_answer + flicker.get_flicker())
-        flicker.set_stop()
+        placeholder1 = assistant.empty()
+
+        searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder1.markdown)
+
+        flicker1 = Flicker_Task(in_stream_buf_callback=placeholder1.markdown)
+        flicker1.init(in_streamlit=True).start()
+        gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
+
+        started = False
+
+        flicker2 = None
+        placeholder2 = None
+        while True:
+            try:
+                result = next(gen)
+                final_answer += result
+                if not started:
+                    # 切换光标
+                    flicker1.set_stop()
+                    assistant.markdown(final_answer)
+                    placeholder2 = assistant.empty()
+                    flicker2 = Flicker_Task(in_stream_buf_callback=placeholder2.markdown)
+                    flicker2.init(in_streamlit=True).start()
+                    started = True
+
+                placeholder2.markdown(final_answer + flicker2.get_flicker())
+            except StopIteration as e:
+                break
+
+        # for result in gen:
+        #     if not started:
+        #         flicker1.set_stop()
+        #         placeholder0 = assistant.empty()
+        #         flicker2 = Flicker_Task(in_stream_buf_callback=placeholder0.markdown)
+        #         flicker2.init(in_streamlit=True).start()
+        #         started = True
+        #
+        #     final_answer += result
+        #     placeholder0.markdown(final_answer + flicker2.get_flicker())
+        flicker2.set_stop()
         return None, final_answer
     # =================================搜索并llm=================================
     if connecting_internet:

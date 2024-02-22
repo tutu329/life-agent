@@ -90,14 +90,10 @@ class Bing_Searcher():
         return llm, search_urls
 
     # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
-    def search_and_ask_yield(self, in_question, in_max_new_tokens=2048, in_stream_buf_callback=None):
+    def search_and_ask_yield(self, in_question, in_max_new_tokens=2048,):
         prompt = in_question
-        self.flicker = Flicker_Task(in_stream_buf_callback=in_stream_buf_callback)
-        self.flicker.init(in_streamlit=True).start()
 
         internet_search_resultes = self.search(prompt)  # [(url, content_para_list), (url, content_para_list), ...]
-
-        self.flicker.set_stop()
 
         yield get_string_of_long_content_with_urls(internet_search_resultes) + '\n\n'
 
@@ -117,7 +113,6 @@ class Bing_Searcher():
                 in_api_url=self.llm_api_url,
                 in_search_urls=search_urls,
                 in_max_new_tokens=in_max_new_tokens,
-                in_stream_buf_callback=in_stream_buf_callback,
             )
 
         if gen is not None:
