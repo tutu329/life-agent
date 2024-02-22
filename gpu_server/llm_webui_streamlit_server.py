@@ -86,7 +86,18 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
         async_llm.start()
     return async_llms
 
-def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail):
+def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
+    # =================================agent功能=================================
+    if is_agent:
+        final_answer = ''
+        assistant = st.chat_message('assistant')
+        placeholder0 = assistant.empty()
+        searcher = search_init(concurrent_num=st.session_state.concurrent_num)
+        gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
+        for result in gen:
+            final_answer += result
+            placeholder0.markdown(final_answer + searcher.flicker.get_flicker())
+        return None, final_answer
     # =================================搜索并llm=================================
     if connecting_internet:
         # =================================搜索=================================
@@ -242,12 +253,13 @@ def streamlit_refresh_loop():
     exp1 =  sidebar.expander("对话参数", expanded=True)
     multi_line_prompt = exp1.text_area(label="多行指令:", label_visibility='collapsed', placeholder="请在这里输入您的多行指令", value="", disabled=st.session_state.processing)
     
-    col0, col01, col1, col2, col3 = exp1.columns([1, 1, 1, 1, 1])
-    connecting_internet = col0.checkbox('联网', value=True, disabled=st.session_state.processing)
-    connecting_internet_detail = col01.checkbox('明细', value=True, disabled=st.session_state.processing)
-    col1.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
-    col2.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
-    col3.button("发送", on_click=on_chat_input_submit, args=(multi_line_prompt,), disabled=st.session_state.processing, key='confirm_button')
+    col0, col1, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1])
+    is_agent = col0.checkbox('Agent', value=True, disabled=st.session_state.processing)
+    connecting_internet = col1.checkbox('联网', value=False, disabled=st.session_state.processing)
+    connecting_internet_detail = col2.checkbox('明细', value=False, disabled=st.session_state.processing)
+    col3.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
+    col4.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
+    col5.button("发送", on_click=on_chat_input_submit, args=(multi_line_prompt,), disabled=st.session_state.processing, key='confirm_button')
     st.session_state.local_llm_temperature = exp1.slider('temperature:', 0.0, 1.0, 0.7, step=0.1, format='%.1f', disabled=st.session_state.processing)
     st.session_state.local_llm_max_new_token = exp1.slider('max_new_tokens:', 256, 2048, 512, step=256, disabled=st.session_state.processing)
     st.session_state.concurrent_num = exp1.slider('联网并发数量:', 2, 10, 3, disabled=st.session_state.processing)
@@ -300,7 +312,7 @@ def streamlit_refresh_loop():
         })
 
         # with st.chat_message('assistant'):
-        async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail)
+        async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
 
         # ==================assistant输出的状态存储====================
         if async_llms:

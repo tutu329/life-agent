@@ -96,7 +96,7 @@ class Bing_Searcher():
         self.flicker.init(in_streamlit=True).start()
 
         internet_search_resultes = self.search(prompt)  # [(url, content_para_list), (url, content_para_list), ...]
-        yield get_string_of_long_content_with_urls(internet_search_resultes) + '\n'
+        yield get_string_of_long_content_with_urls(internet_search_resultes) + '\n\n'
 
         contents = []
         search_urls = []
@@ -106,7 +106,7 @@ class Bing_Searcher():
                 web_url = result[0]
                 search_urls.append(web_url)
                 content_list = result[1]
-                contents.append('\n'.join(content_list))
+                contents.append('\n\n'.join(content_list))
 
             gen = long_content_qa_concurrently_yield(
                 in_contents=contents,
@@ -120,13 +120,13 @@ class Bing_Searcher():
         if gen is not None:
             for result in gen:
                 yield result
-            yield '\n'
+            yield '\n\n'
             i=0
             for url in search_urls:
                 i+=1
-                yield f'[{i}]' + url + '\n'
+                yield f'[{i}]' + url + '\n\n'
         else:
-            yield '网络异常，请重试.\n'
+            yield '网络异常，请重试.\n\n'
 
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
     @staticmethod

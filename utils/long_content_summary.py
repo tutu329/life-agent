@@ -143,17 +143,17 @@ def long_content_qa_concurrently_yield(in_contents, in_prompt, in_api_url='http:
     answers = ''
 
     for summary in summaries:
-        line = f'{80*"-"}\n'
+        line = f'{80*"-"}\n\n'
         if in_search_urls:
-            answers += f'小结[{i+1}]: ' + summary + '\n' + f'小结[{i+1}]的来源: ' + in_search_urls[i] + '\n' + line
+            answers += f'小结[{i+1}]: ' + summary + '\n\n' + f'小结[{i+1}]的来源: ' + in_search_urls[i] + '\n\n' + line
         else:
-            answers += f'小结[{i+1}]: \n' + summary + '\n' + line
+            answers += f'小结[{i+1}]: \n\n' + summary + '\n\n' + line
         result_string = summary.replace('\n', '')[:50]
 
-        yield f"搜索结果[{i+1}]: '{result_string}...'\n"
+        yield f"搜索结果[{i+1}]: '{result_string}...'\n\n"
         i += 1
 
-    yield f'\n{36*"="}解读结果{36*"="}\n{answers}\n'
+    yield f'\n\n{36*"="}解读结果{36*"="}\n\n{answers}\n\n'
     llm = LLM_Client(
         url=in_api_url,
         temperature=0,
