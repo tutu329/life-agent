@@ -320,7 +320,8 @@ def main_linux():
 
 def main_search_and_summery(question='李白和杜甫关系如何'):
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
-    searcher.search_and_ask(question).get_answer_and_sync_print()
+    llm, urls = searcher.search_and_ask(question)
+    llm.get_answer_and_sync_print()
     # searcher.search_and_ask('2024年有什么大新闻？')
 
 if __name__ == '__main__':
