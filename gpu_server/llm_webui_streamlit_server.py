@@ -92,7 +92,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         final_answer = ''
         assistant = st.chat_message('assistant')
         placeholder0 = assistant.empty()
-        searcher = search_init(concurrent_num=st.session_state.concurrent_num)
+        searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.columns([1])[0].empty().markdown)
         gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
         for result in gen:
             final_answer += result
