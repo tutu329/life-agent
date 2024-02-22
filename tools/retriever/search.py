@@ -5,7 +5,7 @@ import re
 import asyncio
 
 from tools.retriever.html2text import html2text
-from utils.print_tools import print_long_content_with_urls
+from utils.print_tools import print_long_content_with_urls, get_string_of_long_content_with_urls
 from utils.long_content_summary import long_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
 
@@ -84,6 +84,30 @@ class Bing_Searcher():
         llm = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
         self.flicker.set_stop()
         return llm, search_urls
+    def search_and_ask_yield(self, in_question):
+        prompt = in_question
+        self.flicker = Flicker_Task(in_stream_buf_callback=self.stream_buf_callback)
+        self.flicker.init(in_streamlit=True).start()
+
+        internet_search_resultes = self.search(prompt)  # [(url, content_para_list), (url, content_para_list), ...]
+        yield get_string_of_long_content_with_urls(internet_search_resultes)
+
+        contents = []
+        search_urls = []
+        for result in internet_search_resultes:
+            web_url = result[0]
+            search_urls.append(web_url)
+            content_list = result[1]
+            contents.append('\n'.join(content_list))
+        gen = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
+        self.flicker.set_stop()
+        for result in gen.get_answer_generator():
+            yield result
+        yield '\n'
+        i=0
+        for url in search_urls:
+            i+=1
+            yield f'[{i}]' + url + '\n'
 
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
     @staticmethod
@@ -324,6 +348,12 @@ def main_search_and_summery(question='李白和杜甫关系如何'):
     llm.get_answer_and_sync_print()
     # searcher.search_and_ask('2024年有什么大新闻？')
 
+def main_search_and_summery_yield(question='李白和杜甫关系如何'):
+    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
+    gen = searcher.search_and_ask_yield(question)
+    for result in gen:
+        print(result, end='', flush=True)
+
 if __name__ == '__main__':
     import argparse
 
@@ -331,4 +361,4 @@ if __name__ == '__main__':
     parser.add_argument("--q", help="question")
     args = parser.parse_args()
 
-    main_search_and_summery(args.q)
+    main_search_and_summery_yield(args.q)

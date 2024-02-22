@@ -126,3 +126,43 @@ def long_content_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.
         in_question=final_question,
     )
     return llm
+def long_content_qa_concurrently_yield(in_contents, in_prompt, in_api_url='http://127.0.0.1:8001/v1', in_search_urls=None):
+    from tools.llm.api_client import Concurrent_LLMs, LLM_Client
+    llms = Concurrent_LLMs(in_url=in_api_url)
+    num = len(in_contents)
+    llms.init(
+        in_prompts=[in_prompt]*num,
+        in_contents=in_contents,
+        # in_stream_buf_callbacks=None,
+    )
+    status = llms.start_and_get_status()
+    results = llms.wait_all(status)
+    summaries = results['llms_full_responses']
+    i = 0
+    answers = ''
+
+    for summary in summaries:
+        if in_search_urls:
+            answers += f'小结[{i}]: ' + summary + '\n' + f'小结[{i}]的来源: ' + in_search_urls[i] + '\n'
+        else:
+            answers += f'小结[{i}]: \n' + summary + '\n'
+        result_string = summary.replace('\n', '')[:50]
+
+        i += 1
+        yield f"搜索结果[{i}]: '{result_string}...'\n"
+
+    yield f'解读结果: \n{answers}\n'
+    llm = LLM_Client(
+        url=in_api_url,
+        temperature=0,
+        print_input=False,
+        history=False,
+    )
+
+    final_question = f'"{answers}", 请综合考虑上述小结内容及其来源可信度，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
+
+    llm = llm.ask_prepare(
+        in_question=final_question,
+    )
+    for chunk in llm.get_answer_generator():
+        yield chunk
