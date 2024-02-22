@@ -8,6 +8,9 @@ def print_long_content_with_urls(in_contents_dict, in_url_len=30, in_content_len
         dot2 = '...' if len(content)>in_content_len else ''
         print(f'[{url[:in_url_len]}{dot1}]: "{content[:in_content_len]}{dot2}"')
 def get_string_of_long_content_with_urls(in_contents_dict, in_url_len=30, in_content_len=50):
+    if in_contents_dict==None:
+        return ''
+
     # in_contents_dict 为 [(url, content_para_list), (url, content_para_list), ...]
     output_string_list = []
     for result in in_contents_dict:

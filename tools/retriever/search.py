@@ -59,10 +59,14 @@ class Bing_Searcher():
         # -------------------------------------- -----------------------------------------------------------------------------------------------
 
     def search(self, in_question):
-        async def _search(in_question):
-            return await self._query_bing_and_get_results(in_question)
+        try:
+            async def _search(in_question):
+                return await self._query_bing_and_get_results(in_question)
 
-        res = self.loop.run_until_complete(_search(in_question))
+            res = self.loop.run_until_complete(_search(in_question))
+        except Exception as e:
+            print(f'search()异常: "{e}"')
+            return None
         return res
 
     # 【legacy】并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
@@ -96,26 +100,33 @@ class Bing_Searcher():
 
         contents = []
         search_urls = []
-        for result in internet_search_resultes:
-            web_url = result[0]
-            search_urls.append(web_url)
-            content_list = result[1]
-            contents.append('\n'.join(content_list))
-        gen = long_content_qa_concurrently_yield(
-            in_contents=contents,
-            in_prompt=prompt,
-            in_api_url=self.llm_api_url,
-            in_search_urls=search_urls,
-            in_max_new_tokens=in_max_new_tokens
-        )
+        gen = None
+        if internet_search_resultes is not None:
+            for result in internet_search_resultes:
+                web_url = result[0]
+                search_urls.append(web_url)
+                content_list = result[1]
+                contents.append('\n'.join(content_list))
+
+            gen = long_content_qa_concurrently_yield(
+                in_contents=contents,
+                in_prompt=prompt,
+                in_api_url=self.llm_api_url,
+                in_search_urls=search_urls,
+                in_max_new_tokens=in_max_new_tokens
+            )
+
         self.flicker.set_stop()
-        for result in gen:
-            yield result
-        yield '\n'
-        i=0
-        for url in search_urls:
-            i+=1
-            yield f'[{i}]' + url + '\n'
+        if gen is not None:
+            for result in gen:
+                yield result
+            yield '\n'
+            i=0
+            for url in search_urls:
+                i+=1
+                yield f'[{i}]' + url + '\n'
+        else:
+            yield '网络异常，请重试.\n'
 
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
     @staticmethod
