@@ -1,6 +1,6 @@
 import streamlit as st
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
-
+from utils.task import Flicker_Task
 import time
 import asyncio
 
@@ -96,9 +96,12 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         placeholder0 = assistant.empty()
         gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024, in_stream_buf_callback=placeholder0.markdown)
         placeholder0 = assistant.empty()
+        flicker = Flicker_Task()
+        flicker.init(in_streamlit=True).start()
         for result in gen:
             final_answer += result
-            placeholder0.markdown(final_answer + searcher.flicker.get_flicker())
+            placeholder0.markdown(final_answer + flicker.get_flicker())
+        flicker.set_stop()
         return None, final_answer
     # =================================搜索并llm=================================
     if connecting_internet:
