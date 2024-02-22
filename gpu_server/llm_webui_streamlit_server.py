@@ -92,8 +92,10 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         final_answer = ''
         assistant = st.chat_message('assistant')
         placeholder0 = assistant.empty()
-        searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.columns([1])[0].empty().markdown)
-        gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
+        searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder0.markdown)
+        placeholder0 = assistant.empty()
+        gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024, in_stream_buf_callback=placeholder0.markdown)
+        placeholder0 = assistant.empty()
         for result in gen:
             final_answer += result
             placeholder0.markdown(final_answer + searcher.flicker.get_flicker())
@@ -110,7 +112,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
             placeholder1 = assistant.empty()
             # searcher = search_init(concurrent_num=st.session_state.concurrent_num)
             # print(f'********1 placeholder.markdown: {placeholder.markdown}')
-            searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.columns([1])[0].empty().markdown)
+            searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.empty().markdown)
             rtn, search_urls = searcher.legacy_search_and_ask(prompt)
 
             final_answer = ''

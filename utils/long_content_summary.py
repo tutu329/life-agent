@@ -1,4 +1,6 @@
 from config import Prompt_Limitation
+from utils.task import Flicker_Task
+
 def long_content_qa(in_llm, in_content, in_prompt):
     # print(f'[long_content_summary()]: 文本长度为 {len(in_content)})')
     if len(in_content)==0:
@@ -126,8 +128,19 @@ def long_content_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.
         in_question=final_question,
     )
     return llm
-def long_content_qa_concurrently_yield(in_contents, in_prompt, in_api_url='http://127.0.0.1:8001/v1', in_max_new_tokens=2048, in_search_urls=None):
+def long_content_qa_concurrently_yield(
+        in_contents,
+        in_prompt,
+        in_api_url='http://127.0.0.1:8001/v1',
+        in_max_new_tokens=2048,
+        in_search_urls=None,
+        in_stream_buf_callback=None,
+):
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
+
+    flicker = Flicker_Task(in_stream_buf_callback=in_stream_buf_callback)
+    flicker.init(in_streamlit=True).start()
+
     llms = Concurrent_LLMs(in_url=in_api_url)
     num = len(in_contents)
     llms.init(
@@ -141,6 +154,8 @@ def long_content_qa_concurrently_yield(in_contents, in_prompt, in_api_url='http:
     summaries = results['llms_full_responses']
     i = 0
     answers = ''
+
+    flicker.set_stop()
 
     for summary in summaries:
         line = f'{80*"-"}\n\n'

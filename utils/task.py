@@ -137,7 +137,7 @@ class Flicker_Task(Task_Base):
 
         self.flicker_timer = None
         self.interval = None
-        self.stop = False
+        self.stopped = False
 
         self.stream_buf_callback = in_stream_buf_callback
 
@@ -168,16 +168,15 @@ class Flicker_Task(Task_Base):
 
     def run(self):
         while True:
-            if self.stop:
-                self._stream_output('')
+            if self.stopped:
                 break
 
+            self._stream_output(self.flicker)
             self.__flicker()
 
             # t = threading.Timer(self.interval, self.__flicker)
             #t.start()
             time.sleep(self.interval)
-            self._stream_output(self.flicker)
 
     def _stream_output(self, in_str):
         if self.stream_buf_callback:
@@ -195,7 +194,8 @@ class Flicker_Task(Task_Base):
         return self.flicker
 
     def set_stop(self):
-        self.stop = True
+        self.stopped = True
+        self._stream_output('')
 
     def __flicker(self):
         # print(f'================2: {self.flicker}=====================')
