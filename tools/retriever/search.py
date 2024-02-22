@@ -65,6 +65,7 @@ class Bing_Searcher():
         res = self.loop.run_until_complete(_search(in_question))
         return res
 
+    # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
     def search_and_ask(self, in_question):
         prompt = in_question
         self.flicker = Flicker_Task(in_stream_buf_callback=self.stream_buf_callback)

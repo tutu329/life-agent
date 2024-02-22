@@ -86,6 +86,7 @@ def long_content_qa(in_llm, in_content, in_prompt):
     # return final_answer
 
 
+# 通过llm对多个内容in_contents进行并发解读，返回最终答复对应的llm对象
 def long_content_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.0.0.1:8001/v1', in_search_urls=None):
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
     llms = Concurrent_LLMs(in_url=in_api_url)
