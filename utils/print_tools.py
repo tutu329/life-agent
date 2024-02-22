@@ -20,4 +20,4 @@ def get_string_of_long_content_with_urls(in_contents_dict, in_url_len=30, in_con
         dot2 = '...' if len(content)>in_content_len else ''
         output_string_list.append(f'[{url[:in_url_len]}{dot1}]: "{content[:in_content_len]}{dot2}"')
 
-    return "\n".join(output_string_list)
+    return "\n\n".join(output_string_list)
