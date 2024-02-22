@@ -101,7 +101,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
             # searcher = search_init(concurrent_num=st.session_state.concurrent_num)
             # print(f'********1 placeholder.markdown: {placeholder.markdown}')
             searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.columns([1])[0].empty().markdown)
-            rtn, search_urls = searcher.search_and_ask(prompt)
+            rtn, search_urls = searcher.legacy_search_and_ask(prompt)
 
             final_answer = ''
             placeholder2 = assistant.empty()

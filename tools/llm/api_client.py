@@ -594,6 +594,7 @@ class Concurrent_LLMs():
         in_role_prompts=None,   # 输入的多个role prompt
         in_extra_suffixes=None, # 输出的额外内容(维度同上)
         in_cursor='█ ',         # 输出未完成时显示用的光标
+        in_max_new_tokens=2048,
     ):
         self.prompts = in_prompts
         self.contents = in_contents
@@ -604,7 +605,7 @@ class Concurrent_LLMs():
 
         # 初始化所有llm
         for prompt in self.prompts:
-            self.llms.append(LLM_Client(history=False, print_input=False, temperature=0, url=self.url))
+            self.llms.append(LLM_Client(history=False, max_new_tokens=in_max_new_tokens, print_input=False, temperature=0, url=self.url))
             self.llms_post_processed.append(False)
         self.llms_num = len(self.llms)
 

@@ -6,7 +6,7 @@ import asyncio
 
 from tools.retriever.html2text import html2text
 from utils.print_tools import print_long_content_with_urls, get_string_of_long_content_with_urls
-from utils.long_content_summary import long_content_qa, long_content_qa_concurrently
+from utils.long_content_summary import long_content_qa, long_content_qa_concurrently, long_content_qa_concurrently_yield
 from utils.task import Flicker_Task
 
 SEARCH_TIME_OUT = 3000    # 超时ms
@@ -65,8 +65,8 @@ class Bing_Searcher():
         res = self.loop.run_until_complete(_search(in_question))
         return res
 
-    # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
-    def search_and_ask(self, in_question):
+    # 【legacy】并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
+    def legacy_search_and_ask(self, in_question):
         prompt = in_question
         self.flicker = Flicker_Task(in_stream_buf_callback=self.stream_buf_callback)
         self.flicker.init(in_streamlit=True).start()
@@ -84,13 +84,15 @@ class Bing_Searcher():
         llm = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
         self.flicker.set_stop()
         return llm, search_urls
-    def search_and_ask_yield(self, in_question):
+
+    # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
+    def search_and_ask_yield(self, in_question, in_max_new_tokens=2048):
         prompt = in_question
         self.flicker = Flicker_Task(in_stream_buf_callback=self.stream_buf_callback)
         self.flicker.init(in_streamlit=True).start()
 
         internet_search_resultes = self.search(prompt)  # [(url, content_para_list), (url, content_para_list), ...]
-        yield get_string_of_long_content_with_urls(internet_search_resultes)
+        yield get_string_of_long_content_with_urls(internet_search_resultes) + '\n'
 
         contents = []
         search_urls = []
@@ -99,9 +101,15 @@ class Bing_Searcher():
             search_urls.append(web_url)
             content_list = result[1]
             contents.append('\n'.join(content_list))
-        gen = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
+        gen = long_content_qa_concurrently_yield(
+            in_contents=contents,
+            in_prompt=prompt,
+            in_api_url=self.llm_api_url,
+            in_search_urls=search_urls,
+            in_max_new_tokens=in_max_new_tokens
+        )
         self.flicker.set_stop()
-        for result in gen.get_answer_generator():
+        for result in gen:
             yield result
         yield '\n'
         i=0
@@ -344,13 +352,13 @@ def main_linux():
 
 def main_search_and_summery(question='李白和杜甫关系如何'):
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
-    llm, urls = searcher.search_and_ask(question)
+    llm, urls = searcher.legacy_search_and_ask(question)
     llm.get_answer_and_sync_print()
     # searcher.search_and_ask('2024年有什么大新闻？')
 
 def main_search_and_summery_yield(question='李白和杜甫关系如何'):
-    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
-    gen = searcher.search_and_ask_yield(question)
+    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3, in_llm_api_url='http://127.0.0.1:8001/v1')
+    gen = searcher.search_and_ask_yield(question, in_max_new_tokens=1024)
     for result in gen:
         print(result, end='', flush=True)
 

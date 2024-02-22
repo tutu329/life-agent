@@ -126,11 +126,12 @@ def long_content_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.
         in_question=final_question,
     )
     return llm
-def long_content_qa_concurrently_yield(in_contents, in_prompt, in_api_url='http://127.0.0.1:8001/v1', in_search_urls=None):
+def long_content_qa_concurrently_yield(in_contents, in_prompt, in_api_url='http://127.0.0.1:8001/v1', in_max_new_tokens=2048, in_search_urls=None):
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
     llms = Concurrent_LLMs(in_url=in_api_url)
     num = len(in_contents)
     llms.init(
+        in_max_new_tokens=in_max_new_tokens,
         in_prompts=[in_prompt]*num,
         in_contents=in_contents,
         # in_stream_buf_callbacks=None,
@@ -142,19 +143,21 @@ def long_content_qa_concurrently_yield(in_contents, in_prompt, in_api_url='http:
     answers = ''
 
     for summary in summaries:
+        line = f'{80*"-"}\n'
         if in_search_urls:
-            answers += f'小结[{i}]: ' + summary + '\n' + f'小结[{i}]的来源: ' + in_search_urls[i] + '\n'
+            answers += f'小结[{i+1}]: ' + summary + '\n' + f'小结[{i+1}]的来源: ' + in_search_urls[i] + '\n' + line
         else:
-            answers += f'小结[{i}]: \n' + summary + '\n'
+            answers += f'小结[{i+1}]: \n' + summary + '\n' + line
         result_string = summary.replace('\n', '')[:50]
 
+        yield f"搜索结果[{i+1}]: '{result_string}...'\n"
         i += 1
-        yield f"搜索结果[{i}]: '{result_string}...'\n"
 
-    yield f'解读结果: \n{answers}\n'
+    yield f'\n{36*"="}解读结果{36*"="}\n{answers}\n'
     llm = LLM_Client(
         url=in_api_url,
         temperature=0,
+        max_new_tokens=in_max_new_tokens,
         print_input=False,
         history=False,
     )
