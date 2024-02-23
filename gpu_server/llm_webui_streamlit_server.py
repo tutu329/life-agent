@@ -90,30 +90,39 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
     # =================================agent功能=================================
     if is_agent:
         final_answer = ''
+        status_data = {
+            'type':'status',
+            'title':'调用Agent',
+            'status_list':[],
+        }
         status = st.status(label=":green[Agent已启动...]", expanded=True)
 
         assistant = st.chat_message('assistant')
         placeholder1 = assistant.empty()
 
-        status.markdown("搜索引擎bing.com调用中...")
+        status_data['status_list'].append("搜索引擎bing.com调用中...")
+        status.markdown(status_data['status_list'][-1])
         searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder1.markdown)
 
         # flicker1 = Flicker_Task(in_stream_buf_callback=placeholder1.markdown)
         # flicker1.init(in_streamlit=True).start()
-        status.markdown("搜索结果已返回, 尝试解读中...")
+        status_data['status_list'].append("搜索结果已返回, 尝试解读中...")
+        status.markdown(status_data['status_list'][-1])
         gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
-        status.markdown("解读完成，正在返回结果...")
+        status_data['status_list'].append("搜索引擎bing.com调用中...")
+        status.markdown(status_data['status_list'][-1])
         for res in gen:
             chunk = res['response']
             if res['response_type']=='debug':
-                status.markdown(chunk)
+                status_data['status_list'].append(chunk)
+                status.markdown(status_data['status_list'][-1])
             elif res['response_type']=='final':
                 final_answer += chunk
                 placeholder1.markdown(final_answer)
             # placeholder1.markdown(final_answer + flicker1.get_flicker())
         # flicker1.set_stop()
         status.update(label=f":green[Agent调用完毕]", state='complete', expanded=True)
-        return None, final_answer
+        return status_data, None, final_answer
     # =================================搜索并llm=================================
     if connecting_internet:
         # =================================搜索=================================
@@ -304,8 +313,17 @@ def streamlit_refresh_loop():
 
     for message in st.session_state.messages:
         if type(message)==dict:
-            with st.chat_message(message['role']):
-                st.markdown(message['content'])
+            # print(f'dict message: {message}')
+            if message.get('type') and message['type']=='status':
+                # 添加已完成的status
+                status_title = message['title']
+                status_list = message['status_list']
+                status = st.status(label=status_title, state='complete', expanded=False)
+                for s in status_list:
+                    status.markdown(s)
+            else:
+                with st.chat_message(message['role']):
+                    st.markdown(message['content'])
         elif type(message)==list:
             with st.chat_message('assistant'):
                 num = len(message)
@@ -315,6 +333,7 @@ def streamlit_refresh_loop():
                     col.markdown(message[i])
                     # col.container(border=True).markdown(message[i])
                     i += 1
+        # st.status('测试下status')
 
     if st.session_state.prompt and st.session_state.processing:
         # =======================user输入的显示=======================
@@ -327,9 +346,11 @@ def streamlit_refresh_loop():
         })
 
         # with st.chat_message('assistant'):
-        async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
+        status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
 
         # ==================assistant输出的状态存储====================
+        if status_data:
+            st.session_state.messages.append(status_data)
         if async_llms:
             num = len(async_llms)
             st.session_state.messages.append([async_llms[i].get_final_response() for i in range(num)])
