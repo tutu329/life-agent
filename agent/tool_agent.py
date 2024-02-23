@@ -116,6 +116,9 @@ class Tool_Agent():
             print(f'action_result = "{action_result}"')
         elif 'search_tool'==tool_name:
             print('选择了【search_tool】')
+            tool = Search_Tool()
+            action_result = tool.call(in_thoughts)
+            print(f'action_result = "{action_result}"')
         else:
             print('未选择任何工具。')
         # --------------------------- call tool ---------------------------

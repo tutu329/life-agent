@@ -2,6 +2,8 @@ from typing import Dict, List, Union
 
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 from utils.extract import extract_code, extract_dict_string
+from tools.retriever.search import Bing_Searcher
+
 import json5
 
 PROMPT_REACT0 = """Answer the following questions as best you can. You have access to the following tools:
@@ -86,7 +88,7 @@ class Base_Tool():
 
 class Search_Tool(Base_Tool):
     name='search_tool'
-    description='通过bing进行网页搜索的工具.'
+    description='通过bing.com进行网页搜索并通过playwright爬取搜索结果的工具.'
     parameters=[
         {
             'name': 'query',
@@ -97,6 +99,23 @@ class Search_Tool(Base_Tool):
     ]
     def __init__(self):
         pass
+
+    def call(self, in_thoughts):
+        dict_string = extract_dict_string(in_thoughts)
+        dict = json5.loads(dict_string)
+        query = dict['tool_parameters'][0]['value']
+        print(f'Search_Tool.call(): dict obj is: {dict}')
+        print(f'Search_Tool.call(): query is: "{query}"')
+
+        searcher = Bing_Searcher.create_searcher_and_loop(in_search_num=3)
+        gen = searcher.search_and_ask_yield(query, in_max_new_tokens=1024)
+        action_result = ''
+        for res in gen:
+            chunk = res['response']
+            if res['response_type']=='final':
+                print(chunk, end='', flush=True)
+                action_result += chunk
+        return action_result
 
 class Code_Tool(Base_Tool):
     name='code_tool'
