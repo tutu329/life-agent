@@ -11,3 +11,7 @@ class Prompt_Limitation():
     context_max_len:int = 2000      # 返回文本(content)字符串的最大长度 (如果文本超过这个长度，则以该长度为单位，进行分段解读，如context_max_len为500，则600字分为500和100两段)
     # 例如搜索结果文本的最大分段数：
     context_max_paragraphs:int = 1  # 返回文本(content)字符串list的最大长度
+
+@dataclass
+class Global():
+    line:str = f'{80 * "-"}\n\n'

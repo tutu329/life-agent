@@ -1,4 +1,4 @@
-from config import Prompt_Limitation
+from config import Prompt_Limitation, Global
 from utils.task import Flicker_Task
 
 def long_content_qa(in_llm, in_content, in_prompt):
@@ -151,18 +151,19 @@ def long_content_qa_concurrently_yield(
     i = 0
     answers = ''
 
+    # line = f'{80 * "-"}\n\n'
+    yield Global.line
     for summary in summaries:
-        line = f'{80*"-"}\n\n'
         if in_search_urls:
-            answers += f'小结[{i+1}]: ' + summary + '\n\n' + f'小结[{i+1}]的来源: ' + in_search_urls[i] + '\n\n' + line
+            answers += f'小结[{i+1}]: ' + summary + '\n\n' + f'小结[{i+1}]的来源: ' + in_search_urls[i] + '\n\n' + Global.line
         else:
-            answers += f'小结[{i+1}]: \n\n' + summary + '\n\n' + line
+            answers += f'小结[{i+1}]: \n\n' + summary + '\n\n' + Global.line
         result_string = summary.replace('\n', '')[:50]
 
         yield f"搜索结果[{i+1}]: '{result_string}...'\n\n"
         i += 1
 
-    yield f'\n\n{36*"="}解读结果{36*"="}\n\n{answers}\n\n'
+    yield Global.line
     llm = LLM_Client(
         url=in_api_url,
         temperature=0,

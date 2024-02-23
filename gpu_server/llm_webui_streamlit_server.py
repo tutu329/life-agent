@@ -90,18 +90,29 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
     # =================================agent功能=================================
     if is_agent:
         final_answer = ''
+        status = st.status(label=":green[Agent已启动...]", expanded=True)
+
         assistant = st.chat_message('assistant')
         placeholder1 = assistant.empty()
 
+        status.markdown("搜索引擎bing.com调用中...")
         searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder1.markdown)
 
-        flicker1 = Flicker_Task(in_stream_buf_callback=placeholder1.markdown)
-        flicker1.init(in_streamlit=True).start()
+        # flicker1 = Flicker_Task(in_stream_buf_callback=placeholder1.markdown)
+        # flicker1.init(in_streamlit=True).start()
+        status.markdown("搜索结果已返回, 尝试解读中...")
         gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
-        for result in gen:
-            final_answer += result
-            placeholder1.markdown(final_answer + flicker1.get_flicker())
-        flicker1.set_stop()
+        status.markdown("解读完成，正在返回结果...")
+        for res in gen:
+            chunk = res['response']
+            if res['response_type']=='debug':
+                status.markdown(chunk)
+            elif res['response_type']=='final':
+                final_answer += chunk
+                placeholder1.markdown(final_answer)
+            # placeholder1.markdown(final_answer + flicker1.get_flicker())
+        # flicker1.set_stop()
+        status.update(label=f":green[Agent调用完毕]", state='complete', expanded=True)
         return None, final_answer
     # =================================搜索并llm=================================
     if connecting_internet:

@@ -90,12 +90,26 @@ class Bing_Searcher():
         return llm, search_urls
 
     # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
-    def search_and_ask_yield(self, in_question, in_max_new_tokens=2048,):
+    def search_and_ask_yield(self, in_question, in_max_new_tokens=2048):
+        searcher_and_llms_status = {
+            'type'                : 'running',
+            'canceled'            : False,
+            'describe'            : '启动搜索解读任务...',
+            'detail'              : f'正在通过bing.com进行搜索...',
+            'llms_complete'       : [False]*self.search_num,
+            'llms_full_responses' : ['']*self.search_num,
+            'response_type'       : 'debug', # debug | final
+            'response'            : '',
+        }
+        yield searcher_and_llms_status
+
         prompt = in_question
 
         internet_search_resultes = self.search(prompt)  # [(url, content_para_list), (url, content_para_list), ...]
 
-        yield get_string_of_long_content_with_urls(internet_search_resultes) + '\n\n'
+        searcher_and_llms_status['response_type'] = 'debug'
+        searcher_and_llms_status['response'] =  get_string_of_long_content_with_urls(internet_search_resultes) + '\n\n'
+        yield searcher_and_llms_status
 
         contents = []
         search_urls = []
@@ -117,14 +131,22 @@ class Bing_Searcher():
 
         if gen is not None:
             for result in gen:
-                yield result
-            yield '\n\n'
+                searcher_and_llms_status['response_type'] = 'final'
+                searcher_and_llms_status['response'] = result
+                yield searcher_and_llms_status
+            searcher_and_llms_status['response_type'] = 'final'
+            searcher_and_llms_status['response'] = '\n\n'
+            yield searcher_and_llms_status
             i=0
             for url in search_urls:
                 i+=1
-                yield f'[{i}]' + url + '\n\n'
+                searcher_and_llms_status['response_type'] = 'final'
+                searcher_and_llms_status['response'] = f'[{i}]' + url + '\n\n'
+                yield searcher_and_llms_status
         else:
-            yield '网络异常，请重试.\n\n'
+            searcher_and_llms_status['response_type'] = 'final'
+            searcher_and_llms_status['response'] += '网络异常，请重试.\n\n'
+            yield searcher_and_llms_status
 
     # 初始化并返回searcher实例、返回loop，并对win下streamlit的eventloop进行fix
     @staticmethod
