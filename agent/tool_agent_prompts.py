@@ -89,7 +89,12 @@ class Base_Tool():
 
 class Energy_Investment_Plan_Tool(Base_Tool):
     name='energy_investment_plan_tool'
-    description='通过"能源投资优化系统"对风光储等能源设施进行基于线性规划的最优投资规模计算的工具.'
+    description='''
+通过"能源投资优化系统"对风光储等能源设施进行基于线性规划的最优投资规模计算的工具.
+所输入参数必须遵循如下要求, 否则转换为dict数据时会失败:
+1)绝对不能增加如#开头的注释.
+2)bool变量必须为true或false, 而不能是True或False.
+'''
     parameters=[
         {
             'name': 'rate',
@@ -107,6 +112,12 @@ class Energy_Investment_Plan_Tool(Base_Tool):
             'name': 'load_max',
             'type': 'float',
             'description': '最大负荷(kW)',
+            'required': 'True',
+        },
+        {
+            'name': 'load_electricity',
+            'type': 'float',
+            'description': '年用电量(kWh)',
             'required': 'True',
         },
         {
@@ -136,7 +147,7 @@ class Energy_Investment_Plan_Tool(Base_Tool):
         {
             'name': 'pv_optimize',
             'type': 'bool',
-            'description': '是否对光伏系统新建规模进行优化(True|False)',
+            'description': '是否对光伏系统新建规模进行优化(true|false)',
             'required': 'True',
         },
         {
@@ -154,7 +165,7 @@ class Energy_Investment_Plan_Tool(Base_Tool):
         {
             'name': 'wind_optimize',
             'type': 'bool',
-            'description': '是否对风电系统新建规模进行优化(True|False)',
+            'description': '是否对风电系统新建规模进行优化(true|false)',
             'required': 'True',
         },
         {
