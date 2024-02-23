@@ -3,6 +3,7 @@ from typing import Dict, List, Union
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 from utils.extract import extract_code, extract_dict_string
 from tools.retriever.search import Bing_Searcher
+from config import Global
 
 import json5
 
@@ -85,6 +86,102 @@ class Base_Tool():
         # print('+++++++++++++++++++++')
         
         return dict['tool_name']
+
+class Energy_Investment_Plan_Tool(Base_Tool):
+    name='energy_investment_plan_tool'
+    description='通过"能源投资优化系统"对风光储等能源设施进行基于线性规划的最优投资规模计算的工具.'
+    parameters=[
+        {
+            'name': 'rate',
+            'type': 'float',
+            'description': '基准收益率',
+            'required': 'True',
+        },
+        {
+            'name': 'simu_years',
+            'type': 'int',
+            'description': '仿真年数(年)',
+            'required': 'True',
+        },
+        {
+            'name': 'load_max',
+            'type': 'float',
+            'description': '最大负荷(kW)',
+            'required': 'True',
+        },
+        {
+            'name': 'storage_w_cost',
+            'type': 'float',
+            'description': '储能系统的功率单位造价(元/W)',
+            'required': 'True',
+        },
+        {
+            'name': 'storage_wh_cost',
+            'type': 'float',
+            'description': '储能系统的容量单位造价(元/Wh)',
+            'required': 'True',
+        },
+        {
+            'name': 'pv_cost',
+            'type': 'float',
+            'description': '光伏系统的功率单位造价(元/W)',
+            'required': 'True',
+        },
+        {
+            'name': 'pv_nom0',
+            'type': 'float',
+            'description': '已建光伏系统规模(kW)',
+            'required': 'True',
+        },
+        {
+            'name': 'pv_optimize',
+            'type': 'bool',
+            'description': '是否对光伏系统新建规模进行优化(True|False)',
+            'required': 'True',
+        },
+        {
+            'name': 'wind_cost',
+            'type': 'float',
+            'description': '风电系统的功率单位造价(元/W)',
+            'required': 'True',
+        },
+        {
+            'name': 'wind_nom0',
+            'type': 'float',
+            'description': '已建风电系统规模(kW)',
+            'required': 'True',
+        },
+        {
+            'name': 'wind_optimize',
+            'type': 'bool',
+            'description': '是否对风电系统新建规模进行优化(True|False)',
+            'required': 'True',
+        },
+        {
+            'name': 'up_flow_max_proportion',
+            'type': 'float',
+            'description': '新能源倒送到电网的电量的最大比例(0-100%)',
+            'required': 'True',
+        },
+        {
+            'name': 'down_flow_max_proportion',
+            'type': 'float',
+            'description': '电网下送电量的最大比例(0-100%)',
+            'required': 'True',
+        },
+    ]
+    def __init__(self):
+        pass
+
+    def call(self, in_thoughts):
+        dict_string = extract_dict_string(in_thoughts)
+        dict = json5.loads(dict_string)
+        print(Global.line)
+        print(f'Energy_Investment_Plan_Tool的输入参数dict为: {dict}')
+        print(Global.line)
+
+        action_result = '【最终答复】Energy_Investment_Plan_Tool()尚未完整实现.'
+        return action_result
 
 class Search_Tool(Base_Tool):
     name='search_tool'
