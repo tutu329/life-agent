@@ -222,11 +222,11 @@ class Energy_Investment_Plan_Tool(Base_Tool):
             response = requests.post(url='http://116.62.63.204:18001/cal/', json=req)
             response.raise_for_status()  # 如果不在200-400，发出一个异常
             rtn_table = response.json()
-            print(f'NPS服务器返回的结果汇总表为: \n{rtn_table}')
+            # print(f'NPS服务器返回的结果为: \n{rtn_table}')
         except RequestException as e:
-            action_result = f'请求API服务器出错：{e}'
+            action_result = f'Energy_Investment_Plan_Tool请求API时，服务器报错：{e}'
 
-        action_result = f'Energy_Investment_Plan_Tool返回的结果汇总表为: \n{rtn_table}'
+        action_result = f'Energy_Investment_Plan_Tool返回的结果汇总为: \n{rtn_table}\n 请返回整理结果和报告的具体url'
         # action_result = '【最终答复】Energy_Investment_Plan_Tool()尚未完整实现.'
         return action_result
 
