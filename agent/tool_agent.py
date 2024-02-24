@@ -117,6 +117,7 @@ class Tool_Agent():
 
     def _thoughts_stream_output(self, gen):
         thoughts = ''
+        i=0
         # stream输出
         for chunk in gen:
             thoughts +=chunk
@@ -127,16 +128,19 @@ class Tool_Agent():
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
                 # self.status_stream(chunk, thoughts)
                 pass
-                # if '\n' in thoughts:
-                #     # 输出已经有\n的内容
-                #     print_content = thoughts.split('\n')[0]
-                #     self.status_print(print_content)
-                #     if self.status_list is not None:
-                #         self.status_list.append(print_content)
-                #     # 删除第一个\n前的内容
-                #     remain_content = thoughts.split('\n')
-                #     remain_content.pop(0)
-                #     thoughts = '\n'.join(remain_content)
+                if '\n' in thoughts:
+                    # 输出已经有\n的内容
+                    print_content = thoughts.split('\n')[i]
+                    i += 1
+                    print(f'=================print_content: {print_content}')
+                    self.status_print(print_content)
+                    if self.status_list is not None:
+                        self.status_list.append(print_content)
+                    # 删除第一个\n前的内容
+                    # remain_content = thoughts.split('\n')
+                    # remain_content.pop(0)
+                    # print(f'=================remain_content: {remain_content}')
+                    # thoughts = '\n'.join(remain_content)
         # 添加输出历史
         if self.__finished_keyword in thoughts:
             # 最终结果输出历史
