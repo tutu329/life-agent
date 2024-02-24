@@ -117,7 +117,6 @@ class Tool_Agent():
 
     def _thoughts_stream_output(self, gen):
         thoughts = ''
-        i=0
         # stream输出
         for chunk in gen:
             thoughts +=chunk
@@ -130,8 +129,7 @@ class Tool_Agent():
                 pass
                 if '\n' in thoughts:
                     # 输出已经有\n的内容
-                    print_content = thoughts.split('\n')[i]
-                    i += 1
+                    print_content = thoughts.split('\n')[0]
                     print(f'=================print_content: {print_content}')
                     self.status_print(print_content)
                     if self.status_list is not None:
