@@ -34,10 +34,11 @@ PROMPT_REACT = """你必须回答接下来的问题，而且系统已经为你�
 【工具】这里写{{
     'tool_invoke':'no'或者'yes',
     'tool_name':你所要调用的工具的名称,
-    'tool_parameters':[
-        {{'name':参数名称, 'value':参数值}}, （注意：如果'value'值为代码字符串，则代码字符串起始必须换一行顶格，绝对不能有额外缩进。）
+    'tool_parameters':{{
+        'para1' : value1,
+        'para2' : value2,   （注意：如果'value'值为代码字符串，则代码字符串起始必须换一行顶格，绝对不能有额外缩进。）
         ... , 
-    ],
+    }},
 }}。(注意工具名称必须是这些名称之一 [{tool_names}] 。)
 【观察】这里不需要你写，系统会自动在这里提供工具调用的结果信息。
 
@@ -171,13 +172,13 @@ class Energy_Investment_Plan_Tool(Base_Tool):
         {
             'name': 'up_flow_max_proportion',
             'type': 'float',
-            'description': '新能源倒送到电网的电量的最大比例(0-100%)',
+            'description': '新能源倒送到电网的电量的最大比例(0.0-1.0)',
             'required': 'True',
         },
         {
             'name': 'down_flow_max_proportion',
             'type': 'float',
-            'description': '电网下送电量的最大比例(0-100%)',
+            'description': '电网下送电量的最大比例(0.0-1.0)',
             'required': 'True',
         },
     ]
@@ -191,7 +192,42 @@ class Energy_Investment_Plan_Tool(Base_Tool):
         print(f'Energy_Investment_Plan_Tool的输入参数dict为: {dict}')
         print(Global.line)
 
-        action_result = '【最终答复】Energy_Investment_Plan_Tool()尚未完整实现.'
+        action_result = ''
+        try:
+            import requests
+            from requests.exceptions import RequestException
+            # req = {
+            #     'rate': 0.08,
+            #
+            #     'pv_nom0': 0,
+            #     'pv_cost': 3.5,
+            #     'pv_optimize': True,
+            #
+            #     'wind_nom0': 0,
+            #     'wind_cost': 3.5,
+            #     'wind_optimize': True,
+            #
+            #     'storage_w_cost': 0.12,
+            #     'storage_wh_cost': 1.38 * 0.6,
+            #
+            #     'up_flow_max_proportion': 0.2,
+            #     'down_flow_max_proportion': 0.1,
+            #
+            #     'load_max': 800 * 1000,
+            #     'load_electricity': 800 * 1000 * 6400,
+            #
+            #     'simu_years': 10,
+            # }
+            req = dict['tool_parameters']
+            response = requests.post(url='http://116.62.63.204:18001/cal/', json=req)
+            response.raise_for_status()  # 如果不在200-400，发出一个异常
+            rtn_table = response.json()
+            print(f'NPS服务器返回的结果汇总表为: \n{rtn_table}')
+        except RequestException as e:
+            action_result = f'请求API服务器出错：{e}'
+
+        action_result = f'Energy_Investment_Plan_Tool返回的结果汇总表为: \n{rtn_table}'
+        # action_result = '【最终答复】Energy_Investment_Plan_Tool()尚未完整实现.'
         return action_result
 
 class Search_Tool(Base_Tool):
