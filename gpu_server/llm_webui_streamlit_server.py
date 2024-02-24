@@ -155,7 +155,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
                 final_answer += url_string
                 placeholder2.markdown(url_string)
 
-            return None, final_answer
+            return None, None, final_answer
 
         searcher = search_init(concurrent_num=st.session_state.concurrent_num)
 
@@ -227,7 +227,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         for answer in task_status['llms_full_responses']:
             # 这里task_status是llms.start_and_get_status()结束后的最终状态
             final_answer += answer
-        return async_llms, final_answer
+        return None, async_llms, final_answer
     else:
         # =================================local llm=================================
         place_holder = st.chat_message('assistant').empty()
@@ -240,7 +240,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         ).get_answer_generator():
             full_res += res
             place_holder.markdown(full_res)
-        return None, full_res
+        return None, None, full_res
 
 def on_clear_history():
     st.session_state.messages = []
