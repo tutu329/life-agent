@@ -226,7 +226,8 @@ class Energy_Investment_Plan_Tool(Base_Tool):
         except RequestException as e:
             action_result = f'Energy_Investment_Plan_Tool请求API时，服务器报错：{e}'
 
-        action_result = f'Energy_Investment_Plan_Tool返回的结果汇总为: \n{rtn_table}\n 请返回整理结果和报告的具体url'
+        # action_result = f'Energy_Investment_Plan_Tool返回的结果汇总为: \n{rtn_table}'
+        action_result = f'Energy_Investment_Plan_Tool返回的结果汇总为: \n{rtn_table}\n 请返回整理结果和报告url'
         # action_result = '[最终答复]Energy_Investment_Plan_Tool()尚未完整实现.'
         return action_result
 

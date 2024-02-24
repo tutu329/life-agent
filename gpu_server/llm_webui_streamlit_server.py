@@ -100,7 +100,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
             'status_list':[],
         }
         status = st.status(label=":green[Agent]", expanded=True)
-        status.markdown('任务已启动...')
+        status.markdown('任务(ReAct模式)已启动...')
 
         assistant = st.chat_message('assistant')
         placeholder1 = assistant.empty()
