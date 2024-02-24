@@ -150,7 +150,7 @@ class Tool_Agent():
                 self.output_list.append(thoughts.replace(self.__finished_keyword, ''))
         else:
             # 中间状态输出历史
-            self.status_print(thoughts) # streamlit的status无法stream输出，只能这里print输出
+            # self.status_print(thoughts) # streamlit的status无法stream输出，只能这里print输出
             if self.status_list is not None:
                 # print(f'self.status_list.append: {thoughts}')
                 self.status_list.append(thoughts)
