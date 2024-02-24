@@ -1,5 +1,9 @@
 import streamlit as st
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
+
+from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool
+from agent.tool_agent import Tool_Agent
+
 from utils.task import Flicker_Task
 import time
 import asyncio
@@ -89,40 +93,70 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
 def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
     # =================================agent功能=================================
     if is_agent:
-        final_answer = ''
+        final_answer_list = []
         status_data = {
             'type':'status',
-            'title':'调用Agent',
+            'title':'Agent',
             'status_list':[],
         }
-        status = st.status(label=":green[Agent已启动...]", expanded=True)
+        status = st.status(label=":green[Agent思考中...]", expanded=True)
 
         assistant = st.chat_message('assistant')
         placeholder1 = assistant.empty()
 
-        status_data['status_list'].append("搜索引擎bing.com调用中...")
-        status.markdown(status_data['status_list'][-1])
-        searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder1.markdown)
+        # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
+        tools = [Search_Tool, Code_Tool, Energy_Investment_Plan_Tool]
+        agent = Tool_Agent(
+            in_query=prompt,
+            in_tool_classes=tools,
+            inout_status_list=status_data['status_list'],
+            in_status_stream_buf=status.markdown,
+            inout_output_list=final_answer_list,
+            in_output_stream_buf=placeholder1.markdown,
+        )
+        agent.init()
+        success = agent.run()
+        print(f'final_answer_list: {final_answer_list}')
+        status_list = status_data["status_list"]
+        print(f'status_list: {status_list}')
 
-        # flicker1 = Flicker_Task(in_stream_buf_callback=placeholder1.markdown)
-        # flicker1.init(in_streamlit=True).start()
-        status_data['status_list'].append("搜索结果已返回, 尝试解读中...")
-        status.markdown(status_data['status_list'][-1])
-        gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
-        status_data['status_list'].append("搜索引擎bing.com调用中...")
-        status.markdown(status_data['status_list'][-1])
-        for res in gen:
-            chunk = res['response']
-            if res['response_type']=='debug':
-                status_data['status_list'].append(chunk)
-                status.markdown(status_data['status_list'][-1])
-            elif res['response_type']=='final':
-                final_answer += chunk
-                placeholder1.markdown(final_answer)
-            # placeholder1.markdown(final_answer + flicker1.get_flicker())
-        # flicker1.set_stop()
-        status.update(label=f":green[Agent调用完毕]", state='complete', expanded=True)
-        return status_data, None, final_answer
+        status.update(label=f":green[Agent已完成任务]", state='complete', expanded=True)
+        return status_data, None, '\n'.join(final_answer_list)
+    # if is_agent:
+    #     final_answer = ''
+    #     status_data = {
+    #         'type':'status',
+    #         'title':'调用Agent',
+    #         'status_list':[],
+    #     }
+    #     status = st.status(label=":green[Agent已启动...]", expanded=True)
+    #
+    #     assistant = st.chat_message('assistant')
+    #     placeholder1 = assistant.empty()
+    #
+    #     status_data['status_list'].append("搜索引擎bing.com调用中...")
+    #     status.markdown(status_data['status_list'][-1])
+    #     searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder1.markdown)
+    #
+    #     # flicker1 = Flicker_Task(in_stream_buf_callback=placeholder1.markdown)
+    #     # flicker1.init(in_streamlit=True).start()
+    #     status_data['status_list'].append("搜索结果已返回, 尝试解读中...")
+    #     status.markdown(status_data['status_list'][-1])
+    #     gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
+    #     status_data['status_list'].append("搜索引擎bing.com调用中...")
+    #     status.markdown(status_data['status_list'][-1])
+    #     for res in gen:
+    #         chunk = res['response']
+    #         if res['response_type']=='debug':
+    #             status_data['status_list'].append(chunk)
+    #             status.markdown(status_data['status_list'][-1])
+    #         elif res['response_type']=='final':
+    #             final_answer += chunk
+    #             placeholder1.markdown(final_answer)
+    #         # placeholder1.markdown(final_answer + flicker1.get_flicker())
+    #     # flicker1.set_stop()
+    #     status.update(label=f":green[Agent调用完毕]", state='complete', expanded=True)
+    #     return status_data, None, final_answer
     # =================================搜索并llm=================================
     if connecting_internet:
         # =================================搜索=================================

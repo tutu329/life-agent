@@ -5,7 +5,15 @@ from utils.extract import extract_code, extract_dict_string
 import torch
 
 class Tool_Agent():
-    def __init__(self, in_query, in_tool_classes, in_human=True):
+    def __init__(self,
+                 in_query,
+                 in_tool_classes,
+                 in_human=True,
+                 inout_status_list=None,
+                 in_output_stream_buf=None,
+                 inout_output_list=None,
+                 in_status_stream_buf=None,
+                 ):
         self.llm = None
         self.prompt = ''
         self.query=in_query
@@ -17,8 +25,51 @@ class Tool_Agent():
         self.action_stop = ['【观察】']
         self.observation_stop = ['【观察】']
 
+        self.ostream = in_output_stream_buf   # 最终结果输出的stream
+        self.sstream = in_status_stream_buf   # 中间状态输出的stream
+
+        self.status_list = inout_status_list     # 状态历史
+        self.output_list = inout_output_list     # 输出历史
+
+        self.__finished_keyword = '【最终答复】'
+
+    # 最终结果输出
+    def output_print(self, in_string):
+        if self.ostream is not None:
+            self.ostream(in_string)
+
+            if self.output_list is not None:
+                self.output_list.append(in_string)
+        else:
+            print(in_string)
+
+    # 中间状态输出
+    def status_print(self, in_string):
+        if self.sstream is not None:
+            self.sstream(in_string)
+
+            if self.status_list is not None:
+                self.status_list.append(in_string)
+        else:
+            print(in_string)
+
+    # 最终结果stream输出
+    def output_stream(self, in_chunk, in_full_response):
+        if self.ostream is not None:
+            self.ostream(in_full_response)
+        else:
+            print(in_chunk, end='', flush=True)
+
+    # 中间状态stream输出(注意：streamlit的status不支持stream输出，只能打印)
+    def status_stream(self, in_chunk, in_full_response):
+        if self.sstream is not None:
+            # self.sstream(in_chunk)
+            pass
+        else:
+            print(in_chunk, end='', flush=True)
+
     def init(self):
-        self.llm = LLM_Client(temperature=0, history=False, print_input=False, max_new_tokens=1048)
+        self.llm = LLM_Client(temperature=0, history=False, print_input=False, max_new_tokens=1024)
         self.prompt = PROMPT_REACT
 
         # 将所有工具转换为{tool_descs}和{tool_names}
@@ -46,61 +97,75 @@ class Tool_Agent():
         for i in range(in_max_retry):
             # 1、思考
             thoughts = self.thinking()
-            if '【最终答复】' in thoughts:
+            if self.__finished_keyword in thoughts:
                 return True
 
-            if i>0:
-                if self.human:
-                    human_input = input('【暂停】是否需要继续, y/n?')
-                    if human_input=='y':
-                        pass
-                    else:
-                        return False
+            # if i>0:
+            #     if self.human:
+            #         human_input = input('【暂停】是否需要继续, y/n?')
+            #         if human_input=='y':
+            #             pass
+            #         else:
+            #             return False
 
             # 2、行动
             action_result = self.action(in_thoughts=thoughts)
             # 3、观察
             self.observation(in_action_result=action_result)
-            
+
         return False
 
-    def thinking(self):
-        thoughts = self.llm.ask_prepare(self.prompt, in_stop=self.action_stop).get_answer_and_sync_print()
-        if '【最终答复】' in thoughts:
-            return thoughts
-            
-        self.prompt += '\n' + thoughts + '】'
-        print(f'============================prompt start============================\n')
-        print(f'{self.prompt}\n------------------------prompt end------------------------')
+    def _thoughts_stream_output(self, gen):
+        thoughts = ''
+        # stream输出
+        for chunk in gen:
+            thoughts +=chunk
+            if self.__finished_keyword in thoughts:
+                # 最终结果stream输出
+                self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
+            else:
+                # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
+                # self.status_stream(chunk, thoughts)
+                pass
+                # if '\n' in thoughts:
+                #     # 输出已经有\n的内容
+                #     print_content = thoughts.split('\n')[0]
+                #     self.status_print(print_content)
+                #     if self.status_list is not None:
+                #         self.status_list.append(print_content)
+                #     # 删除第一个\n前的内容
+                #     remain_content = thoughts.split('\n')
+                #     remain_content.pop(0)
+                #     thoughts = '\n'.join(remain_content)
+        # 添加输出历史
+        if self.__finished_keyword in thoughts:
+            # 最终结果输出历史
+            if self.output_list is not None:
+                s = thoughts.replace(self.__finished_keyword, '')
+                # print(f'self.output_list.append: {s}')
+                self.output_list.append(thoughts.replace(self.__finished_keyword, ''))
+        else:
+            # 中间状态输出历史
+            self.status_print(thoughts) # streamlit的status无法stream输出，只能这里print输出
+            if self.status_list is not None:
+                # print(f'self.status_list.append: {thoughts}')
+                self.status_list.append(thoughts)
+
         return thoughts
 
-    def action0(self, in_thoughts):
-        # --------------------------- call tool ---------------------------
-        action_result = ''
-        dict_string = extract_dict_string(in_thoughts)
-        print('+++++++++++++++++++++')
-        print(f'dict_string:')
-        print(f'{dict_string}')
-        print('+++++++++++++++++++++')
-        if not dict_string:
-            action_result = '【错误】工具参数未写完整！'
-            return action_result
-        if 'code_tool' in dict_string:
-            print('选择了【code_tool】')
-            code = extract_code(dict_string)
-            if code:
-                print(f'【code_tool】输入的程序为：\n{code}\n')
-                action_result = execute_python_code_in_docker(code)
-                if action_result=='':
-                    action_result = 'code_tool未输出有效信息，可能是因为没有用print输出结果。'
-        elif 'search_tool' in dict_string:
-            print('选择了【search_tool】')
-        else:
-            print('未选择任何工具。')
-        # --------------------------- call tool ---------------------------
+    def thinking(self):
+        gen = self.llm.ask_prepare(self.prompt, in_stop=self.action_stop).get_answer_generator()
+        # thoughts = ''
 
-        print(f'【行动结果】\n{action_result}')
-        return action_result
+        thoughts = self._thoughts_stream_output(gen)
+
+        if self.__finished_keyword in thoughts:
+            return thoughts
+
+        self.prompt += '\n' + thoughts + '】'
+        # self.status_print(f'============================prompt start============================\n')
+        # self.status_print(f'{self.prompt}\n------------------------prompt end------------------------')
+        return thoughts
 
     def action(self, in_thoughts):
         # --------------------------- call tool ---------------------------
@@ -108,27 +173,27 @@ class Tool_Agent():
         tool_name = Base_Tool.extract_tool_name(in_thoughts)
 
         if 'code_tool'==tool_name:
-            print('选择了【code_tool】')
+            self.status_print('选择了【code_tool】')
             tool = Code_Tool()
             action_result = tool.call(in_thoughts)
             if action_result=='':
                 action_result = 'code_tool未输出有效信息，可能是因为没有用print输出结果。'
-            print(f'action_result = "{action_result}"')
+            # self.status_print(f'action_result = "{action_result}"')
         elif 'search_tool'==tool_name:
-            print('选择了【search_tool】')
+            self.status_print('选择了【search_tool】')
             tool = Search_Tool()
             action_result = tool.call(in_thoughts)
-            print(f'action_result = "{action_result}"')
+            # self.status_print(f'action_result = "{action_result}"')
         elif 'energy_investment_plan_tool'==tool_name:
-            print('选择了【energy_investment_plan_tool】')
+            self.status_print('选择了【energy_investment_plan_tool】')
             tool = Energy_Investment_Plan_Tool()
             action_result = tool.call(in_thoughts)
-            print(f'action_result = "{action_result}"')
+            # self.status_print(f'action_result = "{action_result}"')
         else:
-            print('未选择任何工具。')
+            self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------
 
-        print(f'【行动结果】\n{action_result}')
+        self.status_print(f'【行动结果】\n{action_result}')
         return action_result
 
     def observation(self, in_action_result=''):
@@ -171,7 +236,7 @@ def main():
             
         agent = Tool_Agent(in_query=query, in_tool_classes=tools)
         agent.init()
-        success = agent.run()
+        success = agent.run_yield()
         if success:
             print(f"【运行结果】成功。")
         else:
