@@ -29,9 +29,9 @@ PROMPT_REACT = """你必须回答接下来的问题，而且系统已经为你�
 
 回复格式具体如下:
 
-【问题】需要你回答的问题。
-【思考】这里写你的思考过程，关于如何才能更好的回答这个问题。
-【工具】这里写{{
+[问题]需要你回答的问题。
+[思考]这里写你的思考过程，关于如何才能更好的回答这个问题。
+[工具]这里写{{
     'tool_invoke':'no'或者'yes',
     'tool_name':你所要调用的工具的名称,
     'tool_parameters':{{
@@ -40,16 +40,16 @@ PROMPT_REACT = """你必须回答接下来的问题，而且系统已经为你�
         ... , 
     }},
 }}。(注意工具名称必须是这些名称之一 [{tool_names}] 。)
-【观察】这里不需要你写，系统会自动在这里提供工具调用的结果信息。
+[观察]这里不需要你写，系统会自动在这里提供工具调用的结果信息。
 
 ... (这个 思考/工具调用/工具调用的输入/观察 的流程，可以被重复0次或多次，直到观察结果表明能够得到最终答复)
 
-【思考】这里写你对最终答复的思考过程。
-【最终答复】这里写你需要回答的问题的最终答复，调理一定要清晰，要用markdown进行格式化。
+[思考]这里写你对最终答复的思考过程。
+[最终答复]这里写你需要回答的问题的最终答复，调理一定要清晰，要用markdown进行格式化。
 
 现在开始!
 
-【问题】{query}"""
+[问题]{query}"""
 
 class Base_Tool():
     name: str
@@ -227,7 +227,7 @@ class Energy_Investment_Plan_Tool(Base_Tool):
             action_result = f'Energy_Investment_Plan_Tool请求API时，服务器报错：{e}'
 
         action_result = f'Energy_Investment_Plan_Tool返回的结果汇总为: \n{rtn_table}\n 请返回整理结果和报告的具体url'
-        # action_result = '【最终答复】Energy_Investment_Plan_Tool()尚未完整实现.'
+        # action_result = '[最终答复]Energy_Investment_Plan_Tool()尚未完整实现.'
         return action_result
 
 class Search_Tool(Base_Tool):
@@ -247,7 +247,7 @@ class Search_Tool(Base_Tool):
     def call(self, in_thoughts):
         dict_string = extract_dict_string(in_thoughts)
         dict = json5.loads(dict_string)
-        query = dict['tool_parameters'][0]['value']
+        query = dict['tool_parameters']['query']
         print(f'Search_Tool.call(): dict obj is: {dict}')
         print(f'Search_Tool.call(): query is: "{query}"')
 

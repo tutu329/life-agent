@@ -22,8 +22,8 @@ class Tool_Agent():
 
         self.tool_classes = in_tool_classes
         self.human = in_human    # 是否和human交互
-        self.action_stop = ['【观察】']
-        self.observation_stop = ['【观察】']
+        self.action_stop = ['[观察]']
+        self.observation_stop = ['[观察]']
 
         self.ostream = in_output_stream_buf   # 最终结果输出的stream
         self.sstream = in_status_stream_buf   # 中间状态输出的stream
@@ -31,7 +31,7 @@ class Tool_Agent():
         self.status_list = inout_status_list     # 状态历史
         self.output_list = inout_output_list     # 输出历史
 
-        self.__finished_keyword = '【最终答复】'
+        self.__finished_keyword = '[最终答复]'
 
     # 最终结果输出
     def output_print(self, in_string):
@@ -102,7 +102,7 @@ class Tool_Agent():
 
             # if i>0:
             #     if self.human:
-            #         human_input = input('【暂停】是否需要继续, y/n?')
+            #         human_input = input('[暂停]是否需要继续, y/n?')
             #         if human_input=='y':
             #             pass
             #         else:
@@ -177,19 +177,19 @@ class Tool_Agent():
         tool_name = Base_Tool.extract_tool_name(in_thoughts)
 
         if 'code_tool'==tool_name:
-            self.status_print('选择了【code_tool】')
+            self.status_print('选择了[code_tool]')
             tool = Code_Tool()
             action_result = tool.call(in_thoughts)
             if action_result=='':
                 action_result = 'code_tool未输出有效信息，可能是因为没有用print输出结果。'
             # self.status_print(f'action_result = "{action_result}"')
         elif 'search_tool'==tool_name:
-            self.status_print('选择了【search_tool】')
+            self.status_print('选择了[search_tool]')
             tool = Search_Tool()
             action_result = tool.call(in_thoughts)
             # self.status_print(f'action_result = "{action_result}"')
         elif 'energy_investment_plan_tool'==tool_name:
-            self.status_print('选择了【energy_investment_plan_tool】')
+            self.status_print('选择了[energy_investment_plan_tool]')
             tool = Energy_Investment_Plan_Tool()
             action_result = tool.call(in_thoughts)
             # self.status_print(f'action_result = "{action_result}"')
@@ -197,7 +197,7 @@ class Tool_Agent():
             self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------
 
-        self.status_print(f'【行动结果】\n{action_result}')
+        self.status_print(f'[行动结果]\n{action_result}')
         return action_result
 
     def observation(self, in_action_result=''):
@@ -242,9 +242,9 @@ def main():
         agent.init()
         success = agent.run_yield()
         if success:
-            print(f"【运行结果】成功。")
+            print(f"[运行结果]成功。")
         else:
-            print(f"【运行结果】失败，请进一步优化问题的描述。")
+            print(f"[运行结果]失败，请进一步优化问题的描述。")
             
 if __name__ == "__main__":
     #hi
