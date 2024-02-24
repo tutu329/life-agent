@@ -117,28 +117,30 @@ class Tool_Agent():
 
     def _thoughts_stream_output(self, gen):
         thoughts = ''
+        thoughts_copy_to_print = ''
         # stream输出
         for chunk in gen:
             thoughts +=chunk
+            thoughts_copy_to_print +=chunk
             if self.__finished_keyword in thoughts:
                 # 最终结果stream输出
                 self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
             else:
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
                 # self.status_stream(chunk, thoughts)
-                pass
-                if '\n' in thoughts:
+
+                # 注意：这里必须是'\n\n'，和agent输出有关，如果是'\n'就会导致页面上额外输出了一行
+                if '\n\n' in thoughts_copy_to_print:
                     # 输出已经有\n的内容
-                    print_content = thoughts.split('\n')[0]
-                    print(f'=================print_content: {print_content}')
+                    print_content = thoughts_copy_to_print.split('\n\n')[0]
                     self.status_print(print_content)
-                    if self.status_list is not None:
-                        self.status_list.append(print_content)
+                    # if self.status_list is not None:
+                    #     self.status_list.append(print_content)
                     # 删除第一个\n前的内容
-                    # remain_content = thoughts.split('\n')
-                    # remain_content.pop(0)
-                    # print(f'=================remain_content: {remain_content}')
-                    # thoughts = '\n'.join(remain_content)
+                    l = thoughts_copy_to_print.split('\n\n')
+                    l.pop(0)
+                    thoughts_copy_to_print = '\n\n'.join(l)    # 这里用' '.join而不用'\n'.join是为了防止streamlit中status.markdown额外输出\n
+
         # 添加输出历史
         if self.__finished_keyword in thoughts:
             # 最终结果输出历史
