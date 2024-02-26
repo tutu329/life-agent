@@ -124,7 +124,8 @@ class Tool_Agent():
             thoughts_copy_to_print +=chunk
             if self.__finished_keyword in thoughts:
                 # 最终结果stream输出
-                self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
+                self.output_stream(chunk, thoughts)
+                # self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
             else:
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
                 # self.status_stream(chunk, thoughts)
@@ -145,9 +146,8 @@ class Tool_Agent():
         if self.__finished_keyword in thoughts:
             # 最终结果输出历史
             if self.output_list is not None:
-                s = thoughts.replace(self.__finished_keyword, '')
-                # print(f'self.output_list.append: {s}')
-                self.output_list.append(thoughts.replace(self.__finished_keyword, ''))
+                self.output_list.append(thoughts)
+                # self.output_list.append(thoughts.replace(self.__finished_keyword, ''))
         else:
             # 中间状态输出历史
             # self.status_print(thoughts) # streamlit的status无法stream输出，只能这里print输出
@@ -166,7 +166,7 @@ class Tool_Agent():
         if self.__finished_keyword in thoughts:
             return thoughts
 
-        self.prompt += '\n' + thoughts + '】'
+        self.prompt += '\n' + thoughts + ']'
         # self.status_print(f'============================prompt start============================\n')
         # self.status_print(f'{self.prompt}\n------------------------prompt end------------------------')
         return thoughts
@@ -197,11 +197,11 @@ class Tool_Agent():
             self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------
 
-        self.status_print(f'[行动结果]\n{action_result}')
+        self.status_print(f'调用工具的行动结果为: \n{action_result}')
         return action_result
 
     def observation(self, in_action_result=''):
-        self.prompt += '工具调用结果为：' + in_action_result
+        self.prompt += '[观察]' + in_action_result
         # print(f'============================prompt start============================\n')
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
 
@@ -240,11 +240,11 @@ def main():
             
         agent = Tool_Agent(in_query=query, in_tool_classes=tools)
         agent.init()
-        success = agent.run_yield()
+        success = agent.run()
         if success:
-            print(f"[运行结果]成功。")
+            print(f"\n[运行结果]成功。")
         else:
-            print(f"[运行结果]失败，请进一步优化问题的描述。")
+            print(f"\n[运行结果]失败，请进一步优化问题的描述。")
             
 if __name__ == "__main__":
     #hi
