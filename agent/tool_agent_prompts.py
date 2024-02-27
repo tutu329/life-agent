@@ -308,7 +308,6 @@ class Summarize_Url_Content_Tool(Base_Tool):
         url = dict['tool_parameters']['url']
         print(f'Summarize_Url_Content_Tool.call(): dict obj is: {dict}')
         print(f'Summarize_Url_Content_Tool.call(): url is: "{url}"')
-
         action_result = ''
         return action_result
 
