@@ -259,7 +259,7 @@ class Energy_Investment_Plan_Tool(Base_Tool):
 
 class Search_Tool(Base_Tool):
     name='search_tool'
-    description='通过bing.com进行网页搜索并通过playwright爬取搜索结果的工具.'
+    description='通过bing搜索引擎对query进行搜索，并返回搜索结果的工具.'
     parameters=[
         {
             'name': 'query',
@@ -286,6 +286,30 @@ class Search_Tool(Base_Tool):
             if res['response_type']=='final':
                 print(chunk, end='', flush=True)
                 action_result += chunk
+        return action_result
+
+class Summarize_Url_Content_Tool(Base_Tool):
+    name='summarize_url_content_tool'
+    description='通过爬取url内容，并对其进行解读的工具.'
+    parameters=[
+        {
+            'name': 'url',
+            'type': 'string',
+            'description': '网页的url地址',
+            'required': 'True',
+        },
+    ]
+    def __init__(self):
+        pass
+
+    def call(self, in_thoughts):
+        dict_string = extract_dict_string(in_thoughts)
+        dict = json5.loads(dict_string)
+        url = dict['tool_parameters']['url']
+        print(f'Summarize_Url_Content_Tool.call(): dict obj is: {dict}')
+        print(f'Summarize_Url_Content_Tool.call(): url is: "{url}"')
+
+        action_result = ''
         return action_result
 
 class Code_Tool(Base_Tool):
