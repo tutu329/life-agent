@@ -292,7 +292,7 @@ class Search_Tool(Base_Tool):
 
 class QA_Url_Content_Tool(Base_Tool):
     name='qa_url_content_tool'
-    description='通过爬取url内容，并对其进行QA问答的工具.'
+    description='通过爬取url对应网页的内容，并对其进行QA问答的工具.'
     parameters=[
         {
             'name': 'url',
