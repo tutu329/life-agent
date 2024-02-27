@@ -6,7 +6,7 @@ import asyncio
 
 from tools.retriever.html2text import html2text
 from utils.print_tools import print_long_content_with_urls, get_string_of_long_content_with_urls
-from utils.long_content_qa import long_content_qa, long_content_qa_concurrently, long_content_qa_concurrently_yield
+from utils.long_content_qa import long_content_qa, multi_contents_qa_concurrently, multi_contents_qa_concurrently_yield
 from utils.task import Flicker_Task
 
 SEARCH_TIME_OUT = 3000    # 超时ms
@@ -85,7 +85,7 @@ class Bing_Searcher():
             search_urls.append(web_url)
             content_list = result[1]
             contents.append('\n'.join(content_list))
-        llm = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
+        llm = multi_contents_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
         self.flicker.set_stop()
         return llm, search_urls
 
@@ -139,7 +139,7 @@ class Bing_Searcher():
                 content_list = result[1]
                 contents.append('\n\n'.join(content_list))
 
-            gen = long_content_qa_concurrently_yield(
+            gen = multi_contents_qa_concurrently_yield(
                 in_contents=contents,
                 in_prompt=prompt,
                 in_api_url=self.llm_api_url,

@@ -88,9 +88,45 @@ def long_content_qa(in_llm, in_content, in_prompt):
     #
     # return final_answer
 
+def long_content_qa_concurrently(in_llm, in_content, in_prompt):
+    # print(f'[long_content_summary()]: 文本长度为 {len(in_content)})')
+    if len(in_content)==0:
+        print('[long_content_summary()]: 异常: 输入文本长度为0')
+        assert(0)
+    content = in_content
+    if len(content) > Prompt_Limitation.context_max_len:
+        # 如果文本长度超过Prompt_Limitation.context_max_len(4096)，进行分段精简并汇编
+        import re
+        # 分隔符：\n，句号，\t，前后可以跟着任意数量的额外空格
+        # paras = re.split(r'\s*[\n。.\t]\s*',content)
+        paras = re.split(r'(?<=[.!?。？！])', content)    # 用正向后行断言，才能保留用于分割的标点。
+        # paras = content.split(' \n\t。')
+        para_len = 0
+        content_list_to_summary = []
+        one_content = ''
+        paras_to_append = 0
+        for para in paras:
+            one_content += para + '\n'
+            para_len += len(para)
+            if para_len >= Prompt_Limitation.context_max_len:
+                if paras_to_append < Prompt_Limitation.context_max_paragraphs :
+                    content_list_to_summary.append(one_content)
+                    one_content = ''
+                    para_len = 0
+                    paras_to_append += 1
+                else:
+                    # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
+                    break
+
+        gen = multi_contents_qa_concurrently(in_contents=content_list_to_summary, in_prompt=in_prompt).get_answer_generator()
+    else:
+        question = f'"{content}", 请根据这些文字，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
+        gen = in_llm.ask_prepare(question).get_answer_generator()
+
+    return gen
 
 # 通过llm对多个内容in_contents进行并发解读，返回最终答复对应的llm对象
-def long_content_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.0.0.1:8001/v1', in_search_urls=None):
+def multi_contents_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.0.0.1:8001/v1', in_search_urls=None):
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
     llms = Concurrent_LLMs(in_url=in_api_url)
     num = len(in_contents)
@@ -123,13 +159,16 @@ def long_content_qa_concurrently(in_contents, in_prompt, in_api_url='http://127.
         history=False,
     )
 
-    final_question = f'"{answers}", 请综合考虑上述小结内容及其来源可信度，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
+    if in_search_urls is not None:
+        final_question = f'"{answers}", 请综合考虑上述小结内容及其来源可信度，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
+    else:
+        final_question = f'"{answers}", 请综合考虑上述小结内容，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
 
     llm = llm.ask_prepare(
         in_question=final_question,
     )
     return llm
-def long_content_qa_concurrently_yield(
+def multi_contents_qa_concurrently_yield(
         in_contents,
         in_prompt,
         in_api_url='http://127.0.0.1:8001/v1',

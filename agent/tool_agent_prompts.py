@@ -1,7 +1,7 @@
 from typing import Dict, List, Union
 
 from tools.llm.api_client import LLM_Client
-from utils.long_content_qa import long_content_qa
+from utils.long_content_qa import long_content_qa, long_content_qa_concurrently
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 from utils.extract import extract_code, extract_dict_string
 from tools.retriever.search import Bing_Searcher
@@ -325,9 +325,10 @@ class QA_Url_Content_Tool(Base_Tool):
         result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url))
 
 
-        gen = long_content_qa(in_llm=llm, in_content=result, in_prompt=question)
+        # gen = long_content_qa(in_llm=llm, in_content=result, in_prompt=question)
+        gen = long_content_qa_concurrently(in_llm=llm, in_content=result, in_prompt=question)
         action_result = ''
-        for chunk in llm.get_answer_generator():
+        for chunk in gen:
             print(chunk, end='', flush=True)
             action_result += chunk
         return action_result
