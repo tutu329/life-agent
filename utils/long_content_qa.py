@@ -35,7 +35,7 @@ def long_content_qa(in_llm, in_content, in_prompt):
         if Prompt_Limitation.context_max_paragraphs > 1:
             for content in content_list_to_summary:
                 # print(f'[long_content_summary()]: 需要总结的文本(长度{len(content)})为: "{content[:50]}"')
-                question = f'"{content}", 请根据这些文字，回答问题"{in_prompt}"，答复一定要简明扼要、要抓住重点、字数要少于100字，不要进行解释，直接返回答复文字'
+                question = f'"{content}", 请根据这些文字，回答问题"{in_prompt}"，答复一定要简明扼要、要抓住重点、字数要少于{Prompt_Limitation.summary_max_len}字，不要进行解释，直接返回答复文字'
                 gen = in_llm.ask_prepare(question).get_answer_generator()
                 answer = ''
                 for chunk in gen:
