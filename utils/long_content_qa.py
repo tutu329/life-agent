@@ -31,6 +31,7 @@ def long_content_qa(in_llm, in_content, in_prompt):
                     # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
                     break
 
+
         answer_list = []
         if Prompt_Limitation.context_max_paragraphs > 1:
             for content in content_list_to_summary:
