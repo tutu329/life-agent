@@ -97,7 +97,6 @@ class Bing_Searcher():
         num = 0
 
         url = in_url
-
         response_status = urls_results[url][0]
         response_text = urls_results[url][1]
         content_para_list = self._html_2_text_paras(response_text)
