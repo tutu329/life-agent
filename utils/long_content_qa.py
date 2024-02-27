@@ -29,7 +29,6 @@ def long_content_qa(in_llm, in_content, in_prompt):
                     paras_to_append += 1
                 else:
                     # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
-
                     break
 
         answer_list = []
