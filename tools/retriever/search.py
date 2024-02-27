@@ -91,9 +91,23 @@ class Bing_Searcher():
 
     async def get_url_content(self, in_url):
         urls = [in_url]
-        results = await self._get_raw_pages(urls)
-        result = results[0]
-        return result
+        urls_results = await self._get_raw_pages(urls)
+
+        results = []
+        num = 0
+
+        url = in_url
+
+        response_status = urls_results[url][0]
+        response_text = urls_results[url][1]
+        content_para_list = self._html_2_text_paras(response_text)
+
+        if response_status == 200:
+            result = '\n'.join(content_para_list)
+            print(f'QA_Url_Content_Tool.get_url_content() result is : {result}')
+            return result
+        else:
+            return '网页内容获取失败.'
 
     # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
     def search_and_ask_yield(self, in_question, in_max_new_tokens=2048):

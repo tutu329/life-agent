@@ -1,7 +1,7 @@
 import streamlit as st
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
-from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool
+from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
 from agent.tool_agent import Tool_Agent
 
 from utils.task import Flicker_Task
@@ -106,7 +106,11 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         placeholder1 = assistant.empty()
 
         # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
-        tools = [Search_Tool, Code_Tool, Energy_Investment_Plan_Tool]
+        tools = [Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
+        print(f'工具: [')
+        for tool in tools:
+            print(tool.name+', ')
+        print(f'] 已加载.')
         agent = Tool_Agent(
             in_query=prompt,
             in_tool_classes=tools,

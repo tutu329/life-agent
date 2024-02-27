@@ -1,6 +1,6 @@
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 from agent.tool_agent_prompts import PROMPT_REACT
-from agent.tool_agent_prompts import Base_Tool, Search_Tool, Code_Tool, Energy_Investment_Plan_Tool
+from agent.tool_agent_prompts import Base_Tool, Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
 from utils.extract import extract_code, extract_dict_string
 import torch
 
@@ -187,12 +187,14 @@ class Tool_Agent():
             self.status_print('选择了[search_tool]')
             tool = Search_Tool()
             action_result = tool.call(in_thoughts)
-            # self.status_print(f'action_result = "{action_result}"')
         elif 'energy_investment_plan_tool'==tool_name:
             self.status_print('选择了[energy_investment_plan_tool]')
             tool = Energy_Investment_Plan_Tool()
             action_result = tool.call(in_thoughts)
-            # self.status_print(f'action_result = "{action_result}"')
+        elif 'qa_url_content_tool'==tool_name:
+            self.status_print('选择了[qa_url_content_tool]')
+            tool = QA_Url_Content_Tool()
+            action_result = tool.call(in_thoughts)
         else:
             self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------
@@ -209,7 +211,7 @@ def main():
     # torch.cuda.manual_seed_all(20000)
     # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8002/v1')
     LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
-    tools=[Search_Tool, Code_Tool, Energy_Investment_Plan_Tool]
+    tools=[Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
     # tools=[Code_Tool]   
     # print(tools)
     exit = False
