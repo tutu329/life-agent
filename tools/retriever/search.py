@@ -6,7 +6,7 @@ import asyncio
 
 from tools.retriever.html2text import html2text
 from utils.print_tools import print_long_content_with_urls, get_string_of_long_content_with_urls
-from utils.long_content_summary import long_content_qa, long_content_qa_concurrently, long_content_qa_concurrently_yield
+from utils.long_content_qa import long_content_qa, long_content_qa_concurrently, long_content_qa_concurrently_yield
 from utils.task import Flicker_Task
 
 SEARCH_TIME_OUT = 3000    # 超时ms
@@ -88,6 +88,12 @@ class Bing_Searcher():
         llm = long_content_qa_concurrently(in_contents=contents, in_prompt=prompt, in_api_url=self.llm_api_url, in_search_urls=search_urls)
         self.flicker.set_stop()
         return llm, search_urls
+
+    async def get_url_content(self, in_url):
+        urls = [in_url]
+        results = await self._get_raw_pages(urls)
+        result = results[0]
+        return result
 
     # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
     def search_and_ask_yield(self, in_question, in_max_new_tokens=2048):

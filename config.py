@@ -15,3 +15,4 @@ class Prompt_Limitation():
 @dataclass
 class Global():
     line:str = f'{80 * "-"}\n\n'
+    llm_url:str = 'http://116.62.63.204:8001/v1'

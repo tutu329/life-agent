@@ -19,7 +19,7 @@ import asyncio
 import threading
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
-from utils.long_content_summary import long_content_qa
+from utils.long_content_qa import long_content_qa
 from utils.task import Flicker_Task
 
 

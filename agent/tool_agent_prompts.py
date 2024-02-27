@@ -1,5 +1,7 @@
 from typing import Dict, List, Union
 
+from tools.llm.api_client import LLM_Client
+from utils.long_content_qa import long_content_qa
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 from utils.extract import extract_code, extract_dict_string
 from tools.retriever.search import Bing_Searcher
@@ -288,14 +290,20 @@ class Search_Tool(Base_Tool):
                 action_result += chunk
         return action_result
 
-class Summarize_Url_Content_Tool(Base_Tool):
-    name='summarize_url_content_tool'
-    description='通过爬取url内容，并对其进行解读的工具.'
+class QA_Url_Content_Tool(Base_Tool):
+    name='qa_url_content_tool'
+    description='通过爬取url内容，并对其进行QA问答的工具.'
     parameters=[
         {
             'name': 'url',
             'type': 'string',
             'description': '网页的url地址',
+            'required': 'True',
+        },
+        {
+            'name': 'question',
+            'type': 'string',
+            'description': '对网页的问题',
             'required': 'True',
         },
     ]
@@ -306,9 +314,21 @@ class Summarize_Url_Content_Tool(Base_Tool):
         dict_string = extract_dict_string(in_thoughts)
         dict = json5.loads(dict_string)
         url = dict['tool_parameters']['url']
-        print(f'Summarize_Url_Content_Tool.call(): dict obj is: {dict}')
-        print(f'Summarize_Url_Content_Tool.call(): url is: "{url}"')
+        question = dict['tool_parameters']['question']
+        print(f'QA_Url_Content_Tool.call(): dict obj is: {dict}')
+        print(f'QA_Url_Content_Tool.call(): url is: "{url}"')
+        print(f'QA_Url_Content_Tool.call(): question is: "{question}"')
+
+        llm = LLM_Client(history=False, max_new_tokens=1024, print_input=False, temperature=0, url=Global.llm_url)
+
+        searcher = Bing_Searcher.create_searcher_and_loop()
+        result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url))
+
+        gen = long_content_qa(in_llm=llm, in_content=result, in_prompt=question)
         action_result = ''
+        for chunk in gen:
+            print(chunk, end='', flush=True)
+            action_result += chunk
         return action_result
 
 class Code_Tool(Base_Tool):
