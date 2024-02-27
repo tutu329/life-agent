@@ -103,7 +103,6 @@ class Bing_Searcher():
 
         if response_status == 200:
             result = '\n'.join(content_para_list)
-            print(f'QA_Url_Content_Tool.get_url_content() result is : {result}')
             return result
         else:
             return '网页内容获取失败.'

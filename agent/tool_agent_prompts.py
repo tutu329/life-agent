@@ -324,9 +324,10 @@ class QA_Url_Content_Tool(Base_Tool):
         searcher = Bing_Searcher.create_searcher_and_loop()
         result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url))
 
+
         gen = long_content_qa(in_llm=llm, in_content=result, in_prompt=question)
         action_result = ''
-        for chunk in gen:
+        for chunk in llm.get_answer_generator():
             print(chunk, end='', flush=True)
             action_result += chunk
         return action_result
