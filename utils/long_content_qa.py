@@ -36,7 +36,7 @@ def long_content_qa(in_llm, in_content, in_prompt):
         if Prompt_Limitation.context_max_paragraphs > 1:
             for content in content_list_to_summary:
                 # print(f'[long_content_summary()]: 需要总结的文本(长度{len(content)})为: "{content[:50]}"')
-                question = f'"{content}", 请根据这些文字，回答问题"{in_prompt}"，答复一定要简明扼要、要抓住重点、字数要少于{Prompt_Limitation.summary_max_len}字，不要进行解释，直接返回答复文字'
+                question = f'"{content}", 请严格依据这些文字，回答问题"{in_prompt}"，答复是简明还是详细，一定要严格按照问题要求来，字数不能大于{Prompt_Limitation.summary_max_len}字，不要解释，直接回复'
                 gen = in_llm.ask_prepare(question).get_answer_generator()
                 answer = ''
                 for chunk in gen:
@@ -60,7 +60,8 @@ def long_content_qa(in_llm, in_content, in_prompt):
         answers = content
 
 
-    question = f'"{answers}", 请根据这些文字，回答问题"{in_prompt}"，回答一定要简明扼要，同时给出这样回答的主要依据。'
+    question = f'"{answers}", 请严格依据这些文字，回答问题"{in_prompt}"，答复是简明还是详细，一定要严格按照问题要求来，字数不能大于{Prompt_Limitation.summary_max_len}字，不要解释，直接回复'
+    # question = f'"{answers}", 请根据这些文字，回答问题"{in_prompt}"，回答一定要简明扼要，同时给出这样回答的主要依据。'
     answers_to_print = answers.replace('\n', '')[:50]
     # print(f'[long_content_summary()]: "{answers_to_print}...", 请根据这些文字，并结合问题"{in_prompt}"对文字进行总结，总结要简明扼要、逻辑合理、重点突出、一定不能有写了一半的句子，尽可能用markdown格式把总结的文字以层次清晰的方式展现出来，字数要少于1000字，不要进行解释，直接返回总结后的文字。')
     if Prompt_Limitation.context_max_len<=1000:
@@ -120,7 +121,7 @@ def long_content_qa_concurrently(in_llm, in_content, in_prompt):
 
         gen = multi_contents_qa_concurrently(in_contents=content_list_to_summary, in_prompt=in_prompt).get_answer_generator()
     else:
-        question = f'"{content}", 请根据这些文字，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
+        question = f'"{content}", 请严格依据这些文字，回答问题"{in_prompt}"，回答一定要调理清晰，不要解释，直接采用markdown回复。'
         gen = in_llm.ask_prepare(question).get_answer_generator()
 
     return gen
@@ -145,7 +146,7 @@ def multi_contents_qa_concurrently(in_contents, in_prompt, in_api_url='http://12
         if in_search_urls:
             answers += f'小结[{i}]: ' + summary + '\n' + f'小结[{i}]的来源: ' + in_search_urls[i] + '\n'
         else:
-            answers += f'小结[{i}]: \n' + summary + '\n'
+            answers += f'分段[{i}]: \n' + summary + '\n'
         result_string = summary.replace('\n', '')[:50]
 
         i += 1
@@ -162,7 +163,7 @@ def multi_contents_qa_concurrently(in_contents, in_prompt, in_api_url='http://12
     if in_search_urls is not None:
         final_question = f'"{answers}", 请综合考虑上述小结内容及其来源可信度，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
     else:
-        final_question = f'"{answers}", 请综合考虑上述小结内容，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
+        final_question = f'"{answers}", 请综合考虑上述分段内容，回答问题"{in_prompt}"，回答是简略还是详细，一定要严格根据问题的要求来。'
 
     llm = llm.ask_prepare(
         in_question=final_question,
