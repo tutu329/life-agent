@@ -12,29 +12,33 @@ def long_content_qa_concurrently(in_llm, in_content, in_prompt):
         import re
         # 分隔符：\n，句号，\t，前后可以跟着任意数量的额外空格
         # paras = re.split(r'\s*[\n。.\t]\s*',content)
-        paras = re.split(r'(?<=[.!?。？！])', content)    # 用正向后行断言，才能保留用于分割的标点。
+        sentences = re.split(r'(?<=[.!?。？！])', content)    # 用正向后行断言，才能保留用于分割的标点。
         # paras = content.split(' \n\t。')
         para_len = 0
-        content_list_to_summary = []
-        one_content = ''
+        paras_to_summary = []
+        one_para = ''
         paras_to_append = 0
-        for para in paras:
-            one_content += para + '\n'
-            para_len += len(para)
+
+        for sentence in sentences:
+            one_para += sentence + '\n'
+            para_len += len(sentence)
             if para_len >= Prompt_Limitation.context_max_len:
                 if paras_to_append < Prompt_Limitation.context_max_paragraphs :
-                    content_list_to_summary.append(one_content)
-                    one_content = ''
+                    paras_to_summary.append(one_para)
+                    one_para = ''
                     para_len = 0
                     paras_to_append += 1
                 else:
                     # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
                     break
+        # 长度没有超限时，内容也要append
+        if len(one_para) > 0:
+            paras_to_summary.append(one_para)
 
         gen = multi_contents_qa_concurrently(
-            in_contents=content_list_to_summary,
+            in_contents=paras_to_summary,
             in_prompt=in_prompt,
-            # in_content_short_enough=True,
+            in_content_short_enough=True,
         ).get_answer_generator()
     else:
         question = f'"{content}", 请严格依据这些文字，回答问题"{in_prompt}"，回答一定要调理清晰，不要解释，直接采用markdown回复。'
@@ -115,6 +119,7 @@ def multi_contents_qa_concurrently_yield(
         x += 1
         print(f'content[{x}]内容: "{content[:50]}..."')
         print(f'content[{x}]长度: {len(content)}')
+        print(f'prompt内容: "{in_prompt[:50]}..."')
     print('--------------------------------------------------------------------')
 
 
@@ -172,9 +177,10 @@ def long_content_qa(in_llm, in_content, in_prompt):
     print('-------------------------long_content_qa()--------------------------')
     print(f'content内容: "{content[:50]}..."')
     print(f'content长度: {len(in_content)}')
-    print(f'Prompt_Limitation.context_max_len: {Prompt_Limitation.context_max_len}')
-    print(f'Prompt_Limitation.summary_max_len: {Prompt_Limitation.summary_max_len}')
-    print(f'Prompt_Limitation.context_max_paragraphs: {Prompt_Limitation.context_max_paragraphs}')
+    print(f'prompt内容: "{in_prompt[:50]}..."')
+    # print(f'Prompt_Limitation.context_max_len: {Prompt_Limitation.context_max_len}')
+    # print(f'Prompt_Limitation.summary_max_len: {Prompt_Limitation.summary_max_len}')
+    # print(f'Prompt_Limitation.context_max_paragraphs: {Prompt_Limitation.context_max_paragraphs}')
     print('--------------------------------------------------------------------')
 
     # 如果文本长度 > context_max_len
@@ -202,6 +208,9 @@ def long_content_qa(in_llm, in_content, in_prompt):
                 else:
                     # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
                     break
+        # 长度没有超限时，内容也要append
+        if len(one_para) > 0:
+            paras_to_summary.append(one_para)
 
         # 对每一段进行ask，并将多段的answer进行拼接
         answer_list = []
@@ -267,6 +276,11 @@ def long_content_qa(in_llm, in_content, in_prompt):
     # return final_answer
 
 def short_content_qa(in_llm, in_content, in_prompt):
+    print('-------------------------short_content_qa()--------------------------')
+    print(f'content内容: "{in_content[:50]}..."')
+    print(f'content长度: {len(in_content)}')
+    print(f'prompt内容: "{in_prompt[:50]}..."')
+    print('--------------------------------------------------------------------')
     question = f'"{in_content}", 请严格依据这些文字，回答问题"{in_prompt}"，答复是简明还是详细，一定要严格按照问题要求来，字数不能大于{Prompt_Limitation.summary_max_len}字，不要解释，直接回复'
     gen = in_llm.ask_prepare(question).get_answer_generator()
     return gen

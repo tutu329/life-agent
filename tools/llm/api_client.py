@@ -685,7 +685,7 @@ class Concurrent_LLMs():
                 try:
                     if gen == []:
                         # 出现超限等问题时返回的[]
-                        status['llms_full_responses'][i] = 'llm输入长度超限.'
+                        status['llms_full_responses'][i] = '服务器错误: llm输入长度超限.'
                         status['llms_complete'][i] = True
                     else:
                         # 正常返回stream
@@ -698,6 +698,10 @@ class Concurrent_LLMs():
                         
                 except StopIteration as e:
                     # 如果next引发StopIteration异常，则设置finished为True
+                    status['llms_complete'][i] = True
+                except Exception as e:
+                    print(f'llm[{i}] next(gen) error: "{e}"')
+                    status['llms_full_responses'][i] = '服务器错误: llm输入长度超限.'
                     status['llms_complete'][i] = True
 
                 # 向外部stream接口输出当前llm的stream chunk
