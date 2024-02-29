@@ -1,5 +1,38 @@
 from config import Prompt_Limitation, Global
 from utils.task import Flicker_Task
+import re
+
+
+def _split_long_content_to_paras(in_content):
+    content = in_content
+
+    # 如果文本长度超过Prompt_Limitation.context_max_len(4096)，进行分段精简并汇编
+    # 分隔符：\n，句号，\t，前后可以跟着任意数量的额外空格
+    # paras = re.split(r'\s*[\n。.\t]\s*',content)
+    sentences = re.split(r'(?<=[.!?。？！])', content)  # 用正向后行断言，才能保留用于分割的标点。
+    # paras = content.split(' \n\t。')
+    para_len = 0
+    paras_to_summary = []
+    one_para = ''
+    paras_to_append = 1
+
+    for sentence in sentences:
+        one_para += sentence + '\n'
+        para_len += len(sentence)
+        if para_len >= Prompt_Limitation.context_max_len:
+            if paras_to_append < Prompt_Limitation.context_max_paragraphs:
+                paras_to_summary.append(one_para)
+                one_para = ''
+                para_len = 0
+                paras_to_append += 1
+            else:
+                # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
+                break
+    # 长度没有超限时，内容也要append
+    if len(one_para) > 0:
+        paras_to_summary.append(one_para)
+
+    return paras_to_summary
 
 def long_content_qa_concurrently(in_llm, in_content, in_prompt):
     # print(f'[long_content_summary()]: 文本长度为 {len(in_content)})')
@@ -8,32 +41,7 @@ def long_content_qa_concurrently(in_llm, in_content, in_prompt):
         assert(0)
     content = in_content
     if len(content) > Prompt_Limitation.context_max_len:
-        # 如果文本长度超过Prompt_Limitation.context_max_len(4096)，进行分段精简并汇编
-        import re
-        # 分隔符：\n，句号，\t，前后可以跟着任意数量的额外空格
-        # paras = re.split(r'\s*[\n。.\t]\s*',content)
-        sentences = re.split(r'(?<=[.!?。？！])', content)    # 用正向后行断言，才能保留用于分割的标点。
-        # paras = content.split(' \n\t。')
-        para_len = 0
-        paras_to_summary = []
-        one_para = ''
-        paras_to_append = 0
-
-        for sentence in sentences:
-            one_para += sentence + '\n'
-            para_len += len(sentence)
-            if para_len >= Prompt_Limitation.context_max_len:
-                if paras_to_append < Prompt_Limitation.context_max_paragraphs :
-                    paras_to_summary.append(one_para)
-                    one_para = ''
-                    para_len = 0
-                    paras_to_append += 1
-                else:
-                    # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
-                    break
-        # 长度没有超限时，内容也要append
-        if len(one_para) > 0:
-            paras_to_summary.append(one_para)
+        paras_to_summary = _split_long_content_to_paras(content)
 
         gen = multi_contents_qa_concurrently(
             in_contents=paras_to_summary,
@@ -185,32 +193,7 @@ def long_content_qa(in_llm, in_content, in_prompt):
 
     # 如果文本长度 > context_max_len
     if len(content) > Prompt_Limitation.context_max_len:
-        # 如果文本长度超过Prompt_Limitation.context_max_len(4096)，进行分段精简并汇编
-        import re
-
-        # 用正则表达式，把长文本分割为句子的list
-        sentenses = re.split(r'(?<=[.!?。？！])', content)  # 用正向后行断言，才能保留用于分割的标点。
-        para_len = 0
-        paras_to_summary = []
-        one_para = ''
-        paras_to_append = 0
-
-        # 把长文本中的内容，一句一句累加起来，总长度超过context_max_len就分段，最大分段数量为context_max_paragraphs，段数超过就丢弃
-        for sentence in sentenses:
-            one_para += sentence + '\n'
-            para_len += len(sentence)
-            if para_len >= Prompt_Limitation.context_max_len:
-                if paras_to_append < Prompt_Limitation.context_max_paragraphs:
-                    paras_to_summary.append(one_para)
-                    one_para = ''
-                    para_len = 0
-                    paras_to_append += 1
-                else:
-                    # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
-                    break
-        # 长度没有超限时，内容也要append
-        if len(one_para) > 0:
-            paras_to_summary.append(one_para)
+        paras_to_summary = _split_long_content_to_paras(content)
 
         # 对每一段进行ask，并将多段的answer进行拼接
         answer_list = []

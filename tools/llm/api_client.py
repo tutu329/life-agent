@@ -610,8 +610,8 @@ class Concurrent_LLMs():
         print('---------------Concurrent_LLMs.init()---------------')
         for content in self.contents:
             x += 1
-            print(f'content[{x}]内容: "{content[:50]}..."')
-            print(f'content[{x}]长度: {len(content)}')
+            content = ''.join(content.split('\n'))
+            print(f'content[{x}]内容(长度{len(content)}): "{content[:50]}..."')
         print('--------------------------------------------------------------------')
 
         # 初始化所有llm
