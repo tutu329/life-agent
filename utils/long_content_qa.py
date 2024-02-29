@@ -16,9 +16,8 @@ def _split_long_content_to_paras(in_content):
     paras_to_append = 1
 
     for sentence in sentences:
-        one_para += sentence + '\n'
-        para_len += len(sentence)
-        if para_len >= Prompt_Limitation.concurrent_para_max_len:
+
+        if para_len+len(sentence)+1 >= Prompt_Limitation.concurrent_para_max_len:
             if paras_to_append < Prompt_Limitation.concurrent_max_paras:
                 paras_to_summary.append(one_para)
                 one_para = ''
@@ -27,6 +26,9 @@ def _split_long_content_to_paras(in_content):
             else:
                 # 超过Prompt_Limitation.context_max_paragraphs的段落直接放弃
                 break
+        else:
+            one_para += sentence + '\n'
+            para_len += len(sentence)+1
     # 长度没有超限时，内容也要append
     if len(one_para) > 0:
         paras_to_summary.append(one_para)
@@ -48,7 +50,14 @@ def long_content_qa_concurrently(in_llm, in_content, in_prompt):
             in_content_short_enough=True,   # 如果short_enough, 则每个qa只需要调用short_content_qa而不用调用long_content_qa(分段)
         ).get_answer_generator()
     else:
-        question = f'"{content}", 请严格依据这些文字，回答问题"{in_prompt}"，回答一定要调理清晰，不要解释，直接采用markdown回复。'
+        # -----------------------------print信息--------------------------------------
+        one_line = ''.join(in_content.split('\n'))[:40]
+        print(f'----------long_content_qa_concurrently(): content内容(长度{len(in_content)}): "{one_line}..."----------prompt内容: "{in_prompt[:50]}..."', end='')
+
+        # 递归的可能: long_content_qa_concurrently() -> multi_contents_qa_concurrently() -> long_content_qa_concurrently()会产生递归 -> ...
+        # 递归的出口: 出口条件即, len(content) <= concurrent_para_max_len
+        question = f'"{content}", 请严格依据这些文字，回答问题"{in_prompt}"，答复是简明还是详细，一定要严格按照问题要求来，字数不能大于{Prompt_Limitation.concurrent_summary_max_len}字，不要解释，直接回复'
+        # question = f'"{content}", 请严格依据这些文字，回答问题"{in_prompt}"，回答一定要调理清晰，不要解释，直接采用markdown回复。'
         gen = in_llm.ask_prepare(question).get_answer_generator()
 
     return gen
@@ -253,8 +262,8 @@ def long_content_qa(in_llm, in_content, in_prompt):
     # return final_answer
 
 def short_content_qa(in_llm, in_content, in_prompt):
-    content = ''.join(in_content.split('\n'))[:40]
-    print(f'----------short_content_qa(): content内容(长度{len(in_content)}): "{content}..."----------', end='')
+    one_line = ''.join(in_content.split('\n'))[:40]
+    print(f'----------short_content_qa(): content内容(长度{len(in_content)}): "{one_line}..."----------', end='')
     print(f'prompt内容: "{in_prompt[:50]}..."')
     question = f'"{in_content}", 请严格依据这些文字，回答问题"{in_prompt}"，答复是简明还是详细，一定要严格按照问题要求来，字数不能大于{Prompt_Limitation.concurrent_summary_max_len}字，不要解释，直接回复'
     gen = in_llm.ask_prepare(question).get_answer_generator()

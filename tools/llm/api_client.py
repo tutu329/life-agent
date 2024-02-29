@@ -19,7 +19,7 @@ import asyncio
 import threading
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
-from utils.long_content_qa import long_content_qa, short_content_qa
+from utils.long_content_qa import long_content_qa, short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
 
 
@@ -610,8 +610,8 @@ class Concurrent_LLMs():
         print('---------------Concurrent_LLMs.init()---------------')
         for content in self.contents:
             x += 1
-            content = ''.join(content.split('\n'))
-            print(f'content[{x}]内容(长度{len(content)}): "{content[:50]}..."')
+            one_line_content = ''.join(content.split('\n'))
+            print(f'content[{x}]内容(长度{len(content)}): "{one_line_content[:50]}..."')
         print('--------------------------------------------------------------------')
 
         # 初始化所有llm
@@ -661,7 +661,8 @@ class Concurrent_LLMs():
             # 返回联网分析结果
             # print(f'self.content_short_enough: {self.content_short_enough}')
             if self.content_short_enough:
-                llms_gens.append(short_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
+                llms_gens.append(long_content_qa_concurrently(self.llms[i], self.contents[i], self.prompts[i]))
+                # llms_gens.append(short_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
             else:
                 llms_gens.append(long_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
 
