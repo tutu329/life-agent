@@ -2,7 +2,6 @@ from config import Prompt_Limitation, Global
 from utils.task import Flicker_Task
 import re
 
-
 def _split_long_content_to_paras(in_content):
     content = in_content
 
@@ -46,7 +45,7 @@ def long_content_qa_concurrently(in_llm, in_content, in_prompt):
         gen = multi_contents_qa_concurrently(
             in_contents=paras_to_summary,
             in_prompt=in_prompt,
-            in_content_short_enough=True,
+            in_content_short_enough=True,   # 如果short_enough, 则每个qa只需要调用short_content_qa而不用调用long_content_qa(分段)
         ).get_answer_generator()
     else:
         question = f'"{content}", 请严格依据这些文字，回答问题"{in_prompt}"，回答一定要调理清晰，不要解释，直接采用markdown回复。'
