@@ -661,10 +661,11 @@ class Concurrent_LLMs():
             # 返回联网分析结果
             # print(f'self.content_short_enough: {self.content_short_enough}')
             if self.content_short_enough:
-                llms_gens.append(long_content_qa_concurrently(self.llms[i], self.contents[i], self.prompts[i]))
-                # llms_gens.append(short_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
+                # llms_gens.append(long_content_qa_concurrently(self.llms[i], self.contents[i], self.prompts[i]))
+                llms_gens.append(short_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
             else:
-                llms_gens.append(long_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
+                llms_gens.append(long_content_qa_concurrently(self.llms[i], self.contents[i], self.prompts[i]))
+                # llms_gens.append(long_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
 
         status['detail'] = '所有llm的文本解读已启动...'
         yield status
