@@ -19,7 +19,7 @@ import asyncio
 import threading
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
-from utils.long_content_qa import long_content_qa
+from utils.long_content_qa import long_content_qa, short_content_qa
 from utils.task import Flicker_Task
 
 
@@ -574,6 +574,7 @@ class Concurrent_LLMs():
         self.prompts = []
         self.role_prompts = []
         self.contents = []
+        self.content_short_enough = False
         
         self.stream_buf_callback = None
         self.llms = []
@@ -595,13 +596,23 @@ class Concurrent_LLMs():
         in_extra_suffixes=None, # 输出的额外内容(维度同上)
         in_cursor='█ ',         # 输出未完成时显示用的光标
         in_max_new_tokens=2048,
+        in_content_short_enough=False,  # 如果short_enough, 则每个qa只需要调用short_content_qa而不用调用long_content_qa(分段)
     ):
         self.prompts = in_prompts
         self.contents = in_contents
+        self.content_short_enough = in_content_short_enough
         self.stream_buf_callbacks = in_stream_buf_callbacks
         self.role_prompts = in_role_prompts
         self.cursor = in_cursor
         self.extra_suffixes = in_extra_suffixes
+
+        x = 0
+        print('---------------Concurrent_LLMs.init()---------------')
+        for content in self.contents:
+            x += 1
+            print(f'content[{x}]内容: "{content[:50]}..."')
+            print(f'content[{x}]长度: {len(content)}')
+        print('--------------------------------------------------------------------')
 
         # 初始化所有llm
         for prompt in self.prompts:
@@ -648,7 +659,11 @@ class Concurrent_LLMs():
         llms_gens = []
         for i in range(llm_num):
             # 返回联网分析结果
-            llms_gens.append(long_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
+            print(f'self.content_short_enough: {self.content_short_enough}')
+            if self.content_short_enough:
+                llms_gens.append(short_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
+            else:
+                llms_gens.append(long_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
 
         status['detail'] = '所有llm的文本解读已启动...'
         yield status
