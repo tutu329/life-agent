@@ -266,7 +266,7 @@ class LLM_Doc():
     def long_content_summary(self, in_content):
         print(f'==========long_content_summary(长度{len(in_content)}) =============')
         content = in_content
-        if len(content) <= self.prompt_limit.context_max_len:
+        if len(content) <= self.prompt_limit.concurrent_para_max_len:
             # 如果文本长度没有超过Prompt_Limitation.context_max_len(4096)，则直接返回
             return content
 
@@ -278,7 +278,7 @@ class LLM_Doc():
         for para in paras:
             one_content += para + '\n'
             para_len += len(para)
-            if para_len >= self.prompt_limit.context_max_len:
+            if para_len >= self.prompt_limit.concurrent_para_max_len:
                 content_list_to_summary.append(one_content)
                 one_content = ''
                 para_len = 0

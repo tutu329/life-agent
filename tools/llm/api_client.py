@@ -659,7 +659,7 @@ class Concurrent_LLMs():
         llms_gens = []
         for i in range(llm_num):
             # 返回联网分析结果
-            print(f'self.content_short_enough: {self.content_short_enough}')
+            # print(f'self.content_short_enough: {self.content_short_enough}')
             if self.content_short_enough:
                 llms_gens.append(short_content_qa(self.llms[i], self.contents[i], self.prompts[i]))
             else:

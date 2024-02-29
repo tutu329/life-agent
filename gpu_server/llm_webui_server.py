@@ -292,7 +292,7 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
                 found = True
                 # -------------界面上生成一个url对应的内容-------------
                 content = " ".join(content_para_list)
-                if len(content) < Prompt_Limitation.context_max_len and content != '':
+                if len(content) < Prompt_Limitation.concurrent_para_max_len and content != '':
                     print(f'============================================== content length = 【{len(content)}】 ==============================================')
                     url_idx += 1
 
@@ -310,9 +310,9 @@ def llm_answer(history, message, temperature, max_new_tokens, request:gr.Request
                     print(f'\n\n出处[{url_idx}]: ' + url + '\n\n')
                     history[-1][1] += f'\n#### 出处[{url_idx}]: ' + url + '\n## &nbsp; \n## &nbsp; ' # 输出url
                     yield history, message
-                elif len(content) > Prompt_Limitation.context_max_len:
-                    print(f'搜索结果长度超过Prompt_Limitation.context_max_len({Prompt_Limitation.context_max_len})')
-                    history[-1][1] += f'搜索结果长度过长({len(content)}>{Prompt_Limitation.context_max_len})\n'
+                elif len(content) > Prompt_Limitation.concurrent_para_max_len:
+                    print(f'搜索结果长度超过Prompt_Limitation.context_max_len({Prompt_Limitation.concurrent_para_max_len})')
+                    history[-1][1] += f'搜索结果长度过长({len(content)}>{Prompt_Limitation.concurrent_para_max_len})\n'
                     yield history, message
                 elif content == '':
                     print(f'搜索结果为空')
