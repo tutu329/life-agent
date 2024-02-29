@@ -52,7 +52,7 @@ def long_content_qa_concurrently(in_llm, in_content, in_prompt):
     else:
         # -----------------------------print信息--------------------------------------
         one_line = ''.join(in_content.split('\n'))[:40]
-        print(f'----------long_content_qa_concurrently(): content内容(长度{len(in_content)}): "{one_line}..."----------prompt内容: "{in_prompt[:50]}..."', end='')
+        print(f'----------long_content_qa_concurrently(): content内容(长度{len(in_content)}): "{one_line}..."----------prompt内容: "{in_prompt[:50]}..."')
 
         # 递归的可能: long_content_qa_concurrently() -> multi_contents_qa_concurrently() -> long_content_qa_concurrently()会产生递归 -> ...
         # 递归的出口: 出口条件即, len(content) <= concurrent_para_max_len
