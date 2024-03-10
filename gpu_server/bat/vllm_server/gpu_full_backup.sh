@@ -21,3 +21,4 @@ sudo nvidia-smi -cc 1 # Overrides or restores default CUDA clocks.
 #                                0/RESTORE_DEFAULT, 1/OVERRIDE
 sudo nvidia-smi -pl 200 # Specifies maximum power management limit in watts.
 #                                Takes an optional argument --scope.
+
