@@ -45,17 +45,17 @@ def session_state_init():
     # 状态的初始化
 
     if 'processing' not in st.session_state:
-        print('=================================状态初始化==================================')
+        # print('=================================状态初始化==================================')
         st.session_state['processing'] = False
-        print(f'st.session_state.processing = {st.session_state.processing}')
+        # print(f'st.session_state.processing = {st.session_state.processing}')
         
     if 'messages' not in st.session_state:
         st.session_state['messages'] = []
-        print(f'st.session_state.messages = {st.session_state.messages}')
+        # print(f'st.session_state.messages = {st.session_state.messages}')
 
     if 'prompt' not in st.session_state:
         st.session_state['prompt'] = ''
-        print(f'st.session_state.prompt = "{st.session_state.prompt}"')
+        # print(f'st.session_state.prompt = "{st.session_state.prompt}"')
         # print('=============================================================================')
     
 # 返回searcher及其loop
@@ -297,8 +297,9 @@ def on_chat_input_submit(in_prompt=None):
         st.session_state.prompt = in_prompt
 
 def on_refresh():
-    print('=================================状态刷新==================================')
-    print(f'st.session_state.processing = {st.session_state.processing}')
+    pass
+    # print('=================================状态刷新==================================')
+    # print(f'st.session_state.processing = {st.session_state.processing}')
     # print('============================================================================')
 
 def st_display_pdf(pdf_file):
@@ -400,7 +401,7 @@ def streamlit_refresh_loop():
             })
 
         # ===================完成输出任务后，通过rerun来刷新一些按钮的状态========================
-        print('=======================任务完成后的刷新( st.rerun() )==============================')
+        # print('=======================任务完成后的刷新( st.rerun() )==============================')
         st.session_state.processing = False
         st.session_state.prompt = ''
         st.rerun()
