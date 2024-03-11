@@ -303,6 +303,8 @@ class LLM_Client():
         # else:
         #     run_top_p = in_top_p
 
+        print(f'query: "{in_question[:50]}..."(len: {len(in_question)}, url: "{self.url}")')
+
         dprint(f'{"-"*80}')
         dprint(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
         dprint(f'【LLM_Client】 ask_prepare(): self.temperature={self.temperature}')
