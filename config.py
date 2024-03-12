@@ -20,6 +20,7 @@ class Global():
 
 @dataclass
 class Port():
+    m3e_api:int = 8000
     llm_api:int = 8001
     one_api:int = 8002
     flowise:int = 7860
