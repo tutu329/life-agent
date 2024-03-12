@@ -17,3 +17,11 @@ class Prompt_Limitation():
 class Global():
     line:str = f'{80 * "-"}\n\n'
     llm_url:str = 'http://116.62.63.204:8001/v1'
+
+@dataclass
+class Port():
+    llm_api:int = 8001
+    one_api:int = 8002
+    flowise:int = 7860
+    llm_ui :int = 7861
+    jupyter:int = 7862
