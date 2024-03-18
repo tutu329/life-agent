@@ -31,5 +31,8 @@ class Port():
     m3e_api:int = 8000  # 由one_api从:8002/v1/embeddings转发到这里
     llm_api:int = 8001  # 由one_api从:8002/v1/chat/completions等转发到这里
 
+    milvus_api:int=8003 # milvus单独的api
+    chroma_api:int=8004 # chroma单独的api
+
     # 工作环境
     jupyter:int = 7862
