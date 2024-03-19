@@ -23,13 +23,14 @@ class Port():
     # 顶层应用
     flowise:int = 7860
     llm_ui: int = 7861
+    xinference_ui: int = 7870
 
     # api转发层
     one_api:int = 8002  # flowise等顶层应用可以直接调用:8002/v1的llm_api和m3e_api
 
     # api底层服务
-    m3e_api:int = 8000  # 由one_api从:8002/v1/embeddings转发到这里
-    m3e_xapi:int = 7870  # 由xinference发布的
+    # m3e_api:int = 8000  # 由one_api从:8002/v1/embeddings转发到这里
+    m3e_api:int = 7870  # 由xinference发布的
     llm_api:int = 8001  # 由one_api从:8002/v1/chat/completions等转发到这里
 
     milvus_api:int=8003 # milvus单独的api
