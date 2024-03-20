@@ -23,6 +23,7 @@ class Port():
     # 顶层应用
     flowise:int = 7860
     llm_ui: int = 7861
+    fastgpt: int = 7863
     xinference_ui: int = 7870
 
     # api转发层
