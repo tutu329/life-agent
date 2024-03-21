@@ -65,7 +65,7 @@ class Bing_Searcher():
 
     #
     def search(self, in_question):
-        print(f'Bing_Searcher.search() entered.')
+        print(f'Bing_Searcher.search() entered.', flush=True)
         try:
             async def _search(in_question):
                 return await self._query_bing_and_get_results(in_question)
@@ -116,7 +116,7 @@ class Bing_Searcher():
 
     # Bing_Searcher的主要入口：并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
     def search_and_ask_yield(self, in_question, in_max_new_tokens=2048, in_para_max=Prompt_Limitation.concurrent_para_max_len_in_search):
-        print(f'Bing_Searcher.search_and_ask_yield() entered.')
+        print(f'Bing_Searcher.search_and_ask_yield() entered.', flush=True)
         searcher_and_llms_status = {
             'type'                : 'running',
             'canceled'            : False,
@@ -148,9 +148,9 @@ class Bing_Searcher():
                 content_list = result[1]
                 content = '\n\n'.join(content_list)
                 stripped_content = content[:in_para_max]
-                print(f'in_para_max: {in_para_max}')
-                print(f'len of content[{i}]: {len(content)}')
-                print(f'stripped len of content[{i}]: {len(stripped_content)}')
+                print(f'in_para_max: {in_para_max}', flush=True)
+                print(f'len of content[{i}]: {len(content)}', flush=True)
+                print(f'stripped len of content[{i}]: {len(stripped_content)}', flush=True)
                 contents.append(stripped_content)
                 i += 1
 
@@ -368,6 +368,7 @@ class Bing_Searcher():
         # 开启事件监听
         # page.on('response',printdata)
         # 进入子页面
+        response = None
         try:
             self.results[url] = [None, None]
             response = await context.request.get(url, timeout=SEARCH_TIME_OUT)
@@ -375,7 +376,10 @@ class Bing_Searcher():
             self.results[url] = (response.status, await response.text())
         except Exception as e:
             print(f'func_get_one_page(url={url}) error: {e}')
-            self.results[url] = (response.status, '')
+            if response is not None:
+                self.results[url] = (response.status, '')
+            else:
+                self.results[url] = (404, '获取网页内容失败.')
             # self.results[url] = (404, None)   # (response_status, response_html_text)
 
 # search的生成器（必须进行同步化改造，否则progress.tqdm(search_gen(message), desc='正在调用搜索引擎中...')报错！）

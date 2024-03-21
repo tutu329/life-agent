@@ -2,6 +2,7 @@ from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 from agent.tool_agent_prompts import PROMPT_REACT
 from agent.tool_agent_prompts import Base_Tool, Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
 from utils.extract import extract_code, extract_dict_string
+from colorama import Fore, Back, Style
 import torch
 
 class Tool_Agent():
@@ -158,23 +159,42 @@ class Tool_Agent():
         return thoughts
 
     def thinking(self):
+        print(Fore.GREEN)
+        print(f'****************************************thinking()***********************************************', flush=True)
         gen = self.llm.ask_prepare(self.prompt, in_stop=self.action_stop).get_answer_generator()
         # thoughts = ''
 
         thoughts = self._thoughts_stream_output(gen)
 
         if self.__finished_keyword in thoughts:
+            print(f'=============================thoughts=============================')
+            print(thoughts)
+            print(f'-----------------------------thoughts-----------------------------')
+            print(f'----------------------------------------thinking()-----------------------------------------------', flush=True)
+            print(Style.RESET_ALL)
             return thoughts
 
         self.prompt += '\n' + thoughts + ']'
         # self.status_print(f'============================prompt start============================\n')
         # self.status_print(f'{self.prompt}\n------------------------prompt end------------------------')
+        print(f'=============================thoughts=============================')
+        print(thoughts)
+        print(f'-----------------------------thoughts-----------------------------')
+        print(f'----------------------------------------thinking()-----------------------------------------------', flush=True)
+        print(Style.RESET_ALL)
         return thoughts
 
     def action(self, in_thoughts):
+        print(Fore.RED)
+        print(f'****************************************action()***********************************************', flush=True)
         # --------------------------- call tool ---------------------------
         action_result = ''
         tool_name = Base_Tool.extract_tool_name(in_thoughts)
+
+        print(f'=============================thoughts=============================')
+        print(in_thoughts)
+        print(f'-----------------------------thoughts-----------------------------')
+        print(f'----------------------------------------action()-----------------------------------------------', flush=True)
 
         if 'code_tool'==tool_name:
             self.status_print('选择了[code_tool]')
@@ -200,6 +220,7 @@ class Tool_Agent():
         # --------------------------- call tool ---------------------------
 
         self.status_print(f'调用工具的行动结果为: \n{action_result}')
+        print(Style.RESET_ALL)
         return action_result
 
     def observation(self, in_action_result=''):
