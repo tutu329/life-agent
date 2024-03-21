@@ -9,6 +9,9 @@ from utils.print_tools import print_long_content_with_urls, get_string_of_long_c
 from utils.long_content_qa import long_content_qa, multi_contents_qa_concurrently, multi_contents_qa_concurrently_yield
 from utils.task import Flicker_Task
 
+from config import Prompt_Limitation
+
+
 SEARCH_TIME_OUT = 3000    # 超时ms
 
 class SearchResult:
@@ -58,6 +61,7 @@ class Bing_Searcher():
         print(f'asyncio.get_event_loop_policy(): {type(asyncio.get_event_loop_policy())}')
         # -------------------------------------- -----------------------------------------------------------------------------------------------
 
+    #
     def search(self, in_question):
         print(f'Bing_Searcher.search() entered.')
         try:
@@ -108,8 +112,8 @@ class Bing_Searcher():
         else:
             return '网页内容获取失败.'
 
-    # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
-    def search_and_ask_yield(self, in_question, in_max_new_tokens=2048):
+    # Bing_Searcher的主要入口：并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
+    def search_and_ask_yield(self, in_question, in_max_new_tokens=2048, in_para_max=Prompt_Limitation.concurrent_para_max_len_in_search):
         print(f'Bing_Searcher.search_and_ask_yield() entered.')
         searcher_and_llms_status = {
             'type'                : 'running',
@@ -135,11 +139,18 @@ class Bing_Searcher():
         search_urls = []
         gen = None
         if internet_search_resultes is not None:
+            i = 1
             for result in internet_search_resultes:
                 web_url = result[0]
                 search_urls.append(web_url)
                 content_list = result[1]
-                contents.append('\n\n'.join(content_list))
+                content = '\n\n'.join(content_list)
+                stripped_content = content[:in_para_max]
+                print(f'in_para_max: {in_para_max}')
+                print(f'len of content[{i}]: {len(content)}')
+                print(f'stripped len of content[{i}]: {len(stripped_content)}')
+                contents.append(stripped_content)
+                i += 1
 
             gen = multi_contents_qa_concurrently_yield(
                 in_contents=contents,

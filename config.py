@@ -12,7 +12,6 @@ class Prompt_Limitation():
     concurrent_para_max_len_in_search:int = 1000
     # 例如搜索结果文本的最大分段数：
     concurrent_max_paras:int = 1                    # 返回文本(content)字符串list的最大长度
-    concurrent_max_paras_in_search:int = 1
 
     concurrent_summary_max_len:int = 1000       # content总结后最大长度(是让llm总结后的长度，llm不一定能完全按要求控制长度)
 

@@ -127,13 +127,13 @@ def multi_contents_qa_concurrently_yield(
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
 
     x=0
-    print('---------------multi_contents_qa_concurrently_yield()---------------')
+    # print('---------------multi_contents_qa_concurrently_yield()---------------')
     for content in in_contents:
         x += 1
-        print(f'content[{x}]内容: "{content[:50]}..."')
-        print(f'content[{x}]长度: {len(content)}')
-        print(f'prompt内容: "{in_prompt[:50]}..."')
-    print('--------------------------------------------------------------------')
+        # print(f'content[{x}]内容: "{content[:50]}..."')
+        # print(f'content[{x}]长度: {len(content)}')
+        # print(f'prompt内容: "{in_prompt[:50]}..."')
+    # print('--------------------------------------------------------------------')
 
 
     llms = Concurrent_LLMs(in_url=in_api_url)
