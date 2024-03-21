@@ -187,6 +187,7 @@ class Tool_Agent():
     def action(self, in_thoughts):
         print(Fore.RED)
         print(f'****************************************action()***********************************************', flush=True)
+
         # --------------------------- call tool ---------------------------
         action_result = ''
         tool_name = Base_Tool.extract_tool_name(in_thoughts)
