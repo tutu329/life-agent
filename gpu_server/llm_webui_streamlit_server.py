@@ -39,6 +39,7 @@ def streamlit_init():
         print_input=False,
         temperature=0,
     )
+    # agent_init()
     return mem_llm
 
 def session_state_init():
@@ -89,6 +90,25 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
         )
         async_llm.start()
     return async_llms
+
+def agent_init():
+    pass
+
+    # tools = [Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
+    # print(f'工具: [')
+    # for tool in tools:
+    #     print(tool.name + ', ')
+    # print(f'] 已加载.')
+    #
+    # agent = Tool_Agent(
+    #     in_query=prompt,
+    #     in_tool_classes=tools,
+    #     inout_status_list=status_data['status_list'],
+    #     in_status_stream_buf=status.markdown,
+    #     inout_output_list=final_answer_list,
+    #     in_output_stream_buf=placeholder1.markdown,
+    # )
+    # agent.init()
 
 def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
     # =================================agent功能=================================

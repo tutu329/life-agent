@@ -92,7 +92,9 @@ class Base_Tool():
 
     @classmethod
     def extract_tool_name(cls, in_thoughts):
+        print(f'+++++++++++++++++++++thoughts in extract_tool_name() is : \n{in_thoughts}+++++++++++++++++++++')
         dict_string = extract_dict_string(in_thoughts)
+        # print(f'+++++++++++++++++++++dict_string in extract_tool_name() is : \n{dict_string}+++++++++++++++++++++')
         if not dict_string:
             return ''
         # print('+++++++++++++++++++++')
@@ -112,8 +114,8 @@ class Base_Tool():
         dict = json5.loads(dict_string__)
         # print(f'{dict}')
         
-        # print('+++++++++++++++++++++')
-        
+        # print(f'+++++++++++++++++++++dict in extract_tool_name() is : \n{dict}+++++++++++++++++++++')
+
         return dict['tool_name']
 
 class Energy_Investment_Plan_Tool(Base_Tool):
@@ -271,7 +273,11 @@ class Search_Tool(Base_Tool):
         },
     ]
     def __init__(self):
-        pass
+        self.searcher = None
+
+    # 初始化searcher
+    def init(self):
+        searcher = Bing_Searcher.create_searcher_and_loop(in_search_num=3)
 
     def call(self, in_thoughts):
         dict_string = extract_dict_string(in_thoughts)

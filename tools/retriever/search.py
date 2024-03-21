@@ -31,6 +31,8 @@ class SearchResult:
         return json.dumps(self.dump())
 
 class Bing_Searcher():
+    global_searcher = None
+
     def __init__(self,
                  in_search_num=3,
                  in_llm_api_url='http://127.0.0.1:8001/v1',
@@ -187,6 +189,20 @@ class Bing_Searcher():
             in_llm_api_url='http://127.0.0.1:8001/v1',
             in_stream_buf_callback = None,
     ):
+        if Bing_Searcher.global_searcher is not None:
+            # searcher已经启动时，不再进行初始化，但要注意其他状态是否需要重置
+            print(f'Bing_Searcher.create_searcher_and_loop() already invoked.')
+            Bing_Searcher.global_searcher.results = {}
+            Bing_Searcher.global_searcher.llm_api_url = in_llm_api_url
+            Bing_Searcher.global_searcher.search_num = in_search_num
+            Bing_Searcher.global_searcher.stream_buf_callback = in_stream_buf_callback
+            print(f'refresh searcher paras:')
+            print(f'global_searcher.results: {Bing_Searcher.global_searcher.results}')
+            print(f'global_searcher.llm_api_url: {Bing_Searcher.global_searcher.llm_api_url}')
+            print(f'global_searcher.search_num: {Bing_Searcher.global_searcher.search_num}')
+            print(f'global_searcher.stream_buf_callback: {Bing_Searcher.global_searcher.stream_buf_callback}')
+            return Bing_Searcher.global_searcher
+
         print(f'Bing_Searcher.create_searcher_and_loop() entered.')
         if fix_streamlit_in_win:
             Bing_Searcher._fix_streamlit_windows_proactor_eventloop_problem()
@@ -203,6 +219,8 @@ class Bing_Searcher():
         loop = asyncio.new_event_loop()
         loop.run_until_complete(_searcher_start())
         searcher.loop = loop    # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
+
+        Bing_Searcher.global_searcher = searcher
         return searcher
 
     async def _start(self):
