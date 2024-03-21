@@ -59,6 +59,7 @@ class Bing_Searcher():
         # -------------------------------------- -----------------------------------------------------------------------------------------------
 
     def search(self, in_question):
+        print(f'Bing_Searcher.search() entered.')
         try:
             async def _search(in_question):
                 return await self._query_bing_and_get_results(in_question)
@@ -109,6 +110,7 @@ class Bing_Searcher():
 
     # 并发的联网搜索和并发的llm解读，返回最终回复对应的llm对象和搜索urls清单
     def search_and_ask_yield(self, in_question, in_max_new_tokens=2048):
+        print(f'Bing_Searcher.search_and_ask_yield() entered.')
         searcher_and_llms_status = {
             'type'                : 'running',
             'canceled'            : False,
@@ -174,6 +176,7 @@ class Bing_Searcher():
             in_llm_api_url='http://127.0.0.1:8001/v1',
             in_stream_buf_callback = None,
     ):
+        print(f'Bing_Searcher.create_searcher_and_loop() entered.')
         if fix_streamlit_in_win:
             Bing_Searcher._fix_streamlit_windows_proactor_eventloop_problem()
 

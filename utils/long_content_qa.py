@@ -36,6 +36,7 @@ def _split_long_content_to_paras(in_content):
     return paras_to_summary
 
 def long_content_qa_concurrently(in_llm, in_content, in_prompt):
+    print(f'long_content_qa_concurrently() entered.')
     # print(f'[long_content_summary()]: 文本长度为 {len(in_content)})')
     if len(in_content)==0:
         print('[long_content_summary()]: 异常: 输入文本长度为0')
@@ -70,6 +71,7 @@ def multi_contents_qa_concurrently(
         in_api_url='http://127.0.0.1:8001/v1',
         in_search_urls=None
 ):
+    print(f'multi_contents_qa_concurrently() entered.')
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
 
     llms = Concurrent_LLMs(in_url=in_api_url)
@@ -121,6 +123,7 @@ def multi_contents_qa_concurrently_yield(
         in_max_new_tokens=2048,
         in_search_urls=None,
 ):
+    print(f'multi_contents_qa_concurrently_yield() entered.')
     from tools.llm.api_client import Concurrent_LLMs, LLM_Client
 
     x=0
@@ -179,6 +182,7 @@ def multi_contents_qa_concurrently_yield(
 
 
 def long_content_qa(in_llm, in_content, in_prompt):
+    print(f'long_content_qa() entered.')
     # print(f'[long_content_summary()]: 文本长度为 {len(in_content)})')
     if len(in_content) == 0:
         print('[long_content_summary()]: 异常: 输入文本长度为0')
@@ -262,6 +266,7 @@ def long_content_qa(in_llm, in_content, in_prompt):
     # return final_answer
 
 def short_content_qa(in_llm, in_content, in_prompt):
+    print(f'short_content_qa() entered.')
     one_line = ''.join(in_content.split('\n'))[:40]
     print(f'----------short_content_qa(): content内容(长度{len(in_content)}): "{one_line}..."----------', end='')
     print(f'prompt内容: "{in_prompt[:50]}..."')
