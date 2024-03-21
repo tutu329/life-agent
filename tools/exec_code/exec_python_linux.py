@@ -42,12 +42,12 @@ def execute_python_code_in_docker(code: str) -> str:
 
         return execute_python_file_in_docker(Path(tmp_code_file.name))
     except Exception as e:
-        # print('【docker】创建临时python文件报错：', e)
+        print('【docker】创建临时python文件报错：', e)
         error = e
     finally:
         if tmp_code_file is not None:
             tmp_code_file.close()
-        return f"系统未返回结果，【docker】创建临时python文件报错: {error}."
+        # return f"系统未返回结果，【docker】创建临时python文件报错: {error}."    # 这行不能有，因为正常return时，finally也会被调用
 
 def execute_python_file_in_docker(
     filename: Path, args: list[str] | str = []
@@ -178,8 +178,13 @@ current_date = datetime.now().strftime("%Y-%m-%d")
 print(current_date)
 '''
     # res = execute_python_code('print("hello")')
+    print(f'code: \n{code}')
     res = execute_python_code_in_docker(code)
     print('【docker】运行结果：\n', res)
+
+def main1():
+    res = execute_python_code_in_docker('print("hello")')
+    print('运行结果：', res)
 
 if __name__ == "__main__":
     main()

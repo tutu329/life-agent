@@ -42,3 +42,4 @@ class Port():
 
     # 工作环境
     jupyter:int = 7862
+    jupyter_temp:int = 7865  # 自定义jupyter的docker容器
