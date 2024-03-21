@@ -135,7 +135,10 @@ class Base_Tool():
         # print(f'{code}')
         # print(f'dict_string__:')
         # print(f'{dict_string__}')
+
+        print(f'----------dict_string__ is : "{dict_string__}"--------------')
         dict = json5.loads(dict_string__)
+
         # print(f'{dict}')
         
         # print(f'+++++++++++++++++++++dict in extract_tool_name() is : \n{dict}+++++++++++++++++++++')

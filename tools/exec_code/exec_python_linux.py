@@ -10,7 +10,7 @@ HOST_WORK_DIR2 = '/home/tutu/jupyter_temp'
 
 DOCKER_WORK_DIR = '/usr/local/jupyter_temp'
 
-DEBUG = False
+DEBUG = True
 
 def dprint(*args, **kwargs):
     if DEBUG:
@@ -30,18 +30,24 @@ def execute_python_code_in_docker(code: str) -> str:
         str: The STDOUT captured from the code when it ran
     """
 
-    tmp_code_file = NamedTemporaryFile(
-        "w", dir=HOST_WORK_DIR, suffix=".py", encoding="utf-8"
-    )
-    tmp_code_file.write(code)
-    tmp_code_file.flush()
-
+    print(f'execute_python_code_in_docker() try to invoke NamedTemporaryFile() withh HOST_WORK_DIR="{HOST_WORK_DIR}"')
+    tmp_code_file = None
+    error = ''
     try:
+        tmp_code_file = NamedTemporaryFile(
+            "w", dir=HOST_WORK_DIR, suffix=".py", encoding="utf-8"
+        )
+        tmp_code_file.write(code)
+        tmp_code_file.flush()
+
         return execute_python_file_in_docker(Path(tmp_code_file.name))
     except Exception as e:
-        print('【docker】创建临时python文件报错：', e)
+        # print('【docker】创建临时python文件报错：', e)
+        error = e
     finally:
-        tmp_code_file.close()
+        if tmp_code_file is not None:
+            tmp_code_file.close()
+        return f"系统未返回结果，【docker】创建临时python文件报错: {error}."
 
 def execute_python_file_in_docker(
     filename: Path, args: list[str] | str = []
@@ -76,6 +82,8 @@ def execute_python_file_in_docker(
     try:
         dprint(f"【docker】启动docker.from_env()...")
         client = docker.from_env()
+        # 如果报错: Error while fetching server API version: ('Connection aborted.', PermissionError(13, 'Permission denied'))
+        # 则为当前用户的docker提供权限: sudo usermod -aG docker $USER(需要logout)， 测试：docker ps
         dprint(f"【docker】启动docker.from_env()成功.")
         image_name = "jupyter_with_common_python_libs"
         try:
