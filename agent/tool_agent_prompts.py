@@ -179,9 +179,6 @@ PROMPT_REACT = """###你必须回答接下来的问题，而且系统已经为�
 
 [问题]{query}"""
 
-# 1、stop要用<结束>
-# 2、llm会自己代替system写观察结果
-
 class Base_Tool():
     name: str
     description: str
