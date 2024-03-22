@@ -25,7 +25,8 @@ class Tool_Agent():
         self.human = in_human    # 是否和human交互
         self.action_stop = ['[观察]']
         self.observation_stop = ['[观察]']
-        self.response_stop = ['<结束>']
+        self.response_stop = ['[观察]']
+        # self.response_stop = ['<结束>']
         # self.response_stop = ['<res_stop>']
 
         self.ostream = in_output_stream_buf   # 最终结果输出的stream
@@ -181,7 +182,8 @@ class Tool_Agent():
             print(f'----------------------------------------thinking()-----------------------------------------------', flush=True)
             return answer_this_turn
 
-        self.agent_desc_and_action_history += '\n' + answer_this_turn + ']'
+        self.agent_desc_and_action_history += '\n' + answer_this_turn
+        # self.agent_desc_and_action_history += '\n' + answer_this_turn + ']'
         # self.status_print(f'============================prompt start============================\n')
         # self.status_print(f'{self.prompt}\n------------------------prompt end------------------------')
         print(Fore.GREEN, flush=True)
@@ -243,24 +245,49 @@ class Tool_Agent():
         print(Style.RESET_ALL, flush=True)
         return action_result
 
+#     def observation(self, in_action_result=''):
+#         # agent_desc_and_action_history去掉最后一个[观察]及其后续内容
+#         kword = '[观察]'
+#         last_his = self.agent_desc_and_action_history.split(kword)
+#         last_his.pop()
+#         last_his = kword.join(last_his)
+#
+#         # 构造观察数据
+#         obs_result = '\n' + kword
+#         obs_result += '''
+# {{
+#     'observer':'system',
+#     'status':'system returned',
+#     'result':'{result}',
+# }}
+# '''
+#         obs_result = obs_result.format(result=in_action_result)
+#         self.agent_desc_and_action_history = last_his + obs_result
+#
+#         print(Fore.CYAN, flush=True)
+#         print(f'=============================action_history=============================', flush=True)
+#         print(self.agent_desc_and_action_history, flush=True)
+#         print(f'-----------------------------action_history-----------------------------', flush=True)
+#         print(Style.RESET_ALL, flush=True)
+#         # print(f'============================prompt start============================\n')
+#         # print(f'{self.prompt}\n------------------------prompt end------------------------')
     def observation(self, in_action_result=''):
         # agent_desc_and_action_history去掉最后一个[观察]及其后续内容
-        kword = '[观察]'
-        last_his = self.agent_desc_and_action_history.split(kword)
-        last_his.pop()
-        last_his = kword.join(last_his)
+        # kword = '[观察]'
+        # last_his = self.agent_desc_and_action_history.split(kword)
+        # last_his.pop()
+        # last_his = kword.join(last_his)
 
         # 构造观察数据
-        obs_result = '\n' + kword
-        obs_result += '''
-{{
-    'observer':'system',
-    'status':'system returned',
-    'system_result':'{result}',
-}}
-'''
-        obs_result = obs_result.format(result=in_action_result)
-        self.agent_desc_and_action_history = last_his + obs_result
+        # obs_result = '\n' + kword
+        # obs_result += f'[观察]{in_action_result}'
+
+        # obs_result = obs_result.format(result=in_action_result)
+        # self.agent_desc_and_action_history = last_his + obs_result
+
+
+
+        self.agent_desc_and_action_history += f'[观察]{in_action_result}'
 
         print(Fore.CYAN, flush=True)
         print(f'=============================action_history=============================', flush=True)

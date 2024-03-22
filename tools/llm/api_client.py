@@ -329,11 +329,12 @@ class LLM_Client():
         if self.print_input:
             print('<User>\n', msgs[-1]['content'])
         if in_stop is None:
+            # stop = ['<|im_end|>', '<|im_start|>']
             stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>']
-            # stop = ['</s>', '人类', 'human', 'Human', 'assistant', 'Assistant']
         else:
+            # stop = ['<|im_end|>', '<|im_start|>'] + in_stop
             stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>'] + in_stop
-            
+
         dprint(f'【LLM_Client】 ask_prepare(): stop={stop}')
         self.stop = stop
 
@@ -453,6 +454,7 @@ class LLM_Client():
     # 方式2：返回generator，在合适的时候输出结果
     def get_answer_generator(self):
         answer = ''
+        perhaps_stop_string = ''    # 非常重要，用于存放疑似stop的缓冲
         for chunk in self.gen:
             if self.response_canceled:
                 break
@@ -462,11 +464,18 @@ class LLM_Client():
                 answer += my_chunk
 
                 answer_no_partial_stop = str_remove_partial_stops(answer, self.stop)
+                # print(f'answer1: {answer}')
+                # print(f'answer2: {answer_no_partial_stop}')
                 if answer_no_partial_stop == answer:
+                    my_chunk = perhaps_stop_string + my_chunk   # 1、将证实不是stop的字符补在前面
+                    perhaps_stop_string = ''                    # 2、清空疑似stop的缓冲
                     # 没partial_stop
+                    # print(my_chunk, end='', flush=True)
                     yield my_chunk
                 else:
+                    perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
                     # 有partial_stop
+                    # print(f'*{my_chunk}*', end='', flush=True)
                     yield ''
 
         self.answer_last_turn = answer_no_partial_stop
@@ -487,6 +496,7 @@ class LLM_Client():
     #
     #     self.answer_last_turn = answer
     #     self.__history_add_last_turn_msg()
+
     # 取消正在进行的stream
     def cancel_response(self):
         self.response_canceled = True

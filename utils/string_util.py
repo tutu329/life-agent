@@ -61,12 +61,13 @@ def str_remove_partial_stops(str, stops):
     return min_str
 
 def main():
-    str1 = "aaaaaaa stopfabc> </stop1[结束<res_stop>【结束<stop>1"
-    # str1 = "aaaaaaa stopfabc><stop1<stop1[结束【结束1"
+    # str1 = "['search_tool','code_tool','energy_investment_plan_tool','qa_url_content_tool'] 。aaaaaaa 'search_tool' stopfabc> </stop1[结束<res_stop>【结束<stop>1"
+    str1 = "['search_tool', 'code_tool', 'energy_investment_plan_tool', 'qa"
     # str1 = "aaaaaaa stopfabc><stop1<stop1【结束[结束]"
     str2 = "<stop>"
     # str2 = "【结束】"
-    stops = ['<stop>', '[结束]', '【结束】', '</s>', '<res_stop>']
+    # stops = ['<stop>', '[结束]', '【结束】', '</s>', '<res_stop>']
+    stops = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', '<step>', '<结束>']
 
     print('str :', str1)  # Output: <stop
 
