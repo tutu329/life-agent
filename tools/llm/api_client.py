@@ -473,6 +473,20 @@ class LLM_Client():
         # self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
 
+    # def get_answer_generator(self):
+    #     answer = ''
+    #     for chunk in self.gen:
+    #         if self.response_canceled:
+    #             break
+    #
+    #         if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
+    #             my_chunk = chunk.choices[0].delta.content
+    #             answer += my_chunk
+    #
+    #             yield my_chunk
+    #
+    #     self.answer_last_turn = answer
+    #     self.__history_add_last_turn_msg()
     # 取消正在进行的stream
     def cancel_response(self):
         self.response_canceled = True

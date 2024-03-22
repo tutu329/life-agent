@@ -32,6 +32,7 @@ def extract_code(text):
 
 # 用re把字符串中的最外层{}里的内容抠出来，包含{}
 def extract_dict_string(text):
+    dprint(f'extract_dict_string(): text = \n"{text}"')
     match = re.search(r'\{.*\}', text, re.DOTALL)
     result = match.group(0) if match else None
     dprint(f'extract_dict_string(): result = \n{result}')
