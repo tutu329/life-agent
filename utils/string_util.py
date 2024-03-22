@@ -1,13 +1,13 @@
 # str1和str2的交集，且该交集起始和str2起始一致
-def str1_has_partial_stop(str1, stop):
+def _str_has_partial_stop(str, stop):
     same_str = ''
     chunk = ''
     # 找到str1和str2交集
     for ch in stop:
         chunk += ch
-        if chunk in str1:
+        if chunk in str:
             same_str = chunk
-            if str1.endswith(same_str):
+            if str.endswith(same_str):
                 # print(f'same:"{same_str}"')
                 break
         else:
@@ -15,10 +15,10 @@ def str1_has_partial_stop(str1, stop):
 
     # 判断partial stop和str1的交集是否为str1尾部，或者完整stop是否in str1
     # print(f'same:"{same_str}"')
-    if str1.endswith(same_str):
+    if str.endswith(same_str):
         return same_str
-    elif stop in str1:
-        str = str1.split(stop)
+    elif stop in str:
+        str = str.split(stop)
         if len(str)>0:
             # 取第一个stop后面所有
             str.pop(0)
@@ -33,12 +33,12 @@ def str1_has_partial_stop(str1, stop):
 
 
 # "aaaaaaa<stop"和"<stop>"的交集是否为<开始
-def str1_remove_partial_stop(str1, stop):
-    partial_stop = str1_has_partial_stop(str1, stop)
+def _str_remove_partial_stop(str, stop):
+    partial_stop = _str_has_partial_stop(str, stop)
     # print(f'partial_stop: "{partial_stop}"')
     if not partial_stop:
-        return str1
-    str = str1.split(partial_stop)
+        return str
+    str = str.split(partial_stop)
     # print(str)
     str.pop()
     # print(str)
@@ -47,14 +47,16 @@ def str1_remove_partial_stop(str1, stop):
 
     return str
 
-def str1_remove_partial_stops(str1, stops):
-    str = str1
+def str_remove_partial_stops(str, stops):
+    str1 = str
     # print(f'str: "{str}"')
     min_str = str1
     for stop in stops:
-        str = str1_remove_partial_stop(str1, stop)
-        if len(min_str) > len(str):
-            min_str = str
+        str1 = _str_remove_partial_stop(str, stop)
+        # print(f'str: "{str}", stop: "{stop}"')
+        # print(f'mmm: "{min_str}", stop: "{stop}"')
+        if len(min_str) > len(str1):
+            min_str = str1
         # print(f'str: "{str}", stop: "{stop}"')
     return min_str
 
@@ -68,7 +70,7 @@ def main():
 
     print('str :', str1)  # Output: <stop
 
-    print('fout:', str1_remove_partial_stops(str1, stops))
+    print('fout:', str_remove_partial_stops(str1, stops))
 
 
 if __name__ == "__main__" :
