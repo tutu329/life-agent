@@ -21,6 +21,7 @@ from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 from utils.long_content_qa import long_content_qa, short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
+from utils.string_util import str_remove_partial_stops
 
 
 if sys.platform.startswith('win'):      # win下用的是qwen的openai api (openai==0.28.1)
@@ -460,11 +461,16 @@ class LLM_Client():
                 my_chunk = chunk.choices[0].delta.content
                 answer += my_chunk
 
-                self.stop
+                answer_no_partial_stop = str_remove_partial_stops(answer, self.stop)
+                if answer_no_partial_stop == answer:
+                    # 没partial_stop
+                    yield my_chunk
+                else:
+                    # 有partial_stop
+                    yield ''
 
-                yield my_chunk
-
-        self.answer_last_turn = answer
+        self.answer_last_turn = answer_no_partial_stop
+        # self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
 
     # 取消正在进行的stream

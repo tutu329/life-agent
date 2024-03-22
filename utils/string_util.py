@@ -61,12 +61,12 @@ def str_remove_partial_stops(str, stops):
     return min_str
 
 def main():
-    str1 = "aaaaaaa stopfabc><stop1[结束【结束<stop>1"
+    str1 = "aaaaaaa stopfabc> </s>top1[结束【结束<stop>1"
     # str1 = "aaaaaaa stopfabc><stop1<stop1[结束【结束1"
     # str1 = "aaaaaaa stopfabc><stop1<stop1【结束[结束]"
     str2 = "<stop>"
     # str2 = "【结束】"
-    stops = ['<stop>', '[结束]', '【结束】']
+    stops = ['<stop>', '[结束]', '【结束】', '</s>']
 
     print('str :', str1)  # Output: <stop
 
