@@ -25,7 +25,7 @@ class Tool_Agent():
         self.human = in_human    # 是否和human交互
         self.action_stop = ['[观察]']
         self.observation_stop = ['[观察]']
-        self.response_stop = ['---回复结束---']
+        self.response_stop = ['[结束]']
 
         self.ostream = in_output_stream_buf   # 最终结果输出的stream
         self.sstream = in_status_stream_buf   # 中间状态输出的stream
@@ -237,11 +237,6 @@ class Tool_Agent():
         return action_result
 
     def observation(self, in_action_result=''):
-        s = '[回复]xxx[回复]yyy[回复]zzz'
-        p = s.split('[回复]')
-        p.pop()
-        f = '[回复]'.join(p)
-
         # agent_desc_and_action_history去掉最后一个[观察]及其后续内容
         kword = '[观察]'
         last_his = self.agent_desc_and_action_history.split(kword)
