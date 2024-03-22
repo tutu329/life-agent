@@ -79,6 +79,7 @@ class LLM_Client():
 
         self.url = url
         self.gen = None     # 返回结果的generator
+        self.stop = None    # 用于对vllm的openai api的stop进行过滤
         self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
         # self.top_p = top_p
@@ -333,6 +334,7 @@ class LLM_Client():
             stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>'] + in_stop
             
         dprint(f'【LLM_Client】 ask_prepare(): stop={stop}')
+        self.stop = stop
 
         try:
             if sys.platform.startswith('win'):
@@ -455,9 +457,12 @@ class LLM_Client():
                 break
 
             if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
-                # print(chunk.choices[0].delta.content, end="", flush=True)
-                answer += chunk.choices[0].delta.content
-                yield chunk.choices[0].delta.content
+                my_chunk = chunk.choices[0].delta.content
+                answer += my_chunk
+
+                self.stop
+
+                yield my_chunk
 
         self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
