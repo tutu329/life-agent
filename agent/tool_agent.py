@@ -192,6 +192,12 @@ class Tool_Agent():
 
         # --------------------------- call tool ---------------------------
         action_result = ''
+
+        # 去掉'[观察]'及后续内容
+        in_answer = in_answer.split('[观察]')
+        in_answer.pop()
+        in_answer = ''.join(in_answer)
+
         tool_name = Base_Tool.extract_tool_name_from_answer(in_answer)
 
         # print(f'=============================thoughts=============================')

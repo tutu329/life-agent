@@ -157,9 +157,9 @@ class Base_Tool():
             # print('-----extract_tool_name4------')
 
             # 去掉'[观察]'及后续内容
-            dict_string__ = dict_string__.split('[观察]')
-            dict_string__.pop()
-            dict_string__ = ''.join(dict_string__)
+            # dict_string__ = dict_string__.split('[观察]')
+            # dict_string__.pop()
+            # dict_string__ = ''.join(dict_string__)
             print('-----------dict string to get tool_name is:----------')
             print(dict_string__)
             print('-----------------------------------------------------')
@@ -342,6 +342,12 @@ class Search_Tool(Base_Tool):
 
     def call(self, in_thoughts):
         dict_string = extract_dict_string(in_thoughts)
+
+        # print(Fore.RED, flush=True)
+        # print('-----------Search_Tool: dict string to get tool_name is:----------')
+        # print(dict_string)
+        # print('------------------------------------------------------------------')
+        # print(Style.RESET_ALL, flush=True)
         dict = json5.loads(dict_string)
         query = dict['tool_parameters']['query']
         print(f'Search_Tool.call(): dict obj is: {dict}')
