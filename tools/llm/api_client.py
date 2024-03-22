@@ -365,6 +365,9 @@ class LLM_Client():
                 )
         except Exception as e:
             print(f'【LLM_Client异常】ask_prepare(): {e}')
+            print('返回gen = None')
+            self.question_last_turn = in_question
+            return self
 
         self.gen = gen
 

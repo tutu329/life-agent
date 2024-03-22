@@ -16,7 +16,7 @@ class Tool_Agent():
                  in_status_stream_buf=None,
                  ):
         self.llm = None
-        self.prompt = ''
+        self.agent_desc_and_action_history = ''
         self.query=in_query
         self.tool_descs=''
         self.tool_names=[]
@@ -25,6 +25,7 @@ class Tool_Agent():
         self.human = in_human    # 是否和human交互
         self.action_stop = ['[观察]']
         self.observation_stop = ['[观察]']
+        self.response_stop = ['---回复结束---']
 
         self.ostream = in_output_stream_buf   # 最终结果输出的stream
         self.sstream = in_status_stream_buf   # 中间状态输出的stream
@@ -32,7 +33,7 @@ class Tool_Agent():
         self.status_list = inout_status_list     # 状态历史
         self.output_list = inout_output_list     # 输出历史
 
-        self.__finished_keyword = '[最终答复]'
+        self.__finished_keyword = '最终答复'
 
     # 最终结果输出
     def output_print(self, in_string):
@@ -71,7 +72,7 @@ class Tool_Agent():
 
     def init(self):
         self.llm = LLM_Client(temperature=0, history=False, print_input=False, max_new_tokens=1024)
-        self.prompt = PROMPT_REACT
+        self.agent_desc_and_action_history = PROMPT_REACT
 
         # 将所有工具转换为{tool_descs}和{tool_names}
         for tool in self.tool_classes:
@@ -92,13 +93,13 @@ class Tool_Agent():
 
         self.tool_names = ','.join(self.tool_names)
 
-        self.prompt = self.prompt.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+        self.agent_desc_and_action_history = self.agent_desc_and_action_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
 
     def run(self, in_max_retry=5):
         for i in range(in_max_retry):
             # 1、思考
-            thoughts = self.thinking()
-            if self.__finished_keyword in thoughts:
+            answer_this_turn = self.thinking()
+            if self.__finished_keyword in answer_this_turn:
                 return True
 
             # if i>0:
@@ -110,7 +111,7 @@ class Tool_Agent():
             #             return False
 
             # 2、行动
-            action_result = self.action(in_thoughts=thoughts)
+            action_result = self.action(in_answer=answer_this_turn)
             # 3、观察
             self.observation(in_action_result=action_result)
 
@@ -159,73 +160,105 @@ class Tool_Agent():
         return thoughts
 
     def thinking(self):
-        print(Fore.GREEN)
         print(f'****************************************thinking()***********************************************', flush=True)
-        gen = self.llm.ask_prepare(self.prompt, in_stop=self.action_stop).get_answer_generator()
+        gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.response_stop).get_answer_generator()
+        # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
         # thoughts = ''
 
-        thoughts = self._thoughts_stream_output(gen)
+        answer_this_turn = self._thoughts_stream_output(gen)
 
-        if self.__finished_keyword in thoughts:
-            print(f'=============================thoughts=============================')
-            print(thoughts)
-            print(f'-----------------------------thoughts-----------------------------')
+        if self.__finished_keyword in answer_this_turn:
+            print(Fore.GREEN, flush=True)
+            print(f'=============================answer=============================', flush=True)
+            print(answer_this_turn, flush=True)
+            print(f'-----------------------------answer-----------------------------', flush=True)
+            print(Style.RESET_ALL, flush=True)
             print(f'----------------------------------------thinking()-----------------------------------------------', flush=True)
-            print(Style.RESET_ALL)
-            return thoughts
+            return answer_this_turn
 
-        self.prompt += '\n' + thoughts + ']'
+        self.agent_desc_and_action_history += '\n' + answer_this_turn + ']'
         # self.status_print(f'============================prompt start============================\n')
         # self.status_print(f'{self.prompt}\n------------------------prompt end------------------------')
-        print(f'=============================thoughts=============================')
-        print(thoughts)
-        print(f'-----------------------------thoughts-----------------------------')
+        print(Fore.GREEN, flush=True)
+        print(f'=============================answer=============================', flush=True)
+        print(answer_this_turn, flush=True)
+        print(f'-----------------------------answer-----------------------------', flush=True)
+        print(Style.RESET_ALL, flush=True)
         print(f'----------------------------------------thinking()-----------------------------------------------', flush=True)
-        print(Style.RESET_ALL)
-        return thoughts
+        return answer_this_turn
 
-    def action(self, in_thoughts):
-        print(Fore.RED)
+    def action(self, in_answer):
         print(f'****************************************action()***********************************************', flush=True)
 
         # --------------------------- call tool ---------------------------
         action_result = ''
-        tool_name = Base_Tool.extract_tool_name(in_thoughts)
+        tool_name = Base_Tool.extract_tool_name_from_answer(in_answer)
 
-        print(f'=============================thoughts=============================')
-        print(in_thoughts)
-        print(f'-----------------------------thoughts-----------------------------')
-        print(f'----------------------------------------action()-----------------------------------------------', flush=True)
+        # print(f'=============================thoughts=============================')
+        # print(in_thoughts)
+        # print(f'-----------------------------thoughts-----------------------------')
 
         if 'code_tool'==tool_name:
             self.status_print('选择了[code_tool]')
             tool = Code_Tool()
-            action_result = tool.call(in_thoughts)
+            action_result = tool.call(in_answer)
             if action_result=='':
-                action_result = 'code_tool未输出有效信息，可能是因为没有用print输出结果。'
+                action_result = 'code_tool未输出有效信息，可能是因为调用code_tool时，输入的代码没有用print输出结果。'
             # self.status_print(f'action_result = "{action_result}"')
         elif 'search_tool'==tool_name:
             self.status_print('选择了[search_tool]')
             tool = Search_Tool()
-            action_result = tool.call(in_thoughts)
+            action_result = tool.call(in_answer)
         elif 'energy_investment_plan_tool'==tool_name:
             self.status_print('选择了[energy_investment_plan_tool]')
             tool = Energy_Investment_Plan_Tool()
-            action_result = tool.call(in_thoughts)
+            action_result = tool.call(in_answer)
         elif 'qa_url_content_tool'==tool_name:
             self.status_print('选择了[qa_url_content_tool]')
             tool = QA_Url_Content_Tool()
-            action_result = tool.call(in_thoughts)
+            action_result = tool.call(in_answer)
         else:
             self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------
 
         self.status_print(f'调用工具的行动结果为: \n{action_result}')
-        print(Style.RESET_ALL)
+
+        print(Fore.BLUE, flush=True)
+        print(f'=============================action_result=============================', flush=True)
+        print(action_result, flush=True)
+        print(f'-----------------------------action_result-----------------------------', flush=True)
+        print(Style.RESET_ALL, flush=True)
         return action_result
 
     def observation(self, in_action_result=''):
-        self.prompt += '[观察]' + in_action_result
+        s = '[回复]xxx[回复]yyy[回复]zzz'
+        p = s.split('[回复]')
+        p.pop()
+        f = '[回复]'.join(p)
+
+        # agent_desc_and_action_history去掉最后一个[观察]及其后续内容
+        kword = '[观察]'
+        last_his = self.agent_desc_and_action_history.split(kword)
+        last_his.pop()
+        last_his = kword.join(last_his)
+
+        # 构造观察数据
+        obs_result = '\n' + kword
+        obs_result += '''
+{{
+    'observer':'system',
+    'status':'system returned',
+    'system_result':'{result}',
+}}
+'''
+        obs_result = obs_result.format(result=in_action_result)
+        self.agent_desc_and_action_history = last_his + obs_result
+
+        print(Fore.CYAN, flush=True)
+        print(f'=============================action_history=============================', flush=True)
+        print(self.agent_desc_and_action_history, flush=True)
+        print(f'-----------------------------action_history-----------------------------', flush=True)
+        print(Style.RESET_ALL, flush=True)
         # print(f'============================prompt start============================\n')
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
 

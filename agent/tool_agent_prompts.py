@@ -6,6 +6,7 @@ from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 from utils.extract import extract_code, extract_dict_string
 from tools.retriever.search import Bing_Searcher
 from config import Global
+from colorama import Fore, Back, Style
 
 import json5
 
@@ -79,12 +80,13 @@ PROMPT_REACT_2024_03_21 = """你必须回答接下来的问题，而且系统已
 
 [问题]{query}"""
 
-PROMPT_REACT = """你必须回答接下来的问题，而且系统已经为你准备了以下这些工具，你可以直接访问这些工具:
+PROMPT_REACT = """你必须回答接下来的问题，而且系统已经为你准备了以下工具，你可以直接访问这些工具:
 {tool_descs}
 
 回复必须严格按照如下格式:
-
-[工具]这里写{{
+---回复开始---
+[工具]这里如果你需要调用工具才写:
+{{
     'tool_invoke':'no'或者'yes',
     'tool_name':你所要调用的工具的名称,
     'tool_parameters':{{
@@ -92,12 +94,18 @@ PROMPT_REACT = """你必须回答接下来的问题，而且系统已经为你�
         'para2' : value2,   （注意：如果'value'值为代码字符串，则代码字符串起始必须换一行顶格，绝对不能有额外缩进。）
         ... , 
     }},
-}}。(注意工具名称必须是这些名称之一 [{tool_names}] 。)
-[观察]这里不需要你写，系统会自动在这里提供工具调用的结果信息。
+}}
+(注意所要调用的工具的名称必须是这些名称之一 [{tool_names}] 。)
 
-... (这个 工具/观察 的流程，可以被重复0次或多次，只要你觉得可以给出最终答复，就要结束这个流程，防止不断循环。)
+[观察]这里你要写:
+{{
+    'observer':'llm'或'system',                          # 注意：这里你写'llm'，如果是系统回复的，会填写'system'
+    'status':'等系统回复'或'最终答复'或'system returned',    # 注意：如果需要调用工具，这里写'等系统回复'，否则写'最终答复'; 如果是系统回复的，会填写'system returned'
+    'system_result':'',                                 # 系统回复的内容
+}}
+---回复结束---
 
-[最终答复]这里写你需要回答的问题的最终答复(注意，如果本次循环需要调用工具，那么在系统提供工具调用结果前，不能返回[最终答复])，调理一定要清晰，要用markdown进行格式化。
+... (这个 工具/观察 的流程，可以被重复0次或多次，如果你觉得可以给出最终答复，就要结束这个流程，防止不断循环。)
 
 现在开始!
 
@@ -115,35 +123,52 @@ class Base_Tool():
         pass
 
     @classmethod
-    def extract_tool_name(cls, in_thoughts):
-        print(f'+++++++++++++++++++++thoughts in extract_tool_name() is : \n{in_thoughts}+++++++++++++++++++++')
-        dict_string = extract_dict_string(in_thoughts)
-        # print(f'+++++++++++++++++++++dict_string in extract_tool_name() is : \n{dict_string}+++++++++++++++++++++')
-        if not dict_string:
-            return ''
-        # print('+++++++++++++++++++++')
-        
-        # print(f'dict_string:')
-        # print(f'{dict_string}')
-        
-        # print(f'dict:')
-        # 过滤掉可能存在的代码
-        code = extract_code(dict_string)
-        dict_string__ = dict_string.replace(code, "")
-        dict_string__ = dict_string__.replace('""""""', "''")
-        # print(f'code:')
-        # print(f'{code}')
-        # print(f'dict_string__:')
-        # print(f'{dict_string__}')
+    def extract_tool_name_from_answer(cls, in_answer):
+        try:
+            # print(f'+++++++++++++++++++++thoughts in extract_tool_name() is : \n{in_answer}+++++++++++++++++++++')
+            dict_string = extract_dict_string(in_answer)
+            # print(f'+++++++++++++++++++++dict_string in extract_tool_name() is : \n{dict_string}+++++++++++++++++++++')
+            if not dict_string:
+                print(Fore.RED, flush=True)
+                print(f'dict_string为空')
+                print('返回tool_name=""')
+                print(Style.RESET_ALL, flush=True)
+                return ''
 
-        print(f'----------dict_string__ is : "{dict_string__}"--------------')
-        dict = json5.loads(dict_string__)
 
-        # print(f'{dict}')
-        
-        # print(f'+++++++++++++++++++++dict in extract_tool_name() is : \n{dict}+++++++++++++++++++++')
+            # print(f'dict:')
+            # 过滤掉可能存在的代码
+            # print('-----extract_tool_name1------')
+            code = extract_code(dict_string)
+            # print(f'****** code:\n{code}\n*****')
+            # print('-----extract_tool_name2------')
+            dict_string__ = dict_string.replace(code, "")
+            # print('-----extract_tool_name3------')
+            dict_string__ = dict_string__.replace('""""""', "''")
+            # print('-----extract_tool_name4------')
 
-        return dict['tool_name']
+            # 去掉'[观察]'及后续内容
+            dict_string__ = dict_string__.split('[观察]')
+            dict_string__.pop()
+            dict_string__ = ''.join(dict_string__)
+            print('-----------dict string to get tool_name is:----------')
+            print(dict_string__)
+            print('-----------------------------------------------------')
+
+            dict = json5.loads(dict_string__)
+            # print('-----extract_tool_name5------')
+
+
+            # print(f'+++++++++++++++++++++dict in extract_tool_name() is : \n{dict}+++++++++++++++++++++')
+            rtn = dict['tool_name']
+        except Exception as e:
+            print(Fore.RED, flush=True)
+            print(f'extract_tool_name()错误: "{e}"')
+            print('返回tool_name=""')
+            print(Style.RESET_ALL, flush=True)
+            return ""
+
+        return rtn
 
 class Energy_Investment_Plan_Tool(Base_Tool):
     name='energy_investment_plan_tool'
