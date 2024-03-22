@@ -25,7 +25,8 @@ class Tool_Agent():
         self.human = in_human    # 是否和human交互
         self.action_stop = ['[观察]']
         self.observation_stop = ['[观察]']
-        self.response_stop = ['<res_stop>']
+        self.response_stop = ['<结束>']
+        # self.response_stop = ['<res_stop>']
 
         self.ostream = in_output_stream_buf   # 最终结果输出的stream
         self.sstream = in_status_stream_buf   # 中间状态输出的stream
