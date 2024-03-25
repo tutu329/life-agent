@@ -1,4 +1,19 @@
 from dataclasses import dataclass, field
+from colorama import Fore, Back, Style
+
+def _dcolor(in_color, *args, **kwargs):
+    print(in_color, end='', flush=True)
+    print(*args, **kwargs)
+    print(Style.RESET_ALL, end='', flush=True)
+
+def dred(*args, **kwargs):
+    _dcolor(Fore.RED, *args, **kwargs)
+def dgreen(*args, **kwargs):
+    _dcolor(Fore.GREEN, *args, **kwargs)
+def dblue(*args, **kwargs):
+    _dcolor(Fore.BLUE, *args, **kwargs)
+def dcyan(*args, **kwargs):
+    _dcolor(Fore.CYAN, *args, **kwargs)
 
 # 用于控制prompt长度的参数
 @dataclass

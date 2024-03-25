@@ -11,7 +11,7 @@ from utils.long_content_qa import long_content_qa, multi_contents_qa_concurrentl
 from utils.task import Flicker_Task
 
 from config import Prompt_Limitation
-from config import Global
+from config import Global, dred, dgreen, dblue
 
 
 SEARCH_TIME_OUT = 3000    # 超时ms
@@ -285,7 +285,9 @@ class Bing_Searcher():
         page = await self.context.new_page()
         # print('--------------------------3.1.10-----------------------------')
         try:
-            await page.goto(f"https://www.bing.com/search?q={question}&count={show_results_in_one_page}")
+            url = f"https://www.bing.com/search?q={question}&count={show_results_in_one_page}"
+            dred(f'page.goto("{url}")')
+            await page.goto(url)
             # print('--------------------------3.1.2-----------------------------')
         except:
             await page.goto(f"https://www.bing.com")
@@ -457,16 +459,24 @@ def main():
 
 def main_only_search(args):
     in_query = args.q
-    print(f'query: {in_query}')
-    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3, in_use_proxy=True)
+
+    dred(f'query: "{in_query}"')
+
+    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=10, in_use_proxy=True)
     internet_search_resultes = searcher.search(in_query)
 
     # [(url, content_para_list), (url, content_para_list), ...]
+    if internet_search_resultes is None:
+        dred('查询结果为空.')
+        return
+
+    print(Fore.GREEN, flush=True)
     for res in internet_search_resultes:
         content = ''.join(res[1])
         url = res[0]
-        print(f'内容: "{content[:500]}..."')
-        print(f'\t\turl: "{url}"')
+        dgreen(f'内容: "{content[:500]}..."')
+        dblue(f'\t\turl: "{url}"')
+    print(Style.RESET_ALL, flush=True)
 
 def main_search_and_summery(question='李白和杜甫关系如何'):
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
@@ -487,7 +497,7 @@ if __name__ == '__main__':
     parser.add_argument("--q", help="question")
     parser.add_argument("--proxy", default='true', help="v2ray proxy")
     args = parser.parse_args()
-    print('请执行: --q 搜索内容')
+    dred('请执行: --q 搜索内容')
 
     main_only_search(args)
     # main_search_and_summery_yield(args.q)
