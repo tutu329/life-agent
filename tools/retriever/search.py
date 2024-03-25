@@ -239,9 +239,7 @@ class Bing_Searcher():
 
         # 启动浏览器
         if self.use_proxy:
-            print(Fore.RED, flush=True)
-            print(f'启动代理: {Global.playwright_proxy}')
-            print(Style.RESET_ALL, flush=True)
+            dred(f'启动代理: {Global.playwright_proxy}')
 
             self.browser = await p.chromium.launch(
                 channel="chrome",
@@ -249,9 +247,7 @@ class Bing_Searcher():
                 proxy=Global.playwright_proxy
             )   # 启动chrome
         else:
-            print(Fore.RED, flush=True)
-            print('未启动代理')
-            print(Style.RESET_ALL, flush=True)
+            dred('未启动代理')
 
             self.browser = await p.chromium.launch(
                 channel="chrome",
@@ -328,7 +324,7 @@ class Bing_Searcher():
             if results:
                 return results
 
-        print('No Bing Result')
+        dred('bing.com搜索结果为空.')
         return None
 
     # 通过bing搜索，并返回结果
@@ -399,9 +395,16 @@ class Bing_Searcher():
         # page.on('response',printdata)
         # 进入子页面
         response = None
+
+        # page = await self.context.new_page()
         try:
             self.results[url] = [None, None]
-            response = await context.request.get(url, timeout=SEARCH_TIME_OUT)
+
+            # response = await page.request.get(
+            response = await context.request.get(
+                url,
+                timeout=SEARCH_TIME_OUT,
+            )
             # 等待子页面加载完毕
             self.results[url] = (response.status, await response.text())
         except Exception as e:
