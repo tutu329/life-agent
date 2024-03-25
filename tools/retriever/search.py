@@ -3,6 +3,7 @@ from typing import List, Dict, Tuple, Optional
 import json
 import re
 import asyncio
+from colorama import Fore, Back, Style
 
 from tools.retriever.html2text import html2text
 from utils.print_tools import print_long_content_with_urls, get_string_of_long_content_with_urls
@@ -10,6 +11,7 @@ from utils.long_content_qa import long_content_qa, multi_contents_qa_concurrentl
 from utils.task import Flicker_Task
 
 from config import Prompt_Limitation
+from config import Global
 
 
 SEARCH_TIME_OUT = 3000    # 超时ms
@@ -37,6 +39,7 @@ class Bing_Searcher():
                  in_search_num=3,
                  in_llm_api_url='http://127.0.0.1:8001/v1',
                  in_stream_buf_callback=None,
+                 in_use_proxy = False,
                  ):
         self.loop = None    # searcher实例对应的loop(主要用于win下streamlit等特定场景)
         self.browser = None
@@ -48,6 +51,8 @@ class Bing_Searcher():
 
         self.flicker = None # 闪烁的光标
         self.stream_buf_callback = in_stream_buf_callback
+
+        self.use_proxy = in_use_proxy   # 使用v2ray代理
 
     # fix_streamlit_windows_proactor_eventloop_problem()必须在任何async调用之前运行
     @staticmethod
@@ -188,6 +193,7 @@ class Bing_Searcher():
             in_search_num=3,
             in_llm_api_url='http://127.0.0.1:8001/v1',
             in_stream_buf_callback = None,
+            in_use_proxy = False,
     ):
         if Bing_Searcher.global_searcher is not None:
             # searcher已经启动时，不再进行初始化，但要注意其他状态是否需要重置
@@ -211,6 +217,7 @@ class Bing_Searcher():
             in_search_num=in_search_num,
             in_llm_api_url=in_llm_api_url,
             in_stream_buf_callback=in_stream_buf_callback,
+            in_use_proxy = in_use_proxy,
         )
 
         async def _searcher_start():
@@ -229,7 +236,28 @@ class Bing_Searcher():
         p = await async_playwright().start()
         # p = sync_playwright().start()
         print('启动chrome: await p.chromium.launch(channel="chrome", headless=True)')
-        self.browser = await p.chromium.launch(channel="chrome", headless=True)   # 启动chrome
+
+        # 启动浏览器
+        if self.use_proxy:
+            print(Fore.RED, flush=True)
+            print(f'启动代理: {Global.playwright_proxy}')
+            print(Style.RESET_ALL, flush=True)
+
+            self.browser = await p.chromium.launch(
+                channel="chrome",
+                headless=True,
+                proxy=Global.playwright_proxy
+            )   # 启动chrome
+        else:
+            print(Fore.RED, flush=True)
+            print('未启动代理')
+            print(Style.RESET_ALL, flush=True)
+
+            self.browser = await p.chromium.launch(
+                channel="chrome",
+                headless=True
+            )   # 启动chrome
+
         print('启动chrome完毕.')
         self.context = await self.browser.new_context()
 
@@ -427,13 +455,18 @@ def main():
             prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{question}"。'
             llm.ask_prepare(prompt).get_answer_and_sync_print()
 
-def main_linux():
-    # prompt = '杭州有哪些著名景点'
-    prompt = '李白是谁？'
-    print(f'prompt: {prompt}')
-    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3)
-    internet_search_resultes = searcher.search(prompt)
-    print(f'internet_search_result: {internet_search_resultes}')
+def main_only_search(args):
+    in_query = args.q
+    print(f'query: {in_query}')
+    searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=3, in_use_proxy=True)
+    internet_search_resultes = searcher.search(in_query)
+
+    # [(url, content_para_list), (url, content_para_list), ...]
+    for res in internet_search_resultes:
+        content = ''.join(res[1])
+        url = res[0]
+        print(f'内容: "{content[:500]}..."')
+        print(f'\t\turl: "{url}"')
 
 def main_search_and_summery(question='李白和杜甫关系如何'):
     searcher = Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win=False, in_search_num=5, in_llm_api_url='http://127.0.0.1:8001/v1')
@@ -452,6 +485,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--q", help="question")
+    parser.add_argument("--proxy", default='true', help="v2ray proxy")
     args = parser.parse_args()
+    print('请执行: --q 搜索内容')
 
-    main_search_and_summery_yield(args.q)
+    main_only_search(args)
+    # main_search_and_summery_yield(args.q)

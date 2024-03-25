@@ -21,6 +21,11 @@ class Global():
     line:str = f'{80 * "-"}\n\n'
     llm_url:str = 'http://116.62.63.204:8001/v1'
 
+    # V2Ray代理
+    playwright_proxy = {
+        "server": "http://127.0.0.1:7890",
+    }
+
 @dataclass
 class Port():
     # 顶层应用
