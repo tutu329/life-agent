@@ -1,4 +1,6 @@
 from playwright.async_api import async_playwright
+from playwright.sync_api import sync_playwright
+
 from typing import List, Dict, Tuple, Optional
 import json
 import re
@@ -285,23 +287,27 @@ class Bing_Searcher():
             dred(f'page.goto("{url}")')
             await page.goto(url)
             # print('--------------------------3.1.2-----------------------------')
-        except:
+        except Exception as e:
+            dred(f'page.goto() error: {e}')
             await page.goto(f"https://www.bing.com")
             await page.fill('input[name="q"]', question)
             await page.press('input[name="q"]', 'Enter')
         try:
+            # await page.wait_for_load_state('networkidle')
             await page.wait_for_load_state('networkidle', timeout=SEARCH_TIME_OUT)
             # print('--------------------------3.1.3-----------------------------')
         except:
             pass
         # page.wait_for_load_state('networkidle')
         search_results = await page.query_selector_all('.b_algo h2')
+        # dred(f'search_results: {search_results}')
         # print('--------------------------3.1.4-----------------------------')
         i = 0
         for result in search_results:
             i += 1
-            if i > self.search_num*3:    # 很多网页搜索结果为空，因此需要增加搜索空间
-                break
+            # if i > self.search_num*3:    # 很多网页搜索结果为空，因此需要增加搜索空间
+            #     dred(f'空页面超过{i-1}个，退出.')
+            #     break
                 
             title = await result.inner_text()
             a_tag = await result.query_selector('a')
@@ -309,6 +315,9 @@ class Bing_Searcher():
             url = await a_tag.get_attribute('href')
             if not url: continue
             # print(title, url)
+
+            dgreen(f'url: "{url}"')
+
             results.append({
                 'title': title,
                 'url': url
@@ -332,6 +341,9 @@ class Bing_Searcher():
         # print('--------------------------3-----------------------------')
         res = await self._query_bing(in_question, max_tries=max_tries)
         # print('--------------------------3.1-----------------------------')
+        if res is None:
+            return []
+
         search_result_urls = [result['url'] for result in res]
         search_results = await self._get_raw_pages(search_result_urls)
 
@@ -386,11 +398,12 @@ class Bing_Searcher():
         for url in urls:
             tasks.append(asyncio.create_task(self._func_get_one_page(self.context, url)))
 
-        await asyncio.wait(tasks, timeout=10)
+        await asyncio.wait(tasks, timeout=100)
 
         return self.results
 
     async def _func_get_one_page(self, context, url):
+        # dred(f'get_page: url({url})')
         # 开启事件监听
         # page.on('response',printdata)
         # 进入子页面
@@ -407,8 +420,10 @@ class Bing_Searcher():
             )
             # 等待子页面加载完毕
             self.results[url] = (response.status, await response.text())
+            # dred(f'{"-"*80}')
+            # dblue( self.results[url][1])
         except Exception as e:
-            print(f'func_get_one_page(url={url}) error: {e}')
+            dred(f'func_get_one_page(url={url}) error: {e}')
             if response is not None:
                 self.results[url] = (response.status, '')
             else:
@@ -477,7 +492,7 @@ def main_only_search(args):
     for res in internet_search_resultes:
         content = ''.join(res[1])
         url = res[0]
-        dgreen(f'内容: "{content[:500]}..."')
+        dgreen(f'内容: "{content[:1500]}..."')
         dblue(f'\t\turl: "{url}"')
     print(Style.RESET_ALL, flush=True)
 
@@ -493,6 +508,56 @@ def main_search_and_summery_yield(question='李白和杜甫关系如何'):
     for result in gen:
         print(result, end='', flush=True)
 
+def main_test_proxy():
+
+    def search_on_bing(query):
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                channel="chrome",
+                headless=True,
+                proxy=Global.playwright_proxy
+            )
+            dred('-----1-------')
+            context = browser.new_context()
+
+            page = context.new_page()
+
+            url = f"https://www.bing.com/search?q={query}&count={50}"
+            dblue(f'page.goto("{url}")')
+            page.goto(url)
+
+            # 等待搜索结果加载
+            page.wait_for_load_state('load')
+
+            # 获取搜索结果
+            search_results = page.query_selector_all('.b_algo h2')
+
+            url_list = []
+            for result in search_results:
+                a_tag = result.query_selector('a')
+                if a_tag:
+                    url = a_tag.get_attribute('href')
+                    if url:
+                        dgreen(f'url: "{url}"')
+                        url_list.append(url)
+                # print(result.text_content())
+
+            try:
+                for url in url_list:
+                    dred(f'{"-" * 80}')
+                    dblue(f'url: "{url}"')
+                    response = context.request.get(url, timeout=3000)
+                    # response = requests.get(url)
+                    text = response.text()
+                    # text = ' '.join(text.split('\n'))
+                    dblue(f'内容: {text}')
+            except Exception as e:
+                dred(f'context.request.get() error: "{e}"')
+            browser.close()
+
+    # search_on_bing('4029 reddit.com')
+    search_on_bing('using playwright to get content on bing.com reddit.com')
+
 if __name__ == '__main__':
     import argparse
 
@@ -503,4 +568,6 @@ if __name__ == '__main__':
     dred('请执行: --q 搜索内容')
 
     main_only_search(args)
+    # main_test_proxy()
     # main_search_and_summery_yield(args.q)
+
