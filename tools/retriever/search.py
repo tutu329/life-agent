@@ -18,6 +18,30 @@ from config import Global, dred, dgreen, dblue
 
 SEARCH_TIME_OUT = 3000    # 超时ms
 
+
+from duckduckgo_search import ddg
+
+def google_search(keywords: str, num_results: int = 50, time="m") -> str:
+    search_results = []
+    if not keywords:
+        return json.dumps(search_results)
+
+    results = ddg(
+        keywords,
+        max_results=num_results,
+        region="us-en",
+        safesearch="off",
+        time=time,   # d w m y，即一天内、一周内、一月内、一年内
+        )
+    if not results:
+        return json.dumps(search_results)
+
+    for j in results:
+        search_results.append(j)
+
+    # results = json.dumps(search_results, ensure_ascii=False, indent=4)
+    return search_results
+
 class SearchResult:
     def __init__(self, title, url, snip) -> None:
         self.title = title
