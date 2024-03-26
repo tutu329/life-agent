@@ -14,9 +14,9 @@ async def get_results(word):
         word,
         region='us-en',
         safesearch='off',
-        max_results=10,
-        # backend='api',
-        backend='html',
+        max_results=3,
+        backend='api',
+        # backend='html',
         # backend='lite',
     )
     return results
