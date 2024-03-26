@@ -46,6 +46,8 @@ class Global():
         "https": "http://127.0.0.1:7890",
     }
 
+    ddgs_search_max_num = 50    # ddgs搜索最大数量
+
 @dataclass
 class Port():
     # 顶层应用

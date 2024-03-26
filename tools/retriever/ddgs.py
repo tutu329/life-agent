@@ -7,28 +7,49 @@ from duckduckgo_search import DDGS
 from config import Global,dred,dblue,dgreen
 import json
 
-async def get_results(word):
-    results = await AsyncDDGS(
-        proxies=Global.ddgs_proxies
-    ).text(
-        word,
-        region='us-en',
-        safesearch='off',
-        max_results=3,
-        backend='api',
-        # backend='html',
-        # backend='lite',
-    )
+async def one_query_results(in_query):
+    try:
+        results = await AsyncDDGS(
+            proxies=Global.ddgs_proxies
+        ).text(
+            in_query,
+            region='us-en',     # region: wt-wt, us-en, uk-en, ru-ru, etc. Defaults to "wt-wt".
+            timelimit='m',      # timelimit: d, w, m, y. Defaults to None.
+            safesearch='off',
+            max_results=Global.ddgs_search_max_num,
+            backend='api',
+            # backend='html',
+            # backend='lite',
+        )
+    except Exception as e:
+        dred(f'ddgs.one_query_results error: "{e}"')
+        return []
+
+    return results
+
+async def multi_queries_results(in_query_list):
+    try:
+        tasks = [one_query_results(w) for w in in_query_list]
+        results = await asyncio.gather(*tasks)
+    except Exception as e:
+        dred(f'ddgs.multi_queries_results error: "{e}"')
+        return []
+    # results: [
+    #   {
+    #     'title': ...
+    #     'href': ...
+    #     'body': ...
+    #   },
+    # ]
     return results
 
 async def async_main():
-    words = ["how to use playwright to get the content of reddit.com"]
-    # words = ["sun", "earth", "moon"]
-    tasks = [get_results(w) for w in words]
-    results = await asyncio.gather(*tasks)
+    queries = ["how to use playwright to get the content of reddit.com"]
+    # queries = ["sun", "earth", "moon"]
+    results = await multi_queries_results(queries)
 
     i=0
-    for w in words:
+    for w in queries:
         for text in results[i]:
             dred(text['title'])
             dgreen(text['href'])
@@ -45,6 +66,7 @@ def sync_main():
         dred(text['title'])
         print(text['href'])
         print(text['body'])
+
 if __name__ == "__main__":
     asyncio.run(async_main())
     # sync_main()
