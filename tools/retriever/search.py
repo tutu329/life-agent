@@ -18,9 +18,6 @@ from config import Global, dred, dgreen, dblue
 
 SEARCH_TIME_OUT = 3000    # 超时ms
 
-
-from duckduckgo_search import ddg
-
 def google_search(keywords: str, num_results: int = 50, time="m") -> str:
     search_results = []
     if not keywords:
