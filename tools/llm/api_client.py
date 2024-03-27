@@ -454,6 +454,7 @@ class LLM_Client():
     # 方式2：返回generator，在合适的时候输出结果
     def get_answer_generator(self):
         answer = ''
+        answer_no_partial_stop = ''
         perhaps_stop_string = ''    # 非常重要，用于存放疑似stop的缓冲
         for chunk in self.gen:
             if self.response_canceled:
