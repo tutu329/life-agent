@@ -23,6 +23,8 @@ from utils.long_content_qa import long_content_qa, short_content_qa, long_conten
 from utils.task import Flicker_Task
 from utils.string_util import str_remove_partial_stops
 
+from config import dred, dgreen, dblue, dcyan
+
 
 if sys.platform.startswith('win'):      # win下用的是qwen的openai api (openai==0.28.1)
     import openai
@@ -80,6 +82,7 @@ class LLM_Client():
 
         self.url = url
         self.gen = None     # 返回结果的generator
+        self.usage = None   # 返回 usage={'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
         self.stop = None    # 用于对vllm的openai api的stop进行过滤
         self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
@@ -260,6 +263,17 @@ class LLM_Client():
         # self.undo()
         # self.ask_prepare(temp_question_last_turn).get_answer_and_sync_print()
 
+    def get_prompt_tokens(self):
+        if self.usage is not None:
+            return self.usage['prompt_tokens']
+        else:
+            return 0
+    def get_completion_tokens(self):
+        if self.usage is not None:
+            return self.usage['completion_tokens']
+        else:
+            return 0
+
     # 返回stream(generator)
     def ask_prepare(
             self,
@@ -273,6 +287,8 @@ class LLM_Client():
             in_undo=False,
             in_stop=None,
     ):
+        self.usage = None   # 清空输入和输出的token数量统计
+
         if not in_max_new_tokens:
             max_new_tokens = self.max_new_tokens
         else:
@@ -461,6 +477,11 @@ class LLM_Client():
                 break
 
             if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
+                if hasattr(chunk, 'usage'):
+                    # 输入和输出的token数量统计
+                    self.usage = chunk.usage    # usage={'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
+                    dred(f'usage: "{chunk.usage}"')
+
                 my_chunk = chunk.choices[0].delta.content
                 answer += my_chunk
 

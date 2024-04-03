@@ -309,6 +309,10 @@ def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_intern
         ).get_answer_generator():
             full_res += res
             place_holder.markdown(full_res)
+        p_tokens = mem_llm.get_prompt_tokens()
+        c_tokens = mem_llm.get_completion_tokens()
+        full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
+        place_holder.markdown(full_res)
         return None, None, full_res
 
 def on_clear_history():
