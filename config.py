@@ -23,7 +23,7 @@ class Prompt_Limitation():
 
     # context_max_len * context_max_paragraphs 为截取后发给llm的文字最大长度 (qwen1.5-72b-int4下(--max-model-len=13000 --max-num-seqs=4), 3000*4=12,000容易oom, 但是1000*26=26,000可以)
     # 例如搜索结果文本的最大分段长度：
-    concurrent_para_max_len:int = 25000             # 返回文本(content)字符串的最大长度 (如果文本超过这个长度，则以该长度为单位，进行分段解读，如context_max_len为500，则600字分为500和100两段)
+    concurrent_para_max_len:int = 28000             # 返回文本(content)字符串的最大长度 (如果文本超过这个长度，则以该长度为单位，进行分段解读，如context_max_len为500，则600字分为500和100两段)
     concurrent_para_max_len_in_search:int = 1000
     # 例如搜索结果文本的最大分段数：
     concurrent_max_paras:int = 1                    # 返回文本(content)字符串list的最大长度

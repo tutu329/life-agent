@@ -110,7 +110,8 @@ def agent_init():
     # )
     # agent.init()
 
-def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
+def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_internet, is_agent):
+# def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
     # =================================agent功能=================================
     if is_agent:
         final_answer_list = []
@@ -189,32 +190,32 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         status.markdown("搜索引擎bing.com调用中...")
         assistant = st.chat_message('assistant')
 
-        if not connecting_internet_detail:
-            # 不包含明细的联网搜索和解读
-            placeholder1 = assistant.empty()
-            # searcher = search_init(concurrent_num=st.session_state.concurrent_num)
-            # print(f'********1 placeholder.markdown: {placeholder.markdown}')
-            searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.empty().markdown)
-            rtn, search_urls = searcher.legacy_search_and_ask(prompt)
-
-            final_answer = ''
-            placeholder2 = assistant.empty()
-            # print(f'********2 placeholder.markdown: {placeholder.markdown}')
-            for chunk in rtn.get_answer_generator():
-                final_answer += chunk
-                placeholder2.markdown(final_answer + searcher.flicker.get_flicker())
-            placeholder2.markdown('\n\n')
-            final_answer += '\n\n'
-            i = 0
-            print(f'-------------------------------{search_urls}+++++++++++++')
-            for search_url in search_urls:
-                i += 1
-                url_md = f'[{search_url[:30]}...]({search_url} "{search_url}")'
-                url_string = f'【{i}】{url_md} \n\n'
-                final_answer += url_string
-                placeholder2.markdown(url_string)
-
-            return None, None, final_answer
+        # if not connecting_internet_detail:
+        #     # 不包含明细的联网搜索和解读
+        #     placeholder1 = assistant.empty()
+        #     # searcher = search_init(concurrent_num=st.session_state.concurrent_num)
+        #     # print(f'********1 placeholder.markdown: {placeholder.markdown}')
+        #     searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.empty().markdown)
+        #     rtn, search_urls = searcher.legacy_search_and_ask(prompt)
+        #
+        #     final_answer = ''
+        #     placeholder2 = assistant.empty()
+        #     # print(f'********2 placeholder.markdown: {placeholder.markdown}')
+        #     for chunk in rtn.get_answer_generator():
+        #         final_answer += chunk
+        #         placeholder2.markdown(final_answer + searcher.flicker.get_flicker())
+        #     placeholder2.markdown('\n\n')
+        #     final_answer += '\n\n'
+        #     i = 0
+        #     print(f'-------------------------------{search_urls}+++++++++++++')
+        #     for search_url in search_urls:
+        #         i += 1
+        #         url_md = f'[{search_url[:30]}...]({search_url} "{search_url}")'
+        #         url_string = f'【{i}】{url_md} \n\n'
+        #         final_answer += url_string
+        #         placeholder2.markdown(url_string)
+        #
+        #     return None, None, final_answer
 
         searcher = search_init(concurrent_num=st.session_state.concurrent_num)
 
@@ -289,8 +290,17 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecti
         return None, async_llms, final_answer
     else:
         # =================================local llm=================================
+        if url_prompt:
+            # 如果填了url
+            searcher = Bing_Searcher.create_searcher_and_loop()
+            result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
+            all_prompt = f'请严格根据URL(网页链接)返回的内容回答问题, URL(网页链接)返回的具体内容为: "{result}"'
+            mem_llm.set_role_prompt(all_prompt)
+        else:
+            all_prompt = role_prompt
+            mem_llm.set_role_prompt(all_prompt)
+
         place_holder = st.chat_message('assistant').empty()
-        mem_llm.set_role_prompt(role_prompt)
         full_res = ''
         for res in mem_llm.ask_prepare(
             in_question=prompt, 
@@ -335,12 +345,13 @@ def streamlit_refresh_loop():
     sidebar = st.sidebar
     # =============================expander：对话参数==============================
     exp1 =  sidebar.expander("对话参数", expanded=True)
+    url_prompt = exp1.text_input(label="URL:", label_visibility='collapsed', placeholder="请在这里输入您需要LLM解读的URL", value="")
     multi_line_prompt = exp1.text_area(label="多行指令:", label_visibility='collapsed', placeholder="请在这里输入您的多行指令", value="", disabled=st.session_state.processing)
-    
+
     col0, col1, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1])
-    is_agent = col0.checkbox('Agent', value=True, disabled=st.session_state.processing)
+    is_agent = col0.checkbox('Agent', value=False, disabled=st.session_state.processing)
     connecting_internet = col1.checkbox('联网', value=False, disabled=st.session_state.processing)
-    connecting_internet_detail = col2.checkbox('明细', value=False, disabled=st.session_state.processing)
+    # connecting_internet_detail = col2.checkbox('明细', value=False, disabled=st.session_state.processing)
     col3.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
     col4.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
     col5.button("发送", on_click=on_chat_input_submit, args=(multi_line_prompt,), disabled=st.session_state.processing, key='confirm_button')
@@ -406,7 +417,8 @@ def streamlit_refresh_loop():
         })
 
         # with st.chat_message('assistant'):
-        status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
+        status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, url_prompt, connecting_internet, is_agent)
+        # status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
 
         # ==================assistant输出的状态存储====================
         if status_data:
