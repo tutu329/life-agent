@@ -321,11 +321,11 @@ def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_intern
 
         end_time = time.time()
         output_time = end_time - start_time
-        output_time_str = f'{output_time:.2f}'
+        output_time_str = f'{output_time:.1f}'
         ts_str = f'{c_tokens/output_time:.1f}'
 
         # 显示token数量、平均t/s
-        full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens, {ts_str} t/s]'
+        full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens in {output_time_str} secs, {ts_str} t/s]'
         # full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
 
         place_holder.markdown(full_res)
