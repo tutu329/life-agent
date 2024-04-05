@@ -14,6 +14,7 @@ import tempfile
 
 from tools.retriever.search import Bing_Searcher
 from utils.long_content_qa import long_content_qa
+from utils.decorator import timer
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
@@ -110,6 +111,7 @@ def agent_init():
     # )
     # agent.init()
 
+@timer
 def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_internet, is_agent):
 # def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
     # =================================agent功能=================================
@@ -302,6 +304,10 @@ def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_intern
 
         place_holder = st.chat_message('assistant').empty()
         full_res = ''
+
+        # llm输出、统计输出时间
+        start_time = time.time()
+
         for res in mem_llm.ask_prepare(
             in_question=prompt, 
             in_temperature=st.session_state.local_llm_temperature,
@@ -311,7 +317,17 @@ def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_intern
             place_holder.markdown(full_res)
         p_tokens = mem_llm.get_prompt_tokens()
         c_tokens = mem_llm.get_completion_tokens()
-        full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
+        all_tokens = p_tokens+c_tokens
+
+        end_time = time.time()
+        output_time = end_time - start_time
+        output_time_str = f'{output_time:.2f}'
+        ts_str = f'{c_tokens/output_time:.1f}'
+
+        # 显示token数量、平均t/s
+        full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens, {ts_str} t/s]'
+        # full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
+
         place_holder.markdown(full_res)
         return None, None, full_res
 
