@@ -314,9 +314,13 @@ def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_intern
             in_max_new_tokens=st.session_state.local_llm_max_new_token,
         ).get_answer_generator()
 
-        start_time2 = time.time()
 
+        wait_first_token = True
         for res in gen:
+            if res and wait_first_token:
+                start_time2 = time.time()
+                wait_first_token = False
+
             full_res += res
             place_holder.markdown(full_res)
         p_tokens = mem_llm.get_prompt_tokens()
@@ -332,8 +336,9 @@ def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_intern
         input_ts_str = f'{p_tokens/input_time:.1f}'
         output_ts_str = f'{c_tokens/output_time:.1f}'
 
-        # 显示token数量、平均t/s
-        full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens in {all_time_str} secs, {input_ts_str} t/s, {output_ts_str} t/s ]'
+        # 显示: 输入、输出token，首字时间、输出时间，首字前t/s、输出t/s
+        # 10445 ( 10039 + 406 ) tokens in 31.6 ( 10.6 + 21.0 ) secs, 946.3 t/s, 19.3 t/s
+        full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens in {all_time_str} ( {input_time_str} + {output_time_str} ) secs, {input_ts_str} t/s, {output_ts_str} t/s ]'
         # full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
 
         place_holder.markdown(full_res)
