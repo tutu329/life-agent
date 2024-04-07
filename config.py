@@ -72,4 +72,5 @@ class Port():
 
     # 工作环境
     jupyter:int = 7862
+    open_webui:int = 7864  # open-webui
     jupyter_temp:int = 7865  # 自定义jupyter的docker容器
