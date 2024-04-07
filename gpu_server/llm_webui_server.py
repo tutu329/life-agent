@@ -134,7 +134,7 @@ def llm_async_ask(message, history, temperature, max_new_tokens, request:gr.Requ
 def llm_undo():
     print('执行llm_undo()')
     llm.undo()
-    llm.print_history()
+    llm.print_history_and_system()
 
 def llm_retry(history, message):
     print('执行llm_retry()')
@@ -144,13 +144,13 @@ def llm_retry(history, message):
         for chunk in llm.get_retry_generator():
             history[-1][1] += chunk
             yield history, message
-    llm.print_history()
+    llm.print_history_and_system()
 
 def llm_clear(request:gr.Request):
     print('执行llm_clear()')
 
     llm.clear_history()
-    llm.print_history()
+    llm.print_history_and_system()
 
     print('清除g_session_data[session_id].chat_history')
     session_id = get_session_id(request)

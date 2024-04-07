@@ -19,6 +19,7 @@ import asyncio
 import threading
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
+import config
 from utils.long_content_qa import long_content_qa, short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
 from utils.string_util import str_remove_partial_stops
@@ -204,30 +205,27 @@ class LLM_Client():
     #     else:
     #         return [msg_this_turn]
 
-    def __history_messages_with_question(self, in_question):
+    def __history_messages_with_system_and_new_question(self, in_question):
         # ===加入system提示===
-        if self.has_role_prompt:
-            # 如果设置有system提示
-            msgs = []
-        else:
-            # 如果没有system提示
-            msgs = [{
-                "role": "system",
-                "content": "You are a helpful assistant."
-            }]
-        # ===加入system提示===
-        
+        msgs = [{
+            "role": "system",
+            "content": config.Global.llm_system,
+            # "content": "You are a helpful assistant."
+        }]
+
         msg_this_turn = {"role": "user", "content": in_question}
         msgs += deepcopy(self.history_list)
         msgs.append(msg_this_turn)
         return msgs
 
-    def print_history(self):
-        print('\n\t================【LLM_Client】 对话历史================')
+    def print_history_and_system(self):
+        # print('\n\t================【LLM_Client】 对话历史================')
         # print(f'system提示: {self.role_prompt}')
-        for item in self.history_list:
-            print(f"\t {item['role']}: {item['content']}")
-        print('\t==================【LLM_Client】 =====================')
+        dgreen(f"\tsystem: \t{config.Global.llm_system}")
+        for chat in self.history_list:
+            content = chat['content'][:50]+'...' if len(chat['content']) > 50 else chat['content']
+            dgreen(f"\t{chat['role']}: \t{content}")
+        # print('\t==================【LLM_Client】 =====================')
 
     # Undo: 删除上一轮对话
     def undo(self):
@@ -301,7 +299,7 @@ class LLM_Client():
 
         if type(in_question)==str:
             # 输入仅为question字符串
-            msgs = self.__history_messages_with_question(in_question)
+            msgs = self.__history_messages_with_system_and_new_question(in_question)
         elif type(in_question)==list:
             # 输入为history list([{"role": "user", "content":'xxx'}, ...])
             msgs = in_question
@@ -321,14 +319,14 @@ class LLM_Client():
         # else:
         #     run_top_p = in_top_p
 
-        msgs_string = ''
-        for msg in msgs:
-            msgs_string += msg['role'] + ': '
-            msgs_string += msg['content'] + ' '
-        # print(f'msgs: {msgs}')
-        # msgs_string = '\n'.join(msgs)
-        print(f'query: "{msgs_string[:100]}..."(len: {len(msgs_string)})')
-        # print(f'query: "{msgs_string[:100]}..."(len: {len(msgs_string)}, url: "{self.url}")')
+        # msgs_string = ''
+        # for msg in msgs:
+        #     msgs_string += msg['role'] + ':\t'
+        #     msgs_string += msg['content'][:50] + '\n'
+        # # print(f'msgs: {msgs}')
+        # # msgs_string = '\n'.join(msgs)
+        # dgreen(f'query: "\n{msgs_string[:300]}...\n"(len: {len(msgs_string)})')
+        # # print(f'query: "{msgs_string[:100]}..."(len: {len(msgs_string)}, url: "{self.url}")')
 
         dprint(f'{"-"*80}')
         dprint(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
@@ -394,56 +392,56 @@ class LLM_Client():
         self.question_last_turn = in_question
         return self
 
-    def ask_block(self, in_question, in_clear_history=False, in_max_new_tokens=None, in_retry=False, in_undo=False):
-        if not in_max_new_tokens:
-            max_new_tokens = self.max_new_tokens
-        else:
-            max_new_tokens = in_max_new_tokens
-            
-        # self.__history_add_last_turn_msg()
-
-        if in_clear_history:
-            self.__history_clear()
-
-        msgs = self.__history_messages_with_question(in_question)
-        if self.print_input:
-            print('【User】\n\t', msgs[0]['content'])
-        # openai.api_base = self.url
-
-        if sys.platform.startswith('win'):
-            res = openai.chat.completion.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=msgs,
-                stream=False,
-                max_tokens=max_new_tokens,
-                functions=[
-                    {
-                        'name':'run_code',
-                        'parameters': {'type': 'object'}
-                    }
-                ]
-                # Specifying stop words in streaming output format is not yet supported and is under development.
-            )
-        elif sys.platform.startswith('linux'):
-            res = self.openai.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=msgs,
-                stream=False,
-                max_tokens=max_new_tokens,
-                functions=[
-                    {
-                        'name':'run_code',
-                        'parameters': {'type': 'object'}
-                    }
-                ]
-                # Specifying stop words in streaming output format is not yet supported and is under development.
-            )
-        result = res['choices'][0]['message']['content']
-        if self.print_output:
-            print(f'<Assistant>\n\t{result}')
-        return res
+    # def ask_block(self, in_question, in_clear_history=False, in_max_new_tokens=None, in_retry=False, in_undo=False):
+    #     if not in_max_new_tokens:
+    #         max_new_tokens = self.max_new_tokens
+    #     else:
+    #         max_new_tokens = in_max_new_tokens
+    #
+    #     # self.__history_add_last_turn_msg()
+    #
+    #     if in_clear_history:
+    #         self.__history_clear()
+    #
+    #     msgs = self.__history_messages_with_system_and_new_question(in_question)
+    #     if self.print_input:
+    #         print('【User】\n\t', msgs[0]['content'])
+    #     # openai.api_base = self.url
+    #
+    #     if sys.platform.startswith('win'):
+    #         res = openai.chat.completion.create(
+    #             model=self.model,
+    #             temperature=self.temperature,
+    #             messages=msgs,
+    #             stream=False,
+    #             max_tokens=max_new_tokens,
+    #             functions=[
+    #                 {
+    #                     'name':'run_code',
+    #                     'parameters': {'type': 'object'}
+    #                 }
+    #             ]
+    #             # Specifying stop words in streaming output format is not yet supported and is under development.
+    #         )
+    #     elif sys.platform.startswith('linux'):
+    #         res = self.openai.chat.completions.create(
+    #             model=self.model,
+    #             temperature=self.temperature,
+    #             messages=msgs,
+    #             stream=False,
+    #             max_tokens=max_new_tokens,
+    #             functions=[
+    #                 {
+    #                     'name':'run_code',
+    #                     'parameters': {'type': 'object'}
+    #                 }
+    #             ]
+    #             # Specifying stop words in streaming output format is not yet supported and is under development.
+    #         )
+    #     result = res['choices'][0]['message']['content']
+    #     if self.print_output:
+    #         print(f'<Assistant>\n\t{result}')
+    #     return res
 
     # 方式1：直接输出结果
     def get_answer_and_sync_print(self):
@@ -503,6 +501,7 @@ class LLM_Client():
         self.answer_last_turn = answer_no_partial_stop
         # self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
+        self.print_history_and_system()
 
     # def get_answer_generator(self):
     #     answer = ''
