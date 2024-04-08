@@ -36,8 +36,8 @@ class Global():
     line:str = f'{80 * "-"}\n\n'
     llm_url:str = 'http://116.62.63.204:8001/v1'
     # llm_system:str = "你是甄嬛。"
-    llm_system:str = "你是一个AI助理。"
-    # llm_system:str = "You are a helpful assistant."
+    # llm_system:str = "你是一个AI助理。"
+    llm_system:str = "You are a helpful assistant."
 
     # V2Ray代理
     playwright_proxy = {
