@@ -1,4 +1,6 @@
 import streamlit as st
+
+import config
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
 from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
@@ -112,7 +114,7 @@ def agent_init():
     # agent.init()
 
 @timer
-def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_internet, is_agent):
+def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt):
 # def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
     # =================================agent功能=================================
     if is_agent:
@@ -312,6 +314,7 @@ def llm_response_concurrently(prompt, role_prompt, url_prompt, connecting_intern
             in_question=prompt, 
             in_temperature=st.session_state.local_llm_temperature,
             in_max_new_tokens=st.session_state.local_llm_max_new_token,
+            in_system_prompt=system_prompt,
         ).get_answer_generator()
 
 
@@ -402,9 +405,10 @@ def streamlit_refresh_loop():
                 
 
     # =============================expander：角色参数==============================
-    exp3 =  sidebar.expander("角色参数", expanded=True)
+    exp3 =  sidebar.expander("Prompt 参数", expanded=True)
+    system_prompt = exp3.text_input(label="设置系统提示:", label_visibility='collapsed', placeholder="请在这里输入您的系统提示", value=config.Global.llm_system)
     role_prompt = exp3.text_area(label="设置角色提示:", label_visibility='collapsed', placeholder="请在这里输入您的角色提示", value="", disabled=st.session_state.processing)
-    
+
     # =======================所有chat历史的显示========================
     # 这一行必须要运行，不能加前置判断，否则chat_input没有显示
     chat_input_prompt = st.chat_input("请在这里输入您的指令", on_submit=on_chat_input_submit)
@@ -450,7 +454,7 @@ def streamlit_refresh_loop():
         })
 
         # with st.chat_message('assistant'):
-        status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, url_prompt, connecting_internet, is_agent)
+        status_data, async_llms, completed_answer = ask_llm(st.session_state.prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt)
         # status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
 
         # ==================assistant输出的状态存储====================

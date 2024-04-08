@@ -87,6 +87,7 @@ class LLM_Client():
         self.stop = None    # 用于对vllm的openai api的stop进行过滤
         self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
+        self.system_prompt = '' # 系统提示
         # self.top_p = top_p
         self.max_new_tokens = max_new_tokens
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
@@ -128,6 +129,9 @@ class LLM_Client():
     @classmethod
     def Get_All_LLM_Server(cls):
         return cls.LLM_SERVER
+
+    def set_system_prompt(self, in_system_prompt):
+        self.system_prompt = in_system_prompt
 
     def set_role_prompt(self, in_role_prompt):
         if in_role_prompt!='':
@@ -209,7 +213,7 @@ class LLM_Client():
         # ===加入system提示===
         msgs = [{
             "role": "system",
-            "content": config.Global.llm_system,
+            "content": self.system_prompt,
             # "content": "You are a helpful assistant."
         }]
 
@@ -221,7 +225,7 @@ class LLM_Client():
     def print_history_and_system(self):
         # print('\n\t================【LLM_Client】 对话历史================')
         # print(f'system提示: {self.role_prompt}')
-        dgreen(f"\tsystem: \t{config.Global.llm_system}")
+        dgreen(f"\tsystem: \t{self.system_prompt}")
         for chat in self.history_list:
             content = chat['content'][:50]+'...' if len(chat['content']) > 50 else chat['content']
             dgreen(f"\t{chat['role']}: \t{content}")
@@ -284,7 +288,11 @@ class LLM_Client():
             in_retry=False,
             in_undo=False,
             in_stop=None,
+            in_system_prompt=None,
     ):
+        if in_system_prompt is not None:
+            self.set_system_prompt(in_system_prompt)
+
         self.usage = None   # 清空输入和输出的token数量统计
 
         if not in_max_new_tokens:
