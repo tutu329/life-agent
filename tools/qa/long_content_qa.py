@@ -270,7 +270,7 @@ def short_content_qa(in_llm, in_content, in_prompt):
     one_line = ''.join(in_content.split('\n'))[:40]
     print(f'----------short_content_qa(): content内容(长度{len(in_content)}): "{one_line}..."----------', end='')
     print(f'prompt内容: "{in_prompt[:50]}..."')
-    question = f'"{in_content}", 请严格依据这些文字，回答问题"{in_prompt}"，不要解释，直接回复'
+    question = f'请严格依据文本内容，回答问题"{in_prompt}"，文本的具体内容为:\n"{in_content}"'
     # question = f'"{in_content}", 请严格依据这些文字，回答问题"{in_prompt}"，答复是简明还是详细，一定要严格按照问题要求来，字数不能大于{Prompt_Limitation.concurrent_summary_max_len}字，不要解释，直接回复'
     gen = in_llm.ask_prepare(question).get_answer_generator()
     return gen
