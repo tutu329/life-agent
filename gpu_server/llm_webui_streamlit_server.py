@@ -10,6 +10,7 @@ from agent.tool_agent import Tool_Agent
 import time
 
 import base64
+from io import StringIO
 
 from tools.qa.file_qa import files_qa
 
@@ -325,11 +326,11 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
             # 如果有文件上传
             f = files[0]
 
-            files_qa(files=files)
+            # files_qa(files=files)
 
-            # result = StringIO(f.getvalue().decode("utf-8")).read()
-            # all_prompt = f'请严格根据文件({f.name})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
-            # mem_llm.set_role_prompt(all_prompt)
+            result = StringIO(f.getvalue().decode("utf-8")).read()
+            all_prompt = f'请严格根据文件({f.name})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
+            mem_llm.set_role_prompt(all_prompt)
 
             # ans = mem_llm.ask_prepare(
             #     in_question='文件目录返回给我',
