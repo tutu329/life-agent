@@ -704,8 +704,8 @@ class Concurrent_LLMs():
     #     'llms_full_responses' : [''， ...]                  # 所有llm的返回文本
     # }
 
-    def wait_all(self, in_gen):
-        for status in in_gen:
+    def wait_all(self, in_status_gen):
+        for status in in_status_gen:
             st = status['detail']
             print(f'[Concurrent_LLMs]: status is "{st}"')
 

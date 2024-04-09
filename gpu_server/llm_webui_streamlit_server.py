@@ -119,8 +119,9 @@ def file_qa(files, callbacks=None, suffixes=None):
 
     llms = Concurrent_LLMs()
     llms.init(prompts, contents, callbacks, in_extra_suffixes=suffixes)
-    for task_status in llms.start_and_get_status():
-        pass
+
+    statuses = llms.start_and_get_status()
+    task_status = llms.wait_all(statuses)
 
     for ans in task_status['llms_full_responses']:
         # 这里task_status是llms.start_and_get_status()结束后的最终状态
