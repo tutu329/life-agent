@@ -111,11 +111,12 @@ def agent_init():
     # agent.init()
 
 def file_qa(files, callbacks=None, suffixes=None):
-    prompts = ['主要内容有条理的详细列一下'] * len(files)
+    prompts = ['将文本的主要内容详细、有条理的列一下'] * len(files)
     contents = []
     for f in files:
         content = StringIO(f.getvalue().decode("utf-8")).read()
         contents.append(content)
+        dred(f'content({len(content)}): {content[:100]}...')
 
     llms = Concurrent_LLMs()
     llms.init(prompts, contents, callbacks, in_extra_suffixes=suffixes)
@@ -335,7 +336,6 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
             #     in_max_new_tokens=st.session_state.local_llm_max_new_token,
             #     in_system_prompt=system_prompt,
             # ).get_answer_and_sync_print()
-            #
             # st.markdown(ans)
 
 

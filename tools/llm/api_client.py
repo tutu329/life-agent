@@ -667,7 +667,7 @@ class Concurrent_LLMs():
         in_extra_suffixes=None, # 输出的额外内容(维度同上)
         in_cursor='█ ',         # 输出未完成时显示用的光标
         in_max_new_tokens=2048,
-        in_content_short_enough=False,  # 如果short_enough, 则每个qa只需要调用short_content_qa而不用调用long_content_qa(分段)
+        in_content_short_enough=True,  # 如果short_enough, 则每个qa只需要调用short_content_qa而不用调用long_content_qa(分段)
     ):
         self.prompts = in_prompts
         self.contents = in_contents
