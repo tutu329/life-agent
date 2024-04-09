@@ -10,7 +10,8 @@ from agent.tool_agent import Tool_Agent
 import time
 
 import base64
-from io import StringIO
+
+from tools.qa.file_qa import files_qa
 
 from tools.retriever.search import Bing_Searcher
 from utils.decorator import timer
@@ -110,24 +111,24 @@ def agent_init():
     # )
     # agent.init()
 
-def file_qa(files, callbacks=None, suffixes=None):
-    prompts = ['将文本的主要内容详细、有条理的列一下'] * len(files)
-    contents = []
-    for f in files:
-        content = StringIO(f.getvalue().decode("utf-8")).read()
-        contents.append(content)
-        dred(f'content({len(content)}): {content[:100]}...')
-
-    llms = Concurrent_LLMs()
-    llms.init(prompts, contents, callbacks, in_extra_suffixes=suffixes)
-
-    statuses = llms.start_and_get_status()
-    task_status = llms.wait_all(statuses)
-
-    for ans in task_status['llms_full_responses']:
-        # 这里task_status是llms.start_and_get_status()结束后的最终状态
-        dred('------------------')
-        dgreen(ans)
+# def file_qa(files, callbacks=None, suffixes=None):
+#     prompts = ['将文本的主要内容详细、有条理的列一下'] * len(files)
+#     contents = []
+#     for f in files:
+#         content = StringIO(f.getvalue().decode("utf-8")).read()
+#         contents.append(content)
+#         dred(f'content({len(content)}): {content[:100]}...')
+#
+#     llms = Concurrent_LLMs()
+#     llms.init(prompts, contents, callbacks, in_extra_suffixes=suffixes)
+#
+#     statuses = llms.start_and_get_status()
+#     task_status = llms.wait_all(statuses)
+#
+#     for ans in task_status['llms_full_responses']:
+#         # 这里task_status是llms.start_and_get_status()结束后的最终状态
+#         dred('------------------')
+#         dgreen(ans)
 
 @timer
 def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt, files):
@@ -324,7 +325,7 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
             # 如果有文件上传
             f = files[0]
 
-            file_qa(files=files)
+            files_qa(files=files)
 
             # result = StringIO(f.getvalue().decode("utf-8")).read()
             # all_prompt = f'请严格根据文件({f.name})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
