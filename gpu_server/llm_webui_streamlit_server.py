@@ -1,6 +1,7 @@
 import streamlit as st
 
 import config
+from config import dred, dgreen, dblue, dcyan
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
 from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
@@ -13,6 +14,7 @@ import asyncio
 import base64
 from pathlib import Path
 import tempfile
+from io import StringIO
 
 from tools.retriever.search import Bing_Searcher
 from utils.long_content_qa import long_content_qa
@@ -398,11 +400,20 @@ def streamlit_refresh_loop():
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)
     # st_display_pdf("/home/tutu/3.pdf")
-    file = exp2.file_uploader("选择待上传的PDF文件", type=['pdf'])
-    if file is not None:
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-            st_display_pdf(tmp_file.name)
-                
+    files = exp2.file_uploader("选择待上传的PDF文件", accept_multiple_files=True, type=['pdf', 'md', 'txt'])
+    if files is not None:
+        for f in files:
+            dblue(f.name)
+            content = StringIO(f.getvalue().decode("utf-8")).read()
+
+            # 显示文件内容
+            dred(content)
+            st.markdown(content)
+
+            # with f.NamedTemporaryFile(delete=False) as tmp_file:
+            #     dgreen(tmp_file.name)
+            # st_display_pdf(f)
+
 
     # =============================expander：角色参数==============================
     exp3 =  sidebar.expander("Prompt 参数", expanded=True)
