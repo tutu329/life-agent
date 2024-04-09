@@ -452,25 +452,34 @@ class LLM_Client():
     #     return res
 
     # 方式1：直接输出结果
+    # def get_answer_and_sync_print(self):
+    #     result = ''
+    #     if self.print_output:
+    #         print('<Assistant>\n', end='')
+    #     for chunk in self.gen:
+    #         if self.response_canceled:
+    #             break
+    #
+    #         # print(f'chunk: {chunk}')
+    #         if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
+    #             if self.print_output:
+    #                 print(chunk.choices[0].delta.content, end="", flush=True)
+    #             result += chunk.choices[0].delta.content
+    #             # yield chunk.choices[0].delta.content
+    #     if self.print_output:
+    #         print()
+    #     self.answer_last_turn = result
+    #     self.__history_add_last_turn_msg()
+    #
+    #     return result
     def get_answer_and_sync_print(self):
         result = ''
-        if self.print_output:
-            print('<Assistant>\n', end='')
-        for chunk in self.gen:
-            if self.response_canceled:
-                break
 
-            # print(f'chunk: {chunk}')
-            if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
-                if self.print_output:
-                    print(chunk.choices[0].delta.content, end="", flush=True)
-                result += chunk.choices[0].delta.content
-                # yield chunk.choices[0].delta.content
-        if self.print_output:
-            print()
-        self.answer_last_turn = result
-        self.__history_add_last_turn_msg()
+        for chunk in self.get_answer_generator():
+            result += chunk
+            dgreen(chunk, end='', flush=True)
 
+        dgreen()
         return result
 
     # 方式2：返回generator，在合适的时候输出结果
@@ -650,7 +659,7 @@ class Concurrent_LLMs():
         self.prompts = []
         self.role_prompts = []
         self.contents = []
-        self.content_short_enough = False
+        self.content_short_enough = True
         
         self.stream_buf_callback = None
         self.llms = []

@@ -115,8 +115,25 @@ def agent_init():
     # )
     # agent.init()
 
+def file_qa(files, callbacks=None, suffixes=None):
+    prompts = ['主要内容有条理的详细列一下'] * len(files)
+    contents = []
+    for f in files:
+        content = StringIO(f.getvalue().decode("utf-8")).read()
+        contents.append(content)
+
+    llms = Concurrent_LLMs()
+    llms.init(prompts, contents, callbacks, in_extra_suffixes=suffixes)
+    for task_status in llms.start_and_get_status():
+        pass
+
+    for ans in task_status['llms_full_responses']:
+        # 这里task_status是llms.start_and_get_status()结束后的最终状态
+        dred('------------------')
+        dgreen(ans)
+
 @timer
-def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt):
+def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt, files):
 # def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
     # =================================agent功能=================================
     if is_agent:
@@ -296,15 +313,35 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
         return None, async_llms, final_answer
     else:
         # =================================local llm=================================
+        all_prompt = role_prompt
+        mem_llm.set_role_prompt(all_prompt)
+
         if url_prompt:
             # 如果填了url
             searcher = Bing_Searcher.create_searcher_and_loop()
             result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
             all_prompt = f'请严格根据URL(网页链接)返回的内容回答问题, URL(网页链接)返回的具体内容为: "{result}"'
             mem_llm.set_role_prompt(all_prompt)
-        else:
-            all_prompt = role_prompt
-            mem_llm.set_role_prompt(all_prompt)
+
+        if files:
+            # 如果有文件上传
+            f = files[0]
+
+            file_qa(files=files)
+
+            # result = StringIO(f.getvalue().decode("utf-8")).read()
+            # all_prompt = f'请严格根据文件({f.name})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
+            # mem_llm.set_role_prompt(all_prompt)
+
+            # ans = mem_llm.ask_prepare(
+            #     in_question='文件目录返回给我',
+            #     in_temperature=st.session_state.local_llm_temperature,
+            #     in_max_new_tokens=st.session_state.local_llm_max_new_token,
+            #     in_system_prompt=system_prompt,
+            # ).get_answer_and_sync_print()
+            #
+            # st.markdown(ans)
+
 
         place_holder = st.chat_message('assistant').empty()
         full_res = ''
@@ -404,11 +441,11 @@ def streamlit_refresh_loop():
     if files is not None:
         for f in files:
             dblue(f.name)
-            content = StringIO(f.getvalue().decode("utf-8")).read()
+            # content = StringIO(f.getvalue().decode("utf-8")).read()
 
             # 显示文件内容
-            dred(content)
-            st.markdown(content)
+            # dred(content)
+            # st.markdown(content)
 
             # with f.NamedTemporaryFile(delete=False) as tmp_file:
             #     dgreen(tmp_file.name)
@@ -465,7 +502,7 @@ def streamlit_refresh_loop():
         })
 
         # with st.chat_message('assistant'):
-        status_data, async_llms, completed_answer = ask_llm(st.session_state.prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt)
+        status_data, async_llms, completed_answer = ask_llm(st.session_state.prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt, files)
         # status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
 
         # ==================assistant输出的状态存储====================
