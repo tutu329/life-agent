@@ -1,23 +1,18 @@
 import streamlit as st
 
 import config
-from config import dred, dgreen, dblue, dcyan
+from config import dred, dgreen, dblue
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
 from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
 from agent.tool_agent import Tool_Agent
 
-from utils.task import Flicker_Task
 import time
-import asyncio
 
 import base64
-from pathlib import Path
-import tempfile
 from io import StringIO
 
 from tools.retriever.search import Bing_Searcher
-from utils.long_content_qa import long_content_qa
 from utils.decorator import timer
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
@@ -68,7 +63,7 @@ def session_state_init():
 # 这里不能用@st.cache_resource，否则每次搜索结果都不变
 # @st.cache_resource
 def search_init(concurrent_num=3, in_stream_buf_callback=None):
-    import sys, platform
+    import sys
     fix_streamlit_in_win = True if sys.platform.startswith('win') else False
     return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win, in_stream_buf_callback=in_stream_buf_callback, in_search_num=concurrent_num)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
 

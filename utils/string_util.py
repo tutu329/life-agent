@@ -13,6 +13,7 @@ def _str_has_partial_stop(str, stop):
         else:
             break
 
+
     # 判断partial stop和str1的交集是否为str1尾部，或者完整stop是否in str1
     # print(f'same:"{same_str}"')
     if str.endswith(same_str):

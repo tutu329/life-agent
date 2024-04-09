@@ -1,31 +1,17 @@
 from copy import deepcopy
-import numpy as np
-import os, requests
 # import os, requests, torch
-import matplotlib.figure as mplfigure
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-import matplotlib.colors as mplc
-from matplotlib.font_manager import FontProperties
-import matplotlib as mpl
-from PIL import Image
-from typing import Collection, Dict, List, Set, Tuple, Union, Any, Callable, Optional
-import random
-import re
 
 import sys, time
-import platform
 
 import asyncio
 import threading
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
-import config
-from utils.long_content_qa import long_content_qa, short_content_qa, long_content_qa_concurrently
+from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
 from utils.string_util import str_remove_partial_stops
 
-from config import dred, dgreen, dblue, dcyan
-
+from config import dred, dgreen
 
 if sys.platform.startswith('win'):      # win下用的是qwen的openai api (openai==0.28.1)
     import openai

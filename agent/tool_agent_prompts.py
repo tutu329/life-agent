@@ -1,12 +1,12 @@
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from tools.llm.api_client import LLM_Client
-from utils.long_content_qa import long_content_qa, long_content_qa_concurrently
+from tools.qa.long_content_qa import long_content_qa_concurrently
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 from utils.extract import extract_code, extract_dict_string
 from tools.retriever.search import Bing_Searcher
 from config import Global
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 
 import json5
 

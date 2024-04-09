@@ -1,15 +1,15 @@
 from playwright.async_api import async_playwright
 from playwright.sync_api import sync_playwright
 
-from typing import List, Dict, Tuple, Optional
+from typing import List
 import json
 import re
 import asyncio
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 
 from tools.retriever.html2text import html2text
 from utils.print_tools import print_long_content_with_urls, get_string_of_long_content_with_urls
-from utils.long_content_qa import long_content_qa, multi_contents_qa_concurrently, multi_contents_qa_concurrently_yield
+from tools.qa.long_content_qa import multi_contents_qa_concurrently, multi_contents_qa_concurrently_yield
 from utils.task import Flicker_Task
 
 from config import Prompt_Limitation
@@ -86,7 +86,7 @@ class Bing_Searcher():
         # WindowsProactorEventLoopPolicy(这是目前windows 支持的EventLoop)
         # WindowsSelectorEventLoopPolicy(目前windows不支持这个EventLoop)
         print(f'asyncio.get_event_loop_policy(): {type(asyncio.get_event_loop_policy())}')
-        from asyncio import (WindowsProactorEventLoopPolicy, WindowsSelectorEventLoopPolicy)
+        from asyncio import (WindowsProactorEventLoopPolicy)
         asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
         print(f'asyncio.get_event_loop_policy(): {type(asyncio.get_event_loop_policy())}')
         # -------------------------------------- -----------------------------------------------------------------------------------------------
