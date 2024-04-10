@@ -84,6 +84,7 @@ def get_session_id():
         dred(f'get session context failed: "{e}"')
         st.session_state.sid = ''
 
+
 def load_pickle_on_startup():
     get_session_id()
     sid = st.session_state.sid
