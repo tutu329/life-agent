@@ -58,14 +58,28 @@ def streamlit_init():
     dblue(f'"history={history}, temperature(初始)={temperature}"')
     return mem_llm
 
+def _get_session():
+    from streamlit.runtime import get_instance
+    from streamlit.runtime.scriptrunner import get_script_run_ctx
+    runtime = get_instance()
+    session_id = get_script_run_ctx().session_id
+    session_info = runtime._session_mgr.get_session_info(session_id)
+    dred(session_id)
+    dred(session_info)
+    if session_info is None:
+        raise RuntimeError("Couldn't get your Streamlit Session object.")
+    return session_info.session
+
 def get_session_id():
+    # _get_session()
     # 获取session_id
     try:
         session_id = ''
         session_context = get_script_run_ctx()
         session_id = session_context.session_id
         st.session_state.sid = session_id
-        # dgreen(f'session id: "{session_id}"')
+        # dgreen(f'session id: "{session_context}"')
+        dgreen(f'session id: "{session_id}"')
     except Exception as e:
         dred(f'get session context failed: "{e}"')
         st.session_state.sid = ''
