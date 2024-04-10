@@ -1,7 +1,7 @@
 import streamlit as st
 
 import config
-from config import dred, dgreen, dblue
+from config import dred, dgreen, dblue, dcyan
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
 from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
@@ -16,6 +16,9 @@ from tools.qa.file_qa import files_qa
 
 from tools.retriever.search import Bing_Searcher
 from utils.decorator import timer
+
+from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
+import pickle
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
@@ -34,15 +37,75 @@ st.set_page_config(
 # )
 @st.cache_resource  # cache_resource主要用于访问db connection等仅调用一次的全局资源
 def streamlit_init():
+    # 读取session的pickle数据
+    if 'session_data' not in st.session_state:
+        st.session_state.session_data = load_pickle_on_startup()
+
+    # 所有LLM的url统一设置
     LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
-    print(f'llm_webui_streamlit_server:streamlit_init:Get_All_LLM_Server() = "{LLM_Client.Get_All_LLM_Server()}"')
+    dgreen(f'初始化所有LLM的url_endpoint: ', end='', flush=True)
+    dblue(f'"{LLM_Client.Get_All_LLM_Server()}"')
+
+    # 初始化 mem_llm
+    history = True
+    temperature = 0
     mem_llm = LLM_Client(
-        history=True,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
+        history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
         print_input=False,
-        temperature=0,
+        temperature=temperature,
     )
-    # agent_init()
+    dgreen('初始化mem_llm完毕: ', end='', flush=True)
+    dblue(f'"history={history}, temperature(初始)={temperature}"')
     return mem_llm
+
+def get_session_id():
+    # 获取session_id
+    try:
+        session_id = ''
+        session_context = get_script_run_ctx()
+        session_id = session_context.session_id
+        st.session_state.sid = session_id
+        # dgreen(f'session id: "{session_id}"')
+    except Exception as e:
+        dred(f'get session context failed: "{e}"')
+        st.session_state.sid = ''
+
+def load_pickle_on_startup():
+    get_session_id()
+    sid = st.session_state.sid
+    dgreen('开始加载会话信息...')
+    dred(f'sid: "{sid}"')
+
+    session_data = None
+
+    work_dir = config.Global.get_work_dir() # "/home/tutu/server/life-agent"
+    dred(f'work dir: "{work_dir}"')
+    session_pkl_file = work_dir + f'/streamlit_session_{sid}.pkl'
+
+    try:
+        with open(session_pkl_file, "rb") as f:
+            session_data = pickle.load(f)
+        st.session_state.session_data = session_data
+        dred(f'读取了session_data数据: \n"{session_data}"')
+    except Exception as e:
+        dred(f'读取会话文件出错: "{e}"')
+        st.session_state.session_data = {}
+
+def save_pickle():
+    # get_session_id()
+    sid = st.session_state.sid
+
+    work_dir = config.Global.get_work_dir() # "/home/tutu/server/life-agent"
+    session_pkl_file = work_dir + f'/streamlit_session_{sid}.pkl'
+
+    try:
+        with open(session_pkl_file, "wb") as f:
+            pickle.dump(st.session_state.session_data, f)
+        dred(f'存储了session_data数据: \n"{st.session_state.session_data}"')
+        dred(f'存储sid: "{sid}"')
+
+    except Exception as e:
+        dred(f'存储会话文件出错: "{e}"')
 
 def session_state_init():
     # 状态的初始化
@@ -111,25 +174,6 @@ def agent_init():
     #     in_output_stream_buf=placeholder1.markdown,
     # )
     # agent.init()
-
-# def file_qa(files, callbacks=None, suffixes=None):
-#     prompts = ['将文本的主要内容详细、有条理的列一下'] * len(files)
-#     contents = []
-#     for f in files:
-#         content = StringIO(f.getvalue().decode("utf-8")).read()
-#         contents.append(content)
-#         dred(f'content({len(content)}): {content[:100]}...')
-#
-#     llms = Concurrent_LLMs()
-#     llms.init(prompts, contents, callbacks, in_extra_suffixes=suffixes)
-#
-#     statuses = llms.start_and_get_status()
-#     task_status = llms.wait_all(statuses)
-#
-#     for ans in task_status['llms_full_responses']:
-#         # 这里task_status是llms.start_and_get_status()结束后的最终状态
-#         dred('------------------')
-#         dgreen(ans)
 
 @timer
 def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt, files):
@@ -514,6 +558,13 @@ def streamlit_refresh_loop():
                 'role': 'assistant',
             'content': completed_answer
             })
+
+        # 存储会话文件
+        get_session_id()
+        st.session_state.session_data = {
+            'session id': st.session_state.sid,
+        }
+        save_pickle()
 
         # ===================完成输出任务后，通过rerun来刷新一些按钮的状态========================
         # print('=======================任务完成后的刷新( st.rerun() )==============================')

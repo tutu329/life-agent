@@ -52,6 +52,13 @@ class Global():
 
     ddgs_search_max_num = 50    # ddgs搜索最大数量
 
+    work_dir = '/home'   # 工作目录
+
+    @staticmethod
+    def get_work_dir():
+        import os
+        return os.path.abspath(os.curdir)
+
 @dataclass
 class Port():
     # 顶层应用
