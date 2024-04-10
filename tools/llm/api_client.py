@@ -7,6 +7,7 @@ import asyncio
 import threading
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
+import config
 from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
 from utils.string_util import str_remove_partial_stops
@@ -32,7 +33,18 @@ def dprint(*args, **kwargs):
 
 class LLM_Client():
     LLM_SERVER = 'http://127.0.0.1:8001/v1'
-    def __init__(self, history=True, history_max_turns=50, model=None, history_clear_method='pop', api_key='b1ad5dac212f563be4765b646543ca1b', temperature=0.7, url=None, max_new_tokens=512, print_input=True, print_output=True):
+    def __init__(self,
+                 history=True,
+                 history_max_turns=config.Global.llm_max_chat_turns,
+                 model_id=None,
+                 history_clear_method='pop',
+                 api_key='b1ad5dac212f563be4765b646543ca1b',
+                 temperature=0.7,
+                 url=None,
+                 max_new_tokens=512,
+                 print_input=True,
+                 print_output=True
+                 ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
         if not url:
@@ -42,28 +54,28 @@ class LLM_Client():
         if sys.platform.startswith('win'):          # win下用的是qwen的openai api
             openai.api_key = api_key
             openai.api_base = url
-            if model is None:
-                self.model = 'local model'
+            if model_id is None:
+                self.model_id = 'local model'
             else:
-                self.model = model
+                self.model_id = model_id
             dprint(f'【LLM_Client】 os: windows. openai api for qwen used.')
-            dprint(f'【LLM_Client】 model: {self.model}')
+            dprint(f'【LLM_Client】 model: {self.model_id}')
         elif sys.platform.startswith('linux'):      # linux下用的是vllm的openai api
             self.openai = OpenAI(
                 api_key=api_key,
                 base_url=url,
             )
             try:
-                if model is None:
-                    self.model = self.openai.models.list().data[0].id
+                if model_id is None:
+                    self.model_id = self.openai.models.list().data[0].id
                 else:
-                    self.model = model
+                    self.model_id = model_id
             except Exception as e:
                 print(f'【LLM_Client异常】__init__(): "{e}"')
                 print(f'【LLM_Client异常】__init__(): 可能是IP或Port设置错误，当前url为: {url}')
                 
             dprint(f'【LLM_Client】 os: linux. openai api for vllm used.')
-            dprint(f'【LLM_Client】 model: {self.model}')
+            dprint(f'【LLM_Client】 model: {self.model_id}')
         else:
             raise Exception('无法识别的操作系统！')
 
@@ -164,17 +176,19 @@ class LLM_Client():
                 self.history_turn_num_now += 1
             else:
                 if self.history_clear_method == 'pop':
-                    print('======记忆超限，记录本轮对话、删除首轮对话======')
+                    dred('======对话轮次超限，记录本轮对话、删除首轮对话======')
                     # for item in self.history_list:
                     #     print(item)
                     if self.role_prompt != '':
+                        # 有role prompt，则删除第二个对话
                         self.history_list.pop(2)
                         self.history_list.pop(2)
                     else:
+                        # 没有role prompt，则删除第一个对话
                         self.history_list.pop(0)
                         self.history_list.pop(0)
                 elif self.history_clear_method == 'clear':
-                    print('======记忆超限，清空记忆======')
+                    dred('======对话轮次超限，清空记忆======')
                     self.__history_clear()
 
     def clear_history(self):
@@ -349,7 +363,7 @@ class LLM_Client():
         try:
             if sys.platform.startswith('win'):
                 gen = openai.ChatCompletion.create(
-                    model=self.model,
+                    model=self.model_id,
                     temperature=run_temperature,
                     # top_k=self.top_k,
                     # top_p = run_top_p,
@@ -363,7 +377,7 @@ class LLM_Client():
                 )
             elif sys.platform.startswith('linux'):
                 gen = self.openai.chat.completions.create(
-                    model=self.model,
+                    model=self.model_id,
                     temperature=run_temperature,
                     # top_k=self.top_k,
                     # top_p = run_top_p,
@@ -1010,7 +1024,7 @@ def main_call():
         history=True,
         history_max_turns=50,
         history_clear_method='pop',
-        model='miqu-1-70b-sf-GPTQ',
+        model_id='miqu-1-70b-sf-GPTQ',
         temperature=0.7,
         api_key='b1ad5dac212f563be4765b646543ca1b',
         # api_key='sk-6zcUSkVMPIR2WIhjC73a27B4D7584e8cBf1f1991Cf512626',

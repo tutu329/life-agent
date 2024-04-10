@@ -37,7 +37,7 @@ def streamlit_init():
     LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
     print(f'llm_webui_streamlit_server:streamlit_init:Get_All_LLM_Server() = "{LLM_Client.Get_All_LLM_Server()}"')
     mem_llm = LLM_Client(
-        history=True,  # 这里要关掉server侧llm的history，对话历史由用户session控制
+        history=True,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
         print_input=False,
         temperature=0,
     )
