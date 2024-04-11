@@ -18,6 +18,9 @@ from tools.retriever.search import Bing_Searcher
 from utils.decorator import timer
 
 from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
+from streamlit import runtime
+from streamlit.web.server.websocket_headers import _get_websocket_headers
+from utils.extract import get_ajs_anonymous_id_from_cookie
 import pickle
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
@@ -75,15 +78,22 @@ def get_session_id():
     # 获取session_id
     try:
         session_id = ''
-        session_context = get_script_run_ctx()
-        session_id = session_context.session_id
-        st.session_state.sid = session_id
-        # dgreen(f'session id: "{session_context}"')
-        dgreen(f'session id: "{session_id}"')
+        # session_context = get_script_run_ctx()
+        # session_id = session_context.session_id
+        # session_info = runtime.get_instance().get_client(session_id)
+        # ip = session_info.request.remote_ip
+        # # dgreen(f'session id: "{session_context}"')
+        # dgreen(f'session id: "{session_id}"')
+        # dgreen(f'session_info: "{session_info}"')
+        # dgreen(f'request: "{session_info.request}"')
+        # dgreen(f'ip: "{ip}"')
+        cookie_str = _get_websocket_headers()['Cookie']
+        ajs_anonymous_id = get_ajs_anonymous_id_from_cookie(cookie_str)
+        # dred(f'ajs_anonymous_id: "{ajs_anonymous_id}"')
+        st.session_state.sid = ajs_anonymous_id
     except Exception as e:
-        dred(f'get session context failed: "{e}"')
+        dred(f'get anonymous_id failed: "{e}"')
         st.session_state.sid = ''
-
 
 def load_pickle_on_startup():
     get_session_id()
@@ -102,6 +112,10 @@ def load_pickle_on_startup():
             session_data = pickle.load(f)
         st.session_state.session_data = session_data
         dred(f'读取了session_data数据: \n"{session_data}"')
+
+        # 装载chat历史
+        st.session_state.messages = st.session_state.session_data['session_data']
+
     except Exception as e:
         dred(f'读取会话文件出错: "{e}"')
         st.session_state.session_data = {}
@@ -471,6 +485,8 @@ def st_display_pdf(pdf_file):
     st.markdown(pdf_display, unsafe_allow_html=True)
     
 def streamlit_refresh_loop():
+    dred('----------------111---------------')
+    load_pickle_on_startup()
     session_state_init()
     on_refresh()
     # =============================侧栏==============================
@@ -577,7 +593,8 @@ def streamlit_refresh_loop():
         # 存储会话文件
         get_session_id()
         st.session_state.session_data = {
-            'session id': st.session_state.sid,
+            'session_id': st.session_state.sid,
+            'session_data': st.session_state.messages,
         }
         save_pickle()
 
