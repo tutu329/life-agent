@@ -459,6 +459,8 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
 
 def on_clear_history():
     st.session_state.messages = []
+    st.session_state.session_data['session_data'] = []
+    save_pickle()
     mem_llm.clear_history()
 
 def on_cancel_response():
