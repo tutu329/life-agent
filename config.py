@@ -62,12 +62,12 @@ class Global():
 @dataclass
 class Port():
     # 顶层应用
-    flowise:int = 7860
-    llm_ui: int = 7861
-    fastgpt: int = 7863
-    dify: int = 7866
-    sovit: int = 7867
-    xinference_ui: int = 7870
+    flowise:int         = 7860
+    llm_ui: int         = 7861
+    fastgpt: int        = 7863
+    dify: int           = 7866
+    sovit: int          = 7867
+    xinference_ui: int  = 7870
 
     # api转发层
     one_api:int = 8002  # flowise等顶层应用可以直接调用:8002/v1的llm_api和m3e_api
@@ -81,6 +81,7 @@ class Port():
     chroma_api:int=8004 # chroma单独的api
 
     # 工作环境
-    jupyter:int = 7862
-    open_webui:int = 7864  # open-webui
-    jupyter_temp:int = 7865  # 自定义jupyter的docker容器
+    jupyter:int         = 7862
+    open_webui:int      = 7864  # open-webui
+    jupyter_temp:int    = 7865  # 自定义jupyter的docker容器
+    sd:int              = 7868  # stable diffusion
