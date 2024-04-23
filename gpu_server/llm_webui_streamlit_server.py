@@ -58,14 +58,12 @@ def streamlit_init():
 
     # 初始化 mem_llm
     history = True
-    temperature = 0
     mem_llm = LLM_Client(
         history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
         print_input=False,
-        temperature=temperature,
     )
     dgreen('初始化mem_llm完毕: ', end='', flush=True)
-    dblue(f'"history={history}, temperature(初始)={temperature}"')
+    # dblue(f'"history={history}, temperature(初始)={temperature}"')
     return mem_llm
 
 def _get_session():
@@ -423,6 +421,26 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
 
         place_holder = st.chat_message('assistant').empty()
         full_res = ''
+
+        # 如果需要将query翻译为英文
+        if st.session_state.input_translate:
+            translate_llm = LLM_Client(
+                history=False,
+                url=st.session_state.translate_llm_url,
+                print_input=False,
+            )
+
+            dblue(f'需翻译的输入: "{prompt}"')
+            # translate_llm.set_role_prompt('不管输入是什么，你都不会对输入的内容进行解读，都直接将输入翻译为英文，且绝对不增加额外的引号')
+            translated_input = translate_llm.ask_prepare(
+                in_question=f'将"{prompt}"翻译为英文，不要增加额外的引号',
+                in_temperature = st.session_state.local_llm_temperature,
+                in_max_new_tokens=st.session_state.local_llm_max_new_token,
+                in_system_prompt = '你擅长将中文翻译为英语'
+            ).get_answer_and_sync_print()
+            dblue(f'翻译后的输入: "{translated_input}"')
+
+            prompt = translated_input
 
         # llm输出、统计输出时间
         start_time1 = time.time()
