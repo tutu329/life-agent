@@ -80,6 +80,8 @@ class LLM_Client():
             raise Exception('无法识别的操作系统！')
 
         self.url = url
+        self.api_key = api_key
+
         self.gen = None     # 返回结果的generator
         self.usage = None   # 返回 usage={'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
         self.stop = None    # 用于对vllm的openai api的stop进行过滤
@@ -127,6 +129,27 @@ class LLM_Client():
     @classmethod
     def Get_All_LLM_Server(cls):
         return cls.LLM_SERVER
+
+    def refresh_url(self, in_url):
+        if self.url != in_url:
+            self.clear_history()
+            self.url = in_url
+
+            self.openai = OpenAI(
+                api_key=self.api_key,
+                base_url=self.url,
+            )
+            try:
+                self.model_id = self.openai.models.list().data[0].id
+            except Exception as e:
+                dred(f'【LLM_Client异常】refresh_url(): "{e}"')
+                dred(f'【LLM_Client异常】refresh_url(): 可能是IP或Port设置错误，当前url为: {self.url}')
+                return False
+
+            dprint(f'【LLM_Client】refresh_url(): {self.url}({self.model_id})')
+            return True
+        else:
+            return False
 
     def set_system_prompt(self, in_system_prompt):
         self.system_prompt = in_system_prompt

@@ -45,7 +45,14 @@ def streamlit_init():
         st.session_state.session_data = load_pickle_on_startup()
 
     # 所有LLM的url统一设置
-    LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
+    if 'llm_api_1_url' in st.session_state:
+        main_llm_url = st.session_state.main_llm_url
+    else:
+        main_llm_url = config.Global.llm_url
+
+
+    LLM_Client.Set_All_LLM_Server(main_llm_url)
+    # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
     dgreen(f'初始化所有LLM的url_endpoint: ', end='', flush=True)
     dblue(f'"{LLM_Client.Get_All_LLM_Server()}"')
 
@@ -531,6 +538,17 @@ def streamlit_refresh_loop():
     exp3 =  sidebar.expander("Prompt 参数", expanded=True)
     system_prompt = exp3.text_input(label="设置系统提示:", label_visibility='collapsed', placeholder="请在这里输入您的系统提示", value=config.Global.llm_system)
     role_prompt = exp3.text_area(label="设置角色提示:", label_visibility='collapsed', placeholder="请在这里输入您的角色提示", value="", disabled=st.session_state.processing)
+
+    # =============================主模型、辅模型(用于翻译input)==============================
+    exp4 =  sidebar.expander("模型API 参数", expanded=True)
+    st.session_state.main_llm_url = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=config.Global.llm_url)
+    refreshed = mem_llm.refresh_url(st.session_state.main_llm_url)
+    if refreshed:
+        # 更换llm成功时，清空屏幕内容和llm记忆
+        on_clear_history()
+
+    st.session_state.input_translate = exp4.checkbox('用辅模型将输入翻译为英文', value=False)
+    st.session_state.translate_llm_url = exp4.text_input(label="辅模型:", placeholder="http(s)://ip:port/v1", value=config.Global.llm_url2, disabled=not st.session_state.input_translate)
 
     # =======================所有chat历史的显示========================
     # 这一行必须要运行，不能加前置判断，否则chat_input没有显示
