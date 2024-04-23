@@ -30,7 +30,6 @@ class Prompt_Limitation():
 
     concurrent_summary_max_len:int = 1000       # content总结后最大长度(是让llm总结后的长度，llm不一定能完全按要求控制长度)
 
-
 @dataclass
 class Global():
     line:str = f'{80 * "-"}\n\n'
