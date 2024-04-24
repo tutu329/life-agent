@@ -153,6 +153,25 @@ def session_state_init():
         st.session_state['messages'] = []
         # print(f'st.session_state.messages = {st.session_state.messages}')
 
+    if 'paras' not in st.session_state:
+        st.session_state['paras'] = {
+            'url_prompt':'',
+            'multi_line_prompt':'',
+            'is_agent':False,
+            'connecting_internet':False,
+
+            'local_llm_temperature':0.7,
+            'local_llm_max_new_token':4096,
+            'concurrent_num':10,
+
+            'files':[],
+            'system_prompt':'',
+            'role_prompt':'',
+            'main_llm_url':'',
+            'input_translate':False,
+            'english_llm_url':'',
+        }
+
     if 'prompt' not in st.session_state:
         st.session_state['prompt'] = ''
         # print(f'st.session_state.prompt = "{st.session_state.prompt}"')
@@ -638,6 +657,7 @@ def streamlit_refresh_loop():
         st.session_state.session_data = {
             'session_id': st.session_state.sid,
             'session_data': st.session_state.messages,
+            # 'url_prompt':
         }
         save_pickle()
 
