@@ -580,7 +580,7 @@ def streamlit_refresh_loop():
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)
     # st_display_pdf("/home/tutu/3.pdf")
-    s_paras['files'] = exp2.file_uploader("选择待上传的PDF文件", accept_multiple_files=True, type=['pdf', 'md', 'txt'])
+    s_paras['files'] = exp2.file_uploader("选择待上传的文件", accept_multiple_files=True, type=['pdf', 'md', 'txt'])
     if s_paras['files'] is not None:
         for f in s_paras['files']:
             dblue(f.name)
