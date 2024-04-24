@@ -456,7 +456,6 @@ def ask_llm(prompt, paras):
             # ).get_answer_and_sync_print()
             # st.markdown(ans)
 
-
         place_holder = st.chat_message('assistant').empty()
         full_res = ''
 
