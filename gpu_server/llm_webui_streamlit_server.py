@@ -564,6 +564,7 @@ def streamlit_refresh_loop():
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
     st.session_state.main_llm_url = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=config.Global.llm_url)
     if not 'input_translate' in st.session_state or not st.session_state.input_translate:
+        # 当调用英语模型时，由于mem_llm的url经过refresh变成了英语模型，因此这里如果refresh为主模型会发现不一致从而清除历史
         refreshed = mem_llm.refresh_url(st.session_state.main_llm_url)
         if refreshed:
             # 更换llm成功时，清空屏幕内容和llm记忆
