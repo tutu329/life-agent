@@ -422,11 +422,11 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
         place_holder = st.chat_message('assistant').empty()
         full_res = ''
 
-        # 如果需要将query翻译为英文
+        # 如果需要将query翻译为英文，并调用擅长英语的模型
         if st.session_state.input_translate:
             translate_llm = LLM_Client(
                 history=False,
-                url=st.session_state.translate_llm_url,
+                url=st.session_state.main_llm_url,
                 print_input=False,
             )
 
@@ -441,6 +441,9 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
             dblue(f'翻译后的输入: "{translated_input}"')
 
             prompt = translated_input
+
+            mem_llm.refresh_url(st.session_state.english_llm_url)
+
 
         # llm输出、统计输出时间
         start_time1 = time.time()
@@ -560,13 +563,14 @@ def streamlit_refresh_loop():
     # =============================主模型、辅模型(用于翻译input)==============================
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
     st.session_state.main_llm_url = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=config.Global.llm_url)
-    refreshed = mem_llm.refresh_url(st.session_state.main_llm_url)
-    if refreshed:
-        # 更换llm成功时，清空屏幕内容和llm记忆
-        on_clear_history()
+    if not 'input_translate' in st.session_state or not st.session_state.input_translate:
+        refreshed = mem_llm.refresh_url(st.session_state.main_llm_url)
+        if refreshed:
+            # 更换llm成功时，清空屏幕内容和llm记忆
+            on_clear_history()
 
-    st.session_state.input_translate = exp4.checkbox('用辅模型将输入翻译为英文', value=False)
-    st.session_state.translate_llm_url = exp4.text_input(label="辅模型:", placeholder="http(s)://ip:port/v1", value=config.Global.llm_url2, disabled=not st.session_state.input_translate)
+    st.session_state.input_translate = exp4.checkbox('调用擅长英语的模型', value=False)
+    st.session_state.english_llm_url = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=config.Global.llm_url2, disabled=not st.session_state.input_translate)
 
     # =======================所有chat历史的显示========================
     # 这一行必须要运行，不能加前置判断，否则chat_input没有显示
