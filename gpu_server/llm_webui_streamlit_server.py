@@ -28,7 +28,7 @@ import pickle
 # 配置(必须第一个调用)
 st.set_page_config(
     initial_sidebar_state="collapsed",
-    page_title="Qwen-72B",
+    page_title="Life-Agent",
     layout="wide",
 )
 # st.set_page_config(
@@ -39,19 +39,19 @@ st.set_page_config(
 #     menu_items=None
 # )
 @st.cache_resource  # cache_resource主要用于访问db connection等仅调用一次的全局资源
-def streamlit_init():
+def llm_init():
     # 读取session的pickle数据
-    if 'session_data' not in st.session_state:
-        st.session_state.session_data = load_pickle_on_startup()
+    # if 'session_data' not in st.session_state:
+    #     st.session_state.session_data = load_pickle_on_startup()
 
-    # 所有LLM的url统一设置
-    if 'llm_api_1_url' in st.session_state:
-        main_llm_url = st.session_state.main_llm_url
-    else:
-        main_llm_url = config.Global.llm_url
+    # # 所有LLM的url统一设置
+    # if 'llm_api_1_url' in st.session_state:
+    #     main_llm_url = st.session_state.main_llm_url
+    # else:
+    #     main_llm_url = config.Global.llm_url
 
 
-    LLM_Client.Set_All_LLM_Server(main_llm_url)
+    LLM_Client.Set_All_LLM_Server(config.Global.llm_url)
     # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
     dgreen(f'初始化所有LLM的url_endpoint: ', end='', flush=True)
     dblue(f'"{LLM_Client.Get_All_LLM_Server()}"')
@@ -95,14 +95,16 @@ def get_session_id():
         cookie_str = _get_websocket_headers()['Cookie']
         ajs_anonymous_id = get_ajs_anonymous_id_from_cookie(cookie_str)
         # dred(f'ajs_anonymous_id: "{ajs_anonymous_id}"')
-        st.session_state.sid = ajs_anonymous_id
+        dred(f'st.session_state: \n{st.session_state}')
+        st.session_state.session_data['sid'] = ajs_anonymous_id
+        # st.session_state.sid = ajs_anonymous_id
     except Exception as e:
         dred(f'get anonymous_id failed: "{e}"')
-        st.session_state.sid = ''
+        st.session_state.session_data['sid'] = ''
 
 def load_pickle_on_startup():
     get_session_id()
-    sid = st.session_state.sid
+    sid = st.session_state.session_data['sid']
     dgreen('开始加载会话信息...')
     dred(f'sid: "{sid}"')
 
@@ -119,15 +121,17 @@ def load_pickle_on_startup():
         dred(f'读取了session_data数据: \n"{session_data}"')
 
         # 装载chat历史
-        st.session_state.messages = st.session_state.session_data['session_data']
+        # st.session_state.messages = st.session_state.session_data['msgs']
 
     except Exception as e:
         dred(f'读取会话文件出错: "{e}"')
-        st.session_state.session_data = {}
+        st.session_state.session_data = default_session_data
+        st.session_state.session_data['sid'] = sid
 
 def save_pickle():
     # get_session_id()
-    sid = st.session_state.sid
+    dgreen(f'sd: \n{st.session_state}')
+    sid = st.session_state.session_data['sid']
 
     work_dir = config.Global.get_work_dir() # "/home/tutu/server/life-agent"
     session_pkl_file = work_dir + f'/streamlit_session_{sid}.pkl'
@@ -141,36 +145,47 @@ def save_pickle():
     except Exception as e:
         dred(f'存储会话文件出错: "{e}"')
 
+default_session_data = {
+    'sid': '',
+    'msgs': [],
+    'paras': {
+        # 'initial_sidebar_state':'collapsed',    # collapsed/auto
+
+        'url_prompt': '',
+        'multi_line_prompt': '',
+        'is_agent': False,
+        'connecting_internet': False,
+
+        'local_llm_temperature': 0.7,
+        'local_llm_max_new_token': 4096,
+        'concurrent_num': 3,
+
+        'files': [],
+        'system_prompt': config.Global.llm_system,
+        'role_prompt': '',
+        'main_llm_url': config.Global.llm_url,
+        'input_translate': False,
+        'english_llm_url': config.Global.llm_url2,
+    }
+}
 def session_state_init():
     # 状态的初始化
+
+    # 注意
+    # 第一级变量，可以用st.session_state.some_para1
+    # 第二级变量，可以用st.session_state.some_para1['some_para2']
 
     if 'processing' not in st.session_state:
         # print('=================================状态初始化==================================')
         st.session_state['processing'] = False
         # print(f'st.session_state.processing = {st.session_state.processing}')
         
-    if 'messages' not in st.session_state:
-        st.session_state['messages'] = []
+    # if 'messages' not in st.session_state:
+    #     st.session_state['messages'] = []
         # print(f'st.session_state.messages = {st.session_state.messages}')
 
-    if 'paras' not in st.session_state:
-        st.session_state['paras'] = {
-            'url_prompt':'',
-            'multi_line_prompt':'',
-            'is_agent':False,
-            'connecting_internet':False,
-
-            'local_llm_temperature':0.7,
-            'local_llm_max_new_token':4096,
-            'concurrent_num':10,
-
-            'files':[],
-            'system_prompt':'',
-            'role_prompt':'',
-            'main_llm_url':'',
-            'input_translate':False,
-            'english_llm_url':'',
-        }
+    if 'session_data' not in st.session_state:
+        st.session_state['session_data'] = default_session_data
 
     if 'prompt' not in st.session_state:
         st.session_state['prompt'] = ''
@@ -186,7 +201,7 @@ def search_init(concurrent_num=3, in_stream_buf_callback=None):
     return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win, in_stream_buf_callback=in_stream_buf_callback, in_search_num=concurrent_num)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
 
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
-mem_llm = streamlit_init()
+mem_llm = llm_init()
 
 def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', in_concurrent_num=3):
     cols = in_st.columns([1]*in_concurrent_num)
@@ -204,7 +219,7 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
             in_role_prompt=in_role_prompt,
             in_extra_suffix=suffix,
             in_streamlit=True,
-            in_temperature= st.session_state.local_llm_temperature,
+            in_temperature= st.session_state.session_data['paras']['local_llm_temperature'],
         )
         async_llm.start()
     return async_llms
@@ -229,7 +244,13 @@ def agent_init():
     # agent.init()
 
 @timer
-def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt, files):
+def ask_llm(prompt, paras):
+    role_prompt = paras['role_prompt']
+    url_prompt = paras['url_prompt']
+    connecting_internet = paras['connecting_internet']
+    is_agent = paras['is_agent']
+    system_prompt = paras['system_prompt']
+    files = paras['files']
 # def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
     # =================================agent功能=================================
     if is_agent:
@@ -336,15 +357,13 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
         #
         #     return None, None, final_answer
 
-        searcher = search_init(concurrent_num=st.session_state.concurrent_num)
+        searcher = search_init(concurrent_num=st.session_state.session_data['paras']['concurrent_num'])
 
-        if not st.session_state.get('local_llm_concurrent_num'):
-            st.session_state.local_llm_concurrent_num = 2
         async_llms = async_llm_local_response_concurrently(
             in_st=assistant,
             in_prompt=prompt,
             in_role_prompt=role_prompt,
-            in_concurrent_num=st.session_state.local_llm_concurrent_num,
+            in_concurrent_num=st.session_state.session_data['paras']['concurrent_num'],
         )
         # 非联网llm调用，用于和联网llm解读结果对比
         #async_llm = Async_LLM()
@@ -442,10 +461,10 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
         full_res = ''
 
         # 如果需要将query翻译为英文，并调用擅长英语的模型
-        if st.session_state.input_translate:
+        if st.session_state.session_data['paras']['input_translate']:
             translate_llm = LLM_Client(
                 history=False,
-                url=st.session_state.main_llm_url,
+                url=st.session_state.session_data['paras']['main_llm_url'],
                 print_input=False,
             )
 
@@ -453,15 +472,15 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
             # translate_llm.set_role_prompt('不管输入是什么，你都不会对输入的内容进行解读，都直接将输入翻译为英文，且绝对不增加额外的引号')
             translated_input = translate_llm.ask_prepare(
                 in_question=f'将"{prompt}"翻译为英文，不要增加额外的引号',
-                in_temperature = st.session_state.local_llm_temperature,
-                in_max_new_tokens=st.session_state.local_llm_max_new_token,
+                in_temperature = st.session_state.session_data['paras']['local_llm_temperature'],
+                in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
                 in_system_prompt = '你擅长将中文翻译为英语'
             ).get_answer_and_sync_print()
             dblue(f'翻译后的输入: "{translated_input}"')
 
             prompt = translated_input
 
-            mem_llm.refresh_url(st.session_state.english_llm_url)
+            mem_llm.refresh_url(st.session_state.session_data['paras']['english_llm_url'])
 
 
         # llm输出、统计输出时间
@@ -469,8 +488,8 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
 
         gen = mem_llm.ask_prepare(
             in_question=prompt, 
-            in_temperature=st.session_state.local_llm_temperature,
-            in_max_new_tokens=st.session_state.local_llm_max_new_token,
+            in_temperature=st.session_state.session_data['paras']['local_llm_temperature'],
+            in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
             in_system_prompt=system_prompt,
         ).get_answer_generator()
 
@@ -505,8 +524,8 @@ def ask_llm(prompt, role_prompt, url_prompt, connecting_internet, is_agent, syst
         return None, None, full_res
 
 def on_clear_history():
-    st.session_state.messages = []
-    st.session_state.session_data['session_data'] = []
+    # st.session_state.messages = []
+    st.session_state.session_data['msgs'] = []
     save_pickle()
     mem_llm.clear_history()
 
@@ -534,34 +553,36 @@ def st_display_pdf(pdf_file):
     st.markdown(pdf_display, unsafe_allow_html=True)
     
 def streamlit_refresh_loop():
-    dred('----------------111---------------')
-    load_pickle_on_startup()
+    # dred('----------------111---------------')
     session_state_init()
+    load_pickle_on_startup()
     on_refresh()
+
+    s_paras = st.session_state.session_data['paras']
     # =============================侧栏==============================
     sidebar = st.sidebar
     # =============================expander：对话参数==============================
     exp1 =  sidebar.expander("对话参数", expanded=True)
-    url_prompt = exp1.text_input(label="URL:", label_visibility='collapsed', placeholder="请在这里输入您需要LLM解读的URL", value="")
-    multi_line_prompt = exp1.text_area(label="多行指令:", label_visibility='collapsed', placeholder="请在这里输入您的多行指令", value="", disabled=st.session_state.processing)
+    s_paras['url_prompt'] = exp1.text_input(label="URL:", label_visibility='collapsed', placeholder="请在这里输入您需要LLM解读的URL", value=s_paras['url_prompt'])
+    s_paras['multi_line_prompt'] = exp1.text_area(label="多行指令:", label_visibility='collapsed', placeholder="请在这里输入您的多行指令", value=s_paras['multi_line_prompt'], disabled=st.session_state.processing)
 
     col0, col1, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1])
-    is_agent = col0.checkbox('Agent', value=False, disabled=st.session_state.processing)
-    connecting_internet = col1.checkbox('联网', value=False, disabled=st.session_state.processing)
+    s_paras['is_agent'] = col0.checkbox('Agent', value=s_paras['is_agent'], disabled=st.session_state.processing)
+    s_paras['connecting_internet'] = col1.checkbox('联网', value=s_paras['connecting_internet'], disabled=st.session_state.processing)
     # connecting_internet_detail = col2.checkbox('明细', value=False, disabled=st.session_state.processing)
     col3.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
     col4.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
-    col5.button("发送", on_click=on_chat_input_submit, args=(multi_line_prompt,), disabled=st.session_state.processing, key='confirm_button')
-    st.session_state.local_llm_temperature = exp1.slider('temperature:', 0.0, 1.0, 0.7, step=0.1, format='%.1f', disabled=st.session_state.processing)
-    st.session_state.local_llm_max_new_token = exp1.slider('max_new_tokens:', 256, 2048, 512, step=256, disabled=st.session_state.processing)
-    st.session_state.concurrent_num = exp1.slider('联网并发数量:', 2, 10, 3, disabled=st.session_state.processing)
+    col5.button("发送", on_click=on_chat_input_submit, args=(s_paras['multi_line_prompt'],), disabled=st.session_state.processing, key='confirm_button')
+    s_paras['local_llm_temperature'] = exp1.slider('temperature:', 0.0, 1.0, s_paras['local_llm_temperature'], step=0.1, format='%.1f', disabled=st.session_state.processing)
+    s_paras['local_llm_max_new_token'] = exp1.slider('max_new_tokens:', 256, 2048, s_paras['local_llm_max_new_token'], step=256, disabled=st.session_state.processing)
+    s_paras['concurrent_num'] = exp1.slider('联网并发数量:', 2, 10, s_paras['concurrent_num'], disabled=st.session_state.processing)
 
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)
     # st_display_pdf("/home/tutu/3.pdf")
-    files = exp2.file_uploader("选择待上传的PDF文件", accept_multiple_files=True, type=['pdf', 'md', 'txt'])
-    if files is not None:
-        for f in files:
+    s_paras['files'] = exp2.file_uploader("选择待上传的PDF文件", accept_multiple_files=True, type=['pdf', 'md', 'txt'])
+    if s_paras['files'] is not None:
+        for f in s_paras['files']:
             dblue(f.name)
             # content = StringIO(f.getvalue().decode("utf-8")).read()
 
@@ -576,21 +597,21 @@ def streamlit_refresh_loop():
 
     # =============================expander：角色参数==============================
     exp3 =  sidebar.expander("Prompt 参数", expanded=True)
-    system_prompt = exp3.text_input(label="设置系统提示:", label_visibility='collapsed', placeholder="请在这里输入您的系统提示", value=config.Global.llm_system)
-    role_prompt = exp3.text_area(label="设置角色提示:", label_visibility='collapsed', placeholder="请在这里输入您的角色提示", value="", disabled=st.session_state.processing)
+    s_paras['system_prompt'] = exp3.text_input(label="设置系统提示:", label_visibility='collapsed', placeholder="请在这里输入您的系统提示", value=s_paras['system_prompt'])
+    s_paras['role_prompt'] = exp3.text_area(label="设置角色提示:", label_visibility='collapsed', placeholder="请在这里输入您的角色提示", value=s_paras['role_prompt'], disabled=st.session_state.processing)
 
     # =============================主模型、辅模型(用于翻译input)==============================
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
-    st.session_state.main_llm_url = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=config.Global.llm_url)
-    if not 'input_translate' in st.session_state or not st.session_state.input_translate:
+    s_paras['main_llm_url'] = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=s_paras['main_llm_url'])
+    if not 'input_translate' in s_paras or not s_paras['input_translate']:
         # 当调用英语模型时，由于mem_llm的url经过refresh变成了英语模型，因此这里如果refresh为主模型会发现不一致从而清除历史
-        refreshed = mem_llm.refresh_url(st.session_state.main_llm_url)
+        refreshed = mem_llm.refresh_url(s_paras['main_llm_url'])
         if refreshed:
             # 更换llm成功时，清空屏幕内容和llm记忆
             on_clear_history()
 
-    st.session_state.input_translate = exp4.checkbox('调用擅长英语的模型', value=False)
-    st.session_state.english_llm_url = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=config.Global.llm_url2, disabled=not st.session_state.input_translate)
+    s_paras['input_translate'] = exp4.checkbox('调用擅长英语的模型', value=s_paras['input_translate'])
+    s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'])
 
     # =======================所有chat历史的显示========================
     # 这一行必须要运行，不能加前置判断，否则chat_input没有显示
@@ -602,7 +623,7 @@ def streamlit_refresh_loop():
         # 侧栏没有输入时，以chat_input prompt为准
         st.session_state.prompt = chat_input_prompt
 
-    for message in st.session_state.messages:
+    for message in st.session_state.session_data['msgs']:
         if type(message)==dict:
             # print(f'dict message: {message}')
             if message.get('type') and message['type']=='status':
@@ -631,34 +652,43 @@ def streamlit_refresh_loop():
         with st.chat_message('user'):
             st.markdown(st.session_state.prompt)
         # =====================user输入的状态存储======================
-        st.session_state.messages.append({
+        st.session_state.session_data['msgs'].append({
             'role': 'user',
             'content': st.session_state.prompt
         })
 
         # with st.chat_message('assistant'):
-        status_data, async_llms, completed_answer = ask_llm(st.session_state.prompt, role_prompt, url_prompt, connecting_internet, is_agent, system_prompt, files)
+        # status_data, async_llms, completed_answer = ask_llm(
+        #     st.session_state.prompt,
+        #     role_prompt,
+        #     st.session_state.url_prompt,
+        #     connecting_internet,
+        #     is_agent,
+        #     system_prompt,
+        #     files
+        # )
+        status_data, async_llms, completed_answer = ask_llm(st.session_state.prompt, st.session_state.session_data['paras'])
         # status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
 
         # ==================assistant输出的状态存储====================
         if status_data:
-            st.session_state.messages.append(status_data)
+            st.session_state.session_data['msgs'].append(status_data)
         if async_llms:
             num = len(async_llms)
-            st.session_state.messages.append([async_llms[i].get_final_response() for i in range(num)])
+            st.session_state.session_data['msgs'].append([async_llms[i].get_final_response() for i in range(num)])
         if completed_answer:
-            st.session_state.messages.append({
+            st.session_state.session_data['msgs'].append({
                 'role': 'assistant',
-            'content': completed_answer
+                'content': completed_answer
             })
 
         # 存储会话文件
-        get_session_id()
-        st.session_state.session_data = {
-            'session_id': st.session_state.sid,
-            'session_data': st.session_state.messages,
-            # 'url_prompt':
-        }
+        # get_session_id()
+        # st.session_state.session_data = {
+        #     'session_id': st.session_state.sid,
+        #     'msgs': st.session_state.session_data['msgs'],
+        #     'paras': st.session_state.paras,
+        # }
         save_pickle()
 
         # ===================完成输出任务后，通过rerun来刷新一些按钮的状态========================
