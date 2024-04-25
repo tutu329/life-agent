@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_file_browser import st_file_browser
 
 import config
 from config import dred, dgreen, dblue, dcyan
@@ -550,12 +551,25 @@ def st_display_pdf(pdf_file):
         base64_pdf = base64.b64encode(f.read()).decode('utf-8')
     pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="800" height="1000" type="application/pdf">'
     st.markdown(pdf_display, unsafe_allow_html=True)
-    
+
 def streamlit_refresh_loop():
     # dred('----------------111---------------')
     session_state_init()
     load_pickle_on_startup()
     on_refresh()
+
+    # st.header('Default Options')
+    # event = st_file_browser(
+    #     path='/home/tutu/file_server',
+    #     key='A',
+    #     # show_preview_top=True,
+    #     # show_choose_file=True,
+    #     # show_download_file=True,
+    #     # show_new_folder=True,
+    #     show_upload_file=True,
+    #     use_static_file_server=True,
+    # )
+    # st.write(event)
 
     s_paras = st.session_state.session_data['paras']
     # =============================侧栏==============================
@@ -647,6 +661,7 @@ def streamlit_refresh_loop():
         # st.status('测试下status')
 
     if st.session_state.prompt and st.session_state.processing:
+
         # =======================user输入的显示=======================
         with st.chat_message('user'):
             st.markdown(st.session_state.prompt)
