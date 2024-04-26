@@ -104,11 +104,13 @@ def get_session_id():
         dred(f'get anonymous_id failed: "{e}"')
         st.session_state.session_data['sid'] = ''
 
-def load_pickle_on_startup():
+def load_pickle_on_refresh():
     get_session_id()
     sid = st.session_state.session_data['sid']
     # dgreen('开始加载会话信息...')
-    # dred(f'sid: "{sid}"')
+    dred(f'=============load_pickle_on_startup=========')
+    dred(f'sid: "{sid}"')
+    dred(f'============================================')
 
     session_data = None
 
@@ -132,7 +134,7 @@ def load_pickle_on_startup():
 
 def save_pickle():
     # get_session_id()
-    dgreen(f'sd: \n{st.session_state}')
+    # dgreen(f'sd: \n{st.session_state}')
     sid = st.session_state.session_data['sid']
 
     work_dir = config.Global.get_work_dir() # "/home/tutu/server/life-agent"
@@ -141,8 +143,8 @@ def save_pickle():
     try:
         with open(session_pkl_file, "wb") as f:
             pickle.dump(st.session_state.session_data, f)
-        dred(f'存储了session_data数据: \n"{st.session_state.session_data}"')
-        dred(f'存储sid: "{sid}"')
+        # dred(f'存储了session_data数据: \n"{st.session_state.session_data}"')
+        # dred(f'存储sid: "{sid}"')
 
     except Exception as e:
         dred(f'存储会话文件出错: "{e}"')
@@ -162,8 +164,9 @@ default_session_data = {
         'local_llm_max_new_token': 4096,
         'concurrent_num': 3,
 
-        'files': [],            # file_uploader返回的UploadedFile列表
-        'file_column': [],      # 用于管理和显示会话内UploadedFile数据
+        'files': [],                            # file_uploader返回的UploadedFile列表
+        'last_files_num_of_file_uploader':0,    # 用于判断是否是file_uploader将files删光，用于和files没有而会话历史有文件数据的情况
+        'file_column_raw_data': {},             # 用于管理和显示会话内UploadedFile数据
         'system_prompt': config.Global.llm_system,
         'role_prompt': '',
         'main_llm_url': config.Global.llm_url,
@@ -177,6 +180,9 @@ def session_state_init():
     # 注意
     # 第一级变量，可以用st.session_state.some_para1
     # 第二级变量，可以用st.session_state.some_para1['some_para2']
+
+    if 'first_page_on_load' not in st.session_state:
+        st.session_state['first_page_on_load'] = True
 
     if 'processing' not in st.session_state:
         # print('=================================状态初始化==================================')
@@ -441,14 +447,13 @@ def ask_llm(prompt, paras):
             all_prompt = f'请严格根据URL(网页链接)返回的内容回答问题, URL(网页链接)返回的具体内容为: "{result}"'
             mem_llm.set_role_prompt(all_prompt)
 
-        if files:
-            # 如果有文件上传
-            f = files[0]
-
-            # files_qa(files=files)
-
-            result = StringIO(f.getvalue().decode("utf-8")).read()
-            all_prompt = f'请严格根据文件({f.name})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
+        files_info_dict = st.session_state.session_data['paras']['file_column_raw_data']
+        if 'file_content' in files_info_dict:
+            # result = StringIO(f.getvalue().decode("utf-8")).read()
+            result = files_info_dict['file_content'][0]
+            dred(f'===========file_content===========\n"{result}"')
+            fname = files_info_dict['file_name'][0]
+            all_prompt = f'请严格根据文件({fname})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
             mem_llm.set_role_prompt(all_prompt)
 
             # ans = mem_llm.ask_prepare(
@@ -554,48 +559,100 @@ def st_display_pdf(pdf_file):
     pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="800" height="1000" type="application/pdf">'
     st.markdown(pdf_display, unsafe_allow_html=True)
 
-# 将file_uploader返回的files转为data_editor并和pickle文件同步
-def set_file_column(in_widget, in_files):
-    if in_files is not None:
-        if len(in_files) > 0:
-            # 处理data_editor
-            file_column_raw_data = {
-                "file_name": [f.name for f in in_files],    # string
-                "file_selected": [True for f in in_files],  # bool
-            }
-            df_file_list = pd.DataFrame(file_column_raw_data)
+# 将file_uploader或pickle文件的files转为data_editor显示
+def refresh_file_column(in_widget, in_files, file_uploader_changed=False):
+    df_files_info = None
+    dblue(f'----------------------in_files----------------------------\n')
+    dblue(in_files)
+    dblue(f'---------------file_uploader_changed----------------------\n')
+    dblue(file_uploader_changed)
+    dblue(f'----------------------------------------------------------\n')
 
-            dred(df_file_list)
-            in_widget.data_editor(
-                df_file_list,
-                column_config={
-                    "file_name": st.column_config.TextColumn(
-                        "文件",
-                        help="已上传的文件名称",
-                    ),
-                    "file_selected": st.column_config.CheckboxColumn(
-                        "选择",
-                        help="选择需要解读的文件",
-                        default=False,
-                    )
-                },
-                disabled=["file_name"],
-                hide_index=True,
-            )
+    if in_files is not None:
+        # file_uploaders有输入时
+        if len(in_files) > 0:
+            # dred('============== >0 ====================')
+            # 由于file_uploader操作造成的更新
+            file_column_raw_data = {
+                "file_name": [f.name for f in in_files],                                            # string
+                "file_selected": [True for f in in_files],                                          # bool
+                "file_content":[StringIO(f.getvalue().decode("utf-8")).read() for f in in_files],   # string of file content
+            }
+            df_files_info = pd.DataFrame(file_column_raw_data)
 
             for f in in_files:
                 dgreen(f'读取"{f.name}"成功.')
                 print(f)
 
-            # 处理session数据
-            st.session_state.session_data['paras']['file_column'] = file_column_raw_data
+            # 存储session数据
+            st.session_state.session_data['paras']['file_column_raw_data'] = file_column_raw_data
+            st.session_state.session_data['paras']['last_files_num_of_file_uploader'] = len(in_files)
+            save_pickle()
+        elif len(in_files) == 0:
+            if st.session_state['first_page_on_load'] == True:
+                # 页面加载
+                df_files_info = pd.DataFrame(st.session_state.session_data['paras']['file_column_raw_data'])
+                st.session_state.session_data['paras']['last_files_num_of_file_uploader'] = 0   # 这里必须设置为0，因为file_uploader在页面刷新时肯定没有files
+                save_pickle()
+            else:
+                if st.session_state.session_data['paras']['last_files_num_of_file_uploader'] > 0:
+                    # 是因为file_uploader的操作，将files都删除了
+                    df_files_info = None
+                    on_clear_files()
+                    st.session_state.session_data['paras']['last_files_num_of_file_uploader'] = 0
+                    save_pickle()
+                else:
+                    # 其他控件的任何操作
+                    pass
 
+        return df_files_info
+
+    # files信息：显示file_name和file_selected，不显示file_content
+    # file_column_return_data = in_widget.data_editor(
+    #     df_files_info,
+    #     column_config={
+    #         "file_name": st.column_config.TextColumn(
+    #             "文件",
+    #             help="已上传的文件名称",
+    #         ),
+    #         "file_selected": st.column_config.CheckboxColumn(
+    #             "选择",
+    #             help="选择需要解读的文件",
+    #             default=False,
+    #         )
+    #     },
+    #     disabled=["file_name"],
+    #     hide_index=True,
+    # )
+
+    # dred(f'file_column_return_data: \n')
+    # file_column_dict = file_column_return_data.to_dict()
+    # file_column_return_data转换为dict后的格式
+    # {
+    #   'file_name': {
+    #       0: '导游-欧洲行注意事项.txt',
+    #       1: '4.29 荷法瑞意+新天鹅堡+花季赏花9晚11日（法签）(1).md'
+    #   },
+    #   'file_selected': {
+    #       0: True,
+    #       1: True
+    #   }
+    # }
+    # dred(file_column_dict)
+
+def on_clear_files():
+    dred('files cleared.')
+    st.session_state.session_data['paras']['files'] = []
+    st.session_state.session_data['paras']['file_column_raw_data'] = {}
 
 def streamlit_refresh_loop():
     # dred('----------------111---------------')
     session_state_init()
-    load_pickle_on_startup()
-    on_refresh()
+
+    first_page_on_load = st.session_state['first_page_on_load']
+    if first_page_on_load == True :
+        dgreen(f'first_page_on_load = {first_page_on_load}')
+        load_pickle_on_refresh()
 
     # st.header('Default Options')
     # event = st_file_browser(
@@ -632,8 +689,37 @@ def streamlit_refresh_loop():
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)
     # st_display_pdf("/home/tutu/3.pdf")
-    s_paras['files'] = exp2.file_uploader("选择待上传的文件", accept_multiple_files=True, type=['md', 'txt'])
-    set_file_column(in_widget=exp2, in_files=s_paras['files'])
+    s_paras['files'] = exp2.file_uploader(
+        "选择待上传的文件",
+        accept_multiple_files=True,
+        type=['sh', 'md', 'txt'],
+        # on_change=refresh_file_column,
+        # kwargs={
+        #     'in_widget':exp2,
+        #     'in_files':s_paras['files'],
+        #     'file_uploader_changed':True,
+        # },
+    )
+    refresh_file_column(in_widget=exp2, in_files=s_paras['files'])
+    if st.session_state.session_data['paras']['file_column_raw_data']:
+        exp2.data_editor(
+            pd.DataFrame(st.session_state.session_data['paras']['file_column_raw_data']),
+            column_config={
+                "file_name": st.column_config.TextColumn(
+                    "文件",
+                    help="已上传的文件名称",
+                ),
+                "file_selected": st.column_config.CheckboxColumn(
+                    "选择",
+                    help="选择需要解读的文件",
+                    default=False,
+                )
+            },
+            disabled=["file_name"],
+            hide_index=True,
+        )
+    exp2.button("清空文件", on_click=on_clear_files, disabled=st.session_state.processing, key='clear_files_button')
+
     # if s_paras['files'] is not None:
 
         # =======由于file_uploader无法在页面启动时设置默认文件列表，因此这里添加额外的文件列表显示=======
@@ -782,6 +868,8 @@ def streamlit_refresh_loop():
         st.session_state.processing = False
         st.session_state.prompt = ''
         st.rerun()
+
+    st.session_state['first_page_on_load'] = False
 
 if __name__ == "__main__" :
     streamlit_refresh_loop()
