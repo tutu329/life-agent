@@ -645,6 +645,23 @@ def on_clear_files():
     st.session_state.session_data['paras']['files'] = []
     st.session_state.session_data['paras']['file_column_raw_data'] = {}
 
+def on_connecting_internet_change():
+    s_paras = st.session_state.session_data['paras']
+    s_paras['connecting_internet'] = not s_paras['connecting_internet']
+
+def on_is_agent_change():
+    s_paras = st.session_state.session_data['paras']
+    s_paras['is_agent'] = not s_paras['is_agent']
+
+def on_input_translate_change():
+    s_paras = st.session_state.session_data['paras']
+    s_paras['input_translate'] = not s_paras['input_translate']
+
+
+def on_temperature_change(new_value):
+    s_paras = st.session_state.session_data['paras']
+    s_paras['local_llm_temperature'] = new_value
+
 def streamlit_refresh_loop():
     # dred('----------------111---------------')
     session_state_init()
@@ -676,13 +693,13 @@ def streamlit_refresh_loop():
     s_paras['multi_line_prompt'] = exp1.text_area(label="多行指令:", label_visibility='collapsed', placeholder="请在这里输入您的多行指令", value=s_paras['multi_line_prompt'], disabled=st.session_state.processing)
 
     col0, col1, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1])
-    s_paras['is_agent'] = col0.checkbox('Agent', value=s_paras['is_agent'], disabled=st.session_state.processing)
-    s_paras['connecting_internet'] = col1.checkbox('联网', value=s_paras['connecting_internet'], disabled=st.session_state.processing)
+    col0.checkbox('Agent', value=s_paras['is_agent'], disabled=st.session_state.processing, on_change=on_is_agent_change)
+    col1.checkbox('联网', value=s_paras['connecting_internet'], disabled=st.session_state.processing, on_change=on_connecting_internet_change)
     # connecting_internet_detail = col2.checkbox('明细', value=False, disabled=st.session_state.processing)
     col3.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
     col4.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
     col5.button("发送", on_click=on_chat_input_submit, args=(s_paras['multi_line_prompt'],), disabled=st.session_state.processing, key='confirm_button')
-    s_paras['local_llm_temperature'] = exp1.slider('temperature:', 0.0, 1.0, s_paras['local_llm_temperature'], step=0.1, format='%.1f', disabled=st.session_state.processing)
+    s_paras['local_llm_temperature']=exp1.slider('temperature:', 0.0, 1.0, s_paras['local_llm_temperature'], step=0.1, format='%.1f', disabled=st.session_state.processing)
     s_paras['local_llm_max_new_token'] = exp1.slider('max_new_tokens:', 256, 4096, s_paras['local_llm_max_new_token'], step=256, disabled=st.session_state.processing)
     s_paras['concurrent_num'] = exp1.slider('联网并发数量:', 2, 10, s_paras['concurrent_num'], disabled=st.session_state.processing)
 
@@ -781,7 +798,7 @@ def streamlit_refresh_loop():
             # 更换llm成功时，清空屏幕内容和llm记忆
             on_clear_history()
 
-    s_paras['input_translate'] = exp4.checkbox('调用擅长英语的模型', value=s_paras['input_translate'])
+    exp4.checkbox('调用擅长英语的模型', value=s_paras['input_translate'], on_change=on_input_translate_change)
     s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'])
 
     # =======================所有chat历史的显示========================
