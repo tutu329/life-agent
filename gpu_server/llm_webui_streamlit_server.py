@@ -699,6 +699,7 @@ def streamlit_refresh_loop():
     col3.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
     col4.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
     col5.button("发送", on_click=on_chat_input_submit, args=(s_paras['multi_line_prompt'],), disabled=st.session_state.processing, key='confirm_button')
+    # exp1.slider('temperature:', 0.0, 1.0, s_paras['local_llm_temperature'], step=0.1, format='%.1f', disabled=st.session_state.processing, on_change=on_temperature_change)
     s_paras['local_llm_temperature']=exp1.slider('temperature:', 0.0, 1.0, s_paras['local_llm_temperature'], step=0.1, format='%.1f', disabled=st.session_state.processing)
     s_paras['local_llm_max_new_token'] = exp1.slider('max_new_tokens:', 256, 4096, s_paras['local_llm_max_new_token'], step=256, disabled=st.session_state.processing)
     s_paras['concurrent_num'] = exp1.slider('联网并发数量:', 2, 10, s_paras['concurrent_num'], disabled=st.session_state.processing)
