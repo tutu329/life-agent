@@ -162,7 +162,8 @@ default_session_data = {
         'local_llm_max_new_token': 4096,
         'concurrent_num': 3,
 
-        'files': [],
+        'files': [],            # file_uploader返回的UploadedFile列表
+        'file_column': [],      # 用于管理和显示会话内UploadedFile数据
         'system_prompt': config.Global.llm_system,
         'role_prompt': '',
         'main_llm_url': config.Global.llm_url,
@@ -553,6 +554,43 @@ def st_display_pdf(pdf_file):
     pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="800" height="1000" type="application/pdf">'
     st.markdown(pdf_display, unsafe_allow_html=True)
 
+# 将file_uploader返回的files转为data_editor并和pickle文件同步
+def set_file_column(in_widget, in_files):
+    if in_files is not None:
+        if len(in_files) > 0:
+            # 处理data_editor
+            file_column_raw_data = {
+                "file_name": [f.name for f in in_files],    # string
+                "file_selected": [True for f in in_files],  # bool
+            }
+            df_file_list = pd.DataFrame(file_column_raw_data)
+
+            dred(df_file_list)
+            in_widget.data_editor(
+                df_file_list,
+                column_config={
+                    "file_name": st.column_config.TextColumn(
+                        "文件",
+                        help="已上传的文件名称",
+                    ),
+                    "file_selected": st.column_config.CheckboxColumn(
+                        "选择",
+                        help="选择需要解读的文件",
+                        default=False,
+                    )
+                },
+                disabled=["file_name"],
+                hide_index=True,
+            )
+
+            for f in in_files:
+                dgreen(f'读取"{f.name}"成功.')
+                print(f)
+
+            # 处理session数据
+            st.session_state.session_data['paras']['file_column'] = file_column_raw_data
+
+
 def streamlit_refresh_loop():
     # dred('----------------111---------------')
     session_state_init()
@@ -588,46 +626,47 @@ def streamlit_refresh_loop():
     col4.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
     col5.button("发送", on_click=on_chat_input_submit, args=(s_paras['multi_line_prompt'],), disabled=st.session_state.processing, key='confirm_button')
     s_paras['local_llm_temperature'] = exp1.slider('temperature:', 0.0, 1.0, s_paras['local_llm_temperature'], step=0.1, format='%.1f', disabled=st.session_state.processing)
-    s_paras['local_llm_max_new_token'] = exp1.slider('max_new_tokens:', 256, 2048, s_paras['local_llm_max_new_token'], step=256, disabled=st.session_state.processing)
+    s_paras['local_llm_max_new_token'] = exp1.slider('max_new_tokens:', 256, 4096, s_paras['local_llm_max_new_token'], step=256, disabled=st.session_state.processing)
     s_paras['concurrent_num'] = exp1.slider('联网并发数量:', 2, 10, s_paras['concurrent_num'], disabled=st.session_state.processing)
 
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)
     # st_display_pdf("/home/tutu/3.pdf")
     s_paras['files'] = exp2.file_uploader("选择待上传的文件", accept_multiple_files=True, type=['md', 'txt'])
-    if s_paras['files'] is not None:
+    set_file_column(in_widget=exp2, in_files=s_paras['files'])
+    # if s_paras['files'] is not None:
 
         # =======由于file_uploader无法在页面启动时设置默认文件列表，因此这里添加额外的文件列表显示=======
-        if len(s_paras['files']) > 0:
-            df_file_list = pd.DataFrame(
-                {
-                    # "file_name": ['1','2','3'],   # string
-                    # "file_selected": [True,True,True],   # bool
-                    "file_name": [f.name for f in s_paras['files']],   # string
-                    "file_selected": [True for f in s_paras['files']],   # bool
-                }
-            )
-            dred(df_file_list)
-            exp2.data_editor(
-                df_file_list,
-                column_config={
-                    "file_name": st.column_config.TextColumn(
-                        "文件",
-                        help="已上传的文件名称",
-                    ),
-                    "file_selected": st.column_config.CheckboxColumn(
-                        "选择",
-                        help="选择需要解读的文件",
-                        default=False,
-                    )
-                },
-                disabled=["file_name"],
-                hide_index=True,
-            )
+        # if len(s_paras['files']) > 0:
+        #     df_file_list = pd.DataFrame(
+        #         {
+        #             # "file_name": ['1','2','3'],   # string
+        #             # "file_selected": [True,True,True],   # bool
+        #             "file_name": [f.name for f in s_paras['files']],   # string
+        #             "file_selected": [True for f in s_paras['files']],   # bool
+        #         }
+        #     )
+        #     dred(df_file_list)
+        #     exp2.data_editor(
+        #         df_file_list,
+        #         column_config={
+        #             "file_name": st.column_config.TextColumn(
+        #                 "文件",
+        #                 help="已上传的文件名称",
+        #             ),
+        #             "file_selected": st.column_config.CheckboxColumn(
+        #                 "选择",
+        #                 help="选择需要解读的文件",
+        #                 default=False,
+        #             )
+        #         },
+        #         disabled=["file_name"],
+        #         hide_index=True,
+        #     )
 
-        for f in s_paras['files']:
-            dgreen(f'读取"{f.name}"成功.')
-            print(f)
+        # for f in s_paras['files']:
+        #     dgreen(f'读取"{f.name}"成功.')
+        #     print(f)
             # content = StringIO(f.getvalue().decode("utf-8")).read()
 
             # 显示文件内容
