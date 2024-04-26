@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from streamlit_file_browser import st_file_browser
 
 import config
@@ -96,7 +97,7 @@ def get_session_id():
         cookie_str = _get_websocket_headers()['Cookie']
         ajs_anonymous_id = get_ajs_anonymous_id_from_cookie(cookie_str)
         # dred(f'ajs_anonymous_id: "{ajs_anonymous_id}"')
-        dred(f'st.session_state: \n{st.session_state}')
+
         st.session_state.session_data['sid'] = ajs_anonymous_id
         # st.session_state.sid = ajs_anonymous_id
     except Exception as e:
@@ -106,26 +107,26 @@ def get_session_id():
 def load_pickle_on_startup():
     get_session_id()
     sid = st.session_state.session_data['sid']
-    dgreen('开始加载会话信息...')
-    dred(f'sid: "{sid}"')
+    # dgreen('开始加载会话信息...')
+    # dred(f'sid: "{sid}"')
 
     session_data = None
 
     work_dir = config.Global.get_work_dir() # "/home/tutu/server/life-agent"
-    dred(f'work dir: "{work_dir}"')
+    # dred(f'work dir: "{work_dir}"')
     session_pkl_file = work_dir + f'/streamlit_session_{sid}.pkl'
 
     try:
         with open(session_pkl_file, "rb") as f:
             session_data = pickle.load(f)
         st.session_state.session_data = session_data
-        dred(f'读取了session_data数据: \n"{session_data}"')
+        # dred(f'读取了session_data数据: \n"{session_data}"')
 
         # 装载chat历史
         # st.session_state.messages = st.session_state.session_data['msgs']
 
     except Exception as e:
-        dred(f'读取会话文件出错: "{e}"')
+        # dred(f'文件读取会话文件出错: "{e}"')
         st.session_state.session_data = default_session_data
         st.session_state.session_data['sid'] = sid
 
@@ -593,10 +594,40 @@ def streamlit_refresh_loop():
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)
     # st_display_pdf("/home/tutu/3.pdf")
-    s_paras['files'] = exp2.file_uploader("选择待上传的文件", accept_multiple_files=True, type=['pdf', 'md', 'txt'])
+    s_paras['files'] = exp2.file_uploader("选择待上传的文件", accept_multiple_files=True, type=['md', 'txt'])
     if s_paras['files'] is not None:
+
+        # =======由于file_uploader无法在页面启动时设置默认文件列表，因此这里添加额外的文件列表显示=======
+        if len(s_paras['files']) > 0:
+            df_file_list = pd.DataFrame(
+                {
+                    # "file_name": ['1','2','3'],   # string
+                    # "file_selected": [True,True,True],   # bool
+                    "file_name": [f.name for f in s_paras['files']],   # string
+                    "file_selected": [True for f in s_paras['files']],   # bool
+                }
+            )
+            dred(df_file_list)
+            exp2.data_editor(
+                df_file_list,
+                column_config={
+                    "file_name": st.column_config.TextColumn(
+                        "文件",
+                        help="已上传的文件名称",
+                    ),
+                    "file_selected": st.column_config.CheckboxColumn(
+                        "选择",
+                        help="选择需要解读的文件",
+                        default=False,
+                    )
+                },
+                disabled=["file_name"],
+                hide_index=True,
+            )
+
         for f in s_paras['files']:
-            dblue(f.name)
+            dgreen(f'读取"{f.name}"成功.')
+            print(f)
             # content = StringIO(f.getvalue().decode("utf-8")).read()
 
             # 显示文件内容
@@ -606,6 +637,8 @@ def streamlit_refresh_loop():
             # with f.NamedTemporaryFile(delete=False) as tmp_file:
             #     dgreen(tmp_file.name)
             # st_display_pdf(f)
+
+        # ==============================================================================
 
 
     # =============================expander：角色参数==============================
