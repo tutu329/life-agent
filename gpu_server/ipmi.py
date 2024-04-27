@@ -80,6 +80,7 @@ def get_temp_and_fan_info():
     temp_info_dict = {}
 
     report = _get_ipmitool_sensor_report()
+
     temp_info_dict['CPU1 Temp'] = _get_temp_from_report(report, 'CPU1 Temp')
     temp_info_dict['CPU2 Temp'] = _get_temp_from_report(report, 'CPU2 Temp')
     temp_info_dict['Inlet Temp'] = _get_temp_from_report(report, 'Inlet Temp')
