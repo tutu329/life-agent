@@ -300,6 +300,28 @@ def get_server_info():
         if 'Board Mfg Date' in info:
             st.session_state.board_mfg_date = value
 
+# 风扇转速等级
+class FAN_LEVEL():
+    FAN_LEVEL_COOL = '0x04'
+    FAN_LEVEL_HOT1 = '0x08'
+    FAN_LEVEL_HOT2 = '0x16'
+    FAN_LEVEL_HOT3 = '0x20'
+    FAN_LEVEL_CRIT = '0x28'
+
+# 设置CPU风扇
+def _set_cpu_fans(fan_level):
+    command = f'sudo ipmitool raw 0x30 0x70 0x66 0x01 0x00 {fan_level}'
+    output = subprocess.run(command, shell=True, check=True, capture_output=True)
+    lines = output.stdout.decode().split('\n')
+    return lines
+
+# 设置Drive风扇
+def _set_drive_fans(fan_level):
+    command = f'sudo ipmitool raw 0x30 0x70 0x66 0x01 0x01 {fan_level}'
+    output = subprocess.run(command, shell=True, check=True, capture_output=True)
+    lines = output.stdout.decode().split('\n')
+    return lines
+
 def streamlit_refresh_loop():
     get_server_info()
 
