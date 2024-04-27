@@ -145,12 +145,17 @@ def _get_temp_from_report(report, temp_name):
             return temp
     return f'{temp_name} not found'
 
+def _get_ipmi_server_info():
+    command = 'sudo ipmitool fru'
+    # full_command = 'echo {} | {}'.format(password, command)
+    output = subprocess.run(command, shell=True, check=True, capture_output=True)
+    lines = output.stdout.decode().split('\n')
+    return lines
+
 def _get_ipmitool_sensor_report():
     command = 'sudo ipmitool sensor'
-    full_command = 'echo {} | {}'.format(password, command)
-    output = subprocess.run(full_command, shell=True, check=True, capture_output=True)
-    # output = subprocess.check_output(['sudo', '-S', 'ipmitool', 'sensor'], stdin=subprocess.PIPE)
-    # output = subprocess.check_output(['sudo', 'ipmitool', 'sensor'])
+    # full_command = 'echo {} | {}'.format(password, command)
+    output = subprocess.run(command, shell=True, check=True, capture_output=True)
     lines = output.stdout.decode().split('\n')
     return lines
 
@@ -160,7 +165,7 @@ def get_gpu_info_list(report, str1_to_find='MiB', str2_to_find='%'):
     st.session_state.gpu_names = []
     for i in range(st.session_state.gpu_num):
         st.session_state.gpu_names.append(torch.cuda.get_device_name(i))
-        print(f'----------{torch.cuda.get_device_name(i)}')
+        # print(f'----------{torch.cuda.get_device_name(i)}')
     st.gpu_string = st.session_state.gpu_names[0]+f' ({st.session_state.gpu_num})' if st.session_state.gpu_num>0 else 'GPU'
 
     gpu_info_list = []
@@ -270,13 +275,41 @@ def get_status():
         print(f'[GPU{i}] Fan:{gpu["Fan"]} Temp:{gpu["Temp"]} Pwr_Usage:{gpu["Pwr:Usage"]} Pwr_Cap:{gpu["Pwr:Cap"]} Mem-Used:{gpu["Mem-Used"]} Mem-Total:{gpu["Mem-Total"]} GPU-Util:{gpu["GPU-Util"]}')
     print()
 
+def get_server_info():
+    server_info = _get_ipmi_server_info()
+    print('server info:')
+    for info in server_info:
+        print(f'{info}')
+        value = info.split(':')
+        if len(value)>=2:
+            value.pop(0)
+            value = ':'.join(value)
+        else:
+            value = ''
+
+        if 'Board Serial' in info:
+            st.session_state.board_serial = value
+        if 'Board Product' in info:
+            st.session_state.board_product = value
+        if 'Product Part Number' in info:
+            st.session_state.product_part_number = value
+        if 'Product Serial' in info:
+            st.session_state.product_serial = value
+        if 'Board Mfg' in info:
+            st.session_state.board_mfg = value
+        if 'Board Mfg Date' in info:
+            st.session_state.board_mfg_date = value
+
 def streamlit_refresh_loop():
-    st.title("System Info")
-    state = st.session_state
+    get_server_info()
+
+    server_title = f'{st.session_state.board_mfg} {st.session_state.product_part_number} (Board Product:{st.session_state.board_product}, Board Serial:{st.session_state.board_serial}, {st.session_state.board_mfg_date})'
+    st.text(server_title)
 
     get_status()
     sidebar = st.sidebar
 
+    state = st.session_state
     # =============================expander：对话参数==============================
     exp1 =  sidebar.expander("控制参数", expanded=True)
     state.cpu1_temp = exp1.markdown(f"CPU1 温度: &emsp;{state.temperature_and_fan_dict['CPU1 Temp']}℃")
