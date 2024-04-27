@@ -4,8 +4,11 @@ import re
 import os
 import time
 
+import pandas as pd
+import numpy as np
+
 # 设置IPMI密码的环境变量
-os.environ['IPMI_PASSWORD'] = 'jackseaver79'
+password = 'jackseaver'
 
 st.set_page_config(
     initial_sidebar_state="collapsed",
@@ -146,9 +149,12 @@ def _get_temp_from_report(report, temp_name):
     return f'{temp_name} not found'
 
 def _get_ipmitool_sensor_report():
-    output = subprocess.check_output(['sudo', '-S', 'ipmitool', 'sensor'], stdin=subprocess.PIPE)
+    command = 'sudo ipmitool sensor'
+    full_command = 'echo {} | {}'.format(password, command)
+    output = subprocess.run(full_command, shell=True, check=True, capture_output=True)
+    # output = subprocess.check_output(['sudo', '-S', 'ipmitool', 'sensor'], stdin=subprocess.PIPE)
     # output = subprocess.check_output(['sudo', 'ipmitool', 'sensor'])
-    lines = output.decode().split('\n')
+    lines = output.stdout.decode().split('\n')
     return lines
 
 def get_gpu_info_list(report, gpu_name='NVIDIA GeForce RTX 2080 Ti'):
@@ -195,12 +201,32 @@ def get_temp_info_and_gpu_info():
 def streamlit_refresh_loop():
     st.title("System Info")
 
-    while True:
-        temperature_and_fan_dict, gpu_info_list = get_temp_info_and_gpu_info()
-        st.markdown(temperature_and_fan_dict)
-        st.markdown(gpu_info_list)
+    temperature_and_fan_dict, gpu_info_list = get_temp_info_and_gpu_info()
 
-        time.sleep(10)
+    temp_list = []  # [ ['cpu1', 25.0], ... ]
+    fan_list = []  # [ ['fan1', 3200], ... ]
+    gpu_list = []
+
+    for k, v in temperature_and_fan_dict.items():
+        if not 'FAN' in k:
+            temp_list.append([k, v])
+
+    for k, v in temperature_and_fan_dict.items():
+        if 'FAN' in k:
+            fan_list.append([k, v])
+
+    temp_data = pd.DataFrame(temp_list, columns=['设备', '温度(℃)'])
+    fan_data = pd.DataFrame(fan_list, columns=['风扇', '转速(RPM)'])
+
+    st.scatter_chart(temp_data, x='设备', y='温度(℃)')
+    st.scatter_chart(fan_data, x='风扇', y='转速(RPM)')
+
+    # while True:
+    #     temperature_and_fan_dict, gpu_info_list = get_temp_info_and_gpu_info()
+    #     st.markdown(temperature_and_fan_dict)
+    #     st.markdown(gpu_info_list)
+    #
+    #     time.sleep(10)
 
 if __name__ == "__main__":
     streamlit_refresh_loop()
