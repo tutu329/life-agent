@@ -308,19 +308,19 @@ class FAN_LEVEL():
     FAN_LEVEL_HOT3 = '0x20'
     FAN_LEVEL_CRIT = '0x28'
 
-# 设置CPU风扇
-def _set_cpu_fans(fan_level):
-    command = f'sudo ipmitool raw 0x30 0x70 0x66 0x01 0x00 {fan_level}'
+# 设置风扇
+def _set_fans(zone, fan_level):
+    command = f'sudo ipmitool raw 0x30 0x70 0x66 0x01 {zone} {fan_level}'   # zone: 0x00-0x03, fan_level:0x04-0x08
+    print(f'command: "{command}"')
     output = subprocess.run(command, shell=True, check=True, capture_output=True)
     lines = output.stdout.decode().split('\n')
     return lines
 
-# 设置Drive风扇
-def _set_drive_fans(fan_level):
-    command = f'sudo ipmitool raw 0x30 0x70 0x66 0x01 0x01 {fan_level}'
-    output = subprocess.run(command, shell=True, check=True, capture_output=True)
-    lines = output.stdout.decode().split('\n')
-    return lines
+def set_all_fans():
+    _set_fans('0x00', '0x04')
+    _set_fans('0x01', '0x04')
+    _set_fans('0x02', '0x08')
+    _set_fans('0x03', '0x08')
 
 def streamlit_refresh_loop():
     get_server_info()
@@ -349,9 +349,9 @@ def streamlit_refresh_loop():
     draw_chart()
 
     while True:
-        time.sleep(5)
+        time.sleep(30)
         get_status()
-
+        set_all_fans()
         st.rerun()
         # 后面的代码无效
 
