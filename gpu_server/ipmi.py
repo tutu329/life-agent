@@ -3,6 +3,8 @@ import subprocess
 import re
 import os
 import time
+import threading
+from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 import pandas as pd
 import numpy as np
@@ -199,84 +201,175 @@ def get_temp_info_and_gpu_info():
 
     return temperature_and_fan_dict, gpu_info_list
 
-def streamlit_refresh_loop():
-    st.title("System Info")
+def get_status():
+    state = st.session_state
 
-    temperature_and_fan_dict, gpu_info_list = get_temp_info_and_gpu_info()
+    state.temperature_and_fan_dict, state.gpu_info_list = get_temp_info_and_gpu_info()
 
-    temp_list = []  # [ ['cpu1', 25.0], ... ]
-    temp_color_list = []
+    state.temp_list = []  # [ ['cpu1', 25.0], ... ]
+    state.temp_color_list = []
 
-    fan_list = []  # [ ['fan1', 3200], ... ]
-    fan_color_list = []
+    state.fan_list = []  # [ ['fan1', 3200], ... ]
+    state.fan_color_list = []
 
-    gpu_list = []
+    state.gpu_list = []
 
-    for k, v in temperature_and_fan_dict.items():
+    for k, v in state.temperature_and_fan_dict.items():
         if not 'FAN' in k:
             if 'na' in v:
                 # 温度为na，设置为0、颜色为'C'
-                temp_list.append([k, 'n/a'])
-                temp_color_list.append('#ff0000')
+                state.temp_list.append([k, 'n/a'])
+                state.temp_color_list.append('#ff0000')
             elif float(v) < 40:
                 # 温度为0-40
-                temp_list.append([k, v])
-                temp_color_list.append('#00ff00')
+                state.temp_list.append([k, v])
+                state.temp_color_list.append('#00ff00')
             elif float(v) < 60:
                 # 温度为40-60
-                temp_list.append([k, v])
-                temp_color_list.append('#228800')
+                state.temp_list.append([k, v])
+                state.temp_color_list.append('#228800')
             elif float(v) < 80:
                 # 温度为60-80
-                temp_list.append([k, v])
-                temp_color_list.append('#444400')
+                state.temp_list.append([k, v])
+                state.temp_color_list.append('#444400')
             elif float(v) < 90:
                 # 温度为80-90
-                temp_list.append([k, v])
-                temp_color_list.append('#882200')
+                state.temp_list.append([k, v])
+                state.temp_color_list.append('#882200')
             else:
                 # 温度为>90
-                temp_list.append([k, v])
-                temp_color_list.append('#ff0000')
+                state.temp_list.append([k, v])
+                state.temp_color_list.append('#ff0000')
 
-    for k, v in temperature_and_fan_dict.items():
+    for k, v in state.temperature_and_fan_dict.items():
         if 'FAN' in k:
-            fan_list.append([k, v])
+            state.fan_list.append([k, v])
 
-    for i in range(len(temp_list)):
-        print(f'{temp_list[i][0]} \t {temp_list[i][1]} \t {temp_color_list[i]}')
+    state.temp_data = pd.DataFrame(state.temp_list, columns=['元件', '温度(℃)'])
+    state.temp_data['color'] = state.temp_color_list
+    state.fan_data = pd.DataFrame(state.fan_list, columns=['风扇', '转速(RPM)'])
+    sidebar = st.sidebar
+def streamlit_refresh_loop():
+    st.title("System Info")
+    state = st.session_state
 
-    temp_data = pd.DataFrame(temp_list, columns=['元件', '温度(℃)'])
-    temp_data['color'] = temp_color_list
-
-    fan_data = pd.DataFrame(fan_list, columns=['风扇', '转速(RPM)'])
-
-    chart = st.scatter_chart(temp_data, x='元件', y='温度(℃)', color='color')
-    # chart.update_layout(xaxis_title='Category', yaxis_title='Number of Apps')
-
-    st.scatter_chart(fan_data, x='风扇', y='转速(RPM)')
-
-    # while True:
-    #     temperature_and_fan_dict, gpu_info_list = get_temp_info_and_gpu_info()
-    #     st.markdown(temperature_and_fan_dict)
-    #     st.markdown(gpu_info_list)
+    get_status()
+    # state.temperature_and_fan_dict, state.gpu_info_list = get_temp_info_and_gpu_info()
     #
-    #     time.sleep(10)
+    # state.temp_list = []  # [ ['cpu1', 25.0], ... ]
+    # state.temp_color_list = []
+    #
+    # state.fan_list = []  # [ ['fan1', 3200], ... ]
+    # state.fan_color_list = []
+    #
+    # state.gpu_list = []
+    #
+    # for k, v in state.temperature_and_fan_dict.items():
+    #     if not 'FAN' in k:
+    #         if 'na' in v:
+    #             # 温度为na，设置为0、颜色为'C'
+    #             state.temp_list.append([k, 'n/a'])
+    #             state.temp_color_list.append('#ff0000')
+    #         elif float(v) < 40:
+    #             # 温度为0-40
+    #             state.temp_list.append([k, v])
+    #             state.temp_color_list.append('#00ff00')
+    #         elif float(v) < 60:
+    #             # 温度为40-60
+    #             state.temp_list.append([k, v])
+    #             state.temp_color_list.append('#228800')
+    #         elif float(v) < 80:
+    #             # 温度为60-80
+    #             state.temp_list.append([k, v])
+    #             state.temp_color_list.append('#444400')
+    #         elif float(v) < 90:
+    #             # 温度为80-90
+    #             state.temp_list.append([k, v])
+    #             state.temp_color_list.append('#882200')
+    #         else:
+    #             # 温度为>90
+    #             state.temp_list.append([k, v])
+    #             state.temp_color_list.append('#ff0000')
+    #
+    # for k, v in state.temperature_and_fan_dict.items():
+    #     if 'FAN' in k:
+    #         state.fan_list.append([k, v])
+
+    # state.temp_data = pd.DataFrame(state.temp_list, columns=['元件', '温度(℃)'])
+    # state.temp_data['color'] = state.temp_color_list
+    # state.fan_data = pd.DataFrame(state.fan_list, columns=['风扇', '转速(RPM)'])
 
     sidebar = st.sidebar
+
     # =============================expander：对话参数==============================
     exp1 =  sidebar.expander("控制参数", expanded=True)
-    cpu1_temp = exp1.markdown(f"CPU1 温度: &emsp;{temperature_and_fan_dict['CPU1 Temp']}℃")
-    cpu2_temp = exp1.markdown(f"CPU2 温度: &emsp;{temperature_and_fan_dict['CPU2 Temp']}℃")
-    nvme_temp = exp1.markdown(f"NVME 温度: &emsp;{temperature_and_fan_dict['NVMe_SSD Temp']}℃")
-    mb10_temp = exp1.markdown(f"MB10 温度: &emsp;{temperature_and_fan_dict['MB_10G Temp']}℃")
-    inle_temp = exp1.markdown(f"INLE 温度: &emsp;{temperature_and_fan_dict['Inlet Temp']}℃")
-    syst_temp = exp1.markdown(f"SYST 温度: &emsp;{temperature_and_fan_dict['System Temp']}℃")
-    peri_temp = exp1.markdown(f"PERI 温度: &emsp;{temperature_and_fan_dict['Peripheral Temp']}℃")
-    temp1 = exp1.number_input(label="温度阈值1(℃):",  placeholder=45.0, max_value=45.0, min_value=0.0, step=1.0, value=45.0)
-    temp2 = exp1.number_input(label="温度阈值2(℃):",  placeholder=50.0, max_value=50.0, min_value=0.0, step=1.0, value=50.0)
-    temp3 = exp1.number_input(label="温度阈值3(℃):",  placeholder=60.0, max_value=60.0, min_value=0.0, step=1.0, value=60.0)
-    temp4 = exp1.number_input(label="温度阈值4(℃):",  placeholder=65.0, max_value=65.0, min_value=0.0, step=1.0, value=65.0)
+    state.cpu1_temp = exp1.markdown(f"CPU1 温度: &emsp;{state.temperature_and_fan_dict['CPU1 Temp']}℃")
+    state.cpu2_temp = exp1.markdown(f"CPU2 温度: &emsp;{state.temperature_and_fan_dict['CPU2 Temp']}℃")
+    state.nvme_temp = exp1.markdown(f"NVME 温度: &emsp;{state.temperature_and_fan_dict['NVMe_SSD Temp']}℃")
+    state.mb10_temp = exp1.markdown(f"MB10 温度: &emsp;{state.temperature_and_fan_dict['MB_10G Temp']}℃")
+    state.inle_temp = exp1.markdown(f"INLE 温度: &emsp;{state.temperature_and_fan_dict['Inlet Temp']}℃")
+    state.syst_temp = exp1.markdown(f"SYST 温度: &emsp;{state.temperature_and_fan_dict['System Temp']}℃")
+    state.peri_temp = exp1.markdown(f"PERI 温度: &emsp;{state.temperature_and_fan_dict['Peripheral Temp']}℃")
+    state.temp1 = exp1.number_input(label="温度阈值1(℃):",  placeholder=45.0, max_value=45.0, min_value=0.0, step=1.0, value=45.0)
+    state.temp2 = exp1.number_input(label="温度阈值2(℃):",  placeholder=50.0, max_value=50.0, min_value=0.0, step=1.0, value=50.0)
+    state.temp3 = exp1.number_input(label="温度阈值3(℃):",  placeholder=60.0, max_value=60.0, min_value=0.0, step=1.0, value=60.0)
+    state.temp4 = exp1.number_input(label="温度阈值4(℃):",  placeholder=65.0, max_value=65.0, min_value=0.0, step=1.0, value=65.0)
+
+    draw_chart()
+
+    # while True:
+    #     state.temp_data = pd.DataFrame(state.temp_list, columns=['元件', '温度(℃)'])
+    #     state.temp_data['color'] = state.temp_color_list
+    #     state.fan_data = pd.DataFrame(state.fan_list, columns=['风扇', '转速(RPM)'])
+    #     # chart()
+    #     # st.rerun()
+    #     time.sleep(10)
+
+    g_data_refresher.start()
+
+class Data_Refresher():
+    def __init__(self):
+        self.task = None
+        self.started = False
+
+    def run(self):
+        state = st.session_state
+
+        while True:
+            get_status()
+
+            # chart()
+            # st.rerun()
+            for i in range(len(state.temp_list)):
+                if 'CPU' in state.temp_list[i][0]:
+                    print(f'{state.temp_list[i][0]} \t {state.temp_list[i][1]} \t {state.temp_color_list[i]}')
+            print()
+
+            time.sleep(10)
+
+    def start(self):
+        if not self.started:
+            self.started = True
+
+            self.task = threading.Thread(target=self.run)
+            add_script_run_ctx(self.task)
+            self.task.start()
+
+@st.cache_resource
+def init_data_refresher():
+    data_refresher = Data_Refresher()
+    return data_refresher
+
+g_data_refresher = init_data_refresher()
+
+
+@st.experimental_fragment
+def draw_chart():
+    state = st.session_state
+
+    state.draw_chart = st.scatter_chart(state.temp_data, x='元件', y='温度(℃)', color='color')
+    st.scatter_chart(state.fan_data, x='风扇', y='转速(RPM)')
 
 if __name__ == "__main__":
     streamlit_refresh_loop()
+
