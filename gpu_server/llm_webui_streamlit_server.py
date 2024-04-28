@@ -444,7 +444,7 @@ def ask_llm(prompt, paras):
             # 如果填了url
             searcher = Bing_Searcher.create_searcher_and_loop()
             result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
-            all_prompt = f'请严格根据URL(网页链接)返回的内容回答问题, URL(网页链接)返回的具体内容为: "{result}"'
+            all_prompt = f'请严格根据URL(网页链接)返回的内容回答问题, URL(网页链接)返回的具体内容为: \n#############################################\n"{result}"\n#############################################\n'
             mem_llm.set_role_prompt(all_prompt)
 
         files_info_dict = st.session_state.session_data['paras']['file_column_raw_data']
@@ -509,6 +509,11 @@ def ask_llm(prompt, paras):
 
             full_res += res
             place_holder.markdown(full_res)
+
+        if wait_first_token:
+            # 可能输出为空，则这里要开始计时
+            start_time2 = time.time()
+
         p_tokens = mem_llm.get_prompt_tokens()
         c_tokens = mem_llm.get_completion_tokens()
         all_tokens = p_tokens+c_tokens
