@@ -1110,7 +1110,6 @@ def main_call():
     llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
     # llm.ask_prepare(question, in_max_new_tokens=500).get_answer_and_sync_print()
 
-
 if __name__ == "__main__" :
     # llm = LLM_Client(
     #     history=True,
