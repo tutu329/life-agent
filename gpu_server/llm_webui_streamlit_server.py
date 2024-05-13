@@ -53,13 +53,20 @@ def llm_init():
     #     main_llm_url = config.Global.llm_url
 
 
-    LLM_Client.Set_All_LLM_Server(config.Global.llm_url)
+    # LLM_Client.Set_All_LLM_Server(config.Global.llm_url)
     # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
-    dgreen(f'初始化所有LLM的url_endpoint: ', end='', flush=True)
-    dblue(f'"{LLM_Client.Get_All_LLM_Server()}"')
+    # dgreen(f'初始化所有LLM的url_endpoint: ', end='', flush=True)
+    # dblue(f'"{LLM_Client.Get_All_LLM_Server()}"')
 
     # 初始化 mem_llm
     history = True
+    mem_llm = LLM_Client(
+        url=config.Global.llm_url,
+        api_key=config.Global.llm_key,
+        model_id=config.Global.llm_model,
+        history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
+        print_input=False,
+    )
     mem_llm = LLM_Client(
         history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
         print_input=False,
@@ -524,13 +531,18 @@ def ask_llm(prompt, paras):
         input_time_str = f'{input_time:.1f}'
         output_time_str = f'{output_time:.1f}'
         all_time_str = f'{input_time+output_time:.1f}'
-        input_ts_str = f'{p_tokens/input_time:.1f}'
-        output_ts_str = f'{c_tokens/output_time:.1f}'
 
-        # 显示: 输入、输出token，首字时间、输出时间，首字前t/s、输出t/s
-        # 10445 ( 10039 + 406 ) tokens in 31.6 ( 10.6 + 21.0 ) secs, 946.3 t/s, 19.3 t/s
-        full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens in {all_time_str} ( {input_time_str} + {output_time_str} ) secs, {input_ts_str} t/s, {output_ts_str} t/s ]'
-        # full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
+        try:
+            input_ts_str = f'{p_tokens/input_time:.1f}'
+            output_ts_str = f'{c_tokens/output_time:.1f}'
+
+            # 显示: 输入、输出token，首字时间、输出时间，首字前t/s、输出t/s
+            # 10445 ( 10039 + 406 ) tokens in 31.6 ( 10.6 + 21.0 ) secs, 946.3 t/s, 19.3 t/s
+            full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens in {all_time_str} ( {input_time_str} + {output_time_str} ) secs, {input_ts_str} t/s, {output_ts_str} t/s ]'
+            # full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
+        except Exception as e:
+            dred(f'统计时间为0.')
+
 
         place_holder.markdown(full_res)
         return None, None, full_res

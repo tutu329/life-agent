@@ -37,6 +37,15 @@ class Global():
     llm_max_chat_turns = 200    # 对话超过llm_max_chat_turns轮，则pop最前面的对话
     llm_url:str = 'http://116.62.63.204:8001/v1'
     llm_url2:str = 'http://116.62.63.204:8000/v1'
+
+    llm_url:str = 'http://116.62.63.204:8001/v1'
+    llm_key:str = None
+    llm_model:str = None
+
+    # llm_url:str = 'https://api.deepseek.com/v1'
+    # llm_key:str = 'sk-a34840fbc9284e07adb59286af0deff0'
+    # llm_model:str = 'deepseek-chat'
+
     # llm_system:str = "你是甄嬛。"
     # llm_system:str = "你是一个助理。"
     llm_system:str = "You are a helpful assistant."
