@@ -3,7 +3,7 @@ from agent.tool_agent_prompts import PROMPT_REACT
 from agent.tool_agent_prompts import Base_Tool, Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
 from utils.extract import extract_code, extract_dict_string
 from colorama import Fore, Back, Style
-import torch
+# import torch
 
 class Tool_Agent():
     def __init__(self,

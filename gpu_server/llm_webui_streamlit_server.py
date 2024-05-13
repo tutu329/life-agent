@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from streamlit_file_browser import st_file_browser
+# from streamlit_file_browser import st_file_browser
 
 import config
 from config import dred, dgreen, dblue, dcyan
