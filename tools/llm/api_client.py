@@ -14,17 +14,13 @@ from utils.string_util import str_remove_partial_stops
 
 from config import dred, dgreen
 
-if sys.platform.startswith('win'):      # win下用的是qwen的openai api (openai==0.28.1)
-    # import openai
-    # openai.api_base = ''
-    # openai.api_key = "EMPTY"
-    from openai import OpenAI
-elif sys.platform.startswith('linux'):  # linux下用的是vllm的openai api (openai>1.0.0)
-    from openai import OpenAI
-else:
-    raise Exception('无法识别的操作系统！')
+from openai import OpenAI
+import openai
+# import openai.types.completion_usage.CompletionUsage
 
-DEBUG = False
+
+DEBUG = True
+# DEBUG = False
 
 def dprint(*args, **kwargs):
     if DEBUG:
@@ -53,49 +49,24 @@ class LLM_Client():
             url = LLM_Client.Get_All_LLM_Server()
         # print(f'LLM_Client.__init__(): url = "{url}"')
             
-        if sys.platform.startswith('win'):          # win下用的是qwen的openai api
-            # openai.api_key = api_key
-            # openai.api_base = url
-            # if model_id is None:
-            #     self.model_id = 'local model'
-            # else:
-            #     self.model_id = model_id
-            # dprint(f'【LLM_Client】 os: windows. openai api for qwen used.')
-            # dprint(f'【LLM_Client】 model: {self.model_id}')
-            self.openai = OpenAI(
-                api_key=api_key,
-                base_url=url,
-            )
-            try:
-                if model_id is None:
-                    self.model_id = self.openai.models.list().data[0].id
-                else:
-                    self.model_id = model_id
-            except Exception as e:
-                dred(f'【LLM_Client异常】__init__(): "{e}"')
-                dred(f'【LLM_Client异常】__init__(): 可能是IP或Port设置错误，当前url为: {url}')
-                self.model_id = ''
+        # if sys.platform.startswith('linux'):      # linux下用的是vllm的openai api
+        self.openai = OpenAI(
+            api_key=api_key,
+            base_url=url,
+        )
+        try:
+            if model_id is None:
+                self.model_id = self.openai.models.list().data[0].id
+            else:
+                self.model_id = model_id
+        except Exception as e:
+            print(f'【LLM_Client异常】__init__(): "{e}"')
+            print(f'【LLM_Client异常】__init__(): 可能是IP或Port设置错误，当前url为: {url}')
+            self.model_id = None
 
-            dprint(f'【LLM_Client】 os: linux. openai api for vllm used.')
-            dprint(f'【LLM_Client】 model: {self.model_id}')
-        elif sys.platform.startswith('linux'):      # linux下用的是vllm的openai api
-            self.openai = OpenAI(
-                api_key=api_key,
-                base_url=url,
-            )
-            try:
-                if model_id is None:
-                    self.model_id = self.openai.models.list().data[0].id
-                else:
-                    self.model_id = model_id
-            except Exception as e:
-                print(f'【LLM_Client异常】__init__(): "{e}"')
-                print(f'【LLM_Client异常】__init__(): 可能是IP或Port设置错误，当前url为: {url}')
-                
-            dprint(f'【LLM_Client】 os: linux. openai api for vllm used.')
-            dprint(f'【LLM_Client】 model: {self.model_id}')
-        else:
-            raise Exception('无法识别的操作系统！')
+        dprint(f'【LLM_Client】 api_key: {api_key}')
+        dprint(f'【LLM_Client】 url: {url}')
+        dprint(f'【LLM_Client】 model: {self.model_id}')
 
         self.url = url
         self.api_key = api_key
@@ -148,23 +119,26 @@ class LLM_Client():
     def Get_All_LLM_Server(cls):
         return cls.LLM_SERVER
 
-    def refresh_url(self, in_url):
-        if self.url != in_url:
+    def refresh_endpoint(self, in_url, in_key, in_model_id):
+        if self.url != in_url or self.model_id !=in_model_id or self.api_key != in_key:
             self.clear_history()
             self.url = in_url
+            self.model_id = in_model_id
+            self.api_key = in_key
 
             self.openai = OpenAI(
                 api_key=self.api_key,
                 base_url=self.url,
             )
-            try:
-                self.model_id = self.openai.models.list().data[0].id
-            except Exception as e:
-                dred(f'【LLM_Client异常】refresh_url(): "{e}"')
-                dred(f'【LLM_Client异常】refresh_url(): 可能是IP或Port设置错误，当前url为: {self.url}')
-                return False
+            if self.model_id is None:
+                try:
+                    self.model_id = self.openai.models.list().data[0].id
+                except Exception as e:
+                    dred(f'【LLM_Client异常】refresh_endpoint(): "{e}"')
+                    dred(f'【LLM_Client异常】refresh_endpoint(): 可能是IP或Port设置错误，当前url为: {self.url}')
+                    return False
 
-            dprint(f'【LLM_Client】refresh_url(): {self.url}({self.model_id})')
+            dprint(f'【LLM_Client】refresh_endpoint(): {self.url}(model_id: {self.model_id}, api_key: "{self.api_key}")')
             return True
         else:
             return False
@@ -388,15 +362,15 @@ class LLM_Client():
         # dgreen(f'query: "\n{msgs_string[:300]}...\n"(len: {len(msgs_string)})')
         # # print(f'query: "{msgs_string[:100]}..."(len: {len(msgs_string)}, url: "{self.url}")')
 
-        dprint(f'{"-"*80}')
-        dprint(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
-        dprint(f'【LLM_Client】 ask_prepare(): self.temperature={self.temperature}')
-        dprint(f'【LLM_Client】 ask_prepare(): 最终选择run_temperature={run_temperature}')
-        dprint(f'【LLM_Client】 ask_prepare(): messages')
-        for chat in msgs:
-            dprint(f'{chat}')
-        dprint(f'【LLM_Client】 ask_prepare(): stream={in_stream}')
-        dprint(f'【LLM_Client】 ask_prepare(): max_new_tokens={max_new_tokens}')
+        # dprint(f'{"-"*80}')
+        # dprint(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
+        # dprint(f'【LLM_Client】 ask_prepare(): self.temperature={self.temperature}')
+        # dprint(f'【LLM_Client】 ask_prepare(): 最终选择run_temperature={run_temperature}')
+        # dprint(f'【LLM_Client】 ask_prepare(): messages')
+        # for chat in msgs:
+        #     dprint(f'{chat}')
+        # dprint(f'【LLM_Client】 ask_prepare(): stream={in_stream}')
+        # dprint(f'【LLM_Client】 ask_prepare(): max_new_tokens={max_new_tokens}')
 
         # ==========================================================
 
@@ -413,53 +387,48 @@ class LLM_Client():
             # stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>'] + in_stop
             stop = in_stop
 
-        dprint(f'【LLM_Client】 ask_prepare(): stop={stop}')
         self.stop = stop
 
+        dprint(f'{"-" * 80}')
+        # dprint(f'self.openai: {self.openai}')
+        dprint(f'self.model_id: {self.model_id}')
+        dprint(f'run_temperature: {run_temperature}')
+        dprint(f'stream: {in_stream}')
+        dprint(f'max_tokens: {max_new_tokens}')
+        dprint(f'stop: {stop}')
+        dprint(f'messages: {msgs}')
+
         try:
-            if sys.platform.startswith('win'):
-                # dred('当前系统: windows')
-                # gen = openai.ChatCompletion.create(
-                #     model=self.model_id,
-                #     temperature=run_temperature,
-                #     # top_k=self.top_k,
-                #     # top_p = run_top_p,
-                #     system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
-                #     messages=msgs,
-                #     stream=in_stream,
-                #     max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                #     # max_length=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                #     # stop=stop,    # win下为openai 0.28.1，不支持stop
-                #     # Specifying stop words in streaming output format is not yet supported and is under development.
-                # )
-                gen = self.openai.chat.completions.create(
-                    model=self.model_id,
-                    temperature=run_temperature,
-                    # top_k=self.top_k,
-                    # top_p = run_top_p,
-                    # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
-                    messages=msgs,
-                    stream=in_stream,
-                    # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    stop=stop,
-                    # Specifying stop words in streaming output format is not yet supported and is under development.
-                )
-            elif sys.platform.startswith('linux'):
-                # dred('当前系统: linux')
-                gen = self.openai.chat.completions.create(
-                    model=self.model_id,
-                    temperature=run_temperature,
-                    # top_k=self.top_k,
-                    # top_p = run_top_p,
-                    # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
-                    messages=msgs,
-                    stream=in_stream,
-                    # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    stop=stop,
-                    # Specifying stop words in streaming output format is not yet supported and is under development.
-                )
+            # dred('当前系统: windows')
+            # gen = openai.ChatCompletion.create(
+            #     model=self.model_id,
+            #     temperature=run_temperature,
+            #     # top_k=self.top_k,
+            #     # top_p = run_top_p,
+            #     system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",
+            #     messages=msgs,
+            #     stream=in_stream,
+            #     max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+            #     # max_length=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+            #     # stop=stop,    # win下为openai 0.28.1，不支持stop
+            #     # Specifying stop words in streaming output format is not yet supported and is under development.
+            # )
+
+            gen = self.openai.chat.completions.create(
+                model=self.model_id,
+                temperature=run_temperature,
+                # top_k=self.top_k,
+                # top_p = run_top_p,
+                # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
+                messages=msgs,
+                stream=in_stream,
+                # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                stop=stop,
+                # Specifying stop words in streaming output format is not yet supported and is under development.
+            )
+            dprint(f'===self.openai.chat.completions.create() invoked.===')
+            dprint(f'{"-" * 80}')
         except Exception as e:
             print(f'【LLM_Client异常】ask_prepare(): {e}')
             print('返回gen = None')
@@ -560,33 +529,51 @@ class LLM_Client():
         perhaps_stop_string = ''    # 非常重要，用于存放疑似stop的缓冲
 
         try:
+            # dprint(f'self.gen: {self.gen}')
             for chunk in self.gen:
+                # dprint(f'chunk: {chunk}')
                 if self.response_canceled:
                     break
 
                 if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
                     if hasattr(chunk, 'usage'):
                         # 输入和输出的token数量统计
-                        self.usage = chunk.usage    # usage={'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
-                        dred(f'usage: "{chunk.usage}"')
+                        # dred(f'usage = {chunk.usage}')
+                        # dred(f'type(usage) = {type(chunk.usage)}')
+                        if type(chunk.usage) is openai.types.completion_usage.CompletionUsage:
+                            # deepseek API采用openai.types.completion_usage.CompletionUsage: CompletionUsage(completion_tokens=50, prompt_tokens=18, total_tokens=68)
+                            self.usage = {}
+                            self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
+                            self.usage['total_tokens'] = chunk.usage.total_tokens
+                            self.usage['completion_tokens'] = chunk.usage.completion_tokens
+                        else:
+                            # vllm API采用: {'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
+                            self.usage = chunk.usage
 
                     my_chunk = chunk.choices[0].delta.content
                     answer += my_chunk
 
-                    answer_no_partial_stop = str_remove_partial_stops(answer, self.stop)
-                    # print(f'answer1: {answer}')
-                    # print(f'answer2: {answer_no_partial_stop}')
-                    if answer_no_partial_stop == answer:
-                        my_chunk = perhaps_stop_string + my_chunk   # 1、将证实不是stop的字符补在前面
-                        perhaps_stop_string = ''                    # 2、清空疑似stop的缓冲
-                        # 没partial_stop
-                        # print(my_chunk, end='', flush=True)
-                        yield my_chunk
+                    if self.stop:
+                        # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
+                        answer_no_partial_stop = str_remove_partial_stops(answer, self.stop)
+
+                        # print(f'answer1: {answer}')
+                        # print(f'answer2: {answer_no_partial_stop}')
+                        if answer_no_partial_stop == answer:
+                            my_chunk = perhaps_stop_string + my_chunk   # 1、将证实不是stop的字符补在前面
+                            perhaps_stop_string = ''                    # 2、清空疑似stop的缓冲
+                            # 没partial_stop
+                            # print(my_chunk, end='', flush=True)
+                            yield my_chunk
+                        else:
+                            perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
+                            # 有partial_stop
+                            # print(f'*{my_chunk}*', end='', flush=True)
+                            yield ''
                     else:
-                        perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
-                        # 有partial_stop
-                        # print(f'*{my_chunk}*', end='', flush=True)
-                        yield ''
+                        # 没有stop时
+                        yield my_chunk
+
         except Exception as e:
             dred(f'LLM_Client("{self.url}")连接异常: {e}')
             yield ''

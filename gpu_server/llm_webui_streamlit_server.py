@@ -67,10 +67,10 @@ def llm_init():
         history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
         print_input=False,
     )
-    mem_llm = LLM_Client(
-        history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
-        print_input=False,
-    )
+    # mem_llm = LLM_Client(
+    #     history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
+    #     print_input=False,
+    # )
     dgreen('初始化mem_llm完毕: ', end='', flush=True)
     # dblue(f'"history={history}, temperature(初始)={temperature}"')
     return mem_llm
@@ -145,6 +145,7 @@ def save_pickle():
     sid = st.session_state.session_data['sid']
 
     work_dir = config.Global.get_work_dir() # "/home/tutu/server/life-agent"
+    dred(f'WORK DIR = "{work_dir}"')
     session_pkl_file = work_dir + f'/streamlit_session_{sid}.pkl'
 
     try:
@@ -176,9 +177,16 @@ default_session_data = {
         'file_column_raw_data': {},             # 用于管理和显示会话内UploadedFile数据
         'system_prompt': config.Global.llm_system,
         'role_prompt': '',
+
         'main_llm_url': config.Global.llm_url,
+        'main_llm_key': config.Global.llm_key,
+        'main_llm_model_id': config.Global.llm_model,
+
         'input_translate': False,
+
         'english_llm_url': config.Global.llm_url2,
+        'english_llm_key': config.Global.llm_key2,
+        'english_llm_model_id': config.Global.llm_model2,
     }
 }
 def session_state_init():
@@ -494,7 +502,11 @@ def ask_llm(prompt, paras):
 
             prompt = translated_input
 
-            mem_llm.refresh_url(st.session_state.session_data['paras']['english_llm_url'])
+            mem_llm.refresh_endpoint(
+                st.session_state.session_data['paras']['english_llm_url'],
+                st.session_state.session_data['paras']['english_llm_key'],
+                st.session_state.session_data['paras']['english_llm_model_id'],
+            )
 
 
         # llm输出、统计输出时间
@@ -674,10 +686,91 @@ def on_input_translate_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['input_translate'] = not s_paras['input_translate']
 
+def on_main_llm_url_change():
+    s_paras = st.session_state.session_data['paras']
+    # s_paras['main_llm_url'] = value
+
+    refreshed = mem_llm.refresh_endpoint(
+        s_paras['main_llm_url'],
+        s_paras['main_llm_key'],
+        s_paras['main_llm_model_id'],
+    )
+    if refreshed:
+        # 更换llm成功时，清空屏幕内容和llm记忆
+        on_clear_history()
+
+def on_main_llm_key_change():
+    s_paras = st.session_state.session_data['paras']
+    # s_paras['main_llm_key'] = value
+
+    refreshed = mem_llm.refresh_endpoint(
+        s_paras['main_llm_url'],
+        s_paras['main_llm_key'],
+        s_paras['main_llm_model_id'],
+    )
+    if refreshed:
+        # 更换llm成功时，清空屏幕内容和llm记忆
+        on_clear_history()
+
+def on_main_llm_model_id_change():
+    s_paras = st.session_state.session_data['paras']
+    # s_paras['main_llm_model_id'] = value
+
+    refreshed = mem_llm.refresh_endpoint(
+        s_paras['main_llm_url'],
+        s_paras['main_llm_key'],
+        s_paras['main_llm_model_id'],
+    )
+    if refreshed:
+        # 更换llm成功时，清空屏幕内容和llm记忆
+        on_clear_history()
+
+def on_english_llm_url_change():
+    s_paras = st.session_state.session_data['paras']
+    # s_paras['english_llm_url'] = value
+
+    refreshed = mem_llm.refresh_endpoint(
+        st.session_state.session_data['paras']['english_llm_url'],
+        st.session_state.session_data['paras']['english_llm_key'],
+        st.session_state.session_data['paras']['english_llm_model_id'],
+    )
+
+    if refreshed:
+        # 更换llm成功时，清空屏幕内容和llm记忆
+        on_clear_history()
+
+def on_english_llm_key_change():
+    s_paras = st.session_state.session_data['paras']
+    # s_paras['english_llm_key'] = value
+
+    refreshed = mem_llm.refresh_endpoint(
+        st.session_state.session_data['paras']['english_llm_url'],
+        st.session_state.session_data['paras']['english_llm_key'],
+        st.session_state.session_data['paras']['english_llm_model_id'],
+    )
+
+    if refreshed:
+        # 更换llm成功时，清空屏幕内容和llm记忆
+        on_clear_history()
+
+def on_english_llm_model_id_change():
+    s_paras = st.session_state.session_data['paras']
+    # s_paras['english_llm_model_id'] = value
+
+    refreshed = mem_llm.refresh_endpoint(
+        st.session_state.session_data['paras']['english_llm_url'],
+        st.session_state.session_data['paras']['english_llm_key'],
+        st.session_state.session_data['paras']['english_llm_model_id'],
+    )
+
+    if refreshed:
+        # 更换llm成功时，清空屏幕内容和llm记忆
+        on_clear_history()
 
 def on_temperature_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['local_llm_temperature'] = st.session_state.local_llm_temperature
+
 
 def on_max_new_token_change():
     s_paras = st.session_state.session_data['paras']
@@ -815,16 +908,24 @@ def streamlit_refresh_loop():
 
     # =============================主模型、辅模型(用于翻译input)==============================
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
-    s_paras['main_llm_url'] = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=s_paras['main_llm_url'])
+    s_paras['main_llm_url'] = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=s_paras['main_llm_url'], on_change=on_main_llm_url_change)
+    s_paras['main_llm_key'] = exp4.text_input(label="主模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['main_llm_key'], on_change=on_main_llm_key_change)
+    s_paras['main_llm_model_id'] = exp4.text_input(label="主模型model_id:", placeholder="model_id", value=s_paras['main_llm_model_id'], on_change=on_main_llm_model_id_change)
     if not 'input_translate' in s_paras or not s_paras['input_translate']:
         # 当调用英语模型时，由于mem_llm的url经过refresh变成了英语模型，因此这里如果refresh为主模型会发现不一致从而清除历史
-        refreshed = mem_llm.refresh_url(s_paras['main_llm_url'])
+        refreshed = mem_llm.refresh_endpoint(
+            s_paras['main_llm_url'],
+            s_paras['main_llm_key'],
+            s_paras['main_llm_model_id'],
+        )
         if refreshed:
             # 更换llm成功时，清空屏幕内容和llm记忆
             on_clear_history()
 
     exp4.checkbox('调用擅长英语的模型', value=s_paras['input_translate'], on_change=on_input_translate_change)
-    s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'])
+    s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'], on_change=on_english_llm_url_change)
+    s_paras['english_llm_key'] = exp4.text_input(label="英语模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['english_llm_key'], disabled=not s_paras['input_translate'], on_change=on_english_llm_key_change)
+    s_paras['english_llm_model_id'] = exp4.text_input(label="英语模型model_id:", placeholder="model_id", value=s_paras['english_llm_model_id'], disabled=not s_paras['input_translate'], on_change=on_english_llm_model_id_change)
 
     # =======================所有chat历史的显示========================
     # 这一行必须要运行，不能加前置判断，否则chat_input没有显示
