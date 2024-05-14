@@ -99,3 +99,4 @@ class Port():
     jupyter_temp:int    = 7865  # 自定义jupyter的docker容器
     sd:int              = 7868  # stable diffusion
     comfy:int           = 7869  # ComfyUI
+
