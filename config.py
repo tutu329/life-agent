@@ -49,7 +49,6 @@ class Global():
     llm_model2:str = None
 
 
-
     # llm_system:str = "你是甄嬛。"
     # llm_system:str = "你是一个助理。"
     llm_system:str = "You are a helpful assistant."
