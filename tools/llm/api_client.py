@@ -55,7 +55,7 @@ class LLM_Client():
             base_url=url,
         )
         try:
-            if model_id is None:
+            if model_id is None or model_id=='' or model_id==' ':
                 self.model_id = self.openai.models.list().data[0].id
             else:
                 self.model_id = model_id
@@ -70,6 +70,7 @@ class LLM_Client():
 
         self.url = url
         self.api_key = api_key
+
 
         self.gen = None     # 返回结果的generator
         self.usage = None   # 返回 usage={'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
@@ -120,17 +121,21 @@ class LLM_Client():
         return cls.LLM_SERVER
 
     def refresh_endpoint(self, in_url, in_key, in_model_id):
+        dred(f'refresh url: {in_url}')
+        dred(f'refresh model id: {in_model_id}')
+        dred(f'refresh api_key: {in_key}')
         if self.url != in_url or self.model_id !=in_model_id or self.api_key != in_key:
             self.clear_history()
             self.url = in_url
             self.model_id = in_model_id
             self.api_key = in_key
 
+
             self.openai = OpenAI(
                 api_key=self.api_key,
                 base_url=self.url,
             )
-            if self.model_id is None:
+            if self.model_id is None or self.model_id=='':
                 try:
                     self.model_id = self.openai.models.list().data[0].id
                 except Exception as e:

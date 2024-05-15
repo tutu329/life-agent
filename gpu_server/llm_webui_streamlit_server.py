@@ -52,7 +52,6 @@ def llm_init():
     # else:
     #     main_llm_url = config.Global.llm_url
 
-
     # LLM_Client.Set_All_LLM_Server(config.Global.llm_url)
     # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
     # dgreen(f'初始化所有LLM的url_endpoint: ', end='', flush=True)
@@ -145,7 +144,7 @@ def save_pickle():
     sid = st.session_state.session_data['sid']
 
     work_dir = config.Global.get_work_dir() # "/home/tutu/server/life-agent"
-    dred(f'WORK DIR = "{work_dir}"')
+    dred(f'WORK DIR saved is: "{work_dir}"')
     session_pkl_file = work_dir + f'/streamlit_session_{sid}.pkl'
 
     try:
@@ -557,6 +556,7 @@ def ask_llm(prompt, paras):
 
 
         place_holder.markdown(full_res)
+        dred(f'full_res: {full_res}')
         return None, None, full_res
 
 def on_clear_history():
@@ -564,6 +564,7 @@ def on_clear_history():
     st.session_state.session_data['msgs'] = []
     save_pickle()
     mem_llm.clear_history()
+    dred('-----------on_clear_history--------------')
 
 def on_cancel_response():
     mem_llm.cancel_response()
@@ -686,7 +687,7 @@ def on_input_translate_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['input_translate'] = not s_paras['input_translate']
 
-def on_main_llm_url_change():
+def on_main_llm_change():
     s_paras = st.session_state.session_data['paras']
     # s_paras['main_llm_url'] = value
 
@@ -695,77 +696,26 @@ def on_main_llm_url_change():
         s_paras['main_llm_key'],
         s_paras['main_llm_model_id'],
     )
-    if refreshed:
-        # 更换llm成功时，清空屏幕内容和llm记忆
-        on_clear_history()
+    # if refreshed:
+    #     # 更换llm成功时，清空屏幕内容和llm记忆
+    #     on_clear_history()
+    #     dred('on_clear_history() by on_main_llm_url_change()')
 
-def on_main_llm_key_change():
-    s_paras = st.session_state.session_data['paras']
-    # s_paras['main_llm_key'] = value
-
-    refreshed = mem_llm.refresh_endpoint(
-        s_paras['main_llm_url'],
-        s_paras['main_llm_key'],
-        s_paras['main_llm_model_id'],
-    )
-    if refreshed:
-        # 更换llm成功时，清空屏幕内容和llm记忆
-        on_clear_history()
-
-def on_main_llm_model_id_change():
-    s_paras = st.session_state.session_data['paras']
-    # s_paras['main_llm_model_id'] = value
-
-    refreshed = mem_llm.refresh_endpoint(
-        s_paras['main_llm_url'],
-        s_paras['main_llm_key'],
-        s_paras['main_llm_model_id'],
-    )
-    if refreshed:
-        # 更换llm成功时，清空屏幕内容和llm记忆
-        on_clear_history()
-
-def on_english_llm_url_change():
+def on_english_llm_change():
     s_paras = st.session_state.session_data['paras']
     # s_paras['english_llm_url'] = value
 
-    refreshed = mem_llm.refresh_endpoint(
-        st.session_state.session_data['paras']['english_llm_url'],
-        st.session_state.session_data['paras']['english_llm_key'],
-        st.session_state.session_data['paras']['english_llm_model_id'],
-    )
+    if s_paras['input_translate']:
+        refreshed = mem_llm.refresh_endpoint(
+            st.session_state.session_data['paras']['english_llm_url'],
+            st.session_state.session_data['paras']['english_llm_key'],
+            st.session_state.session_data['paras']['english_llm_model_id'],
+        )
 
-    if refreshed:
-        # 更换llm成功时，清空屏幕内容和llm记忆
-        on_clear_history()
-
-def on_english_llm_key_change():
-    s_paras = st.session_state.session_data['paras']
-    # s_paras['english_llm_key'] = value
-
-    refreshed = mem_llm.refresh_endpoint(
-        st.session_state.session_data['paras']['english_llm_url'],
-        st.session_state.session_data['paras']['english_llm_key'],
-        st.session_state.session_data['paras']['english_llm_model_id'],
-    )
-
-    if refreshed:
-        # 更换llm成功时，清空屏幕内容和llm记忆
-        on_clear_history()
-
-def on_english_llm_model_id_change():
-    s_paras = st.session_state.session_data['paras']
-    # s_paras['english_llm_model_id'] = value
-
-    refreshed = mem_llm.refresh_endpoint(
-        st.session_state.session_data['paras']['english_llm_url'],
-        st.session_state.session_data['paras']['english_llm_key'],
-        st.session_state.session_data['paras']['english_llm_model_id'],
-    )
-
-    if refreshed:
-        # 更换llm成功时，清空屏幕内容和llm记忆
-        on_clear_history()
+        # if refreshed:
+        #     # 更换llm成功时，清空屏幕内容和llm记忆
+        #     on_clear_history()
+        #     dred('on_clear_history() by on_english_llm_url_change()')
 
 def on_temperature_change():
     s_paras = st.session_state.session_data['paras']
@@ -908,24 +858,32 @@ def streamlit_refresh_loop():
 
     # =============================主模型、辅模型(用于翻译input)==============================
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
-    s_paras['main_llm_url'] = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=s_paras['main_llm_url'], on_change=on_main_llm_url_change)
-    s_paras['main_llm_key'] = exp4.text_input(label="主模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['main_llm_key'], on_change=on_main_llm_key_change)
-    s_paras['main_llm_model_id'] = exp4.text_input(label="主模型model_id:", placeholder="model_id", value=s_paras['main_llm_model_id'], on_change=on_main_llm_model_id_change)
-    if not 'input_translate' in s_paras or not s_paras['input_translate']:
-        # 当调用英语模型时，由于mem_llm的url经过refresh变成了英语模型，因此这里如果refresh为主模型会发现不一致从而清除历史
-        refreshed = mem_llm.refresh_endpoint(
-            s_paras['main_llm_url'],
-            s_paras['main_llm_key'],
-            s_paras['main_llm_model_id'],
-        )
-        if refreshed:
-            # 更换llm成功时，清空屏幕内容和llm记忆
-            on_clear_history()
+    # 注意：用on_change回调的话，回调的瞬间，s_paras['main_llm_url']中的值是change之前的
+    s_paras['main_llm_url'] = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=s_paras['main_llm_url'])
+    s_paras['main_llm_key'] = exp4.text_input(label="主模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['main_llm_key'])
+    s_paras['main_llm_model_id'] = exp4.text_input(label="主模型model_id:", placeholder="model_id", value=s_paras['main_llm_model_id'])
+    if s_paras['main_llm_url'] or s_paras['main_llm_key'] or s_paras['main_llm_model_id']:
+        on_main_llm_change()
+    # if not 'input_translate' in s_paras or not s_paras['input_translate']:
+    #     # 当调用英语模型时，由于mem_llm的url经过refresh变成了英语模型，因此这里如果refresh为主模型会发现不一致从而清除历史
+    #     refreshed = mem_llm.refresh_endpoint(
+    #         s_paras['main_llm_url'],
+    #         s_paras['main_llm_key'],
+    #         s_paras['main_llm_model_id'],
+    #     )
+    #     if refreshed:
+    #         # 更换llm成功时，清空屏幕内容和llm记忆
+    #         on_clear_history()
+    #         dred('on_clear_history() by input_translate')
+    #         dred(f'input_translate in s_paras: {"input_translate" in s_paras}')
+    #         dred(f's_paras["input_translate"]: {s_paras["input_translate"]}')
 
     exp4.checkbox('调用擅长英语的模型', value=s_paras['input_translate'], on_change=on_input_translate_change)
-    s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'], on_change=on_english_llm_url_change)
-    s_paras['english_llm_key'] = exp4.text_input(label="英语模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['english_llm_key'], disabled=not s_paras['input_translate'], on_change=on_english_llm_key_change)
-    s_paras['english_llm_model_id'] = exp4.text_input(label="英语模型model_id:", placeholder="model_id", value=s_paras['english_llm_model_id'], disabled=not s_paras['input_translate'], on_change=on_english_llm_model_id_change)
+    s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'])
+    s_paras['english_llm_key'] = exp4.text_input(label="英语模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['english_llm_key'], disabled=not s_paras['input_translate'])
+    s_paras['english_llm_model_id'] = exp4.text_input(label="英语模型model_id:", placeholder="model_id", value=s_paras['english_llm_model_id'], disabled=not s_paras['input_translate'])
+    if s_paras['english_llm_url'] or s_paras['english_llm_key'] or s_paras['english_llm_model_id']:
+        on_english_llm_change()
 
     # =======================所有chat历史的显示========================
     # 这一行必须要运行，不能加前置判断，否则chat_input没有显示
@@ -985,6 +943,7 @@ def streamlit_refresh_loop():
         status_data, async_llms, completed_answer = ask_llm(st.session_state.prompt, st.session_state.session_data['paras'])
         # status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
 
+        dgreen(f'completed_answer: {completed_answer}')
         # ==================assistant输出的状态存储====================
         if status_data:
             st.session_state.session_data['msgs'].append(status_data)
