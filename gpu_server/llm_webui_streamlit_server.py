@@ -181,13 +181,14 @@ default_session_data = {
         'main_llm_key': config.Global.llm_key,
         'main_llm_model_id': config.Global.llm_model,
 
-        'input_translate': False,
+        # 'input_translate': False,
 
-        'english_llm_url': config.Global.llm_url2,
-        'english_llm_key': config.Global.llm_key2,
-        'english_llm_model_id': config.Global.llm_model2,
+        # 'english_llm_url': config.Global.llm_url2,
+        # 'english_llm_key': config.Global.llm_key2,
+        # 'english_llm_model_id': config.Global.llm_model2,
     }
 }
+
 def session_state_init():
     # 状态的初始化
 
@@ -482,30 +483,30 @@ def ask_llm(prompt, paras):
         full_res = ''
 
         # 如果需要将query翻译为英文，并调用擅长英语的模型
-        if st.session_state.session_data['paras']['input_translate']:
-            translate_llm = LLM_Client(
-                history=False,
-                url=st.session_state.session_data['paras']['main_llm_url'],
-                print_input=False,
-            )
-
-            dblue(f'需翻译的输入: "{prompt}"')
-            # translate_llm.set_role_prompt('不管输入是什么，你都不会对输入的内容进行解读，都直接将输入翻译为英文，且绝对不增加额外的引号')
-            translated_input = translate_llm.ask_prepare(
-                in_question=f'将"{prompt}"翻译为英文，不要增加额外的引号',
-                in_temperature = st.session_state.session_data['paras']['local_llm_temperature'],
-                in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
-                in_system_prompt = '你擅长将中文翻译为英语'
-            ).get_answer_and_sync_print()
-            dblue(f'翻译后的输入: "{translated_input}"')
-
-            prompt = translated_input
-
-            mem_llm.refresh_endpoint(
-                st.session_state.session_data['paras']['english_llm_url'],
-                st.session_state.session_data['paras']['english_llm_key'],
-                st.session_state.session_data['paras']['english_llm_model_id'],
-            )
+        # if st.session_state.session_data['paras']['input_translate']:
+        #     translate_llm = LLM_Client(
+        #         history=False,
+        #         url=st.session_state.session_data['paras']['main_llm_url'],
+        #         print_input=False,
+        #     )
+        #
+        #     dblue(f'需翻译的输入: "{prompt}"')
+        #     # translate_llm.set_role_prompt('不管输入是什么，你都不会对输入的内容进行解读，都直接将输入翻译为英文，且绝对不增加额外的引号')
+        #     translated_input = translate_llm.ask_prepare(
+        #         in_question=f'将"{prompt}"翻译为英文，不要增加额外的引号',
+        #         in_temperature = st.session_state.session_data['paras']['local_llm_temperature'],
+        #         in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
+        #         in_system_prompt = '你擅长将中文翻译为英语'
+        #     ).get_answer_and_sync_print()
+        #     dblue(f'翻译后的输入: "{translated_input}"')
+        #
+        #     prompt = translated_input
+        #
+        #     mem_llm.refresh_endpoint(
+        #         st.session_state.session_data['paras']['english_llm_url'],
+        #         st.session_state.session_data['paras']['english_llm_key'],
+        #         st.session_state.session_data['paras']['english_llm_model_id'],
+        #     )
 
 
         # llm输出、统计输出时间
@@ -556,7 +557,7 @@ def ask_llm(prompt, paras):
 
 
         place_holder.markdown(full_res)
-        dred(f'full_res: {full_res}')
+        # dred(f'full_res: {full_res}')
         return None, None, full_res
 
 def on_clear_history():
@@ -683,9 +684,9 @@ def on_is_agent_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['is_agent'] = not s_paras['is_agent']
 
-def on_input_translate_change():
-    s_paras = st.session_state.session_data['paras']
-    s_paras['input_translate'] = not s_paras['input_translate']
+# def on_input_translate_change():
+#     s_paras = st.session_state.session_data['paras']
+#     s_paras['input_translate'] = not s_paras['input_translate']
 
 def on_main_llm_change():
     s_paras = st.session_state.session_data['paras']
@@ -701,21 +702,17 @@ def on_main_llm_change():
     #     on_clear_history()
     #     dred('on_clear_history() by on_main_llm_url_change()')
 
-def on_english_llm_change():
-    s_paras = st.session_state.session_data['paras']
-    # s_paras['english_llm_url'] = value
+# def on_english_llm_change():
+#     s_paras = st.session_state.session_data['paras']
+#     # s_paras['english_llm_url'] = value
+#
+#     if s_paras['input_translate']:
+#         refreshed = mem_llm.refresh_endpoint(
+#             st.session_state.session_data['paras']['english_llm_url'],
+#             st.session_state.session_data['paras']['english_llm_key'],
+#             st.session_state.session_data['paras']['english_llm_model_id'],
+#         )
 
-    if s_paras['input_translate']:
-        refreshed = mem_llm.refresh_endpoint(
-            st.session_state.session_data['paras']['english_llm_url'],
-            st.session_state.session_data['paras']['english_llm_key'],
-            st.session_state.session_data['paras']['english_llm_model_id'],
-        )
-
-        # if refreshed:
-        #     # 更换llm成功时，清空屏幕内容和llm记忆
-        #     on_clear_history()
-        #     dred('on_clear_history() by on_english_llm_url_change()')
 
 def on_temperature_change():
     s_paras = st.session_state.session_data['paras']
@@ -859,9 +856,9 @@ def streamlit_refresh_loop():
     # =============================主模型、辅模型(用于翻译input)==============================
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
     # 注意：用on_change回调的话，回调的瞬间，s_paras['main_llm_url']中的值是change之前的
-    s_paras['main_llm_url'] = exp4.text_input(label="主模型:", placeholder="http(s)://ip:port/v1", value=s_paras['main_llm_url'])
-    s_paras['main_llm_key'] = exp4.text_input(label="主模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['main_llm_key'])
-    s_paras['main_llm_model_id'] = exp4.text_input(label="主模型model_id:", placeholder="model_id", value=s_paras['main_llm_model_id'])
+    s_paras['main_llm_url'] = exp4.text_input(label="URL:", placeholder="http(s)://ip:port/v1", value=s_paras['main_llm_url'])
+    s_paras['main_llm_key'] = exp4.text_input(label="API-key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['main_llm_key'])
+    s_paras['main_llm_model_id'] = exp4.text_input(label="id:", placeholder="model_id", value=s_paras['main_llm_model_id'])
     if s_paras['main_llm_url'] or s_paras['main_llm_key'] or s_paras['main_llm_model_id']:
         on_main_llm_change()
     # if not 'input_translate' in s_paras or not s_paras['input_translate']:
@@ -878,12 +875,12 @@ def streamlit_refresh_loop():
     #         dred(f'input_translate in s_paras: {"input_translate" in s_paras}')
     #         dred(f's_paras["input_translate"]: {s_paras["input_translate"]}')
 
-    exp4.checkbox('调用擅长英语的模型', value=s_paras['input_translate'], on_change=on_input_translate_change)
-    s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'])
-    s_paras['english_llm_key'] = exp4.text_input(label="英语模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['english_llm_key'], disabled=not s_paras['input_translate'])
-    s_paras['english_llm_model_id'] = exp4.text_input(label="英语模型model_id:", placeholder="model_id", value=s_paras['english_llm_model_id'], disabled=not s_paras['input_translate'])
-    if s_paras['english_llm_url'] or s_paras['english_llm_key'] or s_paras['english_llm_model_id']:
-        on_english_llm_change()
+    # exp4.checkbox('调用擅长英语的模型', value=s_paras['input_translate'], on_change=on_input_translate_change)
+    # s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'])
+    # s_paras['english_llm_key'] = exp4.text_input(label="英语模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['english_llm_key'], disabled=not s_paras['input_translate'])
+    # s_paras['english_llm_model_id'] = exp4.text_input(label="英语模型model_id:", placeholder="model_id", value=s_paras['english_llm_model_id'], disabled=not s_paras['input_translate'])
+    # if s_paras['english_llm_url'] or s_paras['english_llm_key'] or s_paras['english_llm_model_id']:
+    #     on_english_llm_change()
 
     # =======================所有chat历史的显示========================
     # 这一行必须要运行，不能加前置判断，否则chat_input没有显示

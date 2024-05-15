@@ -45,32 +45,14 @@ class LLM_Client():
                  ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
-        if not url:
-            url = LLM_Client.Get_All_LLM_Server()
-        # print(f'LLM_Client.__init__(): url = "{url}"')
-            
-        # if sys.platform.startswith('linux'):      # linux下用的是vllm的openai api
-        self.openai = OpenAI(
-            api_key=api_key,
-            base_url=url,
-        )
-        try:
-            if model_id is None or model_id=='' or model_id==' ':
-                self.model_id = self.openai.models.list().data[0].id
-            else:
-                self.model_id = model_id
-        except Exception as e:
-            print(f'【LLM_Client异常】__init__(): "{e}"')
-            print(f'【LLM_Client异常】__init__(): 可能是IP或Port设置错误，当前url为: {url}')
-            self.model_id = None
+        if url is None:
+            self.url = LLM_Client.Get_All_LLM_Server()
+        else:
+            self.url = url
 
-        dprint(f'【LLM_Client】 api_key: {api_key}')
-        dprint(f'【LLM_Client】 url: {url}')
-        dprint(f'【LLM_Client】 model: {self.model_id}')
-
-        self.url = url
+        self.openai = None
+        self.model_id = None
         self.api_key = api_key
-
 
         self.gen = None     # 返回结果的generator
         self.usage = None   # 返回 usage={'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
@@ -141,6 +123,7 @@ class LLM_Client():
                 except Exception as e:
                     dred(f'【LLM_Client异常】refresh_endpoint(): "{e}"')
                     dred(f'【LLM_Client异常】refresh_endpoint(): 可能是IP或Port设置错误，当前url为: {self.url}')
+                    self.model_id = 'wrong'
                     return False
 
             dprint(f'【LLM_Client】refresh_endpoint(): {self.url}(model_id: {self.model_id}, api_key: "{self.api_key}")')
@@ -321,6 +304,31 @@ class LLM_Client():
             in_stop=None,
             in_system_prompt=None,
     ):
+
+        dprint(f'{"-" * 40}输入参数{"-" * 40}')
+        dprint(f'self.url: "{self.url}"')
+        dprint(f'self.model_id: "{self.model_id}"')
+        dprint(f'self.api_key: "{self.api_key}"')
+
+        dprint(f'in_temperature: {in_temperature}')
+        dprint(f'in_stream: {in_stream}')
+        dprint(f'in_max_new_tokens: {in_max_new_tokens}')
+        dprint(f'in_stop: {in_stop}')
+        dprint(f'in_question: "【{in_question}】"')
+        dprint(f'{"-" * 40}采用参数{"-" * 40}')
+
+        self.openai = OpenAI(
+            api_key=self.api_key,
+            base_url=self.url,
+        )
+        try:
+            if self.model_id is None or self.model_id=='':
+                self.model_id = self.openai.models.list().data[0].id
+        except Exception as e:
+            print(f'【LLM_Client异常】ask_prepare(): "{e}"')
+            print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
+            self.model_id = 'wrong'
+
         if in_system_prompt is not None:
             self.set_system_prompt(in_system_prompt)
 
@@ -396,7 +404,7 @@ class LLM_Client():
 
         dprint(f'{"-" * 80}')
         # dprint(f'self.openai: {self.openai}')
-        dprint(f'self.model_id: {self.model_id}')
+        dprint(f'self.model_id: "{self.model_id}"')
         dprint(f'run_temperature: {run_temperature}')
         dprint(f'stream: {in_stream}')
         dprint(f'max_tokens: {max_new_tokens}')
