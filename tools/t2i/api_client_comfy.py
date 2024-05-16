@@ -6,52 +6,77 @@ import uuid
 import json
 import urllib.request
 import urllib.parse
+import random
 
 from PIL import Image
 import io
 # from IPython.display import display
 
-server_address = "127.0.0.1:7869"
-client_id = str(uuid.uuid4())
+from config import Port, Global
+class Comfy:
+    def __init__(self):
+        self.server_address = f'127.0.0.1:{Port.comfy}' # 127.0.0.1:7869
+        self.client_id = None
+        self.images = None
+        self.temp_dir = Global.temp_dir
 
-def queue_prompt(prompt):
-    p = {"prompt": prompt, "client_id": client_id}
-    data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data)
-    return json.loads(urllib.request.urlopen(req).read())
+    def get_images(self, in_prompt):
+        self.client_id = str(uuid.uuid4())
 
-def get_image(filename, subfolder, folder_type):
-    data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
-    url_values = urllib.parse.urlencode(data)
-    with urllib.request.urlopen("http://{}/view?{}".format(server_address, url_values)) as response:
-        return response.read()
+        ws = websocket.WebSocket()
+        ws.connect("ws://{}/ws?clientId={}".format(self.server_address, self.client_id))
+        images = self._get_images(ws, in_prompt, self.client_id)
 
-def get_history(prompt_id):
-    with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
-        return json.loads(response.read())
+        self.images = images
 
-def get_images(ws, prompt):
-    prompt_id = queue_prompt(prompt)['prompt_id']
-    output_images = {}
-    current_node = ""
-    while True:
-        out = ws.recv()
-        if isinstance(out, str):
-            message = json.loads(out)
-            if message['type'] == 'executing':
-                data = message['data']
-                if data['prompt_id'] == prompt_id:
-                    if data['node'] is None:
-                        break #Execution is done
-                    else:
-                        current_node = data['node']
-        else:
-            if current_node == 'save_image_websocket_node':
-                images_output = output_images.get(current_node, [])
-                images_output.append(out[8:])
-                output_images[current_node] = images_output
+    def save_images(self):
+        i=0
+        for node_id in self.images:
+            for image_data in self.images[node_id]:
+                from PIL import Image
+                import io
+                image = Image.open(io.BytesIO(image_data))
+                image.save(f'{self.temp_dir}/{self.client_id}_{i}.jpg')
+                i += 1
 
-    return output_images
+    def _get_images(self, ws, prompt, client_id):
+        prompt_id = self._queue_prompt(prompt, client_id)['prompt_id']
+        output_images = {}
+        current_node = ""
+        while True:
+            out = ws.recv()
+            if isinstance(out, str):
+                message = json.loads(out)
+                if message['type'] == 'executing':
+                    data = message['data']
+                    if data['prompt_id'] == prompt_id:
+                        if data['node'] is None:
+                            break  # Execution is done
+                        else:
+                            current_node = data['node']
+            else:
+                if current_node == 'save_image_websocket_node':
+                    images_output = output_images.get(current_node, [])
+                    images_output.append(out[8:])
+                    output_images[current_node] = images_output
+
+        return output_images
+
+    def _get_image(self, filename, subfolder, folder_type):
+        data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
+        url_values = urllib.parse.urlencode(data)
+        with urllib.request.urlopen("http://{}/view?{}".format(self.server_address, url_values)) as response:
+            return response.read()
+
+    def _get_history(self, prompt_id):
+        with urllib.request.urlopen("http://{}/history/{}".format(self.server_address, prompt_id)) as response:
+            return json.loads(response.read())
+
+    def _queue_prompt(self, prompt, client_id):
+        p = {"prompt": prompt, "client_id": client_id}
+        data = json.dumps(p).encode('utf-8')
+        req =  urllib.request.Request("http://{}/prompt".format(self.server_address), data=data)
+        return json.loads(urllib.request.urlopen(req).read())
 
 prompt_text = """
 {
@@ -140,34 +165,16 @@ prompt_text = """
     }
 }
 """
-print('--------1--------')
-prompt = json.loads(prompt_text)
-#set the text prompt for our positive CLIPTextEncode
-# prompt["6"]["inputs"]["text"] = "masterpiece best quality man"
 
-#set the seed for our KSampler node
-prompt["3"]["inputs"]["seed"] = 5
+def main():
 
-print('--------2--------')
-ws = websocket.WebSocket()
-ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
-images = get_images(ws, prompt)
+    client = Comfy()
+    prompt = json.loads(prompt_text)
+    seed = random.randint(1, 1e14)
+    print(f'seed: {seed}')
+    prompt['3']['inputs']['seed'] = seed
+    client.get_images(prompt)
+    client.save_images()
 
-#print(f'images: {images}')
-
-
-print('--------3--------')
-#Commented out code to display the output images:
-
-for node_id in images:
-   for image_data in images[node_id]:
-       from PIL import Image
-       import io
-       image = Image.open(io.BytesIO(image_data))
-       image.save("test.jpg")
-       # image.show()
-
-# for node_id in images:
-#     for image_data in images[node_id]:
-#         image = Image.open(io.BytesIO(image_data))
-#         # display(image)
+if __name__ == "__main__" :
+    main()

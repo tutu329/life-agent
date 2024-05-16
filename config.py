@@ -65,6 +65,7 @@ class Global():
     ddgs_search_max_num = 50    # ddgs搜索最大数量
 
     work_dir = '/home'   # 工作目录
+    temp_dir = './temp'
 
     @staticmethod
     def get_work_dir():
