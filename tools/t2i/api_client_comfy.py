@@ -229,7 +229,6 @@ class Comfy:
         return json.loads(urllib.request.urlopen(req).read())
 
 def main():
-
     client = Comfy()
     client.set_server_address('192.168.124.33:7869')
     client.set_workflow_type(Work_Flow_Type.simple)
