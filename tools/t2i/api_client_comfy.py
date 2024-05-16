@@ -231,11 +231,7 @@ class Comfy:
 def main():
 
     client = Comfy()
-    # prompt = json.loads(prompt_text)
-    # seed = random.randint(1, 1e14)
-    # print(f'seed: {seed}')
-    # prompt['3']['inputs']['seed'] = seed
-
+    client.set_server_address('192.168.124.33:7869')
     client.set_workflow_type(Work_Flow_Type.simple)
     client.set_simple_work_flow(
         positive='super man',
