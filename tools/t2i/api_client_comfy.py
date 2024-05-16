@@ -170,6 +170,9 @@ class Comfy:
 
         self.images = images
 
+    def set_server_address(self, address=f'127.0.0.1:{Port.comfy}'):
+        self.server_address = address
+
     def set_temp_dir(self, dir=Global.temp_dir):
         self.temp_dir = dir
 
