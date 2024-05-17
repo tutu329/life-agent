@@ -169,6 +169,7 @@ class Comfy:
         images = self._get_images(ws, self.prompt, self.client_id)
 
         self.images = images
+        return images
 
     def set_server_address(self, address=f'127.0.0.1:{Port.comfy}'):
         self.server_address = address

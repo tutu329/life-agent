@@ -8,6 +8,7 @@ from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
 from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
 from agent.tool_agent import Tool_Agent
+from tools.t2i.api_client_comfy import Comfy, Work_Flow_Type
 
 import time
 
@@ -58,12 +59,18 @@ def llm_init():
     # dblue(f'"{LLM_Client.Get_All_LLM_Server()}"')
 
     # 初始化 mem_llm
-    history = True
     mem_llm = LLM_Client(
         url=config.Global.llm_url,
         api_key=config.Global.llm_key,
         model_id=config.Global.llm_model,
-        history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
+        history=True,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
+        print_input=False,
+    )
+    draw_llm = LLM_Client(
+        url=config.Global.llm_url,
+        api_key=config.Global.llm_key,
+        model_id=config.Global.llm_model,
+        history=False,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
         print_input=False,
     )
     # mem_llm = LLM_Client(
@@ -72,7 +79,7 @@ def llm_init():
     # )
     dgreen('初始化mem_llm完毕: ', end='', flush=True)
     # dblue(f'"history={history}, temperature(初始)={temperature}"')
-    return mem_llm
+    return mem_llm, draw_llm
 
 def _get_session():
     from streamlit.runtime import get_instance
@@ -166,6 +173,7 @@ default_session_data = {
         'multi_line_prompt': '',
         'is_agent': False,
         'connecting_internet': False,
+        'draw': False,
 
         'local_llm_temperature': 0.7,
         'local_llm_max_new_token': 4096,
@@ -225,7 +233,7 @@ def search_init(concurrent_num=3, in_stream_buf_callback=None):
     return Bing_Searcher.create_searcher_and_loop(fix_streamlit_in_win, in_stream_buf_callback=in_stream_buf_callback, in_search_num=concurrent_num)   # 返回loop，主要是为了在searcher完成start后，在同一个loop中执行query_bing_and_get_results()
 
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
-mem_llm = llm_init()
+mem_llm, draw_llm = llm_init()
 
 def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', in_concurrent_num=3):
     cols = in_st.columns([1]*in_concurrent_num)
@@ -272,11 +280,65 @@ def ask_llm(prompt, paras):
     role_prompt = paras['role_prompt']
     url_prompt = paras['url_prompt']
     connecting_internet = paras['connecting_internet']
+    draw = paras['draw']
     is_agent = paras['is_agent']
     system_prompt = paras['system_prompt']
     files = paras['files']
 # def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
     # =================================agent功能=================================
+    if draw:
+
+        answer = draw_llm.ask_prepare(
+            in_question=f'''
+请将描述"{prompt}"转换为stable diffusion的英文的出图提示词，返回的提示词风格如下（注意必须全部为英文，且只返回引号内的内容）:
+"Energetic (puppy playing in a water fountain:1.5) in a (lively urban park:1.4), with (splashing water droplets:1.4) and (amused onlookers:1.3), intricate details, (vibrant blue and green tones:1.4), (joyful playful atmosphere:1.5), (bright sunny daylight:1.4), high-definition, sharp focus, perfect composition, (modern photography:1.5) (smartphone camera:1.5) (social media post:1.5)"
+''',
+            in_temperature=st.session_state.session_data['paras']['local_llm_temperature'],
+            in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
+            in_system_prompt=system_prompt,
+        ).get_answer_and_sync_print()
+        place_holder = st.chat_message('assistant').empty()
+        place_holder.markdown(answer)
+
+        client = Comfy()
+        client.set_server_address('192.168.124.33:7869')
+        client.set_workflow_type(Work_Flow_Type.simple)
+        client.set_simple_work_flow(
+            positive=answer,
+            negative='',
+            # seed=seed,
+            ckpt_name='sdxl_lightning_2step.safetensors',
+            height=1024,
+            width=1024,
+        )
+        images = client.get_images()
+        rtn_images_data = {
+            'type':'pics',
+            'data':[]
+        }
+        one_image_data = {
+            'caption':'',
+            'data':None,
+        }
+
+        for node_id in images:
+            for image_data in images[node_id]:
+                from PIL import Image
+                import io
+                image = Image.open(io.BytesIO(image_data))
+                place_holder.image(image, caption=prompt, use_column_width=True)
+
+                # 一张图的标题和data
+                one_image_data['caption'] = prompt
+                one_image_data['data'] = image
+
+                # list添加新图
+                rtn_images_data['data'].append(one_image_data)
+
+                # image.save(f'{self.temp_dir}/{self.client_id}_{i}.jpg')
+        # client.save_images_to_temp_dir()
+        return None, None, answer, rtn_images_data
+
     if is_agent:
         final_answer_list = []
         status_data = {
@@ -311,7 +373,7 @@ def ask_llm(prompt, paras):
         print(f'status_list: {status_list}')
 
         status.update(label=f":green[Agent已完成任务]", state='complete', expanded=True)
-        return status_data, None, '\n'.join(final_answer_list)
+        return status_data, None, '\n'.join(final_answer_list), None
     # if is_agent:
     #     final_answer = ''
     #     status_data = {
@@ -346,7 +408,7 @@ def ask_llm(prompt, paras):
     #         # placeholder1.markdown(final_answer + flicker1.get_flicker())
     #     # flicker1.set_stop()
     #     status.update(label=f":green[Agent调用完毕]", state='complete', expanded=True)
-    #     return status_data, None, final_answer
+    #     return status_data, None, final_answer, None
     # =================================搜索并llm=================================
     if connecting_internet:
         # =================================搜索=================================
@@ -379,7 +441,7 @@ def ask_llm(prompt, paras):
         #         final_answer += url_string
         #         placeholder2.markdown(url_string)
         #
-        #     return None, None, final_answer
+        #     return None, None, final_answer, None
 
         searcher = search_init(concurrent_num=st.session_state.session_data['paras']['concurrent_num'])
 
@@ -449,7 +511,7 @@ def ask_llm(prompt, paras):
         for answer in task_status['llms_full_responses']:
             # 这里task_status是llms.start_and_get_status()结束后的最终状态
             final_answer += answer
-        return None, async_llms, final_answer
+        return None, async_llms, final_answer, None
     else:
         # =================================local llm=================================
         all_prompt = role_prompt
@@ -558,7 +620,7 @@ def ask_llm(prompt, paras):
 
         place_holder.markdown(full_res)
         # dred(f'full_res: {full_res}')
-        return None, None, full_res
+        return None, None, full_res, None
 
 def on_clear_history():
     # st.session_state.messages = []
@@ -680,6 +742,10 @@ def on_connecting_internet_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['connecting_internet'] = not s_paras['connecting_internet']
 
+def on_draw_change():
+    s_paras = st.session_state.session_data['paras']
+    s_paras['draw'] = not s_paras['draw']
+
 def on_is_agent_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['is_agent'] = not s_paras['is_agent']
@@ -760,6 +826,7 @@ def streamlit_refresh_loop():
     col0, col1, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1])
     col0.checkbox('Agent', value=s_paras['is_agent'], disabled=st.session_state.processing, on_change=on_is_agent_change)
     col1.checkbox('联网', value=s_paras['connecting_internet'], disabled=st.session_state.processing, on_change=on_connecting_internet_change)
+    col2.checkbox('绘画', value=s_paras['draw'], disabled=st.session_state.processing, on_change=on_draw_change)
     # connecting_internet_detail = col2.checkbox('明细', value=False, disabled=st.session_state.processing)
     col3.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
     col4.button("中止", on_click=on_cancel_response, disabled=not st.session_state.processing, key='cancel_button')
@@ -902,6 +969,10 @@ def streamlit_refresh_loop():
                 status = st.status(label=status_title, state='complete', expanded=False)
                 for s in status_list:
                     status.markdown(s)
+            elif message.get('type') and message['type']=='pics':
+                # 添加图片list
+                for img in message['data']:
+                    st.image(img['data'], caption=img['caption'], use_column_width=True)
             else:
                 with st.chat_message(message['role']):
                     st.markdown(message['content'])
@@ -914,6 +985,7 @@ def streamlit_refresh_loop():
                     col.markdown(message[i])
                     # col.container(border=True).markdown(message[i])
                     i += 1
+
         # st.status('测试下status')
 
     if st.session_state.prompt and st.session_state.processing:
@@ -937,7 +1009,7 @@ def streamlit_refresh_loop():
         #     system_prompt,
         #     files
         # )
-        status_data, async_llms, completed_answer = ask_llm(st.session_state.prompt, st.session_state.session_data['paras'])
+        status_data, async_llms, completed_answer, images_data = ask_llm(st.session_state.prompt, st.session_state.session_data['paras'])
         # status_data, async_llms, completed_answer = llm_response_concurrently(st.session_state.prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent)
 
         dgreen(f'completed_answer: {completed_answer}')
@@ -952,6 +1024,8 @@ def streamlit_refresh_loop():
                 'role': 'assistant',
                 'content': completed_answer
             })
+        if images_data:
+            st.session_state.session_data['msgs'].append(images_data)
 
         # 存储会话文件
         # get_session_id()
