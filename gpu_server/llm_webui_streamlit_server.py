@@ -1,3 +1,5 @@
+import copy
+
 import streamlit as st
 import pandas as pd
 # from streamlit_file_browser import st_file_browser
@@ -305,11 +307,12 @@ def ask_llm(prompt, paras):
         client.set_workflow_type(Work_Flow_Type.simple)
         client.set_simple_work_flow(
             positive=answer,
-            negative='',
+            negative='low quality, low res, bad face, bad hands, ugly, bad fingers, bad legs, text, watermark',
             # seed=seed,
             ckpt_name='sdxl_lightning_2step.safetensors',
             height=1024,
             width=1024,
+            batch_size=2,
         )
         images = client.get_images()
         rtn_images_data = {
@@ -333,7 +336,7 @@ def ask_llm(prompt, paras):
                 one_image_data['data'] = image
 
                 # list添加新图
-                rtn_images_data['data'].append(one_image_data)
+                rtn_images_data['data'].append(copy.deepcopy(one_image_data))
 
                 # image.save(f'{self.temp_dir}/{self.client_id}_{i}.jpg')
         # client.save_images_to_temp_dir()

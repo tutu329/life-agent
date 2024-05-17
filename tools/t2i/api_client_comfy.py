@@ -138,6 +138,7 @@ class Comfy:
             steps=2,
             cfg=1,
             denoise=1,
+            batch_size=1,
     ):
         # 设置simple工作流模板
         self.prompt = json.loads(Work_Flow_Template.template[self.workflow_type])
@@ -155,6 +156,7 @@ class Comfy:
 
         self.prompt['5']['inputs']['height'] = height
         self.prompt['5']['inputs']['width'] = width
+        self.prompt['5']['inputs']['batch_size'] = batch_size
 
         self.prompt['6']['inputs']['text'] = positive   # 如: "masterpiece best quality girl"
         self.prompt['7']['inputs']['text'] = negative   # 如: "bad hands"
