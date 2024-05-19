@@ -107,7 +107,15 @@ class LLM_Client():
         dred(f'refresh model id: {in_model_id}')
         dred(f'refresh api_key: {in_key}')
         if self.url != in_url or self.model_id !=in_model_id or self.api_key != in_key:
-            self.clear_history()
+            dred(f'self.url: {self.url}')
+            dred(f'in_url: {in_url}')
+            dred(f'self.model_id: {self.model_id}')
+            dred(f'in_model_id: {in_model_id}')
+
+            dred(f'self.api_key: {self.api_key}')
+            dred(f'in_key: {in_key}')
+            dred(f'refresh_endpoint(): history cleared.')
+            # self.clear_history()
             self.url = in_url
             self.model_id = in_model_id
             self.api_key = in_key
@@ -206,6 +214,7 @@ class LLM_Client():
                     self.__history_clear()
 
     def clear_history(self):
+        dred(f'----------------------------------------------------clear_history() invoked!----------------------------------------------------')
         self.__history_clear()
 
     def __history_clear(self):
