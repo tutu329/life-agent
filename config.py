@@ -95,6 +95,8 @@ class Port():
     milvus_api:int=8003 # milvus单独的api
     chroma_api:int=8004 # chroma单独的api
 
+    redis:int=8010      # redis消息服务
+
     # 工作环境
     jupyter:int         = 7862
     open_webui:int      = 7864  # open-webui
