@@ -36,6 +36,115 @@ st.set_page_config(
     page_title="Life-Agent",
     layout="wide",
 )
+
+
+
+
+
+
+# # 全局变量
+# server_status = {'name': 'jack', 'age': 23}
+#
+# # 设置页面配置
+# # st.set_page_config(layout="wide")
+#
+# # 处理查询参数
+# params = st.experimental_get_query_params()
+# if "show_modal" in params and params["show_modal"][0] == "true":
+#     st.session_state.show_modal = True
+# else:
+#     st.session_state.show_modal = False
+#
+# # CSS样式
+# st.markdown("""
+#     <style>
+#     .modal {
+#         display: none;
+#         position: fixed;
+#         z-index: 1;
+#         padding-top: 100px;
+#         left: 0;
+#         top: 0;
+#         width: 100%;
+#         height: 100%;
+#         overflow: auto;
+#         background-color: rgb(0,0,0);
+#         background-color: rgba(0,0,0,0.4);
+#     }
+#     .modal-content {
+#         background-color: #fefefe;
+#         margin: auto;
+#         padding: 20px;
+#         border: 1px solid #888;
+#         width: 80%;
+#     }
+#     .close {
+#         color: #aaa;
+#         float: right;
+#         font-size: 28px;
+#         font-weight: bold;
+#     }
+#     .close:hover,
+#     .close:focus {
+#         color: black;
+#         text-decoration: none;
+#         cursor: pointer;
+#     }
+#     </style>
+#     """, unsafe_allow_html=True)
+#
+# # JavaScript脚本
+# st.markdown("""
+#     <script>
+#     function openModal() {
+#         var modal = document.getElementById("myModal");
+#         modal.style.display = "block";
+#     }
+#     function closeModal() {
+#         var modal = document.getElementById("myModal");
+#         modal.style.display = "none";
+#         window.location.href = window.location.href.split('?')[0] + "?show_modal=false";
+#     }
+#     </script>
+#     """, unsafe_allow_html=True)
+#
+# # 侧边栏按钮
+# if st.sidebar.button('打开窗口'):
+#     st.experimental_set_query_params(show_modal="true")
+#     st.session_state.show_modal = True
+#
+# # 悬浮窗口的HTML结构
+# if st.session_state.show_modal:
+#     st.markdown(f"""
+#         <div id="myModal" class="modal" style="display: block;">
+#             <div class="modal-content">
+#                 <span class="close" onclick="closeModal()">&times;</span>
+#                 <h2>Server Status</h2>
+#                 <p>Name: {server_status['name']}</p>
+#                 <p>Age: {server_status['age']}</p>
+#             </div>
+#         </div>
+#         """, unsafe_allow_html=True)
+#
+# # 主页面内容
+# st.write("欢迎使用Streamlit悬浮窗口示例！")
+#
+# # JavaScript 用于刷新页面
+# if st.session_state.show_modal:
+#     st.markdown("""
+#         <script>
+#         openModal();
+#         </script>
+#         """, unsafe_allow_html=True)
+
+
+
+
+
+
+
+
+
 # st.set_page_config(
 #     page_title=None,
 #     page_icon=None,
