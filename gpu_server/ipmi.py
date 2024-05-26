@@ -237,7 +237,10 @@ def get_status():
     # 风扇信息
     for k, v in state.temperature_and_fan_dict.items():
         if 'FAN' in k:
-            state.fan_list.append([k, float(v)])
+            if 'na' in v:
+                state.fan_list.append([k, 0.0])
+            else:
+                state.fan_list.append([k, float(v)])
 
     # GPU信息
     for i in range(len(state.gpu_info_list)):
@@ -425,4 +428,5 @@ def draw_chart():
 
 if __name__ == "__main__":
     streamlit_refresh_loop()
+    ##
 
