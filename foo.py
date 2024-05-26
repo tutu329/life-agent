@@ -37,5 +37,4 @@ outputs = model.generate(input_tensor.to(model.device), max_new_tokens=100)
 
 result = tokenizer.decode(outputs[0][input_tensor.shape[1]:], skip_special_tokens=True)
 print(result)
-
 ###
