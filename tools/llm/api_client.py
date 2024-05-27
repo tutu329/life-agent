@@ -2,6 +2,7 @@ from copy import deepcopy
 # import os, requests, torch
 
 import sys, time
+from uuid import uuid4
 
 import asyncio
 import threading
@@ -18,9 +19,29 @@ from openai import OpenAI
 import openai
 # import openai.types.completion_usage.CompletionUsage
 
+from dataclasses import dataclass, field, asdict
+from typing import List, Optional
+from redis_client import Redis_Client
 
 DEBUG = True
 # DEBUG = False
+
+
+
+@dataclass
+class LLM_Client_Status:
+    uuid: Optional[str] = None
+    url: Optional[str] = None
+    question: Optional[str] = None
+    model_id: Optional[str] = None
+    stops: Optional[int] = None
+    temperature: Optional[float] = None
+    system_prompt: Optional[str] = None
+    role_prompt: Optional[str] = None
+    max_new_tokens: Optional[int] = None
+    has_history: Optional[bool] = None
+    history_list: Optional[List[str]] = field(default_factory=list)
+    last_response: Optional[str] = None
 
 def dprint(*args, **kwargs):
     if DEBUG:
@@ -28,14 +49,19 @@ def dprint(*args, **kwargs):
     else:
         pass
 
-class LLM_Client():
+def status_to_redis(in_status: LLM_Client_Status):
+    dict = asdict(in_status)
+    redis = Redis_Client()
+    redis.set_dict(f'LLM_Client({in_status.uuid})', dict)
+
+class LLM_Client:
     LLM_SERVER = 'http://127.0.0.1:8001/v1'
     def __init__(self,
                  history=True,
                  history_max_turns=config.Global.llm_max_chat_turns,
                  model_id=None,
                  history_clear_method='pop',
-                 api_key=None,
+                 api_key='empty',
                  # api_key='b1ad5dac212f563be4765b646543ca1b',
                  temperature=0.7,
                  url=None,
@@ -44,6 +70,16 @@ class LLM_Client():
                  print_output=True
                  ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
+
+        self.status = LLM_Client_Status(
+            uuid=str(uuid4()),
+            url=LLM_Client.Get_All_LLM_Server() if url is None else url,
+            model_id=model_id,
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
+            has_history=history,
+        )
+        status_to_redis(self.status)
 
         if url is None:
             self.url = LLM_Client.Get_All_LLM_Server()
@@ -142,6 +178,8 @@ class LLM_Client():
     def set_system_prompt(self, in_system_prompt):
         self.system_prompt = in_system_prompt
 
+        self.status.system_prompt = in_system_prompt
+
     def set_role_prompt(self, in_role_prompt):
         if in_role_prompt!='':
             # role_prompt有内容
@@ -186,6 +224,10 @@ class LLM_Client():
                 if len(self.history_list)>0:
                     self.history_list.pop(0)
                 self.has_role_prompt = False
+
+        self.status.role_prompt = in_role_prompt
+        # dred(f'--------------status: {self.status}')
+        status_to_redis(self.status)
 
     # 内部openai格式的history
     def __history_add_last_turn_msg(self):
@@ -313,7 +355,6 @@ class LLM_Client():
             in_stop=None,
             in_system_prompt=None,
     ):
-
         dprint(f'{"-" * 40}输入参数{"-" * 40}')
         dprint(f'self.url: "{self.url}"')
         dprint(f'self.model_id: "{self.model_id}"')
@@ -419,6 +460,15 @@ class LLM_Client():
         dprint(f'max_tokens: {max_new_tokens}')
         dprint(f'stop: {stop}')
         dprint(f'messages: {msgs}')
+
+        self.status.question = in_question
+        self.status.temperature = run_temperature
+        self.status.max_new_tokens = max_new_tokens
+        self.status.stops = stop
+        self.status.system_prompt = in_system_prompt
+        dgreen(f'--------------status: {self.status}')
+        status_to_redis(self.status)
+
 
         try:
             # dred('当前系统: windows')
@@ -542,6 +592,12 @@ class LLM_Client():
             dgreen(chunk, end='', flush=True)
 
         dgreen()
+
+        self.status.last_response = result
+        self.status.history_list = self.history_list
+        dred(f'--------------history_list: {self.history_list}')
+        dred(f'--------------status: {self.status}')
+        status_to_redis(self.status)
         return result
 
     # 方式2：返回generator，在合适的时候输出结果
@@ -605,6 +661,11 @@ class LLM_Client():
         self.__history_add_last_turn_msg()
         self.print_history_and_system()
 
+        self.status.last_response = answer
+        self.status.history_list = self.history_list
+        dred(f'--------------status: {self.status}')
+        status_to_redis(self.status)
+
     # def get_answer_generator(self):
     #     answer = ''
     #     for chunk in self.gen:
@@ -625,7 +686,7 @@ class LLM_Client():
         self.response_canceled = True
 
 # async的非联网llm调用
-class Async_LLM():
+class Async_LLM:
     def __init__(self):
         
         self.llm = None
@@ -739,7 +800,7 @@ class Async_LLM():
         dprint(f'Async_LLM.start() invoked.')
     
 # 通过多个llm的client，对model进行并发访问，同步返回多个stream
-class Concurrent_LLMs():
+class Concurrent_LLMs:
     def __init__(self, in_url='http://127.0.0.1:8001/v1'):
         self.prompts = []
         self.role_prompts = []
@@ -1103,7 +1164,7 @@ def miqu_generate_stream(in_query):
     print()
 
 
-def main_call():
+def main1():
     print('main_call()')
     llm = LLM_Client(
         history=True,
@@ -1119,17 +1180,20 @@ def main_call():
     llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
     # llm.ask_prepare(question, in_max_new_tokens=500).get_answer_and_sync_print()
 
+def main2():
+    llm = LLM_Client(
+        history=True,
+        history_max_turns=50,
+        history_clear_method='pop',
+        temperature=0.7,
+        url='http://localhost:8001/v1'
+    )
+    # print('models: ', openai.models.list().data)
+    llm.set_system_prompt('你是一个ai助理.')
+    llm.ask_prepare('who r u?', in_max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_prepare('i am tutu', in_max_new_tokens=300).get_answer_and_sync_print()
+    llm.ask_prepare('who am i?', in_max_new_tokens=400).get_answer_and_sync_print()
 
 if __name__ == "__main__" :
-    # llm = LLM_Client(
-    #     history=True,
-    #     history_max_turns=50,
-    #     history_clear_method='pop',
-    #     temperature=0.7,
-    #     url='http://localhost:8001/v1'
-    # )
-    # # print('models: ', openai.models.list().data)
-    # llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
-    # main()
-    main_call()
-    # miqu_generate_stream('你是谁？')
+    # main1()
+    main2()

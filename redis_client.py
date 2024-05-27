@@ -60,14 +60,15 @@ class Redis_Client:
 def main():
     # client = Redis_Client(host='116.62.63.201')
 
-    client = Redis_Client(host='192.168.124.33')
+    client = Redis_Client()
+    # client = Redis_Client(host='192.168.124.33')
     d = {
         'aa':22,
         'bb':11,
     }
     client.set_dict('msg', d)
     print(client.get_dict('msg'))
-    print('hhhh')
+    print('ssss')
 
     # r = redis.Redis(host='116.62.63.201')
     # r.set('msg', 'hh')
