@@ -20,28 +20,11 @@ import openai
 # import openai.types.completion_usage.CompletionUsage
 
 from dataclasses import dataclass, field, asdict
-from typing import List, Optional
+from typing import List, Optional, Dict
 from redis_client import Redis_Client
 
 # DEBUG = True
 DEBUG = False
-
-
-
-@dataclass
-class LLM_Client_Status:
-    uuid: Optional[str] = None
-    url: Optional[str] = None
-    question: Optional[str] = None
-    model_id: Optional[str] = None
-    stops: Optional[int] = None
-    temperature: Optional[float] = None
-    system_prompt: Optional[str] = None
-    role_prompt: Optional[str] = None
-    max_new_tokens: Optional[int] = None
-    has_history: Optional[bool] = None
-    history_list: Optional[List[str]] = field(default_factory=list)
-    last_response: Optional[str] = None
 
 def dprint(*args, **kwargs):
     if DEBUG:
@@ -49,10 +32,37 @@ def dprint(*args, **kwargs):
     else:
         pass
 
+@dataclass
+class LLM_Client_Status:
+    uuid: Optional[str] = None
+    url: Optional[str] = None
+    question: Optional[str] = None
+    model_id: Optional[str] = None
+    stops: Optional[List[str]] = field(default_factory=list)
+    temperature: Optional[float] = None
+    system_prompt: Optional[str] = None
+    role_prompt: Optional[str] = None
+    max_new_tokens: Optional[int] = None
+    has_history: Optional[bool] = None
+    history_list: Optional[List[Dict]] = field(default_factory=list)
+    last_response: Optional[str] = None
+
 def status_to_redis(in_status: LLM_Client_Status):
     dict = asdict(in_status)
     redis = Redis_Client()
     redis.set_dict(f'LLM_Client status', dict)
+    # redis.set_dict(f'client uuid', in_status.uuid)
+    # redis.set_dict(f'client url', in_status.url)
+    redis.set_dict(f'client question', in_status.question)
+    # redis.set_dict(f'client model_id', in_status.model_id)
+    redis.set_dict(f'client stops', in_status.stops)
+    redis.set_dict(f'client temperature', in_status.temperature)
+    redis.set_dict(f'client system_prompt', in_status.system_prompt)
+    redis.set_dict(f'client role_prompt', in_status.role_prompt)
+    # redis.set_dict(f'client max_new_tokens', in_status.max_new_tokens)
+    # redis.set_dict(f'client has_history', in_status.has_history)
+    redis.set_dict(f'client history_list', in_status.history_list)
+    redis.set_dict(f'client last_response', in_status.last_response)
 
 class LLM_Client:
     LLM_SERVER = 'http://127.0.0.1:8001/v1'
@@ -1197,9 +1207,9 @@ def main2():
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
     # llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
-    llm.ask_prepare('write a sentence', in_temperature=0.5, in_max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_prepare('你是谁', in_temperature=0.5, in_max_new_tokens=200).get_answer_and_sync_print()
     llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
-    llm.ask_prepare('write two words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
+    llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 
 if __name__ == "__main__" :
     # main1()
