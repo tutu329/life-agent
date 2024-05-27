@@ -179,6 +179,8 @@ class LLM_Client:
         self.system_prompt = in_system_prompt
 
         self.status.system_prompt = in_system_prompt
+        dred(f'--------system_prompt: {in_system_prompt}')
+        status_to_redis(self.status)
 
     def set_role_prompt(self, in_role_prompt):
         if in_role_prompt!='':
@@ -381,6 +383,8 @@ class LLM_Client:
 
         if in_system_prompt is not None:
             self.set_system_prompt(in_system_prompt)
+        else:
+            self.set_system_prompt(config.Global.llm_system)
 
         self.usage = None   # 清空输入和输出的token数量统计
 
@@ -465,8 +469,7 @@ class LLM_Client:
         self.status.temperature = run_temperature
         self.status.max_new_tokens = max_new_tokens
         self.status.stops = stop
-        self.status.system_prompt = in_system_prompt
-        dgreen(f'--------------status: {self.status}')
+        self.status.system_prompt = self.system_prompt
         status_to_redis(self.status)
 
 
@@ -592,12 +595,6 @@ class LLM_Client:
             dgreen(chunk, end='', flush=True)
 
         dgreen()
-
-        self.status.last_response = result
-        self.status.history_list = self.history_list
-        dred(f'--------------history_list: {self.history_list}')
-        dred(f'--------------status: {self.status}')
-        status_to_redis(self.status)
         return result
 
     # 方式2：返回generator，在合适的时候输出结果
@@ -656,13 +653,19 @@ class LLM_Client:
             dred(f'LLM_Client("{self.url}")连接异常: {e}')
             yield ''
 
-        self.answer_last_turn = answer_no_partial_stop
+        if self.stop:
+            self.answer_last_turn = answer_no_partial_stop
+        else:
+            self.answer_last_turn = answer
+
         # self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
         self.print_history_and_system()
 
         self.status.last_response = answer
         self.status.history_list = self.history_list
+        dred(f'--------------self.last_response: {answer}')
+        dred(f'--------------self.history_list: {self.history_list}')
         dred(f'--------------status: {self.status}')
         status_to_redis(self.status)
 
@@ -1189,10 +1192,11 @@ def main2():
         url='http://localhost:8001/v1'
     )
     # print('models: ', openai.models.list().data)
-    llm.set_system_prompt('你是一个ai助理.')
-    llm.ask_prepare('who r u?', in_max_new_tokens=200).get_answer_and_sync_print()
-    llm.ask_prepare('i am tutu', in_max_new_tokens=300).get_answer_and_sync_print()
-    llm.ask_prepare('who am i?', in_max_new_tokens=400).get_answer_and_sync_print()
+    # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
+    llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
+    llm.ask_prepare('it is a picture', in_max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_prepare('captain america', in_max_new_tokens=300).get_answer_and_sync_print()
+    llm.ask_prepare('it is fucking messy', in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 
 if __name__ == "__main__" :
     # main1()
