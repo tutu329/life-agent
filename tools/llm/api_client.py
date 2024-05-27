@@ -23,8 +23,8 @@ from dataclasses import dataclass, field, asdict
 from typing import List, Optional
 from redis_client import Redis_Client
 
-DEBUG = True
-# DEBUG = False
+# DEBUG = True
+DEBUG = False
 
 
 
@@ -52,7 +52,7 @@ def dprint(*args, **kwargs):
 def status_to_redis(in_status: LLM_Client_Status):
     dict = asdict(in_status)
     redis = Redis_Client()
-    redis.set_dict(f'LLM_Client({in_status.uuid})', dict)
+    redis.set_dict(f'LLM_Client status', dict)
 
 class LLM_Client:
     LLM_SERVER = 'http://127.0.0.1:8001/v1'
@@ -71,16 +71,6 @@ class LLM_Client:
                  ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
-        self.status = LLM_Client_Status(
-            uuid=str(uuid4()),
-            url=LLM_Client.Get_All_LLM_Server() if url is None else url,
-            model_id=model_id,
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
-            has_history=history,
-        )
-        status_to_redis(self.status)
-
         if url is None:
             self.url = LLM_Client.Get_All_LLM_Server()
         else:
@@ -90,6 +80,7 @@ class LLM_Client:
         self.model_id = None
         self.api_key = api_key
 
+        self.uuid = str(uuid4())
         self.gen = None     # 返回结果的generator
         self.usage = None   # 返回 usage={'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
         self.stop = None    # 用于对vllm的openai api的stop进行过滤
@@ -117,6 +108,16 @@ class LLM_Client:
         self.external_last_history = []     # 用于存放外部格式独特的history
         self.print_input = print_input
         self.print_output = print_output
+
+        self.status = LLM_Client_Status(
+            uuid=self.uuid,
+            url=self.url,
+            model_id=self.model_id,
+            temperature=self.temperature,
+            max_new_tokens=self.max_new_tokens,
+            has_history=self.history,
+        )
+        status_to_redis(self.status)
 
     # 动态修改role_prompt
     # def set_role_prompt(self, in_role_prompt):
@@ -179,7 +180,7 @@ class LLM_Client:
         self.system_prompt = in_system_prompt
 
         self.status.system_prompt = in_system_prompt
-        dred(f'--------system_prompt: {in_system_prompt}')
+        # dred(f'--------system_prompt: {in_system_prompt}')
         status_to_redis(self.status)
 
     def set_role_prompt(self, in_role_prompt):
@@ -292,7 +293,7 @@ class LLM_Client:
     def print_history_and_system(self):
         # print('\n\t================【LLM_Client】 对话历史================')
         # print(f'system提示: {self.role_prompt}')
-        dgreen(f"\tsystem: \t{self.system_prompt}")
+        dgreen(f"\n\tsystem: \t{self.system_prompt}")
         for chat in self.history_list:
             content = chat['content'][:50]+'...' if len(chat['content']) > 50 else chat['content']
             dgreen(f"\t{chat['role']}: \t{content}")
@@ -466,6 +467,7 @@ class LLM_Client:
         dprint(f'messages: {msgs}')
 
         self.status.question = in_question
+        self.status.model_id = self.model_id
         self.status.temperature = run_temperature
         self.status.max_new_tokens = max_new_tokens
         self.status.stops = stop
@@ -590,11 +592,12 @@ class LLM_Client:
     def get_answer_and_sync_print(self):
         result = ''
 
+        dred('<assistant>')
         for chunk in self.get_answer_generator():
             result += chunk
-            dgreen(chunk, end='', flush=True)
+            dred(chunk, end='', flush=True)
 
-        dgreen()
+        # dgreen(' \n\n', flush=True)
         return result
 
     # 方式2：返回generator，在合适的时候输出结果
@@ -664,9 +667,9 @@ class LLM_Client:
 
         self.status.last_response = answer
         self.status.history_list = self.history_list
-        dred(f'--------------self.last_response: {answer}')
-        dred(f'--------------self.history_list: {self.history_list}')
-        dred(f'--------------status: {self.status}')
+        # dred(f'--------------self.last_response: {answer}')
+        # dred(f'--------------self.history_list: {self.history_list}')
+        # dred(f'--------------status: {self.status}')
         status_to_redis(self.status)
 
     # def get_answer_generator(self):
@@ -1193,10 +1196,10 @@ def main2():
     )
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
-    llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
-    llm.ask_prepare('it is a picture', in_max_new_tokens=200).get_answer_and_sync_print()
-    llm.ask_prepare('captain america', in_max_new_tokens=300).get_answer_and_sync_print()
-    llm.ask_prepare('it is fucking messy', in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
+    # llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
+    llm.ask_prepare('write a sentence', in_temperature=0.5, in_max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
+    llm.ask_prepare('write two words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 
 if __name__ == "__main__" :
     # main1()
