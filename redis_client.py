@@ -2,7 +2,9 @@ import redis
 import json5 as json
 
 from config import Port
+from singleton import singleton
 
+@singleton
 class Redis_Client:
     def __init__(self, host='localhost', port=Port.redis):
         self.host = host
@@ -65,6 +67,7 @@ def main():
     }
     client.set_dict('msg', d)
     print(client.get_dict('msg'))
+    print('hhhh')
 
     # r = redis.Redis(host='116.62.63.201')
     # r.set('msg', 'hh')
