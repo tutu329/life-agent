@@ -24,19 +24,19 @@ def show_llm(tab1):
     data = from_dict(LLM_Client_Status, status)
 
     # 显示data
-    tab1.markdown(f'【问题】  {data.question}')
     tab1.markdown(f'【uuid】 {data.uuid}')
     tab1.markdown(f'【system prompt】 {data.system_prompt}')
     tab1.markdown(f'【role prompt】 {data.role_prompt}')
     tab1.markdown(f'【temperature】 {data.temperature}')
     tab1.markdown(f'【stops】 {data.stops}')
     tab1.markdown(f'【max new tokens】 {data.max_new_tokens}')
-    last_response = data.last_response.replace("\n", " ")[:50]
-    tab1.markdown(f'【上一次回复】 {last_response}...')
+    last_response = data.last_response.replace("\n", " ")[:50]+'...' if len(data.last_response.replace("\n", " "))>50 else data.last_response.replace("\n", " ")
+    tab1.markdown(f'【上一问题】  {data.question}')
+    tab1.markdown(f'【上一回复】 {last_response}')
     tab1.markdown(f'【对话历史】')
     for chat in data.history_list:
-        content = chat['content'].replace("\n", " ")[:50]
-        tab1.markdown(f"{'&nbsp;' * 16}【{chat['role']}】 {content}...")
+        content = chat['content'].replace("\n", " ")[:50]+'...' if len(chat['content'].replace("\n", " "))>50 else chat['content'].replace("\n", " ")
+        tab1.markdown(f"{'&nbsp;' * 16}【{chat['role']}】 {content}")
 
 def show_other(tab2):
     tab2.markdown('dd')
