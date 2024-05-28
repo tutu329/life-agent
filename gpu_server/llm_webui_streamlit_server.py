@@ -1030,8 +1030,7 @@ def streamlit_refresh_loop():
     # =============================expander：角色参数==============================
     exp3 =  sidebar.expander("Prompt 参数", expanded=True)
     s_paras['system_prompt'] = exp3.text_input(label="设置系统提示:", label_visibility='collapsed', placeholder="请在这里输入您的系统提示", value=s_paras['system_prompt'])
-    role_prompt_input = exp3.text_area(label="设置角色提示:", label_visibility='collapsed', placeholder="请在这里输入您的角色提示", value=s_paras['role_prompt'], disabled=st.session_state.processing)
-    s_paras['role_prompt'] = role_prompt_input
+    s_paras['role_prompt'] = exp3.text_area(label="设置角色提示:", label_visibility='collapsed', placeholder="请在这里输入您的角色提示", value=s_paras['role_prompt'], disabled=st.session_state.processing)
 
     # =============================主模型、辅模型(用于翻译input)==============================
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
