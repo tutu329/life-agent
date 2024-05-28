@@ -23,7 +23,7 @@ def streamlit_refresh_loop():
 
     # 主循环，每秒刷新一次数据
     while True:
-        # ----------------------------------tab1----------------------------------------
+        # ----------------------------------LLM----------------------------------------
         status = r.get_dict('LLM_Client status')
         data = from_dict(LLM_Client_Status, status)
 
@@ -34,14 +34,16 @@ def streamlit_refresh_loop():
         tab1.markdown(f'【temperature】 {data.temperature}')
         tab1.markdown(f'【stops】 {data.stops}')
         tab1.markdown(f'【max new tokens】 {data.max_new_tokens}')
-        tab1.markdown(f'【上一次回复】 {data.last_response}')
+        last_response = data.last_response.replace("\n", " ")[:50]
+        tab1.markdown(f'【上一次回复】 {last_response}...')
         tab1.markdown(f'【对话历史】')
         for chat in data.history_list:
-            tab1.markdown(f"{'&nbsp;'*16}【{chat['role']}】 {chat['content']}")
+            content = chat['content'].replace("\n", " ")[:50]
+            tab1.markdown(f"{'&nbsp;'*16}【{chat['role']}】 {content}...")
 
 
 
-        # ----------------------------------tab2----------------------------------------
+        # ----------------------------------other----------------------------------------
         tab2.markdown('dd')
         tab2.markdown('hi')
 
