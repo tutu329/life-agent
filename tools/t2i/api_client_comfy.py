@@ -125,6 +125,18 @@ class Comfy:
     def set_workflow_type(self, type:Work_Flow_Type):
         self.workflow_type = type
 
+    def set_workflow_by_json_file(self, in_json_file):
+        with open(in_json_file, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            # print(data)
+        self.prompt = data
+        seed = random.randint(1, 1e14)
+        print(f'seed: "{seed}"')
+        self.prompt['3']['inputs']['seed'] = seed
+
+    def is_image_websocket_node(self, in_node):
+        return self.prompt[str(in_node)]["class_type"] == "SaveImageWebsocket"
+
     def set_simple_work_flow(
             self,
             positive,
@@ -168,7 +180,9 @@ class Comfy:
         ws = websocket.WebSocket()
         ws.connect("ws://{}/ws?clientId={}".format(self.server_address, self.client_id))
 
+        # print(f'get_images(): self.prompt="{self.prompt}"')
         images = self._get_images(ws, self.prompt, self.client_id)
+        # print(f'get_images(): images="{images}"')
 
         self.images = images
         return images
@@ -200,15 +214,21 @@ class Comfy:
             out = ws.recv()
             if isinstance(out, str):
                 message = json.loads(out)
+                print(f'message: "{message}"')
                 if message['type'] == 'executing':
                     data = message['data']
                     if data['prompt_id'] == prompt_id:
                         if data['node'] is None:
+                            print('数据均已返回.')
                             break  # Execution is done
                         else:
                             current_node = data['node']
+                            print(f'处理节点【{current_node}】...')
+
             else:
-                if current_node == 'save_image_websocket_node':
+                if self.is_image_websocket_node(current_node):
+                # if current_node == 'save_image_websocket_node':
+                    print('节点【save_image_websocket_node】输出数据...')
                     images_output = output_images.get(current_node, [])
                     images_output.append(out[8:])
                     output_images[current_node] = images_output
@@ -235,16 +255,21 @@ def main():
     client = Comfy()
     client.set_server_address('192.168.124.33:7869')
     client.set_workflow_type(Work_Flow_Type.simple)
-    client.set_simple_work_flow(
-        positive='super man',
-        negative='ugly',
-        # seed=seed,
-        ckpt_name='sdxl_lightning_2step.safetensors',
-        height=1024,
-        width=1024,
-    )
+    t = 0
+    if t==1:
+        client.set_simple_work_flow(
+            positive='super man',
+            negative='ugly',
+            # seed=seed,
+            ckpt_name='sdxl_lightning_2step.safetensors',
+            height=512,
+            width=512,
+        )
+    else:
+        client.set_workflow_by_json_file('api3.json')
     client.get_images()
     client.save_images_to_temp_dir()
+
 
 if __name__ == "__main__" :
     main()
