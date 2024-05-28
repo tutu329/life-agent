@@ -30,12 +30,16 @@ def show_llm(tab1):
     tab1.markdown(f'【temperature】 {data.temperature}')
     tab1.markdown(f'【stops】 {data.stops}')
     tab1.markdown(f'【max new tokens】 {data.max_new_tokens}')
-    last_response = data.last_response.replace("\n", " ")[:50]+'...' if len(data.last_response.replace("\n", " "))>50 else data.last_response.replace("\n", " ")
+
+    last_response = data.last_response.replace("\n", " ") if data.last_response else ''
+    last_response = last_response[:50]+'...' if len(last_response)>50 else last_response
+
     tab1.markdown(f'【上一问题】  {data.question}')
     tab1.markdown(f'【上一回复】 {last_response}')
     tab1.markdown(f'【对话历史】')
     for chat in data.history_list:
-        content = chat['content'].replace("\n", " ")[:50]+'...' if len(chat['content'].replace("\n", " "))>50 else chat['content'].replace("\n", " ")
+        content = chat['content'].replace("\n", " ") if chat['content'] else ''
+        content = content[:50]+'...' if len(content)>50 else content
         tab1.markdown(f"{'&nbsp;' * 16}【{chat['role']}】 {content}")
 
 def show_other(tab2):

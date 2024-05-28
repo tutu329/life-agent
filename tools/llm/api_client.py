@@ -194,7 +194,7 @@ class LLM_Client:
         status_to_redis(self.status)
 
     def set_role_prompt(self, in_role_prompt):
-        if in_role_prompt!='':
+        if in_role_prompt.strip() != '':
             # role_prompt有内容
             self.role_prompt = in_role_prompt
 
@@ -237,6 +237,7 @@ class LLM_Client:
                 if len(self.history_list)>0:
                     self.history_list.pop(0)
                 self.has_role_prompt = False
+                self.role_prompt = ''
 
         self.status.role_prompt = in_role_prompt
         # dred(f'--------------status: {self.status}')
@@ -256,7 +257,7 @@ class LLM_Client:
                     dred('======对话轮次超限，记录本轮对话、删除首轮对话======')
                     # for item in self.history_list:
                     #     print(item)
-                    if self.role_prompt != '':
+                    if self.has_role_prompt:
                         # 有role prompt，则删除第二个对话
                         self.history_list.pop(2)
                         self.history_list.pop(2)
