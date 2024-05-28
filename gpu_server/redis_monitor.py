@@ -17,6 +17,31 @@ def redis_init():
 
 r = redis_init()
 
+def show_llm(tab1):
+    # 实时获取redis变量
+    status = r.get_dict('LLM_Client status')
+    # 由dict转换为dataclass
+    data = from_dict(LLM_Client_Status, status)
+
+    # 显示data
+    tab1.markdown(f'【问题】  {data.question}')
+    tab1.markdown(f'【uuid】 {data.uuid}')
+    tab1.markdown(f'【system prompt】 {data.system_prompt}')
+    tab1.markdown(f'【role prompt】 {data.role_prompt}')
+    tab1.markdown(f'【temperature】 {data.temperature}')
+    tab1.markdown(f'【stops】 {data.stops}')
+    tab1.markdown(f'【max new tokens】 {data.max_new_tokens}')
+    last_response = data.last_response.replace("\n", " ")[:50]
+    tab1.markdown(f'【上一次回复】 {last_response}...')
+    tab1.markdown(f'【对话历史】')
+    for chat in data.history_list:
+        content = chat['content'].replace("\n", " ")[:50]
+        tab1.markdown(f"{'&nbsp;' * 16}【{chat['role']}】 {content}...")
+
+def show_other(tab2):
+    tab2.markdown('dd')
+    tab2.markdown('hi')
+
 def streamlit_refresh_loop():
     # 创建标签页
     tab1, tab2 = st.tabs(["LLM", "other"])
@@ -24,28 +49,8 @@ def streamlit_refresh_loop():
     # 主循环，每秒刷新一次数据
     while True:
         # ----------------------------------LLM----------------------------------------
-        status = r.get_dict('LLM_Client status')
-        data = from_dict(LLM_Client_Status, status)
-
-        tab1.markdown(f'【问题】  {data.question}')
-        tab1.markdown(f'【uuid】 {data.uuid}')
-        tab1.markdown(f'【system prompt】 {data.system_prompt}')
-        tab1.markdown(f'【role prompt】 {data.role_prompt}')
-        tab1.markdown(f'【temperature】 {data.temperature}')
-        tab1.markdown(f'【stops】 {data.stops}')
-        tab1.markdown(f'【max new tokens】 {data.max_new_tokens}')
-        last_response = data.last_response.replace("\n", " ")[:50]
-        tab1.markdown(f'【上一次回复】 {last_response}...')
-        tab1.markdown(f'【对话历史】')
-        for chat in data.history_list:
-            content = chat['content'].replace("\n", " ")[:50]
-            tab1.markdown(f"{'&nbsp;'*16}【{chat['role']}】 {content}...")
-
-
-
-        # ----------------------------------other----------------------------------------
-        tab2.markdown('dd')
-        tab2.markdown('hi')
+        show_llm(tab1)
+        show_other(tab2)
 
         # ----------------------------------刷新----------------------------------------
         time.sleep(1)
