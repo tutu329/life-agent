@@ -4,6 +4,13 @@ import json5 as json
 from config import Port
 from singleton import singleton
 
+from typing import Type, TypeVar
+
+T = TypeVar('T')
+
+def from_dict(data_class: Type[T], data: dict) -> T:
+    return data_class(**data)
+
 @singleton
 class Redis_Client:
     def __init__(self, host='localhost', port=Port.redis):
