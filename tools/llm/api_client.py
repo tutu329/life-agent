@@ -513,6 +513,7 @@ class LLM_Client:
                 # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
                 max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
                 stop=stop,
+                # stop_token_ids=[151329, 151336, 151338],    # glm9b-chat-1m
                 # Specifying stop words in streaming output format is not yet supported and is under development.
             )
             dprint(f'===self.openai.chat.completions.create() invoked.===')
