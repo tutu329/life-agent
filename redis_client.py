@@ -87,6 +87,7 @@ class Redis_Client:
             self,
             stream_key,
             inout_data_list,    # 返回的数据列表
+            use_byte=False,     # 是否使用byte格式的数据(b'xxx')
             last_id='0-0',      # 起始id(>该id，则返回)
             count=100,          # 返回数据个数
             block=100           # 阻塞时间ms
@@ -100,8 +101,11 @@ class Redis_Client:
                 message_id = message[0]
                 message_data = message[1]
                 if inout_data_list is not None:
-                    inout_data_list.append(data_convert_from_byte_to_str(message_data))
-                dprint(f'\t Received message ID: {message_id}, data: {message_data}', end='', flush=True)
+                    if use_byte:
+                        inout_data_list.append(message_data)
+                    else:
+                        inout_data_list.append(data_convert_from_byte_to_str(message_data))
+                    dprint(f'\t Received message ID: {message_id}, data: {message_data}', end='', flush=True)
 
                 # 更新 last_id 以避免重复读取
                 last_id = message_id.decode('utf-8')
@@ -131,7 +135,7 @@ def main():
     inout_list2 = []
     client.add_stream('test_stream', data={'name':'jack', 'age':35})
     last1 = client.pop_stream('test_stream', inout_data_list=inout_list1)
-    last2 = client.pop_stream('test_stream',inout_data_list=inout_list2,  last_id='1718178990332-0', count=2)
+    last2 = client.pop_stream('test_stream', use_byte=False, inout_data_list=inout_list2,  last_id='1718178990332-0', count=2)
 
     print(f'last1: {last1}')
     print(f'inout_list1: "{inout_list1}')
