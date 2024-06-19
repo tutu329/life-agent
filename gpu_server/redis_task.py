@@ -50,19 +50,22 @@ def main():
     print(f'last2: {last2}')
     print(f'inout_list2: "{inout_list2}')
 
-def Example_Callback(out_task_info, arg1):
-    i=arg1
+def Example_Callback(out_task_info_must_be_here, num, num2):
+    i=num
     while True:
         i += 1
-        if out_task_info['status']==Status.Cancelling:
-             print(f"{out_task_info['task_name']} cancelled")
+        if out_task_info_must_be_here['status']==Status.Cancelling:
+             print(f"{out_task_info_must_be_here['task_name']} cancelled")
              break
         print(i)
         time.sleep(1)
 
 def main1():
     t = Redis_Task_Server()
-    t.init(Example_Callback, in_name='task1', in_timeout=3, arg1=100)
+    out_task_info = {
+        'status': 'hh'
+    }
+    t.init(Example_Callback, in_name='task1', in_timeout=3, num=100, num2=300)
     t.start()
 
 if __name__ == "__main__":

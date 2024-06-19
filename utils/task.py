@@ -204,12 +204,12 @@ class Flicker_Task(Task_Base):
         else:
             self.flicker=self.flicker1
 
-def Example_Callback(out_task_info, num):
+def Example_Callback(out_task_info_must_be_here, num):
     i=num
     while True:
         i += 1
-        if out_task_info['status']==Status.Cancelling:
-             print(f"{out_task_info['task_name']} cancelled")
+        if out_task_info_must_be_here['status']==Status.Cancelling:
+             print(f"{out_task_info_must_be_here['task_name']} cancelled")
              break
         print(i)
         time.sleep(1)
