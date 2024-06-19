@@ -1,4 +1,8 @@
 import config
+from singleton import singleton
+
+from enum import Enum, unique
+from dataclasses import dataclass, asdict, field
 
 from utils.task import Task_Base, Status
 from redis_client import Redis_Client
@@ -6,7 +10,19 @@ from config import dred,dgreen
 
 import uuid,time
 
-class Task(Task_Base):
+@unique
+class Redis_Task_Type(Enum):
+    LLM = 'LLM'
+    T2I = 'T2I'
+    TTS = 'TTS'
+
+@dataclass
+class Redis_Task_Data:
+    task_type:str = str(Redis_Task_Type.LLM)     #任务类型
+    task_input:str = ''                                 #任务输入
+
+@singleton
+class Redis_Task_Server(Task_Base):
     def __init__(self):
         super().__init__()
 
@@ -18,6 +34,9 @@ class Task(Task_Base):
              in_streamlit=False,
              **in_callback_func_kwargs
             ):
+        if not self.inited:
+            dgreen(f'Redis Task Server (id="{in_name}") started.')
+
         super().init(
              in_callback_func,
              *in_callback_func_args,
@@ -29,6 +48,14 @@ class Task(Task_Base):
 
     def start(self):
         super().start()
+
+    def add_llm_task(self, input):
+        client = Redis_Client(host='localhost', port=6379)  # win-server
+        data = Redis_Task_Data()
+        data.task_type = str(Redis_Task_Type.LLM)
+        data.task_input = input
+        print(f'add_llm_task() input: {input}')
+        client.add_stream('redis_task', data=asdict(data))
 
 def redis_test():
     client = Redis_Client(host='localhost', port=6379)  # win-server
@@ -44,7 +71,7 @@ def redis_test():
 
     inout_list1 = []
     inout_list2 = []
-    client.add_stream('test_stream', data={'name':'jack', 'age':35})
+    client.add_stream('test_stream', data={'name':'jack', 'age':37})
     last1 = client.pop_stream('test_stream', inout_data_list=inout_list1)
     last2 = client.pop_stream('test_stream', use_byte=False, inout_data_list=inout_list2,  last_id='1718178990332-0', count=2)
 
@@ -59,11 +86,15 @@ def Redis_Task_Server_Callback(out_task_info_must_be_here):
     def cancel():
         dred(f"Redis Task Server ({rt_status['task_name']}) cancelling...")
 
-    def task():
+    def task(stream_last_id):
         inout_list1 = []
-        last1 = s_redis_client.pop_stream('test_stream', inout_data_list=inout_list1)
-        print(f'inout_list1: "{inout_list1}')
+        last_id = None
+        if stream_last_id is not None:
+            last_id = s_redis_client.pop_stream('redis_task', inout_data_list=inout_list1, last_id=stream_last_id)
+            print(f'inout_list1: "{inout_list1}')
+        return last_id
 
+    last_id = '0-0'
     while True:
         if rt_status['status']==Status.Cancelling:
             # cancel中
@@ -71,16 +102,20 @@ def Redis_Task_Server_Callback(out_task_info_must_be_here):
             dred(f"Redis Task Server ({rt_status['task_name']}) cancelled")
             break
 
-        task()
+        last_id = task(last_id)
 
         time.sleep(config.Global.redis_task_server_sleep_time)
 
-s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
-s_redis_task_server = Task()
-s_redis_task_server.init(Redis_Task_Server_Callback)
-# s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=5)
-s_redis_task_server.start()
-dgreen(f'Redis Task Server started.')
+# IS_SERVER = False
+IS_SERVER = True
+if IS_SERVER:
+    # 启动 Redis Task Server
+    s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
+    s_redis_task_server = Redis_Task_Server()
+    s_redis_task_server.init(Redis_Task_Server_Callback)
+    # s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=5)
+    s_redis_task_server.start()
+
 
 def Example_Callback(out_task_info_must_be_here, num, num2):
     i=num
@@ -94,7 +129,7 @@ def Example_Callback(out_task_info_must_be_here, num, num2):
         time.sleep(1)
 
 def main():
-    t = Task()
+    t = Redis_Task_Server()
     t.init(Example_Callback, in_timeout=3, num=100, num2=300)
     t.start()
     while(1):

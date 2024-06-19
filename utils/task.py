@@ -5,6 +5,8 @@ import time
 import signal
 import sys
 
+from config import dred, dgreen
+
 @unique
 class Status(Enum):
     Created = 0
@@ -26,6 +28,8 @@ def dprint(*args, **kwargs):
 class Task_Base():
     def __init__(self):
         dprint('Task_Base.__init__()')
+        self.inited = False    # 用于singleton实例中，避免重复init
+        self.started = False   # 用于singleton实例中，避免重复start
         self.task_info = {}
         self.task_info['status'] = Status.Created    # 为了方便传递引用
 
@@ -53,28 +57,33 @@ class Task_Base():
              in_streamlit=False,
              **in_callback_func_kwargs
             ):
-        self.run_in_streamlit = in_streamlit
-        self.task_info['status'] = Status.Initializing
-        
-        self.task_info['task_name'] = in_name
+        if not self.inited:
+            self.inited = True
 
-        if threading.current_thread().name == 'MainThread':
-            signal.signal(signal.SIGINT, self.terminate)
-        
-        dprint(f"{self.task_info['task_name']}.init()")
-        self.thread = threading.Thread(target=self.run, daemon=True)    # daemon==True时，主线程退出则该线程也马上退出（可以有效响应ctrl+c）
-        if self.run_in_streamlit:
-            from streamlit.runtime.scriptrunner import add_script_run_ctx
-            add_script_run_ctx(self.thread)
+            self.run_in_streamlit = in_streamlit
+            self.task_info['status'] = Status.Initializing
 
-        self.callback = in_callback_func
-        self.callback_args = in_callback_func_args
-        self.callback_kwargs = in_callback_func_kwargs
+            self.task_info['task_name'] = in_name
 
-        if in_timeout:
-            self.timeout_timer = threading.Timer(in_timeout, lambda :self.cancel())
+            if threading.current_thread().name == 'MainThread':
+                signal.signal(signal.SIGINT, self.terminate)
 
-        self.task_info['status'] = Status.Initialized
+            dprint(f"{self.task_info['task_name']}.init()")
+            self.thread = threading.Thread(target=self.run, daemon=True)    # daemon==True时，主线程退出则该线程也马上退出（可以有效响应ctrl+c）
+            if self.run_in_streamlit:
+                from streamlit.runtime.scriptrunner import add_script_run_ctx
+                add_script_run_ctx(self.thread)
+
+            self.callback = in_callback_func
+            self.callback_args = in_callback_func_args
+            self.callback_kwargs = in_callback_func_kwargs
+
+            if in_timeout:
+                self.timeout_timer = threading.Timer(in_timeout, lambda :self.cancel())
+
+            self.task_info['status'] = Status.Initialized
+        else:
+            dred(f"Task {self.task_info['task_name']} already initialized. No more init worker done.")
      
     def run(self):
         self.task_info['status'] = Status.Running
@@ -90,14 +99,19 @@ class Task_Base():
         self.task_info['status'] = Status.Completed
 
     def start(self):
-        dprint(f"{self.task_info['task_name']}.start()")
-        
-        # 启动timeout的timer
-        if self.timeout_timer:
-            self.timeout_timer.start()
+        if not self.started:
+            self.started = True
 
-        # 启动task的timer
-        self.thread.start()
+            dprint(f"{self.task_info['task_name']}.start()")
+
+            # 启动timeout的timer
+            if self.timeout_timer:
+                self.timeout_timer.start()
+
+            # 启动task的timer
+            self.thread.start()
+        else:
+            dred(f"Task {self.task_info['task_name']} already started. No more started.")
 
     def cancel(self):
         dprint(f"{self.task_info['task_name']}.cancel()")
