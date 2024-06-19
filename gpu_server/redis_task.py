@@ -3,7 +3,7 @@ from redis_client import Redis_Client
 
 import uuid,time
 
-class Redis_Task_Server(Task_Base):
+class Task(Task_Base):
     def __init__(self):
         super().__init__()
 
@@ -50,6 +50,21 @@ def main():
     print(f'last2: {last2}')
     print(f'inout_list2: "{inout_list2}')
 
+def Redis_Task_Server_Callback(out_task_info_must_be_here):
+    i=900
+    while True:
+        i += 1
+        if out_task_info_must_be_here['status']==Status.Cancelling:
+             print(f"{out_task_info_must_be_here['task_name']} cancelled")
+             break
+        print(f'server: {i}')
+        print(out_task_info_must_be_here)
+        time.sleep(1)
+
+s_redis_task_server = Task()
+s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=3)
+s_redis_task_server.start()
+
 def Example_Callback(out_task_info_must_be_here, num, num2):
     i=num
     while True:
@@ -58,14 +73,12 @@ def Example_Callback(out_task_info_must_be_here, num, num2):
              print(f"{out_task_info_must_be_here['task_name']} cancelled")
              break
         print(i)
+        print(out_task_info_must_be_here)
         time.sleep(1)
 
 def main1():
-    t = Redis_Task_Server()
-    out_task_info = {
-        'status': 'hh'
-    }
-    t.init(Example_Callback, in_name='task1', in_timeout=3, num=100, num2=300)
+    t = Task()
+    t.init(Example_Callback, in_timeout=3, num=100, num2=300)
     t.start()
 
 if __name__ == "__main__":
