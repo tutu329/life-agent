@@ -21,6 +21,18 @@ class Redis_Task_Data:
     task_type:str = str(Redis_Task_Type.LLM)     #任务类型
     task_input:str = ''                                 #任务输入
 
+class Redis_Task_Client():
+    def __init__(self):
+        pass
+
+    def add_llm_task(self, input):
+        client = Redis_Client(host='localhost', port=6379)  # win-server
+        data = Redis_Task_Data()
+        data.task_type = str(Redis_Task_Type.LLM)
+        data.task_input = input
+        print(f'add_llm_task() input: {input}')
+        client.add_stream('redis_task', data=asdict(data))
+
 @singleton
 class Redis_Task_Server(Task_Base):
     def __init__(self):
@@ -48,14 +60,6 @@ class Redis_Task_Server(Task_Base):
 
     def start(self):
         super().start()
-
-    def add_llm_task(self, input):
-        client = Redis_Client(host='localhost', port=6379)  # win-server
-        data = Redis_Task_Data()
-        data.task_type = str(Redis_Task_Type.LLM)
-        data.task_input = input
-        print(f'add_llm_task() input: {input}')
-        client.add_stream('redis_task', data=asdict(data))
 
 def redis_test():
     client = Redis_Client(host='localhost', port=6379)  # win-server
@@ -87,14 +91,16 @@ def Redis_Task_Server_Callback(out_task_info_must_be_here):
         dred(f"Redis Task Server ({rt_status['task_name']}) cancelling...")
 
     def task(stream_last_id):
-        inout_list1 = []
+        inout_list = []
         last_id = None
         if stream_last_id is not None:
-            last_id = s_redis_client.pop_stream('redis_task', inout_data_list=inout_list1, last_id=stream_last_id)
-            print(f'inout_list1: "{inout_list1}')
+            last_id = s_redis_client.pop_stream('redis_task', inout_data_list=inout_list, last_id=stream_last_id)
+            for item in inout_list:
+                print(f'item: "{item}')
         return last_id
 
     last_id = '0-0'
+    last_valid_id = '0-0'  # 查询到最后一个msg后，redis会返回None而不是最后一个msg的id
     while True:
         if rt_status['status']==Status.Cancelling:
             # cancel中
@@ -102,8 +108,17 @@ def Redis_Task_Server_Callback(out_task_info_must_be_here):
             dred(f"Redis Task Server ({rt_status['task_name']}) cancelled")
             break
 
+        # print(f'last_id: {last_id}')
         last_id = task(last_id)
 
+        # 查询到最后一个msg后，redis会返回None而不是最后一个msg的id
+        if last_id is not None:
+            last_valid_id = last_id
+        else:
+            # 返回None，这里改为最后一个msg的id
+            last_id = last_valid_id
+
+        # time.sleep(1)
         time.sleep(config.Global.redis_task_server_sleep_time)
 
 # IS_SERVER = False
@@ -129,9 +144,9 @@ def Example_Callback(out_task_info_must_be_here, num, num2):
         time.sleep(1)
 
 def main():
-    t = Redis_Task_Server()
-    t.init(Example_Callback, in_timeout=3, num=100, num2=300)
-    t.start()
+    # t = Redis_Task_Server()
+    # t.init(Example_Callback, in_timeout=3, num=100, num2=300)
+    # t.start()
     while(1):
         time.sleep(1)
 

@@ -23,8 +23,8 @@ def redis_test():
     # print(f'inout_list2: "{inout_list2}')
 
 def main():
-    s_redis_task_server = Redis_Task_Server()
-    s_redis_task_server.add_llm_task('你是谁2？')
+    c = Redis_Task_Client()
+    c.add_llm_task('你是谁96？')
 
 if __name__ == "__main__":
 
