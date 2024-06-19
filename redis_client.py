@@ -122,7 +122,10 @@ def main():
     # client = Redis_Client(host='116.62.63.201')
 
     # client = Redis_Client(host='localhost')
-    client = Redis_Client(host='192.168.124.33')
+
+    client = Redis_Client(host='localhost', port=6379)  # win-server
+
+    # client = Redis_Client(host='192.168.124.33')  # ubuntu-server
     d = {
         'aa':22,
         'bb':11,
