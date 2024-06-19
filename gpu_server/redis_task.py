@@ -1,5 +1,6 @@
 from utils.task import Task_Base, Status
 from redis_client import Redis_Client
+from config import dred,dgreen
 
 import uuid,time
 
@@ -27,7 +28,7 @@ class Task(Task_Base):
     def start(self):
         super().start()
 
-def main():
+def redis_test():
     client = Redis_Client(host='localhost', port=6379)  # win-server
 
     # client = Redis_Client(host='192.168.124.33')  # ubuntu-server
@@ -57,13 +58,14 @@ def Redis_Task_Server_Callback(out_task_info_must_be_here):
         if out_task_info_must_be_here['status']==Status.Cancelling:
              print(f"{out_task_info_must_be_here['task_name']} cancelled")
              break
-        print(f'server: {i}')
-        print(out_task_info_must_be_here)
+        print(f'Redis Task Server: {i}')
         time.sleep(1)
 
 s_redis_task_server = Task()
-s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=3)
+s_redis_task_server.init(Redis_Task_Server_Callback)
+# s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=3)
 s_redis_task_server.start()
+dgreen(f'Redis Task Server started.')
 
 def Example_Callback(out_task_info_must_be_here, num, num2):
     i=num
@@ -73,14 +75,16 @@ def Example_Callback(out_task_info_must_be_here, num, num2):
              print(f"{out_task_info_must_be_here['task_name']} cancelled")
              break
         print(i)
-        print(out_task_info_must_be_here)
+        # print(out_task_info_must_be_here)
         time.sleep(1)
 
-def main1():
+def main():
     t = Task()
     t.init(Example_Callback, in_timeout=3, num=100, num2=300)
     t.start()
+    while(1):
+        time.sleep(1)
 
 if __name__ == "__main__":
-    main1()
-    # main()
+    main()
+    # redis_test()
