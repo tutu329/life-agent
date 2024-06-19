@@ -1,3 +1,5 @@
+import config
+
 from utils.task import Task_Base, Status
 from redis_client import Redis_Client
 from config import dred,dgreen
@@ -52,18 +54,31 @@ def redis_test():
     print(f'inout_list2: "{inout_list2}')
 
 def Redis_Task_Server_Callback(out_task_info_must_be_here):
-    i=900
-    while True:
-        i += 1
-        if out_task_info_must_be_here['status']==Status.Cancelling:
-             print(f"{out_task_info_must_be_here['task_name']} cancelled")
-             break
-        print(f'Redis Task Server: {i}')
-        time.sleep(1)
+    rt_status = out_task_info_must_be_here
 
+    def cancel():
+        dred(f"Redis Task Server ({rt_status['task_name']}) cancelling...")
+
+    def task():
+        inout_list1 = []
+        last1 = s_redis_client.pop_stream('test_stream', inout_data_list=inout_list1)
+        print(f'inout_list1: "{inout_list1}')
+
+    while True:
+        if rt_status['status']==Status.Cancelling:
+            # cancel中
+            cancel()
+            dred(f"Redis Task Server ({rt_status['task_name']}) cancelled")
+            break
+
+        task()
+
+        time.sleep(config.Global.redis_task_server_sleep_time)
+
+s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
 s_redis_task_server = Task()
 s_redis_task_server.init(Redis_Task_Server_Callback)
-# s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=3)
+# s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=5)
 s_redis_task_server.start()
 dgreen(f'Redis Task Server started.')
 

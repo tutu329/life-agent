@@ -77,6 +77,8 @@ class Redis_Client:
             stream_key,
             data
     ) -> str:                   # 返回message_id
+        self.__connect()
+
         # 向流中添加消息
         # message_id = self.__client.xadd(stream_key, {'key1': 'value1', 'key2': 'value2'})
         message_id = self.__client.xadd(stream_key, data)
@@ -92,6 +94,8 @@ class Redis_Client:
             count=100,          # 返回数据个数
             block=100           # 阻塞时间ms
     ) -> str:   # 返回last_id
+        self.__connect()
+
         # 读取新的消息
         messages = self.__client.xread({stream_key: last_id}, count=count, block=block)
         # print(f'messages: {messages}')
