@@ -25,7 +25,7 @@ def redis_test():
 
 def main():
     c = Redis_Task_Client()
-    c.add_llm_task('写一首诗')
+    c.add_llm_task('1+1=')
 
 if __name__ == "__main__":
 

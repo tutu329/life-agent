@@ -24,6 +24,7 @@ class Redis_Task_Data:
     task_input:str = ''                                 #任务输入
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
+@singleton
 class Redis_Task_Client():
     def __init__(self):
         pass
