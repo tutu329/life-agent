@@ -4,7 +4,8 @@ from redis_client import Redis_Client
 from gpu_server.redis_task import *
 
 def redis_test():
-    client = Redis_Client(host='localhost', port=6379)  # win-server
+    client = Redis_Client(host='192.168.124.33', port=8010)  # win-server
+    # client = Redis_Client(host='localhost', port=6379)  # win-server
 
 
     inout_list1 = []
@@ -24,7 +25,7 @@ def redis_test():
 
 def main():
     c = Redis_Task_Client()
-    c.add_llm_task('你是谁96？')
+    c.add_llm_task('写一首诗')
 
 if __name__ == "__main__":
 
