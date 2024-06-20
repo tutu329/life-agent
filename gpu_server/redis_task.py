@@ -3,6 +3,7 @@ from singleton import singleton
 
 from enum import Enum, unique
 from dataclasses import dataclass, asdict, field
+from typing import List, Any
 
 from utils.task import Task_Base, Status
 from redis_client import Redis_Client
@@ -19,9 +20,27 @@ class Redis_Task_Type(Enum):
     TTS = 'TTS'
 
 @dataclass
-class Redis_Task_Data:
+class Redis_Task_LLM_Data:
     task_type:str = str(Redis_Task_Type.LLM)     #任务类型
-    task_input:str = ''                                 #任务输入
+
+    url:str = ''
+    history:bool = True
+    max_new_tokens:int = 512
+    temperature:float = 0.7
+    api_key:str = 'empty'
+
+@dataclass
+class LLM_Ask_Data:
+    question:str = ''
+
+    temperature:Any = None
+    max_new_tokens:Any = None
+    clear_history:Any = None
+    stream:Any = None
+    stops:Any = None
+    # stops:List[str] = field(default_factory=list)
+    system_prompt:Any = None
+
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton
@@ -29,13 +48,37 @@ class Redis_Task_Client():
     def __init__(self):
         pass
 
-    def add_llm_task(self, input):
+    def add_llm_task(
+            self,
+            url='',
+            history = True,
+            max_new_tokens = 512,
+            temperature = 0.7,
+            api_key = 'empty',
+    ):
         client = Redis_Client(host='localhost', port=6379)  # win-server
-        data = Redis_Task_Data()
+
+        data = Redis_Task_LLM_Data()
         data.task_type = str(Redis_Task_Type.LLM)
-        data.task_input = input
-        print(f'add_llm_task() input: {input}')
-        client.add_stream('redis_task', data=asdict(data))
+        data.url = url
+        data.history = history
+        data.max_new_tokens = max_new_tokens
+        data.temperature = temperature
+        data.api_key = api_key
+
+        task_id = 'llm_task_' + str(uuid.uuid4())
+        print(f'add_llm_task() task_id: {task_id}')
+        client.add_stream(task_id, data=asdict(data))
+
+        return task_id
+
+    def llm_ask(self, task_id, question):
+        client = Redis_Client(host='localhost', port=6379)  # win-server
+
+        data = LLM_Ask_Data()
+        data.question = question
+
+        client.add_stream(task_id, data=asdict(data))
 
 # 被Redis_Task_Server调用的worker，用于启动llm、t2i、tts等异步任务
 class Task_Worker(Task_Base):

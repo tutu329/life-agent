@@ -10,7 +10,7 @@ def redis_test():
 
     inout_list1 = []
     inout_list2 = []
-    data = Redis_Task_Data()
+    data = Redis_Task_LLM_Data()
     data.task_type = str(Redis_Task_Type.LLM)
     data.task_input = '你是谁？'
     print(f'data: {data}')
