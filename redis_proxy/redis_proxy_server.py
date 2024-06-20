@@ -19,6 +19,13 @@ class Redis_Task_Type(Enum):
     T2I = 'T2I'
     TTS = 'TTS'
 
+@unique
+class Redis_LLM_Command(Enum):
+    INIT = 'INIT'
+    START = 'START'
+    CANCEL = 'CANCEL'
+    ASK = 'ASK'
+
 @dataclass
 class Redis_Task_LLM_Data:
     task_type:str = str(Redis_Task_Type.LLM)     #任务类型

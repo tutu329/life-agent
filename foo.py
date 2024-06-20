@@ -1,3 +1,6 @@
+from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_LLM_Command
+
+from redis_proxy.redis_proxy_client import Redis_Proxy_Client
 from redis_proxy.redis_proxy_client import Redis_Task_Client
 
 # def redis_test():
@@ -21,8 +24,13 @@ from redis_proxy.redis_proxy_client import Redis_Task_Client
 #     # print(f'inout_list2: "{inout_list2}')
 
 def main():
-    c = Redis_Task_Client()
-    c.add_llm_task('2+2=')
+    # c = Redis_Task_Client()
+    # c.add_llm_task('2+2=')
+
+    p1 = Redis_Proxy_Client()
+    task_id = p1.task_register(str(Redis_Task_Type.LLM))
+    p1.task_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), x=1, y=2)
+    p1.task_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), x=4, y=5)
 
 if __name__ == "__main__":
     main()
