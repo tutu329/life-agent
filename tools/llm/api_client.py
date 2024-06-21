@@ -395,8 +395,8 @@ class LLM_Client:
 
         if in_system_prompt is not None:
             self.set_system_prompt(in_system_prompt)
-        else:
-            self.set_system_prompt(config.Global.llm_system)
+        # else:
+        #     self.set_system_prompt(config.Global.llm_system)
 
         self.usage = None   # 清空输入和输出的token数量统计
 

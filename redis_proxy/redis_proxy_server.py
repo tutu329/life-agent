@@ -267,6 +267,14 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                 # dred(f'llm_callback() invoked: stats({out_task_info_must_be_here}), question({question})')
                 status = out_task_info_must_be_here
 
+                if 'system_prompt' in arg_dict:
+                    print(f"system_prompt is : {arg_dict['system_prompt']}")
+                    llm_obj.set_system_prompt(arg_dict['system_prompt'])
+
+                if 'role_prompt' in arg_dict:
+                    print(f"role_prompt is : {arg_dict['role_prompt']}")
+                    llm_obj.set_role_prompt(arg_dict['role_prompt'])
+
                 question = arg_dict['question']
                 if 'temperature' in arg_dict:
                     temperature = arg_dict['temperature']
