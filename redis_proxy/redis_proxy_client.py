@@ -16,10 +16,7 @@ s_redis = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
 @singleton
 class Redis_Proxy_Client():
     def __init__(self):
-        self.task_result_stream_last_id = {     # 用于存放返回数据的stream_id指针
-            # stream_key1: result_stream_id1,
-            # stream_key2: result_stream_id2,
-        }
+        self.client_id = 'Client_' + str(uuid.uuid4())
 
     # 向server发送一个消息，在server构造一个task
     def new_task(
@@ -31,14 +28,11 @@ class Redis_Proxy_Client():
         s_redis.add_stream(
             stream_key='Task_Register',
             data={
+                'client_id': self.client_id,
                 'task_type': str(task_type),
                 'task_id': task_id,
             },
         )
-
-        # 初始化task_id对应的result_stream_last_id
-        stream_key = f'Task_{task_id}_Result'
-        self.task_result_stream_last_id[stream_key] = None
 
         return task_id
 
@@ -51,6 +45,7 @@ class Redis_Proxy_Client():
     ):
         # 封装redis的data
         data = {
+            'client_id': self.client_id,
             'command': command,
         }
         # redis必须将arg_dict的item加到data中，而不能嵌套dict
@@ -78,31 +73,15 @@ class Redis_Proxy_Client():
     def get_result(self, task_id,        # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
     )->str:                 # 返回的数据
         # 返回stream_key为'Task_xxxid_Result'（该数据由server填充）的最新数据
-
-        dred(f'get_result()之前：self.task_result_stream_last_id: {self.task_result_stream_last_id}')
-
         stream_key = f'Task_{task_id}_Result'
 
         # 读取最新stream数据
-        inout_data_list = []
-        if stream_key in  self.task_result_stream_last_id and self.task_result_stream_last_id[stream_key] is not None:
-            last_stream_id = self.task_result_stream_last_id[stream_key]
-        else:
-            last_stream_id = '0-0'
-        last_stream_id = s_redis.pop_stream(stream_key=stream_key, inout_data_list=inout_data_list, use_byte=False, last_id=last_stream_id)
+        rtn_data_list = s_redis.pop_stream(stream_key=stream_key, use_byte=False)
 
-        # stream last_id指针放在最后，如没有新的数据则不变
-        if last_stream_id is not None:
-            self.task_result_stream_last_id[stream_key] = last_stream_id
-
-        dgreen(f'get_result()之后：self.task_result_stream_last_id: {self.task_result_stream_last_id}')
-
-        if inout_data_list:
-            return inout_data_list[-1]
+        if rtn_data_list:
+            return rtn_data_list[-1]
         else:
             return None
-
-
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton

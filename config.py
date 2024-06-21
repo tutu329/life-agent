@@ -53,7 +53,7 @@ class Global():
     # llm_system:str = "你是一个助理。"
     llm_system:str = "You are a helpful assistant."
 
-    redis_task_server_sleep_time:float = 0.1    # redis task server循环的sleep时间
+    redis_proxy_server_sleep_time:float = 0.1    # redis task server循环的sleep时间
 
     # V2Ray代理
     playwright_proxy = {
