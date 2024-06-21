@@ -38,8 +38,9 @@ def main():
 
     print(f'result is:')
     while True:
-        print(t1.get_result(task_id), end='\r', flush=True)
-        time.sleep(0.2)
+        print(t1.get_result(task_id))
+        # print(t1.get_result(task_id), end='\r', flush=True)
+        # time.sleep(0.2)
         if t1.get_status(task_id)=='completed':
             print('finished.')
             break
