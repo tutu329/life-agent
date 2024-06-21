@@ -22,7 +22,7 @@ class Redis_Task_Type(Enum):
 @unique
 class Redis_LLM_Command(Enum):
     INIT = 'INIT'
-    START = 'START'
+    # START = 'START'
     CANCEL = 'CANCEL'
     ASK = 'ASK'
 
@@ -196,16 +196,19 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
         if task_type==str(Redis_Task_Type.LLM):
             data = {
                 'task_type': task_type,
-                'task_status': '',
+                'task_status_key': f'Task_{task_id}_Status',
+                'task_result_key': f'Task_{task_id}_Result',
                 'task_system': [
                     {
-                        'obj': LLM_Client(
-                            url=config.Global.llm_url,
-                            history=True,
-                            max_new_tokens=config.Global.llm_max_new_tokens,
-                            temperature=config.Global.llm_temperature,
-                        ),
-                        'thread': Task_Worker_Thread(),
+                        'obj':None,
+                        'thread': None,
+                        # 'obj': LLM_Client(
+                        #     url=config.Global.llm_url,
+                        #     history=True,
+                        #     max_new_tokens=config.Global.llm_max_new_tokens,
+                        #     temperature=config.Global.llm_temperature,
+                        # ),
+                        # 'thread': Task_Worker_Thread(),
                     },
                     # {
                     #     'obj': tts_client,
@@ -247,18 +250,37 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
         task_data = s_redis_proxy_server_data[cid][tid]
 
         if command==str(Redis_LLM_Command.INIT):
-            pass
-
+            # 初始化 LLM_Client
+            task_data['task_system'][0]['obj'] = LLM_Client(
+                url=config.Global.llm_url,
+                history=True,
+                max_new_tokens=config.Global.llm_max_new_tokens,
+                temperature=config.Global.llm_temperature,
+            )
+            # 初始化 Task_Worker_Thread
+            task_data['task_system'][0]['thread'] = Task_Worker_Thread()
 
         if command==str(Redis_LLM_Command.ASK):
-            def llm_callback(out_task_info_must_be_here, llm_obj, question):
+            def llm_callback(out_task_info_must_be_here, status_key, result_key, llm_obj, question):
+                dred(f'llm_callback() invoked: stats({out_task_info_must_be_here}), question({question})')
                 status = out_task_info_must_be_here
-                llm_obj.ask_prepare(in_question=question)
-                llm_obj.get_answer_and_sync_print()
+                gen = llm_obj.ask_prepare(in_question=question).get_answer_generator()
+                result = ''
+                for chunk in gen:
+                    print(chunk, end='', flush=True)
+                    result += chunk
+                    s_redis_client.set_string(key=result_key,value_string=result)
+
+                s_redis_client.set_string(key=status_key,value_string='completed')
+
 
             llm = task_data['task_system'][0]['obj']
+            print(f'llm: {llm}')
+            status_key = task_data['task_status_key']
+            result_key = task_data['task_result_key']
             thread = task_data['task_system'][0]['thread']
-            thread.init(in_callback_func=llm_callback, llm_obj=llm, question=arg_dict['question'])
+            thread.init(in_callback_func=llm_callback, status_key=status_key, result_key=result_key, llm_obj=llm, question=arg_dict['question'])
+            thread.start()
 
     # 响应client某task的command
     def polling_task_commands():
@@ -294,6 +316,9 @@ IS_SERVER = True
 if IS_SERVER:
     # 启动 Redis Task Server
     s_redis_client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
+    # redis清空所有数据
+    s_redis_client.flushall()
+
     # s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
     s_redis_proxy_server_thread = Redis_Proxy_Server_Thread()
     s_redis_proxy_server_thread.init(Redis_Proxy_Server_Callback)

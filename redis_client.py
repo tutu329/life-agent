@@ -39,7 +39,11 @@ class Redis_Client:
                 dred(f'Redis_Client.connect(): failed.({e})')
                 self.__client = None
 
-    def set(self, key, value_string):
+    def flushall(self):
+        self.__connect()
+        self.__client.flushall()
+
+    def set_string(self, key, value_string):
         self.__connect()
 
         try:
@@ -48,11 +52,15 @@ class Redis_Client:
             dred(f'Redis_Client.set(key={key}, value={value_string}): failed.({e})')
             self.__client = None
 
-    def get(self, key):
+    def get_string(self, key):
         self.__connect()
 
         try:
-            return self.__client.get(key)
+            result = self.__client.get(key)
+            if result:
+                return result.decode('utf-8')
+            else:
+                return ''
         except redis.exceptions.TimeoutError as e:
             dred(f'Redis_Client.get(key={key}): failed.({e})')
             self.__client = None

@@ -34,6 +34,16 @@ def main():
     # t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), question='1+1=?', temperature=0.7)
     print(f'result is : {t1.get_result(task_id=task_id)}')
     print(f'status is : {t1.get_status(task_id=task_id)}')
+    import time
+
+    print(f'result is:')
+    while True:
+        print(t1.get_result(task_id), end='\r', flush=True)
+        time.sleep(0.2)
+        if t1.get_status(task_id)=='completed':
+            print('finished.')
+            break
+
 
 if __name__ == "__main__":
     main()

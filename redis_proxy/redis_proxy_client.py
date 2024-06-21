@@ -63,26 +63,20 @@ class Redis_Proxy_Client():
     def get_status(self, task_id):
         # 返回key为'Task_xxxid_Status'（该数据由server填充）的最新数据
         key = f'Task_{task_id}_Status'
-        status_dict = s_redis.get_dict(key=key)     # status_dict为{'status': 'xxx'}
+        status = s_redis.get_string(key=key)
 
-        if 'status' in status_dict:
-            return status_dict['status']
-        else:
-            return None
+        return status
 
     # 返回task的result数据
     def get_result(self, task_id,        # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
     )->str:                 # 返回的数据
         # 返回stream_key为'Task_xxxid_Result'（该数据由server填充）的最新数据
-        stream_key = f'Task_{task_id}_Result'
+        key = f'Task_{task_id}_Result'
 
         # 读取最新stream数据
-        rtn_data_list = s_redis.pop_stream(stream_key=stream_key, use_byte=False)
+        result = s_redis.get_string(key=key)
 
-        if rtn_data_list:
-            return rtn_data_list[-1]
-        else:
-            return None
+        return result
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton
