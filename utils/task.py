@@ -57,7 +57,7 @@ class Task_Base():
              in_streamlit=False,
              **in_callback_func_kwargs
             ):
-        if not self.inited:
+        if not self.inited or (self.inited and self.task_info['status'] == Status.Completed) :
             self.inited = True
 
             self.run_in_streamlit = in_streamlit
@@ -83,7 +83,7 @@ class Task_Base():
 
             self.task_info['status'] = Status.Initialized
         else:
-            dred(f"Task {self.task_info['task_name']} already initialized. No more init worker done.")
+            dred(f"Task {self.task_info['task_name']} already initialized and not completed. No more init work done.")
      
     def run(self):
         self.task_info['status'] = Status.Running
@@ -99,7 +99,9 @@ class Task_Base():
         self.task_info['status'] = Status.Completed
 
     def start(self):
-        if not self.started:
+        # print(f' self.started: { self.started}')
+        # print(f"  self.task_info['status']: {  self.task_info['status']}")
+        if not self.started or (self.started and self.task_info['status'] == Status.Initialized) :
             self.started = True
 
             dprint(f"{self.task_info['task_name']}.start()")
@@ -111,7 +113,7 @@ class Task_Base():
             # 启动task的timer
             self.thread.start()
         else:
-            dred(f"Task {self.task_info['task_name']} already started. No more started.")
+            dred(f"Task {self.task_info['task_name']} already started and not completed. No more started.")
 
     def cancel(self):
         dprint(f"{self.task_info['task_name']}.cancel()")

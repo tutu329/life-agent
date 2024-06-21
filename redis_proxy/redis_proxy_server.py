@@ -235,32 +235,52 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
         command = arg_dict['command']
         task_data = s_redis_proxy_server_data[cid][tid]
 
+        if 'max_new_tokens' in arg_dict:
+            max_new_tokens = arg_dict['max_new_tokens']
+        else:
+            max_new_tokens = config.Global.llm_max_new_tokens
+
+        if 'url' in arg_dict:
+            url = arg_dict['url']
+        else:
+            url = config.Global.llm_url
+
+        if 'temperature' in arg_dict:
+            temperature = arg_dict['temperature']
+        else:
+            temperature = config.Global.llm_temperature
+
         if command==str(Redis_LLM_Command.INIT):
             # 初始化 LLM_Client
             task_data['task_system'][0]['obj'] = LLM_Client(
-                url=config.Global.llm_url,
+                url=url,
                 history=True,
-                max_new_tokens=config.Global.llm_max_new_tokens,
-                temperature=config.Global.llm_temperature,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
             )
+
             # 初始化 Task_Worker_Thread
             task_data['task_system'][0]['thread'] = Task_Worker_Thread()
 
         if command==str(Redis_LLM_Command.ASK):
-            def llm_callback(out_task_info_must_be_here, status_key, result_key, llm_obj, question):
-                dred(f'llm_callback() invoked: stats({out_task_info_must_be_here}), question({question})')
+            def llm_callback(out_task_info_must_be_here, status_key, result_key, llm_obj, arg_dict):
+                # dred(f'llm_callback() invoked: stats({out_task_info_must_be_here}), question({question})')
                 status = out_task_info_must_be_here
-                gen = llm_obj.ask_prepare(in_question=question).get_answer_generator()
-                result = ''
+
+                question = arg_dict['question']
+                if 'temperature' in arg_dict:
+                    temperature = arg_dict['temperature']
+                    gen = llm_obj.ask_prepare(in_question=question, in_temperature=temperature).get_answer_generator()
+                else:
+                    gen = llm_obj.ask_prepare(in_question=question).get_answer_generator()
+
                 for chunk in gen:
                     print(chunk, end='', flush=True)
-                    # result += chunk
                     data = {
                         'chunk': chunk,
                         'status': 'running',
                     }
                     s_redis_client.add_stream(stream_key=result_key, data=data)
-                    # s_redis_client.set_string(key=result_key,value_string=result)
 
                 data = {
                     'status': 'completed',
@@ -273,7 +293,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
             status_key = task_data['task_status_key']
             result_key = task_data['task_result_key']
             thread = task_data['task_system'][0]['thread']
-            thread.init(in_callback_func=llm_callback, status_key=status_key, result_key=result_key, llm_obj=llm, question=arg_dict['question'])
+            thread.init(in_callback_func=llm_callback, status_key=status_key, result_key=result_key, llm_obj=llm, arg_dict=arg_dict)
             thread.start()
 
     # 响应client某task的command
