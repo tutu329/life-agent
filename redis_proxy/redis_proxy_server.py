@@ -26,6 +26,9 @@ class Redis_LLM_Command(Enum):
     CANCEL = 'CANCEL'
     ASK = 'ASK'
 
+
+
+
 @dataclass
 class Redis_Task_LLM_Data:
     task_type:str = str(Redis_Task_Type.LLM)     #任务类型
@@ -152,8 +155,8 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 IS_SERVER = True
 if IS_SERVER:
     # 启动 Redis Task Server
-    # s_redis_client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
-    s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
+    s_redis_client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
+    # s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
     s_redis_task_server = Redis_Proxy_Server()
     s_redis_task_server.init(Redis_Proxy_Server_Callback)
     # s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=5)

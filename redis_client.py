@@ -66,11 +66,16 @@ class Redis_Client:
         self.__connect()
 
         try:
-            return json.loads(self.__client.get(key))
+            string = self.__client.get(key)
+            # print(f'string: {string}')
+            if string:
+                return json.loads(string)
+            else:
+                return {}
         except redis.exceptions.TimeoutError as e:
             dred(f'Redis_Client.get_dict(key={key}): failed.({e})')
             self.__client = None
-            return None
+            return {}
 
     def add_stream(
             self,

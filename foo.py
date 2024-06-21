@@ -1,7 +1,7 @@
 from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_LLM_Command
 
 from redis_proxy.redis_proxy_client import Redis_Proxy_Client
-from redis_proxy.redis_proxy_client import Redis_Task_Client
+# from redis_proxy.redis_proxy_client import Redis_Task_Client
 
 # def redis_test():
 #     client = Redis_Client(host='192.168.124.33', port=8010)  # win-server
@@ -27,10 +27,13 @@ def main():
     # c = Redis_Task_Client()
     # c.add_llm_task('2+2=')
 
-    p1 = Redis_Proxy_Client()
-    task_id = p1.task_register(str(Redis_Task_Type.LLM))
-    p1.task_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), x=1, y=2)
-    p1.task_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), x=4, y=5)
+    t1 = Redis_Proxy_Client()
+    task_id = t1.new_task(str(Redis_Task_Type.LLM))
+    t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.INIT), url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
+    t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), question='你是谁', temperature=0.8)
+    t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), question='1+1=?', temperature=0.7)
+    print(f'result is : {t1.get_result(task_id=task_id)}')
+    print(f'status is : {t1.get_status(task_id=task_id)}')
 
 if __name__ == "__main__":
     main()
