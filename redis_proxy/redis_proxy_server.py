@@ -13,21 +13,7 @@ from tools.llm.api_client import LLM_Client
 
 import uuid,time
 
-@unique
-class Redis_Task_Type(Enum):
-    LLM = 'LLM'
-    T2I = 'T2I'
-    TTS = 'TTS'
-
-@unique
-class Redis_LLM_Command(Enum):
-    INIT = 'INIT'
-    # START = 'START'
-    CANCEL = 'CANCEL'
-    ASK = 'ASK'
-
-
-
+from redis_proxy_client import Redis_Task_Type, Redis_LLM_Command
 
 @dataclass
 class Redis_Task_LLM_Data:
@@ -268,11 +254,19 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                 result = ''
                 for chunk in gen:
                     print(chunk, end='', flush=True)
-                    result += chunk
-                    s_redis_client.set_string(key=result_key,value_string=result)
+                    # result += chunk
+                    data = {
+                        'chunk': chunk,
+                        'status': 'running',
+                    }
+                    s_redis_client.add_stream(stream_key=result_key, data=data)
+                    # s_redis_client.set_string(key=result_key,value_string=result)
 
+                data = {
+                    'status': 'completed',
+                }
+                s_redis_client.add_stream(stream_key=result_key, data=data)
                 s_redis_client.set_string(key=status_key,value_string='completed')
-
 
             llm = task_data['task_system'][0]['obj']
             print(f'llm: {llm}')

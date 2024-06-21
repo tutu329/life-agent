@@ -5,12 +5,25 @@ import uuid
 import uuid
 
 from redis_client import Redis_Client
-from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_Task_LLM_Data, LLM_Ask_Data
+# from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_Task_LLM_Data, LLM_Ask_Data
 
 from config import dred, dgreen
 
 s_redis = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
 # s_redis = Redis_Client(host='localhost', port=6379)  # win-server
+
+@unique
+class Redis_Task_Type(Enum):
+    LLM = 'LLM'
+    T2I = 'T2I'
+    TTS = 'TTS'
+
+@unique
+class Redis_LLM_Command(Enum):
+    INIT = 'INIT'
+    # START = 'START'
+    CANCEL = 'CANCEL'
+    ASK = 'ASK'
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton
@@ -68,15 +81,19 @@ class Redis_Proxy_Client():
         return status
 
     # 返回task的result数据
-    def get_result(self, task_id,        # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
-    )->str:                 # 返回的数据
+    def get_result_gen(self, task_id):       # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
         # 返回stream_key为'Task_xxxid_Result'（该数据由server填充）的最新数据
-        key = f'Task_{task_id}_Result'
+        stream_key = f'Task_{task_id}_Result'
 
         # 读取最新stream数据
-        result = s_redis.get_string(key=key)
+        while True:
+            result_dict = s_redis.pop_stream(stream_key=stream_key)
+            for item in result_dict:
+                if item['status'] != 'completed':
+                    yield item['chunk']
+                else:
+                    return
 
-        return result
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton

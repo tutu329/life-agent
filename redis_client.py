@@ -8,7 +8,7 @@ from singleton import singleton
 
 from typing import Type, TypeVar, List, Dict
 
-Redis_Client_DEBUG = True
+Redis_Client_DEBUG = False
 def dprint(*args, **kwargs):
     if Redis_Client_DEBUG:
         print(*args, **kwargs)
