@@ -46,6 +46,7 @@ class Redis_Proxy_Client():
         # 封装redis的data
         data = {
             'client_id': self.client_id,
+            'task_id': task_id,
             'command': command,
         }
         # redis必须将arg_dict的item加到data中，而不能嵌套dict

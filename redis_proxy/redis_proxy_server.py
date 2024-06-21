@@ -199,8 +199,13 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                 'task_status': '',
                 'task_system': [
                     {
-                        'obj': None,
-                        'thread': None,
+                        'obj': LLM_Client(
+                            url=config.Global.llm_url,
+                            history=True,
+                            max_new_tokens=config.Global.llm_max_new_tokens,
+                            temperature=config.Global.llm_temperature,
+                        ),
+                        'thread': Task_Worker_Thread(),
                     },
                     # {
                     #     'obj': tts_client,
@@ -233,13 +238,43 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
                 add_task(inout_register_data=s_redis_proxy_server_data[cid], task_id=tid, task_type=ttype)
 
+    # 执行command
+    def exec_command(**arg_dict):
+        dgreen(f'command from client: {arg_dict}')
+        cid = arg_dict['client_id']
+        tid = arg_dict['task_id']
+        command = arg_dict['command']
+        task_data = s_redis_proxy_server_data[cid][tid]
+
+        if command==str(Redis_LLM_Command.INIT):
+            pass
 
 
+        if command==str(Redis_LLM_Command.ASK):
+            def llm_callback(out_task_info_must_be_here, llm_obj, question):
+                status = out_task_info_must_be_here
+                llm_obj.ask_prepare(in_question=question)
+                llm_obj.get_answer_and_sync_print()
 
+            llm = task_data['task_system'][0]['obj']
+            thread = task_data['task_system'][0]['thread']
+            thread.init(in_callback_func=llm_callback, llm_obj=llm, question=arg_dict['question'])
 
     # 响应client某task的command
     def polling_task_commands():
-        pass
+        for k,v in s_redis_proxy_server_data.items():
+            # 所有client_id
+            for k1,v1 in v.items():
+                # 所有task_id
+                task_id = k1
+
+                # 查询该task下的command
+                stream_key = f'Task_{task_id}_Command'
+                dict_list = pop_stream(key=stream_key)
+
+                # 执行所有command
+                for command_para_dict in dict_list:
+                    exec_command(**command_para_dict)
 
     # Redis Proxy Server 主循环
     while True:
