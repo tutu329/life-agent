@@ -170,12 +170,12 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
     def cancel():
         dred(f"Redis Proxy Server ({thread_status['task_name']}) cancelling...")
 
-    def pop_stream(key):
+    def __pop_stream(key):
         return s_redis_client.pop_stream(key)
 
 
     # 注册各种类型的任务
-    def add_task(inout_register_data, task_id, task_type):
+    def __add_task(inout_register_data, task_id, task_type):
         assert task_id not in inout_register_data
 
         data = None
@@ -208,10 +208,10 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
     # 响应client的new task
     def polling_new_tasks():
-        print(f's_redis_proxy_server_data: {s_redis_proxy_server_data}')
-        dict_list = pop_stream(key='Task_Register')
+        # print(f's_redis_proxy_server_data: {s_redis_proxy_server_data}')
+        dict_list = __pop_stream(key='Task_Register')
         for dict in dict_list:
-            print(f'new task dict: {dict}')
+            # print(f'new task dict: {dict}')
             # {'client_id': 'Client_7b8024f3-f88c-4756-97c3-c583252ce6e5', 'task_type': 'Redis_Task_Type.LLM', 'task_id': 'Task_41158011-e11e-4a3e-84f4-38fd87fba71d'}
 
             if 'client_id' in dict and 'task_type' in dict and 'task_id' in dict:
@@ -225,10 +225,10 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     # 没有该client数据
                     s_redis_proxy_server_data[cid] = {}
 
-                add_task(inout_register_data=s_redis_proxy_server_data[cid], task_id=tid, task_type=ttype)
+                __add_task(inout_register_data=s_redis_proxy_server_data[cid], task_id=tid, task_type=ttype)
 
     # 执行command
-    def exec_command(**arg_dict):
+    def __exec_command(**arg_dict):
         dgreen(f'command from client: {arg_dict}')
         cid = arg_dict['client_id']
         tid = arg_dict['task_id']
@@ -268,11 +268,11 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                 status = out_task_info_must_be_here
 
                 if 'system_prompt' in arg_dict:
-                    print(f"system_prompt is : {arg_dict['system_prompt']}")
+                    # print(f"system_prompt is : {arg_dict['system_prompt']}")
                     llm_obj.set_system_prompt(arg_dict['system_prompt'])
 
                 if 'role_prompt' in arg_dict:
-                    print(f"role_prompt is : {arg_dict['role_prompt']}")
+                    # print(f"role_prompt is : {arg_dict['role_prompt']}")
                     llm_obj.set_role_prompt(arg_dict['role_prompt'])
 
                 question = arg_dict['question']
@@ -283,7 +283,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     gen = llm_obj.ask_prepare(in_question=question).get_answer_generator()
 
                 for chunk in gen:
-                    print(chunk, end='', flush=True)
+                    # print(chunk, end='', flush=True)
                     data = {
                         'chunk': chunk,
                         'status': 'running',
@@ -297,7 +297,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                 s_redis_client.set_string(key=status_key,value_string='completed')
 
             llm = task_data['task_system'][0]['obj']
-            print(f'llm: {llm}')
+            # print(f'llm: {llm}')
             status_key = task_data['task_status_key']
             result_key = task_data['task_result_key']
             thread = task_data['task_system'][0]['thread']
@@ -314,11 +314,11 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
                 # 查询该task下的command
                 stream_key = f'Task_{task_id}_Command'
-                dict_list = pop_stream(key=stream_key)
+                dict_list = __pop_stream(key=stream_key)
 
                 # 执行所有command
                 for command_para_dict in dict_list:
-                    exec_command(**command_para_dict)
+                    __exec_command(**command_para_dict)
 
     # Redis Proxy Server 主循环
     while True:

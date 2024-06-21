@@ -8,6 +8,7 @@ def main():
     t1 = Redis_Proxy_Client()
     task_id = t1.new_task(str(Redis_Task_Type.LLM))
     t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.INIT), url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
+    # t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), question='你是谁？我叫土土', temperature=0.6)
     t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
     print(f'result is:')
     for chunk in t1.get_result_gen(task_id):

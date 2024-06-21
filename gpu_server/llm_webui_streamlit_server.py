@@ -293,7 +293,7 @@ default_session_data = {
         'files': [],                            # file_uploader返回的UploadedFile列表
         'last_files_num_of_file_uploader':0,    # 用于判断是否是file_uploader将files删光，用于和files没有而会话历史有文件数据的情况
         'file_column_raw_data': {},             # 用于管理和显示会话内UploadedFile数据
-        'system_prompt': config.Global.llm_system,
+        'system_prompt': config.Global.llm_system_prompt,
         'role_prompt': '',
 
         'main_llm_url': config.Global.llm_url,

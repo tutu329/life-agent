@@ -96,7 +96,8 @@ class LLM_Client:
         self.stop = None    # 用于对vllm的openai api的stop进行过滤
         self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
-        self.system_prompt = '' # 系统提示
+        self.system_prompt = config.Global.llm_system_prompt
+        # self.system_prompt = '' # 系统提示
         # self.top_p = top_p
         self.max_new_tokens = max_new_tokens
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
