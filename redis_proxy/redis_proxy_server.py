@@ -304,6 +304,11 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
             thread.init(in_callback_func=llm_callback, status_key=status_key, result_key=result_key, llm_obj=llm, arg_dict=arg_dict)
             thread.start()
 
+        if command==str(Redis_LLM_Command.CANCEL):
+            llm = task_data['task_system'][0]['obj']
+            if llm is not None:
+                llm.cancel_response()
+
     # 响应client某task的command
     def polling_task_commands():
         for k,v in s_redis_proxy_server_data.items():

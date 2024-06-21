@@ -1,6 +1,8 @@
 from redis_proxy.redis_proxy_client import Redis_Task_Type, Redis_LLM_Command
 from redis_proxy.redis_proxy_client import Redis_Proxy_Client
 
+import time
+
 def main():
     # c = Redis_Task_Client()
     # c.add_llm_task('2+2=')
@@ -15,11 +17,20 @@ def main():
         print(chunk, end='', flush=True)
     print()
 
-    t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), question='我叫什么', temperature=0.7)
+    t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), question='写一首长诗', temperature=0.7)
+    # t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.ASK), question='我叫什么', temperature=0.7)
 
     print(f'result is:')
+    result = ''
     for chunk in t1.get_result_gen(task_id):
+        result += chunk
         print(chunk, end='', flush=True)
+        if len(result)>50:
+            t1.send_command(task_id=task_id, command=str(Redis_LLM_Command.CANCEL))
+            print()
+            print('canceled.')
+            break
+
     print()
 
 if __name__ == "__main__":
