@@ -82,7 +82,6 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
         time.sleep(2)
         # time.sleep(config.Global.redis_proxy_server_sleep_time)
 
-
 def server_init():
     global s_redis_proxy_server_data, s_redis_client, s_redis_proxy_server_thread
 
