@@ -1,102 +1,17 @@
 import config
-from singleton import singleton
 
-from utils.task import Task_Base, Status
+from utils.task import Status
 from redis_client import Redis_Client
 from config import dred,dgreen
 from tools.llm.api_client import LLM_Client
-import uuid,time
+import time
 
-from redis_proxy.command.protocol import invoking
-from redis_proxy.command.protocol import add_task
-from redis_proxy.command.thread import Task_Worker_Thread, Redis_Proxy_Server_Thread
+from redis_proxy.command.protocol import server_add_task, server_invoking_command
+from redis_proxy.thread import Task_Worker_Thread, Redis_Proxy_Server_Thread
 
 from redis_proxy.command.llm.protocol import Redis_Proxy_Command_LLM
 
-
-
-# 被Redis_Task_Server调用的worker，用于启动llm、t2i、tts等异步任务
-# class Task_Worker_Thread(Task_Base):
-#     def __init__(self):
-#         super().__init__()
-#
-#     def init(self,
-#              in_callback_func,
-#              *in_callback_func_args,
-#              in_name='Task_Worker_'+str(uuid.uuid4()),
-#              in_timeout=None,    # timeout秒之后，设置cancel标识
-#              in_streamlit=False,
-#              **in_callback_func_kwargs
-#             ):
-#         if not self.inited:
-#             dgreen(f'Task Worker (id="{in_name}") started.')
-#
-#         super().init(
-#              in_callback_func,
-#              *in_callback_func_args,
-#              in_name=in_name,
-#              in_timeout=in_timeout,
-#              in_streamlit=in_streamlit,
-#              **in_callback_func_kwargs
-#         )
-#
-#     def start(self):
-#         super().start()
-
-# @singleton
-# class Redis_Proxy_Server_Thread(Task_Base):
-#     def __init__(self):
-#         super().__init__()
-#
-#     def init(self,
-#              in_callback_func,
-#              *in_callback_func_args,
-#              in_name='Redis_Proxy_Server_'+str(uuid.uuid4()),
-#              in_timeout=None,    # timeout秒之后，设置cancel标识
-#              in_streamlit=False,
-#              **in_callback_func_kwargs
-#             ):
-#         if not self.inited:
-#             dgreen(f'Redis Proxy Server (id="{in_name}") started.')
-#
-#         super().init(
-#              in_callback_func,
-#              *in_callback_func_args,
-#              in_name=in_name,
-#              in_timeout=in_timeout,
-#              in_streamlit=in_streamlit,
-#              **in_callback_func_kwargs
-#         )
-#
-#     def start(self):
-#         super().start()
-
-# IS_SERVER = False
-
-s_redis_proxy_server_data = {
-    # 'client-id1' : {
-    #     'task-id1' : {
-    #         'task_type' : str(Redis_Task_Type.LLM),
-    #         'task_status' : '',
-    #         'task_system' : [
-    #             {
-    #                 'obj': llm_client,
-    #                 'thread': llm_client_thread,
-    #             },
-    #             {
-    #                 'obj': tts_client,
-    #                 'thread': tts_client_thread,
-    #             },
-    #         ],
-    #     },
-    #     'task-id2' : {
-    #         'task_type' : str(Redis_Task_Type.LLM),
-    #         'task_status': '',
-    #     },
-    # },
-    # 'client-id2' : {
-    # },
-}
+from redis_proxy.command.llm.servant import llm_servant
 
 def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
     thread_status = out_task_info_must_be_here
@@ -110,38 +25,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
     # 注册各种类型的任务
     def __add_task(inout_register_data, task_id, task_type):
-        add_task(inout_register_data, task_id, task_type)
-        pass
-
-        # assert task_id not in inout_register_data
-        #
-        # data = None
-        # if task_type==str(Redis_Task_Type.LLM):
-        #     data = {
-        #         'task_type': task_type,
-        #         'task_status_key': f'Task_{task_id}_Status',
-        #         'task_result_key': f'Task_{task_id}_Result',
-        #         'task_system': [
-        #             {
-        #                 'obj':None,
-        #                 'thread': None,
-        #                 # 'obj': LLM_Client(
-        #                 #     url=config.Global.llm_url,
-        #                 #     history=True,
-        #                 #     max_new_tokens=config.Global.llm_max_new_tokens,
-        #                 #     temperature=config.Global.llm_temperature,
-        #                 # ),
-        #                 # 'thread': Task_Worker_Thread(),
-        #             },
-        #             # {
-        #             #     'obj': tts_client,
-        #             #     'thread': tts_client_thread,
-        #             # },
-        #         ],
-        #     }
-        #
-        # inout_register_data[task_id] = data
-
+        server_add_task(inout_register_data, task_id, task_type)
 
     # 响应client的new task
     def polling_new_tasks():
@@ -166,88 +50,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
     # 执行command
     def __exec_command(**arg_dict):
-        # invoking(**arg_dict)
-        # pass
-
-        dgreen(f'command from client: {arg_dict}')
-        cid = arg_dict['client_id']
-        tid = arg_dict['task_id']
-        command = arg_dict['command']
-        task_data = s_redis_proxy_server_data[cid][tid]
-
-        if 'max_new_tokens' in arg_dict:
-            max_new_tokens = arg_dict['max_new_tokens']
-        else:
-            max_new_tokens = config.Global.llm_max_new_tokens
-
-        if 'url' in arg_dict:
-            url = arg_dict['url']
-        else:
-            url = config.Global.llm_url
-
-        if 'temperature' in arg_dict:
-            temperature = arg_dict['temperature']
-        else:
-            temperature = config.Global.llm_temperature
-
-        if command==str(Redis_Proxy_Command_LLM.INIT):
-            # 初始化 LLM_Client
-            task_data['task_system'][0]['obj'] = LLM_Client(
-                url=url,
-                history=True,
-                max_new_tokens=max_new_tokens,
-                temperature=temperature,
-            )
-
-            # 初始化 Task_Worker_Thread
-            task_data['task_system'][0]['thread'] = Task_Worker_Thread()
-
-        if command==str(Redis_Proxy_Command_LLM.ASK):
-            def llm_callback(out_task_info_must_be_here, status_key, result_key, llm_obj, arg_dict):
-                # dred(f'llm_callback() invoked: stats({out_task_info_must_be_here}), question({question})')
-                status = out_task_info_must_be_here
-
-                if 'system_prompt' in arg_dict:
-                    # print(f"system_prompt is : {arg_dict['system_prompt']}")
-                    llm_obj.set_system_prompt(arg_dict['system_prompt'])
-
-                if 'role_prompt' in arg_dict:
-                    # print(f"role_prompt is : {arg_dict['role_prompt']}")
-                    llm_obj.set_role_prompt(arg_dict['role_prompt'])
-
-                question = arg_dict['question']
-                if 'temperature' in arg_dict:
-                    temperature = arg_dict['temperature']
-                    gen = llm_obj.ask_prepare(in_question=question, in_temperature=temperature).get_answer_generator()
-                else:
-                    gen = llm_obj.ask_prepare(in_question=question).get_answer_generator()
-
-                for chunk in gen:
-                    # print(chunk, end='', flush=True)
-                    data = {
-                        'chunk': chunk,
-                        'status': 'running',
-                    }
-                    s_redis_client.add_stream(stream_key=result_key, data=data)
-
-                data = {
-                    'status': 'completed',
-                }
-                s_redis_client.add_stream(stream_key=result_key, data=data)
-                s_redis_client.set_string(key=status_key,value_string='completed')
-
-            llm = task_data['task_system'][0]['obj']
-            # print(f'llm: {llm}')
-            status_key = task_data['task_status_key']
-            result_key = task_data['task_result_key']
-            thread = task_data['task_system'][0]['thread']
-            thread.init(in_callback_func=llm_callback, status_key=status_key, result_key=result_key, llm_obj=llm, arg_dict=arg_dict)
-            thread.start()
-
-        if command==str(Redis_Proxy_Command_LLM.CANCEL):
-            llm = task_data['task_system'][0]['obj']
-            if llm is not None:
-                llm.cancel_response()
+        server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dict)
 
     # 响应client某task的command
     def polling_task_commands():
@@ -279,20 +82,50 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
         time.sleep(2)
         # time.sleep(config.Global.redis_proxy_server_sleep_time)
 
-IS_SERVER = True
-if IS_SERVER:
-    # 启动 Redis Task Server
-    s_redis_client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
-    # redis清空所有数据
-    s_redis_client.flushall()
 
-    # s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
-    s_redis_proxy_server_thread = Redis_Proxy_Server_Thread()
-    s_redis_proxy_server_thread.init(Redis_Proxy_Server_Callback)
-    # s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=5)
-    s_redis_proxy_server_thread.start()
+def server_init():
+    global s_redis_proxy_server_data, s_redis_client, s_redis_proxy_server_thread
+
+    s_redis_proxy_server_data = {
+        # 'client-id1' : {
+        #     'task-id1' : {
+        #         'task_type' : str(Redis_Task_Type.LLM),
+        #         'task_status' : '',
+        #         'task_system' : [
+        #             {
+        #                 'obj': llm_client,
+        #                 'thread': llm_client_thread,
+        #             },
+        #             {
+        #                 'obj': tts_client,
+        #                 'thread': tts_client_thread,
+        #             },
+        #         ],
+        #     },
+        #     'task-id2' : {
+        #         'task_type' : str(Redis_Task_Type.LLM),
+        #         'task_status': '',
+        #     },
+        # },
+        # 'client-id2' : {
+        # },
+    }
+
+    IS_SERVER = True
+    if IS_SERVER:
+        # 启动 Redis Task Server
+        s_redis_client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
+        # redis清空所有数据
+        s_redis_client.flushall()
+
+        # s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
+        s_redis_proxy_server_thread = Redis_Proxy_Server_Thread()
+        s_redis_proxy_server_thread.init(Redis_Proxy_Server_Callback)
+        # s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=5)
+        s_redis_proxy_server_thread.start()
 
 def main():
+    server_init()
     while(1):
         time.sleep(1)
 

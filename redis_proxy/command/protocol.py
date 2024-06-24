@@ -1,51 +1,5 @@
 from enum import Enum, unique
-
-from config import dred, dgreen
-import config
-
-# from redis_proxy.command.llm.servant import llm_servant
-
-# from redis_proxy.command.thread import Redis_Proxy_Server_Thread
-# from import Redis_Proxy_Server_Callback
-# from redis_proxy.redis_proxy_client import Redis_Client
-
-# s_redis_proxy_server_data = {
-#     # 'client-id1' : {
-#     #     'task-id1' : {
-#     #         'task_type' : str(Redis_Task_Type.LLM),
-#     #         'task_status' : '',
-#     #         'task_system' : [
-#     #             {
-#     #                 'obj': llm_client,
-#     #                 'thread': llm_client_thread,
-#     #             },
-#     #             {
-#     #                 'obj': tts_client,
-#     #                 'thread': tts_client_thread,
-#     #             },
-#     #         ],
-#     #     },
-#     #     'task-id2' : {
-#     #         'task_type' : str(Redis_Task_Type.LLM),
-#     #         'task_status': '',
-#     #     },
-#     # },
-#     # 'client-id2' : {
-#     # },
-# }
-
-# IS_SERVER = True
-# if IS_SERVER:
-#     # 启动 Redis Task Server
-#     s_redis_client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
-#     # redis清空所有数据
-#     s_redis_client.flushall()
-#
-#     # s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
-#     s_redis_proxy_server_thread = Redis_Proxy_Server_Thread()
-#     s_redis_proxy_server_thread.init(Redis_Proxy_Server_Callback)
-#     # s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=5)
-#     s_redis_proxy_server_thread.start()
+from redis_proxy.command.llm.servant import llm_servant
 
 @unique
 class Redis_Task_Type(Enum):
@@ -53,13 +7,15 @@ class Redis_Task_Type(Enum):
     T2I = 'T2I'
     TTS = 'TTS'
 
-def invoking(**arg_dict):
+# 执行command
+def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dict):
     command = arg_dict['command']
 
     if 'Redis_Proxy_Command_LLM' in command:
-        llm_servant()
+        llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict)
 
-def add_task(inout_register_data, task_id, task_type):
+# 注册各种类型的任务
+def server_add_task(inout_register_data, task_id, task_type):
     assert task_id not in inout_register_data
 
     data = None
