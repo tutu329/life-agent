@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from redis_proxy.command.llm.servant import llm_servant
+from redis_proxy.custom_command.llm.servant import llm_servant
 
 @unique
 class Redis_Task_Type(Enum):
@@ -9,7 +9,7 @@ class Redis_Task_Type(Enum):
 
 # 执行command
 def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dict):
-    command = arg_dict['command']
+    command = arg_dict['custom_command']
 
     if 'Redis_Proxy_Command_LLM' in command:
         llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict)

@@ -147,14 +147,14 @@ def _get_temp_from_report(report, temp_name):
 
 def _get_ipmi_server_info():
     command = 'sudo ipmitool fru'
-    # full_command = 'echo {} | {}'.format(password, command)
+    # full_command = 'echo {} | {}'.format(password, custom_command)
     output = subprocess.run(command, shell=True, check=True, capture_output=True)
     lines = output.stdout.decode().split('\n')
     return lines
 
 def _get_ipmitool_sensor_report():
     command = 'sudo ipmitool sensor'
-    # full_command = 'echo {} | {}'.format(password, command)
+    # full_command = 'echo {} | {}'.format(password, custom_command)
     output = subprocess.run(command, shell=True, check=True, capture_output=True)
     lines = output.stdout.decode().split('\n')
     return lines

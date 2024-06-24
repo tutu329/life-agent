@@ -6,12 +6,12 @@ from config import dred,dgreen
 from tools.llm.api_client import LLM_Client
 import time
 
-from redis_proxy.command.protocol import server_add_task, server_invoking_command
+from redis_proxy.custom_command.protocol import server_add_task, server_invoking_command
 from redis_proxy.thread import Task_Worker_Thread, Redis_Proxy_Server_Thread
 
-from redis_proxy.command.llm.protocol import Redis_Proxy_Command_LLM
+from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM
 
-from redis_proxy.command.llm.servant import llm_servant
+from redis_proxy.custom_command.llm.servant import llm_servant
 
 def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
     thread_status = out_task_info_must_be_here

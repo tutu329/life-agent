@@ -73,7 +73,7 @@ def execute_python_file_in_docker(
     file_path = filename
     # print('【docker】obj file_path', file_path)
     if not file_path.is_file():
-        # Mimic the response that you get from the command line so that it's easier to identify
+        # Mimic the response that you get from the custom_command line so that it's easier to identify
         print(
             f"【docker】python: 无法打开文件 '{filename}': [Errno 2] No such file or directory"
         )
@@ -141,17 +141,17 @@ def execute_python_file_in_docker(
         return ''
 
     # def execute_shell(command_line: str, agent: Agent) -> str:
-    #     """Execute a shell command and return the output
+    #     """Execute a shell custom_command and return the output
     #
     #     Args:
-    #         command_line (str): The command line to execute
+    #         command_line (str): The custom_command line to execute
     #
     #     Returns:
-    #         str: The output of the command
+    #         str: The output of the custom_command
     #     """
     #     if not validate_command(command_line, agent.legacy_config):
     #         logger.info(f"Command '{command_line}' not allowed")
-    #         raise OperationNotAllowedError("This shell command is not allowed.")
+    #         raise OperationNotAllowedError("This shell custom_command is not allowed.")
     #
     #     current_dir = Path.cwd()
     #     # Change dir into workspace if necessary
@@ -159,7 +159,7 @@ def execute_python_file_in_docker(
     #         os.chdir(agent.workspace.root)
     #
     #     logger.info(
-    #         f"Executing command '{command_line}' in working directory '{os.getcwd()}'"
+    #         f"Executing custom_command '{command_line}' in working directory '{os.getcwd()}'"
     #     )
     #
     #     result = subprocess.run(command_line, capture_output=True, shell=True)
