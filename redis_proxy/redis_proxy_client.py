@@ -8,22 +8,12 @@ from redis_client import Redis_Client
 # from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_Task_LLM_Data, LLM_Ask_Data
 
 from config import dred, dgreen
+from redis_proxy.protocol import Redis_Task_Type
+from redis_proxy.protocol import Redis_LLM_Command
+
 
 s_redis = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
 # s_redis = Redis_Client(host='localhost', port=6379)  # win-server
-
-@unique
-class Redis_Task_Type(Enum):
-    LLM = 'LLM'
-    T2I = 'T2I'
-    TTS = 'TTS'
-
-@unique
-class Redis_LLM_Command(Enum):
-    INIT = 'INIT'
-    # START = 'START'
-    CANCEL = 'CANCEL'
-    ASK = 'ASK'
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton

@@ -13,7 +13,7 @@ from tools.llm.api_client import LLM_Client
 
 import uuid,time
 
-from redis_proxy_client import Redis_Task_Type, Redis_LLM_Command
+from redis_proxy.redis_proxy_client import Redis_Task_Type, Redis_LLM_Command
 
 @dataclass
 class Redis_Task_LLM_Data:
