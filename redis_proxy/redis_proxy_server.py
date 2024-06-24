@@ -1,141 +1,75 @@
 import config
 from singleton import singleton
 
-from enum import Enum, unique
-from dataclasses import dataclass, asdict, field
-from typing import List, Any
-
 from utils.task import Task_Base, Status
 from redis_client import Redis_Client
 from config import dred,dgreen
-
 from tools.llm.api_client import LLM_Client
-
 import uuid,time
 
-from redis_proxy.redis_proxy_client import Redis_Task_Type, Redis_LLM_Command
+from redis_proxy.command.protocol import invoking
+from redis_proxy.command.protocol import add_task
+from redis_proxy.command.thread import Task_Worker_Thread, Redis_Proxy_Server_Thread
 
-@dataclass
-class Redis_Task_LLM_Data:
-    task_type:str = str(Redis_Task_Type.LLM)     #任务类型
+from redis_proxy.command.llm.protocol import Redis_Proxy_Command_LLM
 
-    url:str = ''
-    history:int = int(True)
-    max_new_tokens:int = 512
-    temperature:float = 0.7
-    api_key:str = 'empty'
 
-@dataclass
-class LLM_Ask_Data:
-    question:str = ''
-
-    temperature:Any = None
-    max_new_tokens:Any = None
-    clear_history:Any = None
-    stream:Any = None
-    stops:Any = None
-    # stops:List[str] = field(default_factory=list)
-    system_prompt:Any = None
 
 # 被Redis_Task_Server调用的worker，用于启动llm、t2i、tts等异步任务
-class Task_Worker_Thread(Task_Base):
-    def __init__(self):
-        super().__init__()
-
-    def init(self,
-             in_callback_func,
-             *in_callback_func_args,
-             in_name='Task_Worker_'+str(uuid.uuid4()),
-             in_timeout=None,    # timeout秒之后，设置cancel标识
-             in_streamlit=False,
-             **in_callback_func_kwargs
-            ):
-        if not self.inited:
-            dgreen(f'Task Worker (id="{in_name}") started.')
-
-        super().init(
-             in_callback_func,
-             *in_callback_func_args,
-             in_name=in_name,
-             in_timeout=in_timeout,
-             in_streamlit=in_streamlit,
-             **in_callback_func_kwargs
-        )
-
-    def start(self):
-        super().start()
-
-@singleton
-class Redis_Proxy_Server_Thread(Task_Base):
-    def __init__(self):
-        super().__init__()
-
-    def init(self,
-             in_callback_func,
-             *in_callback_func_args,
-             in_name='Redis_Proxy_Server_'+str(uuid.uuid4()),
-             in_timeout=None,    # timeout秒之后，设置cancel标识
-             in_streamlit=False,
-             **in_callback_func_kwargs
-            ):
-        if not self.inited:
-            dgreen(f'Redis Proxy Server (id="{in_name}") started.')
-
-        super().init(
-             in_callback_func,
-             *in_callback_func_args,
-             in_name=in_name,
-             in_timeout=in_timeout,
-             in_streamlit=in_streamlit,
-             **in_callback_func_kwargs
-        )
-
-    def start(self):
-        super().start()
-
-# def Redis_Proxy_Server_Callback1(out_task_info_must_be_here):
-#     rt_status = out_task_info_must_be_here
+# class Task_Worker_Thread(Task_Base):
+#     def __init__(self):
+#         super().__init__()
 #
-#     def cancel():
-#         dred(f"Redis Proxy Server ({rt_status['task_name']}) cancelling...")
+#     def init(self,
+#              in_callback_func,
+#              *in_callback_func_args,
+#              in_name='Task_Worker_'+str(uuid.uuid4()),
+#              in_timeout=None,    # timeout秒之后，设置cancel标识
+#              in_streamlit=False,
+#              **in_callback_func_kwargs
+#             ):
+#         if not self.inited:
+#             dgreen(f'Task Worker (id="{in_name}") started.')
 #
-#     def llm_task(input):
-#         llm = LLM_Client(url='http://192.168.124.33:8001/v1')
-#         llm.ask_prepare(in_question=input)
-#         llm.get_answer_and_sync_print()
+#         super().init(
+#              in_callback_func,
+#              *in_callback_func_args,
+#              in_name=in_name,
+#              in_timeout=in_timeout,
+#              in_streamlit=in_streamlit,
+#              **in_callback_func_kwargs
+#         )
 #
-#     def task(stream_last_id):
-#         inout_list = []
-#         last_id = None
-#         if stream_last_id is not None:
-#             last_id = s_redis_client.pop_stream('redis_task', inout_data_list=inout_list, last_id=stream_last_id)
-#             for item in inout_list:
-#                 print(f'item: "{item}')
-#                 if item['task_type']==str(Redis_Task_Type.LLM):
-#                     llm_task(input=item['task_input'])
-#         return last_id
+#     def start(self):
+#         super().start()
+
+# @singleton
+# class Redis_Proxy_Server_Thread(Task_Base):
+#     def __init__(self):
+#         super().__init__()
 #
-#     last_id = '0-0'
-#     last_valid_id = '0-0'  # 查询到最后一个msg后，redis会返回None而不是最后一个msg的id
-#     while True:
-#         if rt_status['status']==Status.Cancelling:
-#             # cancel中
-#             cancel()
-#             dred(f"Redis Task Server ({rt_status['task_name']}) cancelled")
-#             break
+#     def init(self,
+#              in_callback_func,
+#              *in_callback_func_args,
+#              in_name='Redis_Proxy_Server_'+str(uuid.uuid4()),
+#              in_timeout=None,    # timeout秒之后，设置cancel标识
+#              in_streamlit=False,
+#              **in_callback_func_kwargs
+#             ):
+#         if not self.inited:
+#             dgreen(f'Redis Proxy Server (id="{in_name}") started.')
 #
-#         # print(f'last_id: {last_id}')
-#         last_id = task(last_id)
+#         super().init(
+#              in_callback_func,
+#              *in_callback_func_args,
+#              in_name=in_name,
+#              in_timeout=in_timeout,
+#              in_streamlit=in_streamlit,
+#              **in_callback_func_kwargs
+#         )
 #
-#         # 查询到最后一个msg后，redis会返回None而不是最后一个msg的id
-#         if last_id is not None:
-#             last_valid_id = last_id
-#         else:
-#             # 返回None，这里改为最后一个msg的id
-#             last_id = last_valid_id
-#
-#         # time.sleep(1)
-#         time.sleep(config.Global.redis_task_server_sleep_time)
+#     def start(self):
+#         super().start()
 
 # IS_SERVER = False
 
@@ -176,34 +110,37 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
     # 注册各种类型的任务
     def __add_task(inout_register_data, task_id, task_type):
-        assert task_id not in inout_register_data
+        add_task(inout_register_data, task_id, task_type)
+        pass
 
-        data = None
-        if task_type==str(Redis_Task_Type.LLM):
-            data = {
-                'task_type': task_type,
-                'task_status_key': f'Task_{task_id}_Status',
-                'task_result_key': f'Task_{task_id}_Result',
-                'task_system': [
-                    {
-                        'obj':None,
-                        'thread': None,
-                        # 'obj': LLM_Client(
-                        #     url=config.Global.llm_url,
-                        #     history=True,
-                        #     max_new_tokens=config.Global.llm_max_new_tokens,
-                        #     temperature=config.Global.llm_temperature,
-                        # ),
-                        # 'thread': Task_Worker_Thread(),
-                    },
-                    # {
-                    #     'obj': tts_client,
-                    #     'thread': tts_client_thread,
-                    # },
-                ],
-            }
-
-        inout_register_data[task_id] = data
+        # assert task_id not in inout_register_data
+        #
+        # data = None
+        # if task_type==str(Redis_Task_Type.LLM):
+        #     data = {
+        #         'task_type': task_type,
+        #         'task_status_key': f'Task_{task_id}_Status',
+        #         'task_result_key': f'Task_{task_id}_Result',
+        #         'task_system': [
+        #             {
+        #                 'obj':None,
+        #                 'thread': None,
+        #                 # 'obj': LLM_Client(
+        #                 #     url=config.Global.llm_url,
+        #                 #     history=True,
+        #                 #     max_new_tokens=config.Global.llm_max_new_tokens,
+        #                 #     temperature=config.Global.llm_temperature,
+        #                 # ),
+        #                 # 'thread': Task_Worker_Thread(),
+        #             },
+        #             # {
+        #             #     'obj': tts_client,
+        #             #     'thread': tts_client_thread,
+        #             # },
+        #         ],
+        #     }
+        #
+        # inout_register_data[task_id] = data
 
 
     # 响应client的new task
@@ -229,6 +166,9 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
     # 执行command
     def __exec_command(**arg_dict):
+        # invoking(**arg_dict)
+        # pass
+
         dgreen(f'command from client: {arg_dict}')
         cid = arg_dict['client_id']
         tid = arg_dict['task_id']
@@ -250,7 +190,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
         else:
             temperature = config.Global.llm_temperature
 
-        if command==str(Redis_LLM_Command.INIT):
+        if command==str(Redis_Proxy_Command_LLM.INIT):
             # 初始化 LLM_Client
             task_data['task_system'][0]['obj'] = LLM_Client(
                 url=url,
@@ -262,7 +202,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
             # 初始化 Task_Worker_Thread
             task_data['task_system'][0]['thread'] = Task_Worker_Thread()
 
-        if command==str(Redis_LLM_Command.ASK):
+        if command==str(Redis_Proxy_Command_LLM.ASK):
             def llm_callback(out_task_info_must_be_here, status_key, result_key, llm_obj, arg_dict):
                 # dred(f'llm_callback() invoked: stats({out_task_info_must_be_here}), question({question})')
                 status = out_task_info_must_be_here
@@ -304,7 +244,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
             thread.init(in_callback_func=llm_callback, status_key=status_key, result_key=result_key, llm_obj=llm, arg_dict=arg_dict)
             thread.start()
 
-        if command==str(Redis_LLM_Command.CANCEL):
+        if command==str(Redis_Proxy_Command_LLM.CANCEL):
             llm = task_data['task_system'][0]['obj']
             if llm is not None:
                 llm.cancel_response()

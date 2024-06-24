@@ -1,15 +1,9 @@
 from singleton import singleton
-from enum import Enum, unique
-from dataclasses import dataclass, asdict, field
-import uuid
+from dataclasses import asdict
 import uuid
 
 from redis_client import Redis_Client
 # from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_Task_LLM_Data, LLM_Ask_Data
-
-from config import dred, dgreen
-from redis_proxy.protocol import Redis_Task_Type
-from redis_proxy.protocol import Redis_LLM_Command
 
 
 s_redis = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
@@ -44,7 +38,7 @@ class Redis_Proxy_Client():
             self,
             task_id,        # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
             command:str,    # 例如：str(Redis_LLM_Command.INIT)
-            **arg_dict,     # 例如：{'key': 'value', 'key2': 'value2'}
+            args=None,      # dataclass类型，例如：LLM_Ask_Para
     ):
         # 封装redis的data
         data = {
@@ -52,9 +46,17 @@ class Redis_Proxy_Client():
             'task_id': task_id,
             'command': command,
         }
-        # redis必须将arg_dict的item加到data中，而不能嵌套dict
-        for k, v in arg_dict.items():
-            data[k] = v
+
+        if args is not None:
+            arg_dict = asdict(args)
+
+            # redis必须将arg_dict的item加到data中，而不能嵌套dict
+            for k, v in arg_dict.items():
+                if v is not None:
+                    if isinstance(v, bool):
+                        # redis下，bool类型需要转换成int
+                        v = int(v)
+                    data[k] = v
 
         # 发送command
         s_redis.add_stream(
@@ -85,41 +87,41 @@ class Redis_Proxy_Client():
                     return
 
 
-# client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
-@singleton
-class Redis_Task_Client():
-    def __init__(self):
-        pass
-
-    def add_llm_task(
-            self,
-            url='',
-            history = True,
-            max_new_tokens = 512,
-            temperature = 0.7,
-            api_key = 'empty',
-    ):
-        # client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
-        client = Redis_Client(host='localhost', port=6379)  # win-server
-
-        data = Redis_Task_LLM_Data()
-        data.task_type = str(Redis_Task_Type.LLM)
-        data.url = url
-        data.history = int(history)
-        data.max_new_tokens = max_new_tokens
-        data.temperature = temperature
-        data.api_key = api_key
-
-        task_id = 'llm_task_' + str(uuid.uuid4())
-        print(f'add_llm_task() task_id: {task_id}')
-        client.add_stream(task_id, data=asdict(data))
-
-        return task_id
-
-    def llm_ask(self, task_id, question):
-        client = Redis_Client(host='localhost', port=6379)  # win-server
-
-        data = LLM_Ask_Data()
-        data.question = question
-
-        client.add_stream(task_id, data=asdict(data))
+# # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
+# @singleton
+# class Redis_Task_Client():
+#     def __init__(self):
+#         pass
+#
+#     def add_llm_task(
+#             self,
+#             url='',
+#             history = True,
+#             max_new_tokens = 512,
+#             temperature = 0.7,
+#             api_key = 'empty',
+#     ):
+#         # client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
+#         client = Redis_Client(host='localhost', port=6379)  # win-server
+#
+#         data = Redis_Task_LLM_Data()
+#         data.task_type = str(Redis_Task_Type.LLM)
+#         data.url = url
+#         data.history = int(history)
+#         data.max_new_tokens = max_new_tokens
+#         data.temperature = temperature
+#         data.api_key = api_key
+#
+#         task_id = 'llm_task_' + str(uuid.uuid4())
+#         print(f'add_llm_task() task_id: {task_id}')
+#         client.add_stream(task_id, data=asdict(data))
+#
+#         return task_id
+#
+#     def llm_ask(self, task_id, question):
+#         client = Redis_Client(host='localhost', port=6379)  # win-server
+#
+#         data = LLM_Ask_Data()
+#         data.question = question
+#
+#         client.add_stream(task_id, data=asdict(data))
