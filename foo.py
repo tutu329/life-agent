@@ -4,6 +4,7 @@ from redis_proxy.redis_proxy_client import Redis_Proxy_Client
 from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM, LLM_Ask_Para, LLM_Init_Para
 from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I, T2I_Init_Para, T2I_Draw_Para
 
+import random
 
 def main():
     # c = Redis_Task_Client()
@@ -49,20 +50,24 @@ def main_t2i():
     args = T2I_Init_Para(url='localhost:5100')
     t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.INIT), args=args)
 
+    seed = random.randint(1, 1e14)
+    print(f'client seed: {seed}')
     args = T2I_Draw_Para(
         positive='8k raw, photo, masterpiece, super man',
         negative='ugly',
-        # seed=seed,
+        seed=seed,
         ckpt_name='sdxl_lightning_2step.safetensors',
         height=1024,
         width=1024,
     )
     t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
 
+    seed = random.randint(1, 1e14)
+    print(f'client seed: {seed}')
     args = T2I_Draw_Para(
         positive='8k raw, photo, masterpiece, super man',
         negative='ugly',
-        # seed=seed,
+        seed=seed,
         ckpt_name='sdxl_lightning_2step.safetensors',
         height=1024,
         width=1024,
@@ -71,8 +76,12 @@ def main_t2i():
 
     i=0
     for image_data in t1.get_result_gen(task_id):
+        i += 1
         t1.save_image_to_file(image_data, file_name=f'output_{task_id}_{i}')
 
+    for image_data in t1.get_result_gen(task_id):
+        i += 1
+        t1.save_image_to_file(image_data, file_name=f'output_{task_id}_{i}')
 
 if __name__ == "__main__":
     main_t2i()

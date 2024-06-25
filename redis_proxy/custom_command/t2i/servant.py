@@ -6,6 +6,8 @@ from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I
 from tools.t2i.api_client_comfy import Comfy, Work_Flow_Type
 from redis_proxy.thread import Task_Worker_Thread
 
+import random
+
 def _get_arg(arg_str, default, **arg_dict):
     arg = default
     if arg_str in arg_dict:
@@ -39,8 +41,8 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
 
             # 注册Task_Worker_Thread
             # 而T2I，由于seed可能需要改变，不同的command对应不同的thread，这里不需要new一个thread
-            # task_data['task_system'][0]['thread'] = None
-            task_data['task_system'][0]['thread'] = Task_Worker_Thread()
+            task_data['task_system'][0]['thread'] = None
+            # task_data['task_system'][0]['thread'] = Task_Worker_Thread()
 
         # ASK
         if command==str(Redis_Proxy_Command_T2I.DRAW):
@@ -54,6 +56,7 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                 ckpt_name = _get_arg(arg_str='ckpt_name', default='sdxl_lightning_2step.safetensors', **arg_dict)
                 height = _get_arg(arg_str='height', default=1024, **arg_dict)
                 width = _get_arg(arg_str='width', default=1024, **arg_dict)
+                seed = _get_arg(arg_str='seed', default=random.randint(1, 1e14), **arg_dict)
 
                 # t2i返回数据给redis的stream
                 obj.set_workflow_type(Work_Flow_Type.simple)
@@ -63,6 +66,7 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                     ckpt_name=ckpt_name,
                     height=height,
                     width=width,
+                    seed=seed,
                 )
 
                 # t2i运行的状态返回给redis
@@ -97,7 +101,7 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
 
             # 与LLM调用不同，LLM的后续ask需要依赖之前的ask的结果，因此LLM同一个task，不同的command对应同一个thread
             # 而T2I，由于seed可能需要改变，不同的command对应不同的thread
-            # task_data['task_system'][0]['thread'] = Task_Worker_Thread()
+            task_data['task_system'][0]['thread'] = Task_Worker_Thread()
             thread = task_data['task_system'][0]['thread']
             thread.init(in_callback_func=callback, status_key=status_key, result_key=result_key, obj=obj, arg_dict=arg_dict)
             thread.start()

@@ -97,6 +97,7 @@ class Redis_Proxy_Client():
                 if item['status'] != 'completed':
                     yield item['chunk']
                 else:
+                    # pass
                     return
 
     def save_image_to_file(self, image_data, file_name):

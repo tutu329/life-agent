@@ -22,3 +22,4 @@ class T2I_Draw_Para():
     ckpt_name:Any = None
     height:Any = None
     width:Any = None
+    seed:Any = None
