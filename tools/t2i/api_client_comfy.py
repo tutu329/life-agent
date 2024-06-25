@@ -152,6 +152,7 @@ class Comfy:
             denoise=1,
             batch_size=1,
     ):
+        print(f'seed: "{seed}"')
         # 设置simple工作流模板
         self.prompt = json.loads(Work_Flow_Template.template[self.workflow_type])
 
@@ -256,7 +257,7 @@ def main():
     client.set_server_address('localhost:5100')
     # client.set_server_address('192.168.124.33:7869')
     client.set_workflow_type(Work_Flow_Type.simple)
-    t = 0
+    t = 1
     if t==1:
         client.set_simple_work_flow(
             positive='super man',

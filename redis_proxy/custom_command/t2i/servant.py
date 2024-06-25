@@ -13,7 +13,7 @@ def _get_arg(arg_str, default, **arg_dict):
     return arg
 
 def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
-        dgreen(f'command from client: {arg_dict}')
+        # dgreen(f'command from client: {arg_dict}')
         cid = arg_dict['client_id']
         tid = arg_dict['task_id']
         command = arg_dict['command']
@@ -38,6 +38,8 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
             task_data['task_system'][0]['obj'] = Comfy()
 
             # 注册Task_Worker_Thread
+            # 而T2I，由于seed可能需要改变，不同的command对应不同的thread，这里不需要new一个thread
+            # task_data['task_system'][0]['thread'] = None
             task_data['task_system'][0]['thread'] = Task_Worker_Thread()
 
         # ASK
@@ -73,7 +75,9 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                 for node_id in images:
                     for image_data in images[node_id]:
                         data = {
-                            'image_data': image_data,
+                            'chunk_data_type':'image_data',
+                            'chunk': image_data,
+                            'chunk_use_byte': int(True),
                             'status': 'completed',
                         }
                         s_redis_client.add_stream(stream_key=result_key, data=data)
@@ -90,6 +94,10 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
 
             status_key = task_data['task_status_key']
             result_key = task_data['task_result_key']
+
+            # 与LLM调用不同，LLM的后续ask需要依赖之前的ask的结果，因此LLM同一个task，不同的command对应同一个thread
+            # 而T2I，由于seed可能需要改变，不同的command对应不同的thread
+            # task_data['task_system'][0]['thread'] = Task_Worker_Thread()
             thread = task_data['task_system'][0]['thread']
             thread.init(in_callback_func=callback, status_key=status_key, result_key=result_key, obj=obj, arg_dict=arg_dict)
             thread.start()

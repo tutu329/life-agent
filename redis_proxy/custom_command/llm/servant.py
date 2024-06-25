@@ -7,7 +7,7 @@ from tools.llm.api_client import LLM_Client
 from redis_proxy.thread import Task_Worker_Thread
 
 def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
-        dgreen(f'command from client: {arg_dict}')
+        # dgreen(f'command from client: {arg_dict}')
         cid = arg_dict['client_id']
         tid = arg_dict['task_id']
         command = arg_dict['command']
@@ -77,7 +77,9 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                 for chunk in gen:
                     # print(chunk, end='', flush=True)
                     data = {
+                        'chunk_data_type': 'text',
                         'chunk': chunk,
+                        'chunk_use_byte': int(False),
                         'status': 'running',
                     }
                     s_redis_client.add_stream(stream_key=result_key, data=data)

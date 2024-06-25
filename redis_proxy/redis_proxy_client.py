@@ -3,6 +3,7 @@ from dataclasses import asdict
 import uuid
 
 from redis_client import Redis_Client
+from config import Global
 # from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_Task_LLM_Data, LLM_Ask_Data
 
 
@@ -13,6 +14,8 @@ s_redis = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
 @singleton
 class Redis_Proxy_Client():
     def __init__(self):
+        self.temp_dir = Global.temp_dir
+
         self.client_id = 'Client_' + str(uuid.uuid4())
 
     # 向server发送一个消息，在server构造一个task
@@ -85,3 +88,10 @@ class Redis_Proxy_Client():
                     yield item['chunk']
                 else:
                     return
+
+    def save_image_to_file(self, image_data, file_name):
+        from PIL import Image
+        import io
+
+        image = Image.open(io.BytesIO(image_data))
+        image.save(f'{self.temp_dir}/{file_name}.jpg')
