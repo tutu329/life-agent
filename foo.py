@@ -62,26 +62,11 @@ def main_t2i():
     )
     t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
 
-    seed = random.randint(1, 1e14)
-    print(f'client seed: {seed}')
-    args = T2I_Draw_Para(
-        positive='8k raw, photo, masterpiece, super man',
-        negative='ugly',
-        seed=seed,
-        ckpt_name='sdxl_lightning_2step.safetensors',
-        height=1024,
-        width=1024,
-    )
-    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
-
     i=0
     for image_data in t1.get_result_gen(task_id):
         i += 1
         t1.save_image_to_file(image_data, file_name=f'output_{task_id}_{i}')
 
-    for image_data in t1.get_result_gen(task_id):
-        i += 1
-        t1.save_image_to_file(image_data, file_name=f'output_{task_id}_{i}')
 
 if __name__ == "__main__":
     main_t2i()
