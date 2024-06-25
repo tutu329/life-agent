@@ -55,6 +55,9 @@ class Global():
     # llm_system:str = "你是一个助理。"
     llm_system_prompt:str = "You are a helpful assistant."
 
+    comfy_url:str = 'http://localhost:5100'
+
+
     redis_proxy_server_sleep_time:float = 0.1    # redis task server循环的sleep时间
 
     # V2Ray代理
@@ -107,5 +110,6 @@ class Port():
     jupyter:int         = 7862
     open_webui:int      = 7864  # open-webui
     jupyter_temp:int    = 7865  # 自定义jupyter的docker容器
-    sd:int              = 7868  # stable diffusion
-    comfy:int           = 7869  # ComfyUI
+    # sd:int              = 7868  # stable diffusion
+    # comfy:int           = 7869  # ComfyUI
+    comfy:int           = 5100  # ComfyUI

@@ -44,7 +44,7 @@ class Redis_Proxy_Client():
         data = {
             'client_id': self.client_id,
             'task_id': task_id,
-            'custom_command': command,
+            'command': command,
         }
 
         if args is not None:

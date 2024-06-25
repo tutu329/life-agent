@@ -253,7 +253,8 @@ class Comfy:
 
 def main():
     client = Comfy()
-    client.set_server_address('192.168.124.33:7869')
+    client.set_server_address('localhost:5100')
+    # client.set_server_address('192.168.124.33:7869')
     client.set_workflow_type(Work_Flow_Type.simple)
     t = 0
     if t==1:

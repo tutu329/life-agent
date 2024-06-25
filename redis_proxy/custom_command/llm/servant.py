@@ -7,10 +7,10 @@ from tools.llm.api_client import LLM_Client
 from redis_proxy.thread import Task_Worker_Thread
 
 def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
-        dgreen(f'custom_command from client: {arg_dict}')
+        dgreen(f'command from client: {arg_dict}')
         cid = arg_dict['client_id']
         tid = arg_dict['task_id']
-        command = arg_dict['custom_command']
+        command = arg_dict['command']
         task_data = s_redis_proxy_server_data[cid][tid]
 
         # 公有参数
