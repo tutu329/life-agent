@@ -77,8 +77,8 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                         data = {
                             'chunk_data_type':'image_data',
                             'chunk': image_data,
-                            'chunk_use_byte': int(True),
-                            'status': 'completed',
+                            'chunk_use_byte': int(True),    # chunk_use_byte==True, 则chunk数据不能被转换为utf-8 string
+                            'status': 'running',
                         }
                         s_redis_client.add_stream(stream_key=result_key, data=data)
 

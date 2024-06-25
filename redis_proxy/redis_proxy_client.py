@@ -82,8 +82,18 @@ class Redis_Proxy_Client():
 
         # 读取最新stream数据
         while True:
-            result_dict = s_redis.pop_stream(stream_key=stream_key)
-            for item in result_dict:
+            dict_list = s_redis.pop_stream(stream_key=stream_key)
+            print('====================================================')
+            for item in dict_list:
+
+                # 打印获取的stream的dict
+                print('received dict:')
+                for k, v in item.items():
+                    if len(v)>100:
+                        print(f'\t{k}: {v[:10]}...(len: {len(v)})')
+                    else:
+                        print(f'\t{k}: {v}')
+
                 if item['status'] != 'completed':
                     yield item['chunk']
                 else:
