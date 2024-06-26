@@ -93,8 +93,8 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                     template_json_file = _get_arg(arg_str='template_json_file', default='api-sexy.json', **arg_dict)
                     seed = _get_arg(arg_str='seed', default=random.randint(1, 1e14), **arg_dict)
                     ckpt_name = _get_arg(arg_str='ckpt_name', default='meichidarkMix_meichidarkV5.safetensors', **arg_dict)
-                    height = _get_arg(arg_str='height', default=512, **arg_dict)
-                    width = _get_arg(arg_str='width', default=768, **arg_dict)
+                    height = _get_arg(arg_str='height', default=768, **arg_dict)
+                    width = _get_arg(arg_str='width', default=512, **arg_dict)
                     sampler_name = _get_arg(arg_str='sampler_name', default='dpmpp_2m_sde', **arg_dict)
                     scheduler = _get_arg(arg_str='scheduler', default='karras', **arg_dict)
                     steps = _get_arg(arg_str='steps', default=20, **arg_dict)
@@ -104,11 +104,11 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
 
                     lora1 = _get_arg(arg_str='lora1', default='sexy-cloth-Tassels-Dudou.safetensors', **arg_dict)
                     lora1_wt = _get_arg(arg_str='lora1_wt', default=0.85, **arg_dict)
-                    lora2 = _get_arg(arg_str='lora2', default='', **arg_dict)
+                    lora2 = _get_arg(arg_str='lora2', default='None', **arg_dict)
                     lora2_wt = _get_arg(arg_str='lora2_wt', default=1, **arg_dict)
-                    lora3 = _get_arg(arg_str='lora3', default='', **arg_dict)
+                    lora3 = _get_arg(arg_str='lora3', default='None', **arg_dict)
                     lora3_wt = _get_arg(arg_str='lora3_wt', default=1, **arg_dict)
-                    lora4 = _get_arg(arg_str='lora4', default='', **arg_dict)
+                    lora4 = _get_arg(arg_str='lora4', default='None', **arg_dict)
                     lora4_wt = _get_arg(arg_str='lora4_wt', default=1, **arg_dict)
 
 

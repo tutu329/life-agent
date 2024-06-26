@@ -63,6 +63,7 @@ def main_t2i():
     # )
     args = T2I_Draw_Para(
         positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
+        steps=72,
         # positive='8k raw, photo, masterpiece, super man',
         # negative='ugly',
         # seed=seed,
@@ -70,8 +71,8 @@ def main_t2i():
         # height=1024,
         # width=1024,
     )
-    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
-    # t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAWS), args=args)
+    # t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
+    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAWS), args=args)
 
     i=0
     for image_data in t1.get_result_gen(task_id):
