@@ -132,7 +132,7 @@ class Comfy:
         self.prompt = data
         seed = random.randint(1, 1e14)
         print(f'seed: "{seed}"')
-        self.prompt['3']['inputs']['seed'] = seed
+        self.prompt['16']['inputs']['seed'] = seed
 
     def is_image_websocket_node(self, in_node):
         return self.prompt[str(in_node)]["class_type"] == "SaveImageWebsocket"
@@ -257,18 +257,19 @@ def main():
     client.set_server_address('localhost:5100')
     # client.set_server_address('192.168.124.33:7869')
     client.set_workflow_type(Work_Flow_Type.simple)
-    t = 1
+    t = 0
     if t==1:
         client.set_simple_work_flow(
             positive='super man',
-            negative='ugly',
+            # negative='ugly',
             # seed=seed,
             ckpt_name='sdxl_lightning_2step.safetensors',
             height=512,
             width=512,
         )
     else:
-        client.set_workflow_by_json_file('api3.json')
+        client.set_workflow_by_json_file('api-sexy-back-liusu.json')
+        # client.set_workflow_by_json_file('api3.json')
     client.get_images()
     client.save_images_to_temp_dir()
 
