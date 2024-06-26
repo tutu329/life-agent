@@ -65,7 +65,7 @@ def status_to_redis(in_status: LLM_Client_Status):
     redis.set_dict(f'client last_response', in_status.last_response)
 
 class LLM_Client:
-    LLM_SERVER = 'http://127.0.0.1:8001/v1'
+    LLM_SERVER = 'http://127.0.0.1:8001/v1/'
     def __init__(self,
                  history=True,
                  history_max_turns=config.Global.llm_max_chat_turns,
@@ -179,8 +179,8 @@ class LLM_Client:
                 except Exception as e:
                     dred(f'【LLM_Client异常】refresh_endpoint(): "{e}"')
                     dred(f'【LLM_Client异常】refresh_endpoint(): 可能是IP或Port设置错误，当前url为: {self.url}')
-                    self.model_id = 'wrong'
-                    return False
+                    self.model_id = 'default'
+                    # return False
 
             dprint(f'【LLM_Client】refresh_endpoint(): {self.url}(model_id: {self.model_id}, api_key: "{self.api_key}")')
             return True
@@ -820,7 +820,7 @@ class Async_LLM:
     
 # 通过多个llm的client，对model进行并发访问，同步返回多个stream
 class Concurrent_LLMs:
-    def __init__(self, in_url='http://127.0.0.1:8001/v1'):
+    def __init__(self, in_url='http://127.0.0.1:8001/v1/'):
         self.prompts = []
         self.role_prompts = []
         self.contents = []
@@ -986,7 +986,7 @@ def main():
         history_max_turns=50,
         history_clear_method='pop',
         temperature=0.7,
-        url='http://127.0.0.1:8001/v1'
+        url='http://127.0.0.1:8001/v1/'
     )
     while True:
         query = input('User: ')
@@ -1193,7 +1193,7 @@ def main1():
         temperature=0.7,
         api_key='b1ad5dac212f563be4765b646543ca1b',
         # api_key='sk-6zcUSkVMPIR2WIhjC73a27B4D7584e8cBf1f1991Cf512626',
-        url='http://116.62.63.204:8001/v1'
+        url='http://116.62.63.204:8001/v1/'
     )
     # print('models: ', openai.models.list().data)
     llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
@@ -1205,7 +1205,7 @@ def main2():
         history_max_turns=50,
         history_clear_method='pop',
         temperature=0.7,
-        url='http://localhost:8001/v1'
+        url='http://localhost:8001/v1/'
     )
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')

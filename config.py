@@ -37,7 +37,7 @@ class Global():
     line:str = f'{80 * "-"}\n\n'
     llm_max_chat_turns = 200    # 对话超过llm_max_chat_turns轮，则pop最前面的对话
 
-    llm_url:str = 'http://192.168.124.33:8001/v1'
+    llm_url:str = 'http://192.168.124.33:8001/v1/'
     llm_max_new_tokens:int = 1024
     llm_temperature:float = 0.7
     # llm_url:str = 'http://116.62.63.204:8001/v1'

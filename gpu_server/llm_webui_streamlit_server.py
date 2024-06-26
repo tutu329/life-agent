@@ -165,7 +165,7 @@ def llm_init():
     #     main_llm_url = config.Global.llm_url
 
     # LLM_Client.Set_All_LLM_Server(config.Global.llm_url)
-    # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1')
+    # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8001/v1/')
     # dgreen(f'初始化所有LLM的url_endpoint: ', end='', flush=True)
     # dblue(f'"{LLM_Client.Get_All_LLM_Server()}"')
 
@@ -464,7 +464,7 @@ def ask_llm(prompt, paras):
         assistant = st.chat_message('assistant')
         placeholder1 = assistant.empty()
 
-        # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
+        # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1/')
         tools = [Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
         print(f'工具: [')
         for tool in tools:
@@ -1035,7 +1035,7 @@ def streamlit_refresh_loop():
     # =============================主模型、辅模型(用于翻译input)==============================
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
     # 注意：用on_change回调的话，回调的瞬间，s_paras['main_llm_url']中的值是change之前的
-    s_paras['main_llm_url'] = exp4.text_input(label="URL:", placeholder="http(s)://ip:port/v1", value=s_paras['main_llm_url'])
+    s_paras['main_llm_url'] = exp4.text_input(label="URL:", placeholder="http(s)://ip:port/v1/", value=s_paras['main_llm_url'])
     s_paras['main_llm_key'] = exp4.text_input(label="API-key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['main_llm_key'])
     s_paras['main_llm_model_id'] = exp4.text_input(label="id:", placeholder="model_id", value=s_paras['main_llm_model_id'])
     if s_paras['main_llm_url'] or s_paras['main_llm_key'] or s_paras['main_llm_model_id']:
@@ -1055,7 +1055,7 @@ def streamlit_refresh_loop():
     #         dred(f's_paras["input_translate"]: {s_paras["input_translate"]}')
 
     # exp4.checkbox('调用擅长英语的模型', value=s_paras['input_translate'], on_change=on_input_translate_change)
-    # s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'])
+    # s_paras['english_llm_url'] = exp4.text_input(label="英语模型:", placeholder="http(s)://ip:port/v1/", value=s_paras['english_llm_url'], disabled=not s_paras['input_translate'])
     # s_paras['english_llm_key'] = exp4.text_input(label="英语模型key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['english_llm_key'], disabled=not s_paras['input_translate'])
     # s_paras['english_llm_model_id'] = exp4.text_input(label="英语模型model_id:", placeholder="model_id", value=s_paras['english_llm_model_id'], disabled=not s_paras['input_translate'])
     # if s_paras['english_llm_url'] or s_paras['english_llm_key'] or s_paras['english_llm_model_id']:
