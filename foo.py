@@ -52,15 +52,26 @@ def main_t2i():
 
     seed = random.randint(1, 1e14)
     print(f'client seed: {seed}')
+    # args = T2I_Draw_Para(
+    #     positive='photo of young man in an grayed blue suit, light green shirt, and yellow tie. He has a neatly styled haircut with red and silver hair and is looking directly at the camera with a neutral expression. The background is seaside. The photograph is in colored, emphasizing contrasts and shadows. The man appears to be in his late twenties or early thirties, with fair skin and short.This man looks very like young Tom Cruise.',
+    #     # positive='8k raw, photo, masterpiece, super man',
+    #     # negative='ugly',
+    #     # seed=seed,
+    #     # ckpt_name='sdxl_lightning_2step.safetensors',
+    #     # height=1024,
+    #     # width=1024,
+    # )
     args = T2I_Draw_Para(
-        positive='8k raw, photo, masterpiece, super man',
-        negative='ugly',
-        seed=seed,
-        ckpt_name='sdxl_lightning_2step.safetensors',
-        height=1024,
-        width=1024,
+        positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
+        # positive='8k raw, photo, masterpiece, super man',
+        # negative='ugly',
+        # seed=seed,
+        # ckpt_name='sdxl_lightning_2step.safetensors',
+        # height=1024,
+        # width=1024,
     )
     t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
+    # t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAWS), args=args)
 
     i=0
     for image_data in t1.get_result_gen(task_id):

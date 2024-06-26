@@ -44,30 +44,98 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
             task_data['task_system'][0]['thread'] = None
             # task_data['task_system'][0]['thread'] = Task_Worker_Thread()
 
-        # ASK
-        if command==str(Redis_Proxy_Command_T2I.DRAW):
+        # DRAW
+        if command==str(Redis_Proxy_Command_T2I.DRAW) or command==str(Redis_Proxy_Command_T2I.DRAWS):
             def callback(out_task_info_must_be_here, status_key, result_key, obj, arg_dict):
-                # dred(f'llm_callback() invoked: stats({out_task_info_must_be_here}), question({question})')
+                dred(f't2i_callback() invoked:')
+                for k, v in arg_dict.items():
+                    dgreen(f'\t {k}: {v}')
+
                 status = out_task_info_must_be_here
 
                 # t2i参数获取
-                positive = _get_arg(arg_str='positive', default='', **arg_dict)
-                negative = _get_arg(arg_str='negative', default='', **arg_dict)
-                ckpt_name = _get_arg(arg_str='ckpt_name', default='sdxl_lightning_2step.safetensors', **arg_dict)
-                height = _get_arg(arg_str='height', default=1024, **arg_dict)
-                width = _get_arg(arg_str='width', default=1024, **arg_dict)
-                seed = _get_arg(arg_str='seed', default=random.randint(1, 1e14), **arg_dict)
+                if command==str(Redis_Proxy_Command_T2I.DRAW):
+                    print(f'------------------command: {command}------------------')
+                    positive = _get_arg(arg_str='positive', default='photo of young man in an grayed blue suit, light green shirt, and yellow tie. He has a neatly styled haircut with red and silver hair and is looking directly at the camera with a neutral expression. The background is seaside. The photograph is in colored, emphasizing contrasts and shadows. The man appears to be in his late twenties or early thirties, with fair skin and short.This man looks very like young Tom Cruise.', **arg_dict)
+                    negative = _get_arg(arg_str='negative', default='ugly face, bad hands, bad fingers, bad quality, poor quality, doll, disfigured, jpg, toy, bad anatomy, missing limbs, missing fingers, 3d, cgi', **arg_dict)
+                    template_json_file = _get_arg(arg_str='template_json_file', default='api-sd3-tom.json', **arg_dict)
+                    seed = _get_arg(arg_str='seed', default=random.randint(1, 1e14), **arg_dict)
+                    ckpt_name = _get_arg(arg_str='ckpt_name', default='sd3_medium.safetensors', **arg_dict)
+                    height = _get_arg(arg_str='height', default=1024, **arg_dict)
+                    width = _get_arg(arg_str='width', default=1024, **arg_dict)
+                    sampler_name = _get_arg(arg_str='sampler_name', default='dpmpp_2m', **arg_dict)
+                    scheduler = _get_arg(arg_str='scheduler', default='sgm_uniform', **arg_dict)
+                    steps = _get_arg(arg_str='steps', default=30, **arg_dict)
+                    cfg = _get_arg(arg_str='cfg', default=4.5, **arg_dict)
+                    denoise = _get_arg(arg_str='denoise', default=1, **arg_dict)
+                    batch_size = _get_arg(arg_str='batch_size', default=1, **arg_dict)
 
-                # t2i返回数据给redis的stream
-                obj.set_workflow_type(Work_Flow_Type.simple)
-                obj.set_simple_work_flow(
-                    positive=positive,
-                    negative=negative,
-                    ckpt_name=ckpt_name,
-                    height=height,
-                    width=width,
-                    seed=seed,
-                )
+                    # t2i返回数据给redis的stream
+                    obj.set_sd3_workflow(
+                        positive=positive,
+                        negative=negative,
+                        template_json_file=template_json_file,
+                        seed=seed,
+                        ckpt_name=ckpt_name,
+                        height=height,
+                        width=width,
+                        sampler_name=sampler_name,
+                        scheduler=scheduler,
+                        steps=steps,
+                        cfg=cfg,
+                        denoise=denoise,
+                        batch_size=batch_size,
+                    )
+                elif command==str(Redis_Proxy_Command_T2I.DRAWS):
+                    print(f'------------------command: {command}------------------')
+                    positive = _get_arg(arg_str='positive', default='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,', **arg_dict)
+                    negative = _get_arg(arg_str='negative', default='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,', **arg_dict)
+                    template_json_file = _get_arg(arg_str='template_json_file', default='api-sexy.json', **arg_dict)
+                    seed = _get_arg(arg_str='seed', default=random.randint(1, 1e14), **arg_dict)
+                    ckpt_name = _get_arg(arg_str='ckpt_name', default='meichidarkMix_meichidarkV5.safetensors', **arg_dict)
+                    height = _get_arg(arg_str='height', default=512, **arg_dict)
+                    width = _get_arg(arg_str='width', default=768, **arg_dict)
+                    sampler_name = _get_arg(arg_str='sampler_name', default='dpmpp_2m_sde', **arg_dict)
+                    scheduler = _get_arg(arg_str='scheduler', default='karras', **arg_dict)
+                    steps = _get_arg(arg_str='steps', default=20, **arg_dict)
+                    cfg = _get_arg(arg_str='cfg', default=7, **arg_dict)
+                    denoise = _get_arg(arg_str='denoise', default=1, **arg_dict)
+                    batch_size = _get_arg(arg_str='batch_size', default=1, **arg_dict)
+
+                    lora1 = _get_arg(arg_str='lora1', default='sexy-cloth-Tassels-Dudou.safetensors', **arg_dict)
+                    lora1_wt = _get_arg(arg_str='lora1_wt', default=0.85, **arg_dict)
+                    lora2 = _get_arg(arg_str='lora2', default='', **arg_dict)
+                    lora2_wt = _get_arg(arg_str='lora2_wt', default=1, **arg_dict)
+                    lora3 = _get_arg(arg_str='lora3', default='', **arg_dict)
+                    lora3_wt = _get_arg(arg_str='lora3_wt', default=1, **arg_dict)
+                    lora4 = _get_arg(arg_str='lora4', default='', **arg_dict)
+                    lora4_wt = _get_arg(arg_str='lora4_wt', default=1, **arg_dict)
+
+
+                    # t2i返回数据给redis的stream
+                    obj.set_sexy_workflow(
+                        positive=positive,
+                        negative=negative,
+                        template_json_file=template_json_file,
+                        seed=seed,
+                        ckpt_name=ckpt_name,
+                        height=height,
+                        width=width,
+                        sampler_name=sampler_name,
+                        scheduler=scheduler,
+                        steps=steps,
+                        cfg=cfg,
+                        denoise=denoise,
+                        batch_size=batch_size,
+                        lora1=lora1,
+                        lora1_wt=lora1_wt,
+                        lora2=lora2,
+                        lora2_wt=lora2_wt,
+                        lora3=lora3,
+                        lora3_wt=lora3_wt,
+                        lora4=lora4,
+                        lora4_wt=lora4_wt,
+                    )
 
                 # t2i运行的状态返回给redis
                 s_redis_client.set_string(key=status_key,value_string='running')

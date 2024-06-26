@@ -7,6 +7,7 @@ from dataclasses import dataclass, asdict, field
 class Redis_Proxy_Command_T2I(Enum):
     INIT    = 'INIT'
     DRAW    = 'DRAW'
+    DRAWS   = 'DRAWS'
 
 # T2I调用(Init)参数
 @dataclass
@@ -17,9 +18,25 @@ class T2I_Init_Para():
 @dataclass
 class T2I_Draw_Para():
     positive:str = ''
-    negative:str = ''
+    negative:Any = None
 
+    template_json_file:Any = None
+    seed:Any = None
     ckpt_name:Any = None
     height:Any = None
     width:Any = None
-    seed:Any = None
+    sampler_name:Any = None
+    scheduler:Any = None
+    steps:Any = None
+    cfg:Any = None
+    denoise:Any = None
+    batch_size:Any = None
+
+    lora1:Any = None
+    lora1_wt:Any = None
+    lora2:Any = None
+    lora2_wt:Any = None
+    lora3:Any = None
+    lora3_wt:Any = None
+    lora4:Any = None
+    lora4_wt:Any = None

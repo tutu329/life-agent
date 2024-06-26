@@ -55,7 +55,7 @@ class Redis_Proxy_Client():
 
             # redis必须将arg_dict的item加到data中，而不能嵌套dict
             for k, v in arg_dict.items():
-                if v is not None:
+                if v is not None:   # Para中为None的就不输入，依靠server侧的default值
                     if isinstance(v, bool):
                         # redis下，bool类型需要转换成int
                         v = int(v)
