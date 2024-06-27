@@ -27,8 +27,8 @@ def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dic
         t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict)
 
 # 注册各种类型的任务
-def server_add_task(inout_register_data, task_id, task_type):
-    assert task_id not in inout_register_data
+def server_add_task(inout_client_data, task_id, task_type):
+    assert task_id not in inout_client_data
 
     # data = None
     # if task_type == str(Redis_Task_Type.LLM):
@@ -55,5 +55,5 @@ def server_add_task(inout_register_data, task_id, task_type):
         ],
     }
 
-    inout_register_data[task_id] = data
+    inout_client_data[task_id] = data
 

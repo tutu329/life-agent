@@ -24,8 +24,8 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
 
     # 注册各种类型的任务
-    def __add_task(inout_register_data, task_id, task_type):
-        server_add_task(inout_register_data, task_id, task_type)
+    def __add_task(inout_client_data, task_id, task_type):
+        server_add_task(inout_client_data, task_id, task_type)
 
     # 响应client的new task
     def polling_new_tasks():
@@ -46,7 +46,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     # 没有该client数据
                     s_redis_proxy_server_data[cid] = {}
 
-                __add_task(inout_register_data=s_redis_proxy_server_data[cid], task_id=tid, task_type=ttype)
+                __add_task(inout_client_data=s_redis_proxy_server_data[cid], task_id=tid, task_type=ttype)
 
     # 执行command
     def __exec_command(**arg_dict):
