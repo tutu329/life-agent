@@ -131,12 +131,12 @@ class Redis_Client:
                 message_id = message[0]
                 message_data = message[1]
 
-                print(f'---------------------------------------------')
-                for k, v in message_data.items():
-                    if len(v)>100:
-                        print(f'\t {k}: {v[:10]}...(len: {len(v)})')
-                    else:
-                        print(f'\t {k}: {v}')
+                # print(f'---------------------------------------------')
+                # for k, v in message_data.items():
+                #     if len(v)>100:
+                #         print(f'\t {k}: {v[:10]}...(len: {len(v)})')
+                #     else:
+                #         print(f'\t {k}: {v}')
 
                 if use_byte:
                     rtn_data_list.append(message_data)

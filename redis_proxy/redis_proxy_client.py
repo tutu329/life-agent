@@ -7,6 +7,7 @@ from config import Global
 # from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_Task_LLM_Data, LLM_Ask_Data
 
 from redis_proxy.custom_command.protocol import Redis_Task_Type
+from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM, LLM_Init_Para, LLM_Ask_Para
 from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I, T2I_Init_Para, T2I_Draw_Para
 import random
 
@@ -88,16 +89,16 @@ class Redis_Proxy_Client():
         # 读取最新stream数据
         while True:
             dict_list = s_redis.pop_stream(stream_key=stream_key)
-            print('====================================================')
+            # print('====================================================')
             for item in dict_list:
 
                 # 打印获取的stream的dict
-                print('received dict:')
-                for k, v in item.items():
-                    if len(v)>100:
-                        print(f'\t{k}: {v[:10]}...(len: {len(v)})')
-                    else:
-                        print(f'\t{k}: {v}')
+                # print('received dict:')
+                # for k, v in item.items():
+                #     if len(v)>100:
+                #         print(f'\t{k}: {v[:10]}...(len: {len(v)})')
+                #     else:
+                #         print(f'\t{k}: {v}')
 
                 if item['status'] != 'completed':
                     yield item['chunk']
@@ -164,6 +165,25 @@ def main_t2i():
         i += 1
         t1.save_image_to_file(image_data, file_name=f'output_{task_id}_{i}')
 
+def main_llm():
+    # c = Redis_Task_Client()
+    # c.add_llm_task('2+2=')
+
+    t1 = Redis_Proxy_Client()
+    task_id = t1.new_task(str(Redis_Task_Type.LLM))
+
+    args = LLM_Init_Para(url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
+    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_LLM.INIT), args=args)
+    # t1.send_command(task_id=task_id, custom_command=str(Redis_Proxy_Command_LLM.INIT), url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
+
+    args = LLM_Ask_Para(question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
+    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_LLM.ASK), args=args)
+    # t1.send_command(task_id=task_id, custom_command=str(Redis_Proxy_Command_LLM.ASK), question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
+    # print(f'result is:')
+    for chunk in t1.get_result_gen(task_id):
+        print(chunk, end='', flush=True)
+    print()
 
 if __name__ == "__main__":
-    main_t2i()
+    main_llm()
+    # main_t2i()
