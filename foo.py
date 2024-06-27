@@ -63,14 +63,30 @@ def main_t2i():
     # )
     args = T2I_Draw_Para(
         positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
-        steps=72,
-        # positive='8k raw, photo, masterpiece, super man',
-        # negative='ugly',
-        # seed=seed,
-        # ckpt_name='sdxl_lightning_2step.safetensors',
-        # height=1024,
-        # width=1024,
+        negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
+        template_json_file = 'api-sexy.json',
+        seed = random.randint(1, 1e14),
+        ckpt_name = 'meichidarkMix_meichidarkV5.safetensors',
+        height = 768,
+        width = 512,
+        sampler_name = 'dpmpp_2m_sde',
+        scheduler = 'karras',
+        steps = 72,
+        cfg = 7,
+        denoise = 1,
+        batch_size = 1,
+
+        lora_count=1,
+        lora1 = 'sexy-cloth-Tassels-Dudou.safetensors',
+        lora1_wt = 0.85,
+        lora2 = None,
+        lora2_wt = None,
+        lora3 = None,
+        lora3_wt = None,
+        lora4 = None,
+        lora4_wt = None,
     )
+    # print(f'args: {args}')
     # t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
     t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAWS), args=args)
 

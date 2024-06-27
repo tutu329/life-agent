@@ -178,6 +178,7 @@ class Comfy:
             cfg=7,
             denoise=1,
             batch_size=1,
+            lora_count=1,
             lora1='sexy-cloth-Tassels-Dudou.safetensors',
             lora1_wt=0.85,
             lora2='None',
@@ -189,7 +190,7 @@ class Comfy:
     ):
         with open(template_json_file, 'r', encoding='utf-8') as file:
             data = json.load(file)
-        print(f'------------------data------------------')
+        print(f'------------------json data------------------')
         for k,v in data.items():
             print(f'\t {k}: {v}')
 
@@ -208,6 +209,7 @@ class Comfy:
         self.prompt['16']['inputs']['steps'] = steps
         self.prompt['16']['inputs']['seed'] = seed
 
+        self.prompt['12']['inputs']['lora_count'] = lora_count
         self.prompt['12']['inputs']['lora_name_1'] = lora1
         self.prompt['12']['inputs']['lora_wt_1'] = lora1_wt
         self.prompt['12']['inputs']['lora_name_2'] = lora2

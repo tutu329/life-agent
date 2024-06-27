@@ -32,6 +32,7 @@ class T2I_Draw_Para():
     denoise:Any = None
     batch_size:Any = None
 
+    lora_count:Any = None
     lora1:Any = None
     lora1_wt:Any = None
     lora2:Any = None

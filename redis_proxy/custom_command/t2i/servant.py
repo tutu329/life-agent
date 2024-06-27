@@ -102,6 +102,7 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                     denoise = _get_arg(arg_str='denoise', default=1, **arg_dict)
                     batch_size = _get_arg(arg_str='batch_size', default=1, **arg_dict)
 
+                    lora_count = _get_arg(arg_str='lora_count', default=1, **arg_dict)
                     lora1 = _get_arg(arg_str='lora1', default='sexy-cloth-Tassels-Dudou.safetensors', **arg_dict)
                     lora1_wt = _get_arg(arg_str='lora1_wt', default=0.85, **arg_dict)
                     lora2 = _get_arg(arg_str='lora2', default='None', **arg_dict)
@@ -111,6 +112,8 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                     lora4 = _get_arg(arg_str='lora4', default='None', **arg_dict)
                     lora4_wt = _get_arg(arg_str='lora4_wt', default=1, **arg_dict)
 
+                    # print(f'========================arg_dict {arg_dict}=============111111111111111111111111111111')
+                    # print(f'========================lora_count {type(lora_count)}=============111111111111111111111111111111')
 
                     # t2i返回数据给redis的stream
                     obj.set_sexy_workflow(
@@ -127,18 +130,21 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                         cfg=cfg,
                         denoise=denoise,
                         batch_size=batch_size,
+                        lora_count=int(lora_count),     # 注意：redis获取的都是str类型，这里必须转为数值，否则comfyui无法正常出图。（除了Lora Stacker这种第三方插件中的参数，其他倒是不需要必须是数值，str也可以，会自动转换为数值）
                         lora1=lora1,
-                        lora1_wt=lora1_wt,
+                        lora1_wt=float(lora1_wt),
                         lora2=lora2,
-                        lora2_wt=lora2_wt,
+                        lora2_wt=float(lora2_wt),
                         lora3=lora3,
-                        lora3_wt=lora3_wt,
+                        lora3_wt=float(lora3_wt),
                         lora4=lora4,
-                        lora4_wt=lora4_wt,
+                        lora4_wt=float(lora4_wt),
                     )
 
                 # t2i运行的状态返回给redis
                 s_redis_client.set_string(key=status_key,value_string='running')
+
+                # print(f'========================obj.prompt {obj.prompt}=============111111111111111111111111111111')
 
                 # t2i运行
                 images = obj.get_images()

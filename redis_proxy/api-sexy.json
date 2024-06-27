@@ -2,13 +2,13 @@
   "12": {
     "inputs": {
       "input_mode": "simple",
-      "lora_count": 2,
-      "lora_name_1": "None",
-      "lora_wt_1": 1,
+      "lora_count": 1,
+      "lora_name_1": "sexy-cloth-Tassels-Dudou.safetensors",
+      "lora_wt_1": 0.85,
       "model_str_1": 1,
       "clip_str_1": 1,
-      "lora_name_2": "sexy-cloth-Tassels-Dudou.safetensors",
-      "lora_wt_2": 0.85,
+      "lora_name_2": "None",
+      "lora_wt_2": 1,
       "model_str_2": 1,
       "clip_str_2": 1,
       "lora_name_3": "None",

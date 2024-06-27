@@ -52,6 +52,7 @@ class Redis_Proxy_Client():
 
         if args is not None:
             arg_dict = asdict(args)
+            # print(f'arg_dict: {arg_dict}')
 
             # redis必须将arg_dict的item加到data中，而不能嵌套dict
             for k, v in arg_dict.items():
