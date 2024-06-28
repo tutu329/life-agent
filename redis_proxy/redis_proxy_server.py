@@ -7,7 +7,7 @@ from tools.llm.api_client import LLM_Client
 import time
 
 from redis_proxy.custom_command.protocol import server_add_task, server_invoking_command
-from redis_proxy.custom_bridge.protocol import server_add_and_start_bridge_servant, server_invoking_bridge
+from redis_proxy.custom_bridge.protocol import server_add_and_start_bridge_servant
 from redis_proxy.thread import Task_Worker_Thread, Redis_Proxy_Server_Thread
 
 from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM
@@ -63,7 +63,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     # 没有该client数据
                     s_redis_proxy_server_data[cid] = {}
 
-                server_add_and_start_bridge_servant(inout_client_data=s_redis_proxy_server_data[cid], bridge_type=btype, arg_dict=dict)
+                server_add_and_start_bridge_servant(inout_client_data=s_redis_proxy_server_data[cid], s_redis_client=s_redis_client, bridge_type=btype, arg_dict=dict)
 
     # 执行command
     def __exec_command(**arg_dict):

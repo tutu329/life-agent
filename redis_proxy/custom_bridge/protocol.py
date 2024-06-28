@@ -32,7 +32,7 @@ class Bridge_Para():
 
 # 由于某一类command对应n个bridge，因此bridge不是某个task或者某个task下的某个command的一部分
 # 因此bridge_system是client的一部分，而不是task的一部分
-def server_add_and_start_bridge_servant(inout_client_data, bridge_type:str, arg_dict):
+def server_add_and_start_bridge_servant(inout_client_data, s_redis_client, bridge_type:str, arg_dict):
     # client的输入
     bridge_type = arg_dict['bridge_type']
     bridge_io_type = arg_dict['bridge_io_type']
@@ -78,19 +78,19 @@ def server_add_and_start_bridge_servant(inout_client_data, bridge_type:str, arg_
     }
 
     # bridge的轮询任务(只对原stream和桥接后stream进行转换，从而确保异步)
-    def bridge_polling_callback(out_task_info_must_be_here):
+    def bridge_polling_callback(out_task_info_must_be_here, s_redis_client):
         while True:
             if out_task_info_must_be_here['status'] == Status.Cancelling:
                 break
 
             if bridge_type==str(Redis_Bridge_Type.TRANSLATE):
-                translate_servant(inout_client_data, client_bridge_data)
+                translate_servant(inout_client_data, client_bridge_data, s_redis_client)
 
             time.sleep(config.Global.redis_proxy_server_sleep_time)
 
     # 启动bridge的thread
     thread = client_bridge_data['thread']
-    thread.init(in_callback_func=bridge_polling_callback)
+    thread.init(in_callback_func=bridge_polling_callback, s_redis_client=s_redis_client)
     thread.start()
 
     # 写入bridge_data
