@@ -11,8 +11,11 @@ def server_add_bridge(inout_client_data, bridge_type):
 
         # key的桥接（bridge的核心任务：将原有task中的redis key转为桥接后的key）
         # 核心流程是：具体某个command执行时，其输入输出的key将被bridge到新的key中（且command流程不需自知）
-        'task_status_bridged_key': None,    # f'Task_{task_id}_Status',
-        'task_result_bridged_key': None,    # f'Task_{task_id}_Result',
+        # 1）修改redis_proxy_server侧的command stream key：
+        'bridged_command_stream_key' :   'Task_{task_id}_Command_Bridged',
+        # 2）在s_redis_proxy_server_data中、server_add_task()中，修改所有task的输出key：
+        'bridged_task_status_key' :      'Task_{task_id}_Status_Bridged',
+        'bridged_task_result_key' :      'Task_{task_id}_Result_Bridged',
     }
 
     # 创建并启动bridge的轮询任务
