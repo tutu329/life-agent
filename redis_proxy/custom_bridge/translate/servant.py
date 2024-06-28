@@ -68,8 +68,9 @@ def translate_servant(inout_client_data, client_bridge_data, bridge_redis_client
             o_key = original_cmd_key.format(task_id=task_id)
             b_key = bridged_cmd_key.format(task_id=task_id)
 
-            # 将以下信息注入，表明这些task需要桥接command stream
+            # ===================将以下信息注入，表明这些task需要桥接command stream===================
             inout_client_data[task_id]['task_command_key_bridged'] = b_key
+            # =================================================================================
 
             # 对command stream下所有记录的需桥接args，进行翻译，并生成bridge后的command stream
             args = client_bridge_data['bridged_command_args']

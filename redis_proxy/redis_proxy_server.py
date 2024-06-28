@@ -2,7 +2,7 @@ import config
 
 from utils.task import Status
 from redis_client import Redis_Client
-from config import dred,dgreen
+from config import dred,dgreen, dblue
 from tools.llm.api_client import LLM_Client
 import time, json5
 
@@ -75,11 +75,28 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
         for k,v in s_redis_proxy_server_data.items():
             # 所有client_id
             for k1,v1 in v.items():
+                if k1=='bridge_system':
+                    # 注意，由于s_redis_proxy_server_data中，'bridge_system'和'Task_idxxxx'平行，因此必须排除掉
+                    continue
+
                 # 所有task_id
                 task_id = k1
 
-                # 查询该task下的command
+                task_data = v1
+
+                #查询该task下的command
+                # if 'task_command_key_bridged' in task_data:
+                #     dred(f'--------------------------------------------------------')
+                #     dred(f"'task_command_key_bridged' in task_data, stream-key is bridged from '{f'Task_{task_id}_Command'}' to '{task_data['task_command_key_bridged']}'.")
+                #     dred(f'--------------------------------------------------------')
+                #     stream_key = task_data['task_command_key_bridged']
+                #     dblue(f'stream_key1: {stream_key}')
+                # else:
+                #     stream_key = f'Task_{task_id}_Command'
+
                 stream_key = f'Task_{task_id}_Command'
+                dblue(f'stream_key2: {stream_key} | s_redis_proxy_server_data: {s_redis_proxy_server_data}')
+
                 dict_list = __pop_stream(key=stream_key)
 
                 # 执行所有command
