@@ -55,7 +55,7 @@ def server_add_bridge(inout_client_data, bridge_type:str, arg_dict):
     # bridge_data['thread'] =
 
     # bridge的轮询任务
-    def bridge_polling():
+    def bridge_polling_callback():
         pass
 
     # 启动bridge的thread
