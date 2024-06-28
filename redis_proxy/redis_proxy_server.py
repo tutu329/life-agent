@@ -45,7 +45,8 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     pass
                 else:
                     # 没有该client数据
-                    s_redis_proxy_server_data[cid] = {}
+                    s_redis_proxy_server_data[cid] = {
+                    }
 
                 __add_task(inout_client_data=s_redis_proxy_server_data[cid], task_id=tid, task_type=ttype)
 
@@ -110,6 +111,7 @@ def server_init():
         #         },
         #     ],
         #     'task-id1' : {
+        #         'task_command_key_bridged':'Task_{task_id}_Command_Bridged',  # 这一行由servant注入，如果有了，表明现需要对command stream进行桥接
         #         'task_type' : str(Redis_Task_Type.LLM),
         #         'task_status_key' : '',
         #         'task_result_key' : '',
