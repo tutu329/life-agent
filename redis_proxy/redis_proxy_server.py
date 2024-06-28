@@ -90,7 +90,7 @@ def server_init():
         #     'task-id1' : {
         #         'task_type' : str(Redis_Task_Type.LLM),
         #         'task_status' : '',
-        #         'task_system' : [
+        #         'command_system' : [
         #             {
         #                 'obj': llm_client,
         #                 'thread': llm_client_thread,
@@ -98,6 +98,12 @@ def server_init():
         #             {
         #                 'obj': tts_client,
         #                 'thread': tts_client_thread,
+        #             },
+        #         ],
+        #         'bridge_system' : [
+        #             {
+        #                 'obj': None,
+        #                 'thread': None,
         #             },
         #         ],
         #     },

@@ -37,7 +37,7 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
             else:
                 history = True
 
-            task_data['task_system'][0]['obj'] = LLM_Client(
+            task_data['command_system'][0]['obj'] = LLM_Client(
                 url=url,
                 history=history,
                 max_new_tokens=max_new_tokens,
@@ -45,7 +45,7 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
             )
 
             # 初始化 Task_Worker_Thread
-            task_data['task_system'][0]['thread'] = Task_Worker_Thread()
+            task_data['command_system'][0]['thread'] = Task_Worker_Thread()
 
         # ASK
         if command==str(Redis_Proxy_Command_LLM.ASK):
@@ -91,15 +91,15 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                 s_redis_client.add_stream(stream_key=result_key, data=data)
                 s_redis_client.set_string(key=status_key,value_string='completed')
 
-            llm = task_data['task_system'][0]['obj']
+            llm = task_data['command_system'][0]['obj']
             # print(f'llm: {llm}')
             status_key = task_data['task_status_key']
             result_key = task_data['task_result_key']
-            thread = task_data['task_system'][0]['thread']
+            thread = task_data['command_system'][0]['thread']
             thread.init(in_callback_func=llm_callback, status_key=status_key, result_key=result_key, llm_obj=llm, arg_dict=arg_dict)
             thread.start()
 
         if command==str(Redis_Proxy_Command_LLM.CANCEL):
-            llm = task_data['task_system'][0]['obj']
+            llm = task_data['command_system'][0]['obj']
             if llm is not None:
                 llm.cancel_response()

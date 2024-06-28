@@ -37,12 +37,12 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                 url = config.Global.llm_url
 
             # 注册obj
-            task_data['task_system'][0]['obj'] = Comfy()
+            task_data['command_system'][0]['obj'] = Comfy()
 
             # 注册Task_Worker_Thread
             # 而T2I，由于seed可能需要改变，不同的command对应不同的thread，这里不需要new一个thread
-            task_data['task_system'][0]['thread'] = None
-            # task_data['task_system'][0]['thread'] = Task_Worker_Thread()
+            task_data['command_system'][0]['thread'] = None
+            # task_data['command_system'][0]['thread'] = Task_Worker_Thread()
 
         # DRAW
         if command==str(Redis_Proxy_Command_T2I.DRAW) or command==str(Redis_Proxy_Command_T2I.DRAWS):
@@ -168,19 +168,19 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                 s_redis_client.set_string(key=status_key,value_string='completed')
 
             # t2i流程启动
-            obj = task_data['task_system'][0]['obj']
+            obj = task_data['command_system'][0]['obj']
 
             status_key = task_data['task_status_key']
             result_key = task_data['task_result_key']
 
             # 与LLM调用不同，LLM的后续ask需要依赖之前的ask的结果，因此LLM同一个task，不同的command对应同一个thread
             # 而T2I，由于seed可能需要改变，不同的command对应不同的thread
-            task_data['task_system'][0]['thread'] = Task_Worker_Thread()
-            thread = task_data['task_system'][0]['thread']
+            task_data['command_system'][0]['thread'] = Task_Worker_Thread()
+            thread = task_data['command_system'][0]['thread']
             thread.init(in_callback_func=callback, status_key=status_key, result_key=result_key, obj=obj, arg_dict=arg_dict)
             thread.start()
 
         # if command==str(Redis_Proxy_Command_LLM.CANCEL):
-        #     llm = task_data['task_system'][0]['obj']
+        #     llm = task_data['command_system'][0]['obj']
         #     if llm is not None:
         #         llm.cancel_response()

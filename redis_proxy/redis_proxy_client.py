@@ -41,6 +41,11 @@ class Redis_Proxy_Client():
 
         return task_id
 
+    # 对某个task下的某个command的输入或输出，进行桥接转换
+    # 例如，将Draw的positive输入，翻译为英文，再传给Draw
+    def add_bridge(self):
+        pass
+
     # 向server发送一个消息，在server执行某task的一个command
     def send_command(
             self,
@@ -185,5 +190,5 @@ def main_llm():
     print()
 
 if __name__ == "__main__":
-    main_llm()
-    # main_t2i()
+    # main_llm()
+    main_t2i()
