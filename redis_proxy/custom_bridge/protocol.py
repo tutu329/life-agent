@@ -1,7 +1,6 @@
 def server_invoking_bridge():
     pass
 
-
 def server_add_bridge(inout_client_data, bridge_type):
     # 由于某一类command对应n个bridge，因此bridge不是某个task或者某个task下的某个command的一部分
     # 因此bridge_system是client的一部分
