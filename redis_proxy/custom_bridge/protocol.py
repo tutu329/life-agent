@@ -1,4 +1,6 @@
 from enum import Enum, unique
+from typing import List, Any
+from dataclasses import dataclass, asdict, field
 
 from config import dred, dgreen
 
@@ -9,9 +11,14 @@ class Redis_Bridge_Type(Enum):
 def server_invoking_bridge():
     pass
 
+@dataclass
+class Bridge_Para():
+    positive:str = ''
+    negative:Any = None
+
 # 由于某一类command对应n个bridge，因此bridge不是某个task或者某个task下的某个command的一部分
 # 因此bridge_system是client的一部分
-def server_add_bridge(inout_client_data, bridge_type:str):
+def server_add_bridge(inout_client_data, bridge_type:str, arg_dict):
     # 读取bridge_system
     if 'bridge_system' in inout_client_data:
         client_bridge_system = inout_client_data['bridge_system']
@@ -31,9 +38,14 @@ def server_add_bridge(inout_client_data, bridge_type:str):
 
         # key的桥接（bridge的核心任务：将原有task中的redis key转为桥接后的key）
         # 核心流程是：具体某个command执行时，其输入输出的key将被bridge到新的key中（且command流程不需自知）
-        # 1）修改redis_proxy_server侧的command stream key：
+
+        # 1）输入桥接：
+        # 修改redis_proxy_server侧的command stream key：
         'bridged_command_stream_key' :   'Task_{task_id}_Command_Bridged',
-        # 2）在s_redis_proxy_server_data中、server_add_task()中，修改所有task的输出key：
+        # 需要桥接的command中的具体args
+        'bridged_args': arg_dict['bridged_args'],   # 如['positive', 'negative']
+
+        # 2）输出桥接：在s_redis_proxy_server_data中、server_add_task()中，修改所有task的输出key：
         'bridged_task_status_key' :      'Task_{task_id}_Status_Bridged',
         'bridged_task_result_key' :      'Task_{task_id}_Result_Bridged',
     }

@@ -62,7 +62,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     # 没有该client数据
                     s_redis_proxy_server_data[cid] = {}
 
-                server_add_bridge(inout_client_data=s_redis_proxy_server_data[cid], bridge_type=btype)
+                server_add_bridge(inout_client_data=s_redis_proxy_server_data[cid], bridge_type=btype, arg_dict=dict)
 
     # 执行command
     def __exec_command(**arg_dict):
