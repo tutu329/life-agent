@@ -18,3 +18,4 @@ def server_add_bridge(inout_client_data, bridge_type):
         bridge_system = inout_client_data['bridge_system']
     # 写入bridge_data
     bridge_system['bridge_type'] = bridge_data
+
