@@ -4,6 +4,9 @@ from dataclasses import dataclass, asdict, field
 
 from config import dred, dgreen
 
+from redis_proxy.thread import Task_Worker_Thread
+
+
 @unique
 class Redis_Bridge_Type(Enum):
     TRANSLATE = 'TRANSLATE'
@@ -34,7 +37,7 @@ def server_add_bridge(inout_client_data, bridge_type:str, arg_dict):
     client_bridge_data = {
         'bridge_type':bridge_type,
         'obj': None,
-        'thread': None,
+        'thread': Task_Worker_Thread(),
 
         # key的桥接（bridge的核心任务：将原有task中的redis key转为桥接后的key）
         # 核心流程是：具体某个command执行时，其输入输出的key将被bridge到新的key中（且command流程不需自知）
@@ -59,7 +62,9 @@ def server_add_bridge(inout_client_data, bridge_type:str, arg_dict):
         pass
 
     # 启动bridge的thread
-
+    thread = client_bridge_data['thread']
+    thread.init(in_callback_func=bridge_polling_callback)
+    thread.start()
 
     # 写入bridge_data
     client_bridge_system['bridge_type'] = client_bridge_data
