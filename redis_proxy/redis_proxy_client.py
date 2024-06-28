@@ -14,8 +14,7 @@ from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I, T2I
 import random, json5
 
 
-s_redis = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
-# s_redis = Redis_Client(host='localhost', port=6379)  # win-server
+s_redis = Redis_Client(host='192.168.124.33', port=8010, invoker='redis_proxy_client')  # winu-server
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton
@@ -138,14 +137,14 @@ class Redis_Proxy_Client():
 def main_t2i():
     t1 = Redis_Proxy_Client()
 
+    task_id = t1.new_task(str(Redis_Task_Type.T2I))
+
     bridge_para = Bridge_Para()
     bridge_para.bridge_type = str(Redis_Bridge_Type.TRANSLATE)
     bridge_para.bridge_io_type = 'input'
     bridge_para.bridged_command = str(Redis_Proxy_Command_T2I.DRAW)
     bridge_para.bridged_command_args = ['positive', 'negative']
     t1.new_bridge(bridge_para=bridge_para)
-
-    task_id = t1.new_task(str(Redis_Task_Type.T2I))
 
     args = T2I_Init_Para(url='localhost:5100')
     t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.INIT), args=args)
@@ -162,7 +161,8 @@ def main_t2i():
     #     # width=1024,
     # )
     args = T2I_Draw_Para(
-        positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
+        positive='一个女孩，跳舞',
+        # positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
         # positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
         negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
         template_json_file = 'api-sexy.json',

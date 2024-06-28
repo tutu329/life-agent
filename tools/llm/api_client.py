@@ -49,20 +49,20 @@ class LLM_Client_Status:
 
 def status_to_redis(in_status: LLM_Client_Status):
     dict = asdict(in_status)
-    redis = Redis_Client()
-    redis.set_dict(f'LLM_Client status', dict)
-    # redis.set_dict(f'client uuid', in_status.uuid)
-    # redis.set_dict(f'client url', in_status.url)
-    redis.set_dict(f'client question', in_status.question)
-    # redis.set_dict(f'client model_id', in_status.model_id)
-    redis.set_dict(f'client stops', in_status.stops)
-    redis.set_dict(f'client temperature', in_status.temperature)
-    redis.set_dict(f'client system_prompt', in_status.system_prompt)
-    redis.set_dict(f'client role_prompt', in_status.role_prompt)
-    # redis.set_dict(f'client max_new_tokens', in_status.max_new_tokens)
-    # redis.set_dict(f'client has_history', in_status.has_history)
-    redis.set_dict(f'client history_list', in_status.history_list)
-    redis.set_dict(f'client last_response', in_status.last_response)
+    # redis = Redis_Client(host='192.168.124.33', port=8010, invoker='api_client')  # win-server
+    # redis.set_dict(f'LLM_Client status', dict)
+    # # redis.set_dict(f'client uuid', in_status.uuid)
+    # # redis.set_dict(f'client url', in_status.url)
+    # redis.set_dict(f'client question', in_status.question)
+    # # redis.set_dict(f'client model_id', in_status.model_id)
+    # redis.set_dict(f'client stops', in_status.stops)
+    # redis.set_dict(f'client temperature', in_status.temperature)
+    # redis.set_dict(f'client system_prompt', in_status.system_prompt)
+    # redis.set_dict(f'client role_prompt', in_status.role_prompt)
+    # # redis.set_dict(f'client max_new_tokens', in_status.max_new_tokens)
+    # # redis.set_dict(f'client has_history', in_status.has_history)
+    # redis.set_dict(f'client history_list', in_status.history_list)
+    # redis.set_dict(f'client last_response', in_status.last_response)
 
 class LLM_Client:
     LLM_SERVER = 'http://127.0.0.1:8001/v1/'

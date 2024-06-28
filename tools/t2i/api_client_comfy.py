@@ -196,6 +196,8 @@ class Comfy:
 
         self.prompt = data
 
+
+        print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@set_sexy_workflow(), positive:{positive}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
         self.prompt['13']['inputs']['text'] = positive
         self.prompt['13']['inputs']['text'] = negative
         self.prompt['13']['inputs']['ckpt_name'] = ckpt_name

@@ -87,7 +87,8 @@ def server_add_and_start_bridge_servant(inout_client_data, s_redis_client, bridg
     # bridge的轮询任务(只对原stream和桥接后stream进行转换，从而确保异步)
     def bridge_polling_callback(out_task_info_must_be_here):
         # 注意：这里必须是一个独立的Redis_Client，否则会和redis_proxy_server下的s_redis_client冲突
-        bridge_redis_client = Redis_Client(host='192.168.124.33', port=8010)
+        bridge_redis_client = Redis_Client(host='192.168.124.33', port=8010, invoker='bridge_polling_callback')
+        print('@@@@@@@@@@@@@@@@@@@@@@@@@@bridge_polling_callback() invoke Redis_Client()@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
 
         while True:
             if out_task_info_must_be_here['status'] == Status.Cancelling:

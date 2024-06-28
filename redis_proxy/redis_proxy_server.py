@@ -85,17 +85,18 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                 task_data = v1
 
                 #查询该task下的command
-                # if 'task_command_key_bridged' in task_data:
-                #     dred(f'--------------------------------------------------------')
-                #     dred(f"'task_command_key_bridged' in task_data, stream-key is bridged from '{f'Task_{task_id}_Command'}' to '{task_data['task_command_key_bridged']}'.")
-                #     dred(f'--------------------------------------------------------')
-                #     stream_key = task_data['task_command_key_bridged']
-                #     dblue(f'stream_key1: {stream_key}')
-                # else:
-                #     stream_key = f'Task_{task_id}_Command'
+                if 'task_command_key_bridged' in task_data:
+                    dred(f'--------------------------------------------------------')
+                    dred(f"'task_command_key_bridged' in task_data, stream-key is bridged from '{f'Task_{task_id}_Command'}' to '{task_data['task_command_key_bridged']}'.")
+                    dred(f'--------------------------------------------------------')
+                    stream_key = task_data['task_command_key_bridged']
+                    dblue(f'stream_key1: {stream_key}')
+                else:
+                    stream_key = f'Task_{task_id}_Command'
+                    dblue(f'stream_key0: {stream_key}')
 
-                stream_key = f'Task_{task_id}_Command'
-                dblue(f'stream_key2: {stream_key} | s_redis_proxy_server_data: {s_redis_proxy_server_data}')
+                # stream_key = f'Task_{task_id}_Command'
+                # dblue(f'stream_key2: {stream_key} | s_redis_proxy_server_data: {s_redis_proxy_server_data}')
 
                 dict_list = __pop_stream(key=stream_key)
 
@@ -157,7 +158,7 @@ def server_init():
     IS_SERVER = True
     if IS_SERVER:
         # 启动 Redis Task Server
-        s_redis_client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
+        s_redis_client = Redis_Client(host='192.168.124.33', port=8010, invoker='redis_proxy_server')  # ubuntu-server
         # redis清空所有数据
         s_redis_client.flushall()
 

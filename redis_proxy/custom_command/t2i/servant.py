@@ -114,6 +114,7 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
 
                     # print(f'========================arg_dict {arg_dict}=============111111111111111111111111111111')
                     # print(f'========================lora_count {type(lora_count)}=============111111111111111111111111111111')
+                    print(f'------------------positive: {positive}------------------')
 
                     # t2i返回数据给redis的stream
                     obj.set_sexy_workflow(

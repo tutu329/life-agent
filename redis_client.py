@@ -18,14 +18,17 @@ T = TypeVar('T')
 def from_dict(data_class: Type[T], data: dict) -> T:
     return data_class(**data)
 
-@singleton
+# @singleton
 class Redis_Client:
     s_stream_last_ids = {
         # 'stream_key1': 'stream_last_id1',
         # 'stream_key2': 'stream_last_id2',
     }
 
-    def __init__(self, host='localhost', port=Port.redis):
+    def __init__(self, host='localhost', port=Port.redis, invoker=None):
+        if invoker is not None:
+            print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@invoker:{invoker}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+        print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@host:{host}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
         self.host = host
         self.port = port
 
