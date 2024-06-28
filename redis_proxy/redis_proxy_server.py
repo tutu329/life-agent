@@ -7,6 +7,7 @@ from tools.llm.api_client import LLM_Client
 import time
 
 from redis_proxy.custom_command.protocol import server_add_task, server_invoking_command
+from redis_proxy.custom_bridge.protocol import server_add_bridge, server_invoking_bridge
 from redis_proxy.thread import Task_Worker_Thread, Redis_Proxy_Server_Thread
 
 from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM
@@ -48,6 +49,21 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
                 __add_task(inout_client_data=s_redis_proxy_server_data[cid], task_id=tid, task_type=ttype)
 
+    def polling_new_bridge():
+        dict_list = __pop_stream(key='Bridge_Register')
+        for dict in dict_list:
+            if 'client_id' in dict and 'bridge_type' in dict:
+                cid = dict['client_id']
+                btype = dict['bridge_type']
+                if cid in s_redis_proxy_server_data:
+                    # 已有该client数据
+                    pass
+                else:
+                    # 没有该client数据
+                    s_redis_proxy_server_data[cid] = {}
+
+                server_add_bridge(inout_client_data=s_redis_proxy_server_data[cid], bridge_type=btype)
+
     # 执行command
     def __exec_command(**arg_dict):
         server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dict)
@@ -87,6 +103,12 @@ def server_init():
 
     s_redis_proxy_server_data = {
         # 'client-id1' : {
+        #     'bridge_system' : {
+        #         'bridge_type1': {
+        #             'obj': None,
+        #             'thread': None,
+        #         },
+        #     },
         #     'task-id1' : {
         #         'task_type' : str(Redis_Task_Type.LLM),
         #         'task_status' : '',
@@ -98,12 +120,6 @@ def server_init():
         #             {
         #                 'obj': tts_client,
         #                 'thread': tts_client_thread,
-        #             },
-        #         ],
-        #         'bridge_system' : [
-        #             {
-        #                 'obj': None,
-        #                 'thread': None,
         #             },
         #         ],
         #     },

@@ -26,7 +26,7 @@ def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dic
     if 'Redis_Proxy_Command_T2I' in command:
         t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict)
 
-# 注册各种类型的任务( [1]task <-> [n]command, [1]task <-> [n]bridge )
+# 注册各种类型的任务( [1]task <-> [n]command )
 def server_add_task(inout_client_data, task_id, task_type):
     assert task_id not in inout_client_data
 
@@ -42,12 +42,14 @@ def server_add_task(inout_client_data, task_id, task_type):
                 'thread': None,
             },
         ],
-        'bridge_system':[
-            {
-                'obj': None,
-                'thread': None,
-            },
-        ],
+        # 由于某一类command对应n个bridge，因此bridge不是某个task或者某个task下的某个command的一部分
+        # 因此bridge_system是client的一部分
+        # 'bridge_system':[
+        #     {
+        #         'obj': None,
+        #         'thread': None,
+        #     },
+        # ],
     }
 
 
