@@ -55,7 +55,7 @@ def server_add_and_start_bridge_servant(inout_client_data, bridge_type:str, arg_
 
     # bridge的参数和线程对象
     client_bridge_data = {
-        'obj': None,
+        # 'obj': None,  # 如llm进行translate，并不需要历史状态，因此暂不需要存放llm的obj状态
         'thread': Task_Worker_Thread(),
 
         # key的桥接（bridge的核心任务：将原有task中的redis key转为桥接后的key）
@@ -77,10 +77,6 @@ def server_add_and_start_bridge_servant(inout_client_data, bridge_type:str, arg_
         'bridged_task_result_key' :      'Task_{task_id}_Result_Bridged',   # 原为'Task_{task_id}_Result'
     }
 
-    # 创建并启动bridge的轮询任务
-    # bridge_data['obj'] =
-    # bridge_data['thread'] =
-
     # bridge的轮询任务(只对原stream和桥接后stream进行转换，从而确保异步)
     def bridge_polling_callback(out_task_info_must_be_here):
         while True:
@@ -88,12 +84,7 @@ def server_add_and_start_bridge_servant(inout_client_data, bridge_type:str, arg_
                 break
 
             if bridge_type==str(Redis_Bridge_Type.TRANSLATE):
-                translate_servant(
-                    bridge_type,
-                    bridge_io_type,
-                    bridged_command,
-                    bridged_command_args,
-                )
+                translate_servant(inout_client_data, client_bridge_data)
 
             time.sleep(config.Global.redis_proxy_server_sleep_time)
 

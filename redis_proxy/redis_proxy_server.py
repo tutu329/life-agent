@@ -111,7 +111,8 @@ def server_init():
         #     ],
         #     'task-id1' : {
         #         'task_type' : str(Redis_Task_Type.LLM),
-        #         'task_status' : '',
+        #         'task_status_key' : '',
+        #         'task_result_key' : '',
         #         'command_system' : [
         #             {
         #                 'obj': llm_client,
