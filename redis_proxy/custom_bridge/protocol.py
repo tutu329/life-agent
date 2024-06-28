@@ -9,6 +9,8 @@ class Redis_Bridge_Type(Enum):
 def server_invoking_bridge():
     pass
 
+# 由于某一类command对应n个bridge，因此bridge不是某个task或者某个task下的某个command的一部分
+# 因此bridge_system是client的一部分
 def server_add_bridge(inout_client_data, bridge_type:str):
     # 读取bridge_system
     if 'bridge_system' in inout_client_data:
@@ -21,8 +23,7 @@ def server_add_bridge(inout_client_data, bridge_type:str):
     client_bridge_num = len(client_bridge_system)
     client_bridge_num += 1
 
-    # 由于某一类command对应n个bridge，因此bridge不是某个task或者某个task下的某个command的一部分
-    # 因此bridge_system是client的一部分
+    # bridge的参数和线程对象
     client_bridge_data = {
         'bridge_type':bridge_type,
         'obj': None,
