@@ -4,7 +4,7 @@ from utils.task import Status
 from redis_client import Redis_Client
 from config import dred,dgreen
 from tools.llm.api_client import LLM_Client
-import time
+import time, json5
 
 from redis_proxy.custom_command.protocol import server_add_task, server_invoking_command
 from redis_proxy.custom_bridge.protocol import server_add_and_start_bridge_servant
@@ -53,9 +53,10 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
     def polling_new_bridge():
         dict_list = __pop_stream(key='Bridge_Register')
         for dict in dict_list:
-            if 'client_id' in dict and 'bridge_type' in dict:
+            if 'client_id' in dict and 'bridge_para_json5_string' in dict:
+                # dgreen(f'polling_new_bridge() dict: {dict}')
                 cid = dict['client_id']
-                btype = dict['bridge_type']
+                bridge_para = json5.loads(dict['bridge_para_json5_string'])
                 if cid in s_redis_proxy_server_data:
                     # 已有该client数据
                     pass
@@ -63,7 +64,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     # 没有该client数据
                     s_redis_proxy_server_data[cid] = {}
 
-                server_add_and_start_bridge_servant(inout_client_data=s_redis_proxy_server_data[cid], s_redis_client=s_redis_client, bridge_type=btype, arg_dict=dict)
+                server_add_and_start_bridge_servant(inout_client_data=s_redis_proxy_server_data[cid], s_redis_client=s_redis_client, bridge_para=bridge_para)
 
     # 执行command
     def __exec_command(**arg_dict):
@@ -94,6 +95,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
             break
 
         polling_new_tasks()
+        polling_new_bridge()
         polling_task_commands()
 
         # time.sleep(2)

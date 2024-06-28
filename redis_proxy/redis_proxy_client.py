@@ -3,13 +3,15 @@ from dataclasses import asdict
 import uuid
 
 from redis_client import Redis_Client
-from config import Global
+from config import Global, dred, dgreen
 # from redis_proxy.redis_proxy_server import Redis_Task_Type, Redis_Task_LLM_Data, LLM_Ask_Data
 
 from redis_proxy.custom_command.protocol import Redis_Task_Type
+from redis_proxy.custom_bridge.protocol import Redis_Bridge_Type
+from redis_proxy.custom_bridge.protocol import Bridge_Para
 from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM, LLM_Init_Para, LLM_Ask_Para
 from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I, T2I_Init_Para, T2I_Draw_Para
-import random
+import random, json5
 
 
 s_redis = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
@@ -40,6 +42,21 @@ class Redis_Proxy_Client():
         )
 
         return task_id
+
+    # 向server发送一个消息，在server构造一个bridge
+    def new_bridge(
+            self,
+            bridge_para:Bridge_Para,
+    ):
+        s_redis.add_stream(
+            stream_key='Bridge_Register',
+            data={
+                'client_id': self.client_id,
+                'bridge_para_json5_string': json5.dumps(asdict(bridge_para)),
+            },
+        )
+        dgreen(f'json5 string of bridge_para: "{json5.dumps(asdict(bridge_para))}"')
+        dgreen('new_bridge() success.')
 
     # 对某个task下的某个command的输入或输出，进行桥接转换
     # 例如，将Draw的positive输入，翻译为英文，再传给Draw
@@ -120,6 +137,14 @@ class Redis_Proxy_Client():
 
 def main_t2i():
     t1 = Redis_Proxy_Client()
+
+    bridge_para = Bridge_Para()
+    bridge_para.bridge_type = str(Redis_Bridge_Type.TRANSLATE)
+    bridge_para.bridge_io_type = 'input'
+    bridge_para.bridged_command = str(Redis_Proxy_Command_T2I.DRAW)
+    bridge_para.bridged_command_args = ['positive', 'negative']
+    t1.new_bridge(bridge_para=bridge_para)
+
     task_id = t1.new_task(str(Redis_Task_Type.T2I))
 
     args = T2I_Init_Para(url='localhost:5100')
@@ -137,7 +162,8 @@ def main_t2i():
     #     # width=1024,
     # )
     args = T2I_Draw_Para(
-        positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
+        positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
+        # positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
         negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
         template_json_file = 'api-sexy.json',
         seed = random.randint(1, 1e14),

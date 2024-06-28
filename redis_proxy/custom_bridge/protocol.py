@@ -9,6 +9,7 @@ from config import dred, dgreen
 from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM
 from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I
 
+from redis_client import Redis_Client
 from redis_proxy.thread import Task_Worker_Thread
 from utils.task import Status
 
@@ -32,13 +33,15 @@ class Bridge_Para():
 
 # 由于某一类command对应n个bridge，因此bridge不是某个task或者某个task下的某个command的一部分
 # 因此bridge_system是client的一部分，而不是task的一部分
-def server_add_and_start_bridge_servant(inout_client_data, s_redis_client, bridge_type:str, arg_dict):
+def server_add_and_start_bridge_servant(inout_client_data, s_redis_client, bridge_para:Bridge_Para):
+    dgreen(f'inout_client_data: {inout_client_data}')
+    dgreen(f'bridge_para: {bridge_para}')
     # client的输入
-    bridge_type = arg_dict['bridge_type']
-    bridge_io_type = arg_dict['bridge_io_type']
-    bridged_command = arg_dict['bridged_command']
-    if 'bridged_command_args' in arg_dict:
-        bridged_command_args = arg_dict['bridged_command_args']
+    bridge_type = bridge_para['bridge_type']
+    bridge_io_type = bridge_para['bridge_io_type']
+    bridged_command = bridge_para['bridged_command']
+    if 'bridged_command_args' in bridge_para:
+        bridged_command_args = bridge_para['bridged_command_args']
     else:
         bridged_command_args = None
 
@@ -76,21 +79,28 @@ def server_add_and_start_bridge_servant(inout_client_data, s_redis_client, bridg
         'bridged_task_status_key' :      'Task_{task_id}_Status_Bridged',   # 原为'Task_{task_id}_Status'
         'bridged_task_result_key' :      'Task_{task_id}_Result_Bridged',   # 原为'Task_{task_id}_Result'
     }
+    dgreen('==================================================================')
+    dgreen(f'client_bridge_data: {client_bridge_data}')
+    dgreen('==================================================================')
+
 
     # bridge的轮询任务(只对原stream和桥接后stream进行转换，从而确保异步)
-    def bridge_polling_callback(out_task_info_must_be_here, s_redis_client):
+    def bridge_polling_callback(out_task_info_must_be_here):
+        # 注意：这里必须是一个独立的Redis_Client，否则会和redis_proxy_server下的s_redis_client冲突
+        bridge_redis_client = Redis_Client(host='192.168.124.33', port=8010)
+
         while True:
             if out_task_info_must_be_here['status'] == Status.Cancelling:
                 break
 
             if bridge_type==str(Redis_Bridge_Type.TRANSLATE):
-                translate_servant(inout_client_data, client_bridge_data, s_redis_client)
+                translate_servant(inout_client_data, client_bridge_data, bridge_redis_client)
 
             time.sleep(config.Global.redis_proxy_server_sleep_time)
 
     # 启动bridge的thread
     thread = client_bridge_data['thread']
-    thread.init(in_callback_func=bridge_polling_callback, s_redis_client=s_redis_client)
+    thread.init(in_callback_func=bridge_polling_callback)
     thread.start()
 
     # 写入bridge_data
