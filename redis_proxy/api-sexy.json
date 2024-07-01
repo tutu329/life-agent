@@ -284,7 +284,7 @@
       "guide_size_for": true,
       "max_size": 1024,
       "seed": 169382892757289,
-      "steps": 3,
+      "steps": 10,
       "cfg": 2,
       "sampler_name": "dpmpp_2m_sde",
       "scheduler": "karras",
