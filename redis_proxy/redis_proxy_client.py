@@ -161,36 +161,44 @@ def main_t2i():
     #     # width=1024,
     # )
     args = T2I_Draw_Para(
-        positive='a girl, standing on paris street, full body, long legs, cars',
-        # positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
-        # positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
-        negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
-        template_json_file = 'api-sexy.json',
-        seed = random.randint(1, 1e14),
-        ckpt_name = 'awportrait_v13.safetensors',
-        # ckpt_name = 'meichidarkMix_meichidarkV5.safetensors',
-        height = 768,
-        width = 512,
-        sampler_name = 'dpmpp_2m_sde',
-        scheduler = 'karras',
-        steps = 72,
-        cfg = 7,
-        denoise = 1,
-        batch_size = 1,
-
-        lora_count=1,
-        # lora1 = 'sexy-cloth-Tassels-Dudou.safetensors',
-        # lora1_wt = 0.85,
-        lora2 = None,
-        lora2_wt = None,
-        lora3 = None,
-        lora3_wt = None,
-        lora4 = None,
-        lora4_wt = None,
+        positive='星际迷航中的星际战舰企业号，出现在地球外层空间',
+        # positive='瑞士雪山下的小村里，好多可爱的牛在吃草',
+        # positive='photo of young man in an grayed blue suit, light green shirt, and yellow tie. He has a neatly styled haircut with red and silver hair and is looking directly at the camera with a neutral expression. The background is seaside. The photograph is in colored, emphasizing contrasts and shadows. The man appears to be in his late twenties or early thirties, with fair skin and short.This man looks very like young Tom Cruise.',
+        negative='',
+        # negative='ugly face, bad hands, bad fingers, bad quality, poor quality, doll, disfigured, jpg, toy, bad anatomy, missing limbs, missing fingers, 3d, cgi',
     )
+
+    # args = T2I_Draw_Para(
+    #     # positive='a girl, standing on paris street, full body, long legs, cars',
+    #     positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
+    #     # positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
+    #     negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
+    #     template_json_file = 'api-sexy.json',
+    #     seed = random.randint(1, 1e14),
+    #     # ckpt_name = 'awportrait_v13.safetensors',
+    #     ckpt_name = 'meichidarkMix_meichidarkV5.safetensors',
+    #     height = 768,
+    #     width = 512,
+    #     sampler_name = 'dpmpp_2m_sde',
+    #     scheduler = 'karras',
+    #     steps = 72,
+    #     cfg = 7,
+    #     denoise = 1,
+    #     batch_size = 1,
+    #
+    #     lora_count=1,
+    #     lora1 = 'sexy-cloth-Tassels-Dudou.safetensors',
+    #     lora1_wt = 0.85,
+    #     lora2 = None,
+    #     lora2_wt = None,
+    #     lora3 = None,
+    #     lora3_wt = None,
+    #     lora4 = None,
+    #     lora4_wt = None,
+    # )
     # print(f'args: {args}')
-    # t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
-    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAWS), args=args)
+    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
+    # t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAWS), args=args)
 
     i=0
     for image_data in t1.get_result_gen(task_id):

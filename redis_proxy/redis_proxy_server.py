@@ -88,8 +88,8 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
                 # 查询该task下的command
                 # 识别task中是否有桥接的关键判断，改为在client下注册bridge而非task下。防止第一个task的command过来时，随机情况下bridge未得到处理的的问题，即必须在command之前完成桥接。
-                if has_bridge:
-                    assert 'task_command_key_bridged' in task_data
+                if has_bridge and 'task_command_key_bridged' in task_data:
+                    # assert 'task_command_key_bridged' in task_data
                 # if 'task_command_key_bridged' in task_data:
                 #     dred(f'--------------------------------------------------------')
                 #     dred(f"'task_command_key_bridged' in task_data, stream-key is bridged from '{f'Task_{task_id}_Command'}' to '{task_data['task_command_key_bridged']}'.")
