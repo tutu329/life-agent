@@ -179,8 +179,10 @@ class Comfy:
             denoise=1,
             batch_size=1,
             lora_count=1,
-            lora1='sexy-cloth-Tassels-Dudou.safetensors',
-            lora1_wt=0.85,
+            lora1='None',
+            # lora1='sexy-cloth-Tassels-Dudou.safetensors',
+            lora1_wt=1,
+            # lora1_wt=0.85,
             lora2='None',
             lora2_wt=1,
             lora3='None',
@@ -198,12 +200,14 @@ class Comfy:
 
 
         print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@set_sexy_workflow(), positive:{positive}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-        self.prompt['13']['inputs']['text'] = positive
-        self.prompt['13']['inputs']['text'] = negative
+        self.prompt['13']['inputs']['positive'] = positive
+        self.prompt['13']['inputs']['negative'] = negative
         self.prompt['13']['inputs']['ckpt_name'] = ckpt_name
         self.prompt['13']['inputs']['empty_latent_height'] = height
         self.prompt['13']['inputs']['empty_latent_width'] = width
         self.prompt['13']['inputs']['batch_size'] = batch_size
+
+        # 绘图参数
         self.prompt['16']['inputs']['sampler_name'] = sampler_name
         self.prompt['16']['inputs']['scheduler'] = scheduler
         self.prompt['16']['inputs']['cfg'] = cfg
@@ -211,6 +215,15 @@ class Comfy:
         self.prompt['16']['inputs']['steps'] = steps
         self.prompt['16']['inputs']['seed'] = seed
 
+        # 面部修复参数
+        self.prompt['20']['inputs']['sampler_name'] = sampler_name
+        self.prompt['20']['inputs']['scheduler'] = scheduler
+        self.prompt['20']['inputs']['cfg'] = 2
+        self.prompt['20']['inputs']['denoise'] = denoise
+        self.prompt['20']['inputs']['steps'] = 10
+        self.prompt['20']['inputs']['seed'] = seed
+
+        # Lora-Stacker
         self.prompt['12']['inputs']['lora_count'] = lora_count
         self.prompt['12']['inputs']['lora_name_1'] = lora1
         self.prompt['12']['inputs']['lora_wt_1'] = lora1_wt

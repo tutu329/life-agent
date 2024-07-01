@@ -3,8 +3,8 @@
     "inputs": {
       "input_mode": "simple",
       "lora_count": 1,
-      "lora_name_1": "sexy-cloth-Tassels-Dudou.safetensors",
-      "lora_wt_1": 0.85,
+      "lora_name_1": "None",
+      "lora_wt_1": 1,
       "model_str_1": 1,
       "clip_str_1": 1,
       "lora_name_2": "None",
@@ -346,7 +346,7 @@
   },
   "21": {
     "inputs": {
-      "model_name": "bbox/face_yolov8m.pt"
+      "model_name": "bbox/face_yolov8n_v2.pt"
     },
     "class_type": "UltralyticsDetectorProvider",
     "_meta": {

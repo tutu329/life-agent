@@ -161,13 +161,14 @@ def main_t2i():
     #     # width=1024,
     # )
     args = T2I_Draw_Para(
-        positive='一个女孩，跳舞',
+        positive='a girl, standing on paris street, full body, long legs, cars',
         # positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
         # positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
         negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
         template_json_file = 'api-sexy.json',
         seed = random.randint(1, 1e14),
-        ckpt_name = 'meichidarkMix_meichidarkV5.safetensors',
+        ckpt_name = 'awportrait_v13.safetensors',
+        # ckpt_name = 'meichidarkMix_meichidarkV5.safetensors',
         height = 768,
         width = 512,
         sampler_name = 'dpmpp_2m_sde',
@@ -178,8 +179,8 @@ def main_t2i():
         batch_size = 1,
 
         lora_count=1,
-        lora1 = 'sexy-cloth-Tassels-Dudou.safetensors',
-        lora1_wt = 0.85,
+        # lora1 = 'sexy-cloth-Tassels-Dudou.safetensors',
+        # lora1_wt = 0.85,
         lora2 = None,
         lora2_wt = None,
         lora3 = None,

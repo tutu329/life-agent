@@ -103,8 +103,8 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
                     batch_size = _get_arg(arg_str='batch_size', default=1, **arg_dict)
 
                     lora_count = _get_arg(arg_str='lora_count', default=1, **arg_dict)
-                    lora1 = _get_arg(arg_str='lora1', default='sexy-cloth-Tassels-Dudou.safetensors', **arg_dict)
-                    lora1_wt = _get_arg(arg_str='lora1_wt', default=0.85, **arg_dict)
+                    lora1 = _get_arg(arg_str='lora1', default='None', **arg_dict)
+                    lora1_wt = _get_arg(arg_str='lora1_wt', default=1, **arg_dict)
                     lora2 = _get_arg(arg_str='lora2', default='None', **arg_dict)
                     lora2_wt = _get_arg(arg_str='lora2_wt', default=1, **arg_dict)
                     lora3 = _get_arg(arg_str='lora3', default='None', **arg_dict)
