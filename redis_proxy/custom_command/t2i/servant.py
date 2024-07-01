@@ -47,9 +47,9 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
         # DRAW
         if command==str(Redis_Proxy_Command_T2I.DRAW) or command==str(Redis_Proxy_Command_T2I.DRAWS):
             def callback(out_task_info_must_be_here, status_key, result_key, obj, arg_dict):
-                dred(f't2i_callback() invoked:')
-                for k, v in arg_dict.items():
-                    dgreen(f'\t {k}: {v}')
+                # dred(f't2i_callback() invoked:')
+                # for k, v in arg_dict.items():
+                #     dgreen(f'\t {k}: {v}')
 
                 status = out_task_info_must_be_here
 

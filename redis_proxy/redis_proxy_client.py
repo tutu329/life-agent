@@ -29,7 +29,7 @@ class Redis_Proxy_Client():
             self,
             task_type:str,                  # task类型
     )->str:                                 # 返回task_id
-        task_id = 'Task_' + str(uuid.uuid4())
+        task_id = 'tid_' + str(uuid.uuid4())
 
         s_redis.add_stream(
             stream_key='Task_Register',

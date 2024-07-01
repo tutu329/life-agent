@@ -27,8 +27,8 @@ class Redis_Client:
 
     def __init__(self, host='localhost', port=Port.redis, invoker=None):
         if invoker is not None:
-            print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@invoker:{invoker}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-        print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@host:{host}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+            print(f'【Redis_Client inited with invoker】{invoker}')
+        # print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@host:{host}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
         self.host = host
         self.port = port
 

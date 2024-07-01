@@ -72,10 +72,12 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
     # 响应client某task的command
     def polling_task_commands():
+        has_bridge = False
         for k,v in s_redis_proxy_server_data.items():
             # 所有client_id
             for k1,v1 in v.items():
                 if k1=='bridge_system':
+                    has_bridge = True
                     # 注意，由于s_redis_proxy_server_data中，'bridge_system'和'Task_idxxxx'平行，因此必须排除掉
                     continue
 
@@ -84,19 +86,19 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
                 task_data = v1
 
-                #查询该task下的command
-                if 'task_command_key_bridged' in task_data:
-                    dred(f'--------------------------------------------------------')
-                    dred(f"'task_command_key_bridged' in task_data, stream-key is bridged from '{f'Task_{task_id}_Command'}' to '{task_data['task_command_key_bridged']}'.")
-                    dred(f'--------------------------------------------------------')
+                # 查询该task下的command
+                # 识别task中是否有桥接的关键判断，改为在client下注册bridge而非task下。防止第一个task的command过来时，随机情况下bridge未得到处理的的问题，即必须在command之前完成桥接。
+                if has_bridge:
+                    assert 'task_command_key_bridged' in task_data
+                # if 'task_command_key_bridged' in task_data:
+                #     dred(f'--------------------------------------------------------')
+                #     dred(f"'task_command_key_bridged' in task_data, stream-key is bridged from '{f'Task_{task_id}_Command'}' to '{task_data['task_command_key_bridged']}'.")
+                #     dred(f'--------------------------------------------------------')
                     stream_key = task_data['task_command_key_bridged']
-                    dblue(f'stream_key1: {stream_key}')
+                    # dblue(f'stream_key1: {stream_key}')
                 else:
                     stream_key = f'Task_{task_id}_Command'
-                    dblue(f'stream_key0: {stream_key}')
-
-                # stream_key = f'Task_{task_id}_Command'
-                # dblue(f'stream_key2: {stream_key} | s_redis_proxy_server_data: {s_redis_proxy_server_data}')
+                    # dblue(f'stream_key0: {stream_key}')
 
                 dict_list = __pop_stream(key=stream_key)
 

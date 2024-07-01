@@ -676,7 +676,7 @@ class LLM_Client:
 
         # self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
-        self.print_history_and_system()
+        # self.print_history_and_system()
 
         self.status.last_response = answer
         self.status.history_list = self.history_list
