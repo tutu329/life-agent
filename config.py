@@ -58,7 +58,7 @@ class Global():
     comfy_url:str = 'http://localhost:5100'
 
 
-    redis_proxy_server_sleep_time:float = 0.1    # redis task server循环的sleep时间
+    redis_proxy_server_sleep_time:float = 0.05    # redis task server循环的sleep时间
 
     # V2Ray代理
     playwright_proxy = {

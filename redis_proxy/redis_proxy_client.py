@@ -24,11 +24,13 @@ class Redis_Proxy_Client():
 
         self.client_id = 'Client_' + str(uuid.uuid4())
 
+        self.task_id = None
+
     # 向server发送一个消息，在server构造一个task
     def new_task(
             self,
-            task_type:str,                  # task类型
-    )->str:                                 # 返回task_id
+            task_type,  # task类型：如Redis_Task_Type.T2I
+    ):
         task_id = 'tid_' + str(uuid.uuid4())
 
         s_redis.add_stream(
@@ -40,17 +42,15 @@ class Redis_Proxy_Client():
             },
         )
 
-        return task_id
+        self.task_id = task_id
 
-    # 向server发送一个消息，在server构造一个bridge
-    #       对某个task下的某个command的输入或输出，进行桥接转换
-    #       例如，将Draw的positive输入，翻译为英文，再传给Draw
+    # 向server发送一个消息，在server构造一个bridge。 对某个task下的某个command的输入或输出，进行桥接转换。
+    # 例如，将Draw的输入positive和negtive，翻译为英文，再传给Draw
     def new_bridge(
             self,
             bridge_para:Bridge_Para,
     ):
         bridge_para = asdict(bridge_para)
-        # print(bridge_para)
         para = {}
         # 对一些参数进行str转换
         for k,v in bridge_para.items():
@@ -59,8 +59,6 @@ class Redis_Proxy_Client():
             else:
                 para[k] = v
         para = json5.dumps(para)
-        # print(f'new_bridge() invoked: {para}')
-
 
         s_redis.add_stream(
             stream_key='Bridge_Register',
@@ -74,10 +72,11 @@ class Redis_Proxy_Client():
     # 向server发送一个消息，在server执行某task的一个command
     def send_command(
             self,
-            task_id,        # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
+            # task_id,        # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
             command,        # 例如：Redis_LLM_Command.INIT
             args=None,      # dataclass类型，例如：redis_proxy.custom_command.llm.protocol.LLM_Ask_Para
     ):
+        task_id = self.task_id
         # 封装redis的data
         data = {
             'client_id': self.client_id,
@@ -111,8 +110,15 @@ class Redis_Proxy_Client():
 
         return status
 
+    def print_stream(self):
+        for chunk in self.get_result_gen():
+            print(chunk, end='', flush=True)
+        print()
+
     # 返回task的result数据
-    def get_result_gen(self, task_id):       # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
+    def get_result_gen(self):       # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
+        task_id = self.task_id
+
         # 返回stream_key为'Task_xxxid_Result'（该数据由server填充）的最新数据
         stream_key = f'Task_{task_id}_Result'
 
@@ -146,7 +152,7 @@ class Redis_Proxy_Client():
 def main_t2i():
     t1 = Redis_Proxy_Client()
 
-    task_id = t1.new_task(str(Redis_Task_Type.T2I))
+    task_id = t1.new_task(Redis_Task_Type.T2I)
 
     bridge_para = Bridge_Para()
     bridge_para.bridge_type = Redis_Bridge_Type.TRANSLATE
@@ -156,7 +162,7 @@ def main_t2i():
     t1.new_bridge(bridge_para=bridge_para)
 
     args = T2I_Init_Para(url='localhost:5100')
-    t1.send_command(task_id=task_id, command=Redis_Proxy_Command_T2I.INIT, args=args)
+    t1.send_command(command=Redis_Proxy_Command_T2I.INIT, args=args)
 
     seed = random.randint(1, 1e14)
     print(f'client seed: {seed}')
@@ -206,33 +212,27 @@ def main_t2i():
     #     lora4_wt = None,
     # )
     # print(f'args: {args}')
-    t1.send_command(task_id=task_id, command=Redis_Proxy_Command_T2I.DRAW, args=args)
-    # t1.send_command(task_id=task_id, command=Redis_Proxy_Command_T2I.DRAWS, args=args)
+    t1.send_command(command=Redis_Proxy_Command_T2I.DRAW, args=args)
+    # t1.send_command(command=Redis_Proxy_Command_T2I.DRAWS, args=args)
 
     i=0
-    for image_data in t1.get_result_gen(task_id):
+    for image_data in t1.get_result_gen():
         i += 1
-        t1.save_image_to_file(image_data, file_name=f'output_{task_id}_{i}')
+        t1.save_image_to_file(image_data, file_name=f'output_{i}')
 
 def main_llm():
     # c = Redis_Task_Client()
     # c.add_llm_task('2+2=')
 
     t1 = Redis_Proxy_Client()
-    task_id = t1.new_task(str(Redis_Task_Type.LLM))
+    t1.new_task(Redis_Task_Type.LLM)
 
     args = LLM_Init_Para(url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
-    t1.send_command(task_id=task_id, command=Redis_Proxy_Command_LLM.INIT, args=args)
-    # t1.send_command(task_id=task_id, custom_command=Redis_Proxy_Command_LLM.INIT, url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
-
+    t1.send_command(command=Redis_Proxy_Command_LLM.INIT, args=args)
     args = LLM_Ask_Para(question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
-    t1.send_command(task_id=task_id, command=Redis_Proxy_Command_LLM.ASK, args=args)
-    # t1.send_command(task_id=task_id, custom_command=Redis_Proxy_Command_LLM.ASK, question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
-    # print(f'result is:')
-    for chunk in t1.get_result_gen(task_id):
-        print(chunk, end='', flush=True)
-    print()
+    t1.send_command(command=Redis_Proxy_Command_LLM.ASK, args=args)
+    t1.print_stream()
 
 if __name__ == "__main__":
-    # main_llm()
-    main_t2i()
+    main_llm()
+    # main_t2i()
