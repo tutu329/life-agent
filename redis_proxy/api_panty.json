@@ -367,16 +367,16 @@
       "title": "SAMLoader (Impact)"
     }
   },
-  "23": {
+  "25": {
     "inputs": {
       "images": [
         "20",
         0
       ]
     },
-    "class_type": "PreviewImage",
+    "class_type": "SaveImageWebsocket",
     "_meta": {
-      "title": "Preview Image"
+      "title": "SaveImageWebsocket Image"
     }
   }
 }

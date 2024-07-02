@@ -159,7 +159,7 @@ def main_t2i():
     bridge_para.bridge_io_type = 'input'
     bridge_para.bridged_command = Redis_Proxy_Command_T2I.DRAW
     bridge_para.bridged_command_args = ['positive', 'negative']     # 对所有args进行如translate的操作
-    t1.new_bridge(bridge_para=bridge_para)
+    # t1.new_bridge(bridge_para=bridge_para)
 
     args = T2I_Init_Para(url='localhost:5100')
     t1.send_command(command=Redis_Proxy_Command_T2I.INIT, args=args)
@@ -175,50 +175,54 @@ def main_t2i():
     #     # height=1024,
     #     # width=1024,
     # )
-    args = T2I_Draw_Para(
-        # positive='星际迷航中的星际战舰企业号，出现在地球外层空间',
-        positive='瑞士雪山下的小村里，好多可爱的牛在吃草',
-        # positive='photo of young man in an grayed blue suit, light green shirt, and yellow tie. He has a neatly styled haircut with red and silver hair and is looking directly at the camera with a neutral expression. The background is seaside. The photograph is in colored, emphasizing contrasts and shadows. The man appears to be in his late twenties or early thirties, with fair skin and short.This man looks very like young Tom Cruise.',
-        negative='',
-        # negative='ugly face, bad hands, bad fingers, bad quality, poor quality, doll, disfigured, jpg, toy, bad anatomy, missing limbs, missing fingers, 3d, cgi',
-    )
 
     # args = T2I_Draw_Para(
-    #     # positive='a girl, standing on paris street, full body, long legs, cars',
-    #     positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
-    #     # positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
-    #     negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
-    #     template_json_file = 'api-sexy.json',
-    #     seed = random.randint(1, 1e14),
-    #     # ckpt_name = 'awportrait_v13.safetensors',
-    #     ckpt_name = 'meichidarkMix_meichidarkV5.safetensors',
-    #     height = 768,
-    #     width = 512,
-    #     sampler_name = 'dpmpp_2m_sde',
-    #     scheduler = 'karras',
-    #     steps = 72,
-    #     cfg = 7,
-    #     denoise = 1,
-    #     batch_size = 1,
-    #
-    #     lora_count=1,
-    #     lora1 = 'sexy-cloth-Tassels-Dudou.safetensors',
-    #     lora1_wt = 0.85,
-    #     lora2 = None,
-    #     lora2_wt = None,
-    #     lora3 = None,
-    #     lora3_wt = None,
-    #     lora4 = None,
-    #     lora4_wt = None,
+    #     # positive='星际迷航中的星际战舰企业号，出现在地球外层空间',
+    #     positive='瑞士雪山下的小村里，好多可爱的牛在吃草',
+    #     # positive='photo of young man in an grayed blue suit, light green shirt, and yellow tie. He has a neatly styled haircut with red and silver hair and is looking directly at the camera with a neutral expression. The background is seaside. The photograph is in colored, emphasizing contrasts and shadows. The man appears to be in his late twenties or early thirties, with fair skin and short.This man looks very like young Tom Cruise.',
+    #     negative='',
+    #     # negative='ugly face, bad hands, bad fingers, bad quality, poor quality, doll, disfigured, jpg, toy, bad anatomy, missing limbs, missing fingers, 3d, cgi',
     # )
+
+    args = T2I_Draw_Para(
+        # positive='a girl, standing on paris street, full body, long legs, cars',
+        # positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
+        # positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
+        # negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
+        positive= "Ultra-realistic 8k CG,masterpiece,best quality,(photorealistic:1.4),(EOS R8,50mm,F1.2,8K,RAW photo:1.2),HDR,absurdres,Professional,RAW photo,(film grain:1.1),Bokeh,(EOS R8,50mm,F1.2,8K,RAW photo:1.2),((Depth of field)),EF 70mm,raytracing,detailed shadows,dim light,POV, ((wallpaper 8k)), ((high detailed)), ((masterpiece)), ((best quality:1.2)), ((hdr)), ((absurdres)), ((RAW photo)), ( depth of field),(sunny city background ),(highlight face detail), blush, (realistic:1.3), (realistic shadow), sweaty body, beautiful eyes, big eyes, detailed eyes, looking at viewers, smile, ((panties pulled aside fuck)), <lora:panties_pulled_aside_fuck.v1.0:1>, mature woman, realistic style, (wearing erotic pantie:1.3), (wearing open shirt:1.3), (breasts out:1.3), topless, (insertion,vaginal), nude, (black lace lingerie nightgown:1.3), beautiful legs, thin legs, 1girl, blonde hair, having sex, bangs, 1man, penis, pussy, embarrassed facial expression, enlighted ,big penis, Pussy, Pussy Juice, cumshot, cumdrip, semen , anus, cum-covered, volumetric shadows, indoors, Cum In Pussy, Hetero, Overflow, (Penetration:1.5), sweat, vaginal penetration, veins, high res, ultra-realistic 8k, perfect artwork, ((perfect female figure)), narrow waist, lens flare, soft lighting, best quality cloth,full body, beautiful, perfect face, perfect body,canon50",
+        negative= "easynegative,ng_deepnegative_v1_75t, badhandv4,(worst quality:2),(low quality:2),(normal quality:2),lowres,bad anatomy,bad hands,normal quality,((monochrome)),((grayscale)),((watermark)), uneven eyes, ugly eyesbad_prompt_version2-neg,verybadimagenegative_v1.3, (worst quality:2),(low quality:2),(normal quality:1.6),monochrome,(watermark:1.3),artist name,character name,text,bad anatomy,sketch,duplicate,(ng_deepnegative_v1_75t),(negative_hand-neg:1.2),bad_pictures,EasyNegative,FastNegativeV2, illustration, 3d, sepia, painting, cartoons, sketch, easynegative,ng_deepnegative_v1_75t, badhandv4,(worst quality:2),(low quality:2),(normal quality:2),lowres,bad anatomy,bad hands,normal quality,((monochrome)),((grayscale)),((watermark)), uneven eyes, ugly eyesbad_prompt_version2-neg,verybadimagenegative_v1.3, (worst quality:2),(low quality:2),(normal quality:1.6),monochrome,(watermark:1.3),artist name,character name,text,bad anatomy,sketch,duplicate,(ng_deepnegative_v1_75t),(negative_hand-neg:1.2),bad_pictures,EasyNegative,FastNegativeV2, bad anatomy, bad res, bad quality, error, malformed, art by bad-artist, bad-image-v2-39000, bad-hands-5, art by negprompt5, lowres, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, (worst quality, low quality, extra digits, loli, loli face:1.3), 3 arms, 3 hands, (((bad hands))), ((2heads)), pants, panties, cartoon, 3d, ((disfigured)), ((bad art)), ((deformed)),((extra limbs)),((close up)),((b&w)), wierd colors, blurry, (((duplicate))), ((morbid)), ((mutilated)), [out of frame], extra fingers, mutated hands, ((poorly drawn hands)), ((poorly drawn face)), (((mutation))), (((deformed))), ((ugly)), blurry, ((bad anatomy)), (((bad proportions))), ((extra limbs)), (((disfigured))), out of frame, ugly, extra limbs, (bad anatomy), gross proportions, (malformed limbs), ((missing arms)), ((missing legs)), (((extra arms))), (((extra legs))), mutated hands, (fused fingers), (too many fingers), ((worst eyes)), ((uneven eyes)), (anal), ((multiple nipples)), ((extra nipples))",
+        template_json_file = 'api_panty.json',
+        # template_json_file = 'api-sexy.json',
+        seed = random.randint(1, 1e14),
+        # ckpt_name = 'awportrait_v13.safetensors',
+        # ckpt_name = 'meichidarkMix_meichidarkV5.safetensors',
+        # height = 768,
+        # width = 512,
+        # sampler_name = 'dpmpp_2m_sde',
+        # scheduler = 'karras',
+        steps = 40,
+        # cfg = 7,
+        # denoise = 1,
+        # batch_size = 1,
+
+        # lora_count=1,
+        # lora1 = 'sexy-cloth-Tassels-Dudou.safetensors',
+        # lora1_wt = 0.85,
+        # lora2 = None,
+        # lora2_wt = None,
+        # lora3 = None,
+        # lora3_wt = None,
+        # lora4 = None,
+        # lora4_wt = None,
+    )
     # print(f'args: {args}')
-    t1.send_command(command=Redis_Proxy_Command_T2I.DRAW, args=args)
-    # t1.send_command(command=Redis_Proxy_Command_T2I.DRAWS, args=args)
+    # t1.send_command(command=Redis_Proxy_Command_T2I.DRAW, args=args)
+    t1.send_command(command=Redis_Proxy_Command_T2I.DRAWS, args=args)
 
     i=0
     for image_data in t1.get_result_gen():
         i += 1
-        t1.save_image_to_file(image_data, file_name=f'output_{i}')
+        t1.save_image_to_file(image_data, file_name=f'output_{uuid.uuid4()}')
 
 def main_llm():
     # c = Redis_Task_Client()
@@ -234,5 +238,5 @@ def main_llm():
     t1.print_stream()
 
 if __name__ == "__main__":
-    main_llm()
-    # main_t2i()
+    # main_llm()
+    main_t2i()
