@@ -107,7 +107,9 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     __exec_command(**command_para_dict)
 
     # Redis Proxy Server 主循环
+    count = 0
     while True:
+        count += 1
         if thread_status['status']==Status.Cancelling:
             # cancel中
             cancel()
@@ -117,6 +119,10 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
         polling_new_tasks()
         polling_new_bridge()
         polling_task_commands()
+
+        # show living per 10*redis_proxy_server_sleep_time
+        if count % 10 == 0:
+            dgreen(f"Redis Proxy Server ({thread_status['status']}) living...")
 
         # time.sleep(2)
         time.sleep(config.Global.redis_proxy_server_sleep_time)

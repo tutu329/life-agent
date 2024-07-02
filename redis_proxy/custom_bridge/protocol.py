@@ -23,11 +23,11 @@ class Redis_Bridge_Type(Enum):
 # bridge参数：桥接输入还是输出、桥接的具体cmd和args
 @dataclass
 class Bridge_Para():
-    bridge_type:str = None              # 如: str(Redis_Bridge_Type.TRANSLATE)
+    bridge_type:Any = None              # 如: Redis_Bridge_Type.TRANSLATE
     bridge_io_type:str = None           # 如: 'input'或'output'
 
     # input或output
-    bridged_command:str = None          # 如: str(Redis_Proxy_Command_T2I.DRAW)
+    bridged_command:Any = None          # 如: Redis_Proxy_Command_T2I.DRAW
     # input
     bridged_command_args:Any = None     # 如: ['positive', 'negative']
 

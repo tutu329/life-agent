@@ -43,37 +43,46 @@ class Redis_Proxy_Client():
         return task_id
 
     # 向server发送一个消息，在server构造一个bridge
+    #       对某个task下的某个command的输入或输出，进行桥接转换
+    #       例如，将Draw的positive输入，翻译为英文，再传给Draw
     def new_bridge(
             self,
             bridge_para:Bridge_Para,
     ):
+        bridge_para = asdict(bridge_para)
+        # print(bridge_para)
+        para = {}
+        # 对一些参数进行str转换
+        for k,v in bridge_para.items():
+            if k=='bridge_type' or k=='bridged_command':
+                para[k]=str(v)
+            else:
+                para[k] = v
+        para = json5.dumps(para)
+        # print(f'new_bridge() invoked: {para}')
+
+
         s_redis.add_stream(
             stream_key='Bridge_Register',
             data={
                 'client_id': self.client_id,
-                'bridge_para_json5_string': json5.dumps(asdict(bridge_para)),
+                'bridge_para_json5_string': para,
             },
         )
-        dgreen(f'json5 string of bridge_para: "{json5.dumps(asdict(bridge_para))}"')
-        dgreen('new_bridge() success.')
-
-    # 对某个task下的某个command的输入或输出，进行桥接转换
-    # 例如，将Draw的positive输入，翻译为英文，再传给Draw
-    def add_bridge(self):
-        pass
+        dgreen(f'new_bridge() success: "{para}"')
 
     # 向server发送一个消息，在server执行某task的一个command
     def send_command(
             self,
             task_id,        # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
-            command:str,    # 例如：str(Redis_LLM_Command.INIT)
+            command,        # 例如：Redis_LLM_Command.INIT
             args=None,      # dataclass类型，例如：redis_proxy.custom_command.llm.protocol.LLM_Ask_Para
     ):
         # 封装redis的data
         data = {
             'client_id': self.client_id,
             'task_id': task_id,
-            'command': command,
+            'command': str(command),    # 例如：str(Redis_LLM_Command.INIT)
         }
 
         if args is not None:
@@ -140,14 +149,14 @@ def main_t2i():
     task_id = t1.new_task(str(Redis_Task_Type.T2I))
 
     bridge_para = Bridge_Para()
-    bridge_para.bridge_type = str(Redis_Bridge_Type.TRANSLATE)
+    bridge_para.bridge_type = Redis_Bridge_Type.TRANSLATE
     bridge_para.bridge_io_type = 'input'
-    bridge_para.bridged_command = str(Redis_Proxy_Command_T2I.DRAW)
-    bridge_para.bridged_command_args = ['positive', 'negative']
+    bridge_para.bridged_command = Redis_Proxy_Command_T2I.DRAW
+    bridge_para.bridged_command_args = ['positive', 'negative']     # 对所有args进行如translate的操作
     t1.new_bridge(bridge_para=bridge_para)
 
     args = T2I_Init_Para(url='localhost:5100')
-    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.INIT), args=args)
+    t1.send_command(task_id=task_id, command=Redis_Proxy_Command_T2I.INIT, args=args)
 
     seed = random.randint(1, 1e14)
     print(f'client seed: {seed}')
@@ -161,8 +170,8 @@ def main_t2i():
     #     # width=1024,
     # )
     args = T2I_Draw_Para(
-        positive='星际迷航中的星际战舰企业号，出现在地球外层空间',
-        # positive='瑞士雪山下的小村里，好多可爱的牛在吃草',
+        # positive='星际迷航中的星际战舰企业号，出现在地球外层空间',
+        positive='瑞士雪山下的小村里，好多可爱的牛在吃草',
         # positive='photo of young man in an grayed blue suit, light green shirt, and yellow tie. He has a neatly styled haircut with red and silver hair and is looking directly at the camera with a neutral expression. The background is seaside. The photograph is in colored, emphasizing contrasts and shadows. The man appears to be in his late twenties or early thirties, with fair skin and short.This man looks very like young Tom Cruise.',
         negative='',
         # negative='ugly face, bad hands, bad fingers, bad quality, poor quality, doll, disfigured, jpg, toy, bad anatomy, missing limbs, missing fingers, 3d, cgi',
@@ -197,8 +206,8 @@ def main_t2i():
     #     lora4_wt = None,
     # )
     # print(f'args: {args}')
-    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAW), args=args)
-    # t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_T2I.DRAWS), args=args)
+    t1.send_command(task_id=task_id, command=Redis_Proxy_Command_T2I.DRAW, args=args)
+    # t1.send_command(task_id=task_id, command=Redis_Proxy_Command_T2I.DRAWS, args=args)
 
     i=0
     for image_data in t1.get_result_gen(task_id):
@@ -213,12 +222,12 @@ def main_llm():
     task_id = t1.new_task(str(Redis_Task_Type.LLM))
 
     args = LLM_Init_Para(url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
-    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_LLM.INIT), args=args)
-    # t1.send_command(task_id=task_id, custom_command=str(Redis_Proxy_Command_LLM.INIT), url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
+    t1.send_command(task_id=task_id, command=Redis_Proxy_Command_LLM.INIT, args=args)
+    # t1.send_command(task_id=task_id, custom_command=Redis_Proxy_Command_LLM.INIT, url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
 
     args = LLM_Ask_Para(question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
-    t1.send_command(task_id=task_id, command=str(Redis_Proxy_Command_LLM.ASK), args=args)
-    # t1.send_command(task_id=task_id, custom_command=str(Redis_Proxy_Command_LLM.ASK), question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
+    t1.send_command(task_id=task_id, command=Redis_Proxy_Command_LLM.ASK, args=args)
+    # t1.send_command(task_id=task_id, custom_command=Redis_Proxy_Command_LLM.ASK, question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
     # print(f'result is:')
     for chunk in t1.get_result_gen(task_id):
         print(chunk, end='', flush=True)
