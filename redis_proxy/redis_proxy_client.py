@@ -43,6 +43,7 @@ class Redis_Proxy_Client():
         )
 
         self.task_id = task_id
+        return self
 
     # 向server发送一个消息，在server构造一个bridge。 对某个task下的某个command的输入或输出，进行桥接转换。
     # 例如，将Draw的输入positive和negtive，翻译为英文，再传给Draw
@@ -101,6 +102,8 @@ class Redis_Proxy_Client():
             stream_key=f'Task_{task_id}_Command',   # 与task_id一一对应的stream_key
             data=data,
         )
+
+        return self
 
     # 返回task的status
     def get_status(self, task_id):
@@ -224,18 +227,21 @@ def main_t2i():
         t1.save_image_to_file(image_data, file_name=f'output_{uuid.uuid4()}')
 
 def main_llm():
-    # c = Redis_Task_Client()
-    # c.add_llm_task('2+2=')
+    # t1 = Redis_Proxy_Client()
+    # t1.new_task(Redis_Task_Type.LLM)
+    #
+    # args = LLM_Init_Para(url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
+    # t1.send_command(command=Redis_Proxy_Command_LLM.INIT, args=args)
+    # args = LLM_Ask_Para(question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
+    # t1.send_command(command=Redis_Proxy_Command_LLM.ASK, args=args)
+    # t1.print_stream()
 
-    t1 = Redis_Proxy_Client()
-    t1.new_task(Redis_Task_Type.LLM)
-
-    args = LLM_Init_Para(url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
-    t1.send_command(command=Redis_Proxy_Command_LLM.INIT, args=args)
-    args = LLM_Ask_Para(question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
-    t1.send_command(command=Redis_Proxy_Command_LLM.ASK, args=args)
-    t1.print_stream()
+    t2=Redis_Proxy_Client()
+    arg1 = LLM_Init_Para(url='http://192.168.124.33:8001/v1', max_new_tokens=1024)
+    arg2 = LLM_Ask_Para(question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
+    t2.new_task(Redis_Task_Type.LLM).send_command(command=Redis_Proxy_Command_LLM.INIT, args=arg1).send_command(command=Redis_Proxy_Command_LLM.ASK, args=arg2)
+    t2.print_stream()
 
 if __name__ == "__main__":
-    # main_llm()
-    main_t2i()
+    main_llm()
+    # main_t2i()
