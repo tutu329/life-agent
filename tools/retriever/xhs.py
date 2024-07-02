@@ -48,6 +48,16 @@ def parse_note_json(data_list):
     print(f'sub1={sub1}')
     print(f'sub2={sub2}')
 
+def get_all_video_urls(
+        json_file,
+        field='video_url'   # video_url | note_url | image_list | note_id | type | title | desc | user_id | nickname | avatar | liked_count | collected_count | share_count
+):
+    with open(json_file, 'r', encoding='utf-8') as file:
+        data = json5.load(file)
+        for item in data:
+            for k,v in item.items():
+                if k==field:
+                    yield v
 
 def main():
 
@@ -56,6 +66,7 @@ def main():
     # with open(r'C:\Users\tutu\MediaCrawler\data\xhs\json\creator_creator_2024-07-02.json', 'r', encoding='utf-8') as file:
     # with open(r'C:\Users\tutu\MediaCrawler\data\xhs\json\creator_contents_2024-07-02.json', 'r', encoding='utf-8') as file:
     # with open(r'creator_contents_2024-07-02-hdstudio.json', 'r', encoding='utf-8') as file:
+
     with open(r'creator_contents_2024-07-02-摘菌大婶.json', 'r', encoding='utf-8') as file:
         data = json5.load(file)
 
@@ -67,6 +78,9 @@ def main():
         for k,v in item.items():
             # if k=='title':
             print(f'\t{k}:{v}')
+
+    # for url in get_all_video_urls(r'creator_contents_2024-07-02-hdstudio.json', field='note_url'):
+    #     print(url, end=' ')
 
 if __name__ == "__main__":
     main()
