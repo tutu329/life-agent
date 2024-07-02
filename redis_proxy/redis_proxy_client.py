@@ -151,7 +151,6 @@ class Redis_Proxy_Client():
 
 def main_t2i():
     t1 = Redis_Proxy_Client()
-
     task_id = t1.new_task(Redis_Task_Type.T2I)
 
     bridge_para = Bridge_Para()
