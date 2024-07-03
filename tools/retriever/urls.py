@@ -4,7 +4,7 @@ import re
 from typing import List
 
 from playwright.async_api import async_playwright   # playwright install
-from bs4 import BeautifulSoup                       # pip install playwright beautifulsoup4 lxml
+from bs4 import BeautifulSoup, Tag                  # pip install playwright beautifulsoup4 lxml
 
 from config import dred, dgreen, dblue, Global
 from tools.retriever.html2text import html2text
@@ -126,12 +126,15 @@ class Urls_Content_Retriever():
 
             html_content = await response.text()
             title, text = self._html_to_text(html_content)
+            text_media = await self._get_text_and_media(html_content)
+            # print(f'text_media: {text_media}')
 
             self.results[url] = {
                 'status': response.status,
                 'html_content': html_content,
-                'text': text,
                 'title': title,
+                'text': text,
+                'text_media': text_media,
             }
 
         except Exception as e:
@@ -158,6 +161,50 @@ class Urls_Content_Retriever():
         text_content = '\n'.join([p.get_text() for p in paragraphs])
 
         return title, text_content
+
+    async def _get_text_and_media(self, html) -> list:
+        # 使用 BeautifulSoup 解析 HTML 并提取正文
+        soup = BeautifulSoup(html, 'html.parser')
+        body = soup.find('body')
+
+        # 准备提取的内容列表
+        extracted_content = []
+
+        # 定义一个递归函数，用于遍历并提取文本和媒体元素
+        def extract_elements(element):
+            if isinstance(element, Tag):
+                if element.name == 'p':
+                    extracted_content.append({'type': 'p', 'content': element.get_text()})
+                elif element.name == 'span':
+                    extracted_content.append({'type': 'span', 'content': element.get_text()})
+                elif element.name == 'img':
+                    src = element.get('src')
+                    if src:
+                        extracted_content.append({'type': 'img', 'content': src})
+                elif element.name == 'video':
+                    src = element.get('src')
+                    if src:
+                        extracted_content.append({'type': 'video', 'content': src})
+                    else:
+                        # 查找 <source> 标签中的视频链接
+                        sources = element.find_all('source')
+                        video_sources = [source.get('src') for source in sources if source.get('src')]
+                        if video_sources:
+                            extracted_content.append({'type': 'video', 'content': video_sources[0]})
+                else:
+                    # 继续递归遍历其他嵌套元素
+                    for child in element.children:
+                        extract_elements(child)
+            elif isinstance(element, str):
+                pass
+                # 添加非标签字符串文本
+                # extracted_content.append({'type': 'text', 'content': element})
+
+        # 从 body 元素开始提取内容
+        if body:
+            extract_elements(body)
+
+        return extracted_content
 
     # page.goto(url)的方式，速度很慢
     # async def _legacy_get_page_content(self, url: str) -> str:
@@ -186,8 +233,11 @@ async def main():
 
     async with Urls_Content_Retriever() as r:
         await r._get_url_content(url)
-        print(f'title: "{r.results[url]["title"]}"')
-        print(f'text: "{r.results[url]["text"]}"')
+        # print(f'title: "{r.results[url]["title"]}"')
+        # print(f'text: "{r.results[url]["text"]}"')
+        data_list = r.results[url]["text_media"]
+        for item in data_list:
+            print(item)
         # print(r.results[url]['html_content'])
 
 if __name__ == '__main__':
