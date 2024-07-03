@@ -64,6 +64,7 @@ class Global():
     playwright_proxy = {
         "server": "http://127.0.0.1:7890",
     }
+    playwright_get_url_content_time_out = 3000 # 超时设置ms
 
     ddgs_proxies = {
         "http": "http://127.0.0.1:7890",
