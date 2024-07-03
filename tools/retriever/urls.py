@@ -133,8 +133,8 @@ class Urls_Content_Retriever():
             )
 
             html_content = await response.text()
-            title, text = await self._html_to_text(html_content)
-            text_and_media_list = await self._get_text_and_media(html_content, url)
+            # title, text = await self._html_to_text(html_content)
+            title, text, text_and_media_list = await self._get_text_and_media(html_content, url)
             # print(f'text_media: {text_media}')
 
             self.results[url] = {
@@ -174,12 +174,15 @@ class Urls_Content_Retriever():
         # 使用 BeautifulSoup 解析 HTML 并提取正文
         soup = BeautifulSoup(html, 'html.parser')
 
-        extracted_content = []
+        extracted_content_list = []
+        extracted_title = ''
+        extracted_text_list = []
 
         title_tag = soup.find('title')
         title = title_tag.get_text() if title_tag else ''
         title = title.strip()
-        extracted_content.append({'type': 'title', 'content': title})
+        extracted_content_list.append({'type': 'title', 'content': title})
+        extracted_title = title
 
         body = soup.find('body')
 
@@ -193,33 +196,39 @@ class Urls_Content_Retriever():
 
             if isinstance(element, Tag):
                 if element.name == 'p':
-                    extracted_content.append({'type': 'text-p', 'content': element.get_text()}) if element.get_text() not in not_needed else foo()
-                elif element.name == 'span':
-                    extracted_content.append({'type': 'text-span', 'content': element.get_text()}) if element.get_text() not in not_needed else foo()
+                    text = element.get_text().strip() if element.get_text() not in not_needed else ''
+                    if text:
+                        extracted_content_list.append({'type': 'text-p', 'content':text})
+                        extracted_text_list.append(text)
+                elif element.name == 'span' and (not element.find_all('p')):    # span标签下没有p标签的text
+                    text = element.get_text().strip() if element.get_text() not in not_needed else ''
+                    if text:
+                        extracted_content_list.append({'type': 'text-span', 'content':text})
+                        extracted_text_list.append(text)
                 elif element.name == 'img':
                     # src的图片
                     img_src = element.get('src')
                     if img_src:
                         if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
                             img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
-                        extracted_content.append({'type': 'img-src', 'content': img_src})
+                        extracted_content_list.append({'type': 'img-src', 'content': img_src})
                     # data-src的图片
                     else:
                         img_src = element.get('data-src')
                         if img_src:
                             if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
                                 img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
-                            extracted_content.append({'type': 'img-data-src', 'content': img_src})
+                            extracted_content_list.append({'type': 'img-data-src', 'content': img_src})
                 elif element.name == 'video':
                     src = element.get('src')
                     if src:
-                        extracted_content.append({'type': 'video', 'content': src})
+                        extracted_content_list.append({'type': 'video', 'content': src})
                     else:
                         # 查找 <source> 标签中的视频链接
                         sources = element.find_all('source')
                         video_sources = [source.get('src') for source in sources if source.get('src')]
                         if video_sources:
-                            extracted_content.append({'type': 'video', 'content': video_sources[0]})
+                            extracted_content_list.append({'type': 'video', 'content': video_sources[0]})
                 else:
                     # 继续递归遍历其他嵌套元素
                     for child in element.children:
@@ -233,7 +242,7 @@ class Urls_Content_Retriever():
         if body:
             _extract_elements(body)
 
-        return extracted_content
+        return extracted_title, '\n'.join(extracted_text_list), extracted_content_list
 
     # page.goto(url)的方式，速度很慢
     # async def _legacy_get_page_content(self, url: str) -> str:
@@ -258,20 +267,21 @@ class Urls_Content_Retriever():
     #         return text_content
 async def main():
     # url = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
-    # url = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
+    url = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     # url = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
     # url = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
-    url = 'http://www.news.cn/politics/xxjxs/index.htm'
+    # url = 'http://www.news.cn/politics/xxjxs/index.htm'
 
     async with Urls_Content_Retriever(in_use_proxy=False) as r:
     # async with Urls_Content_Retriever(in_use_proxy=True) as r:
         await r._get_url_content(url)
-        # print(f'title: "{r.results[url]["title"]}"')
+
         # print(f'text: "{r.results[url]["text"]}"')
+
         data_list = r.results[url]["text_and_media_list"]
         for item in data_list:
             print(item)
-        # print(r.results[url]['html_content'])
+
 
 if __name__ == '__main__':
     asyncio.run(main())
