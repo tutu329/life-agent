@@ -41,14 +41,9 @@ class Urls_Content_Retriever():
                 self.browser = await p.chromium.launch(
                     channel="chrome",
                     headless=True,
-                    proxy=Global.playwright_proxy
+                    proxy=Global.playwright_proxy   # 关于win下报错：A "socket" was not created for HTTP request before 3000ms，查看internet选项的局域网设置中的代理服务器设置，port和该设置一致就行，如shadowsocket是10809而非10808
                 )   # 启动chrome
-                # 关于报错：A "socket" was not created for HTTP request before 3000ms
-                self.context = await self.browser.new_context(
-                    proxy={
-                        "server": Global.playwright_proxy['server'],
-                    },
-                )
+
             else:
                 dgreen('playwright未启动代理.')
 
@@ -56,7 +51,8 @@ class Urls_Content_Retriever():
                     channel="chrome",
                     headless=True
                 )   # 启动chrome
-                self.context = await self.browser.new_context()
+
+            self.context = await self.browser.new_context()
 
 
             print('playwright启动完毕, context已获得.')
@@ -118,7 +114,7 @@ class Urls_Content_Retriever():
         return ret
 
     # 获取url的html内容
-    async def _get_url_content(self, url):
+    async def _get_url_content(self, url, domain=None):
 
 
         dgreen(f'获取网页"{url}"的内容...')
@@ -134,7 +130,7 @@ class Urls_Content_Retriever():
 
             html_content = await response.text()
             # title, text = await self._html_to_text(html_content)
-            title, text, text_and_media_list = await self._get_text_and_media(html_content, url)
+            title, text, text_and_media_list = await self._get_text_and_media(html_content, url, domain=domain)
             # print(f'text_media: {text_media}')
 
             self.results[url] = {
@@ -170,7 +166,7 @@ class Urls_Content_Retriever():
 
         return title, text_content
 
-    async def _get_text_and_media(self, html, url) -> list:
+    async def _get_text_and_media(self, html, url, domain=None) -> list:
         # 使用 BeautifulSoup 解析 HTML 并提取正文
         soup = BeautifulSoup(html, 'html.parser')
 
@@ -194,34 +190,44 @@ class Urls_Content_Retriever():
             def foo():
                 pass
 
+            # print(f'---------------element: {element}---------------')
             if isinstance(element, Tag):
-                if element.name == 'p':
+                # if element.name == 'p' and ([element.children]==[]):       # p为末端节点
+                if element.name == 'p' and (not element.find_all('span')) and (not element.find_all('span')):       # p为文本类型的末端节点
                     text = element.get_text().strip() if element.get_text() not in not_needed else ''
                     if text:
                         extracted_content_list.append({'type': 'text-p', 'content':text})
                         extracted_text_list.append(text)
-                elif element.name == 'span' and (not element.find_all('p')):    # span标签下没有p标签的text
+                # elif element.name == 'div' and (not element.find_all('p')) and (not element.find_all('span')):    # div标签下没有p标签的text
+                #     text = element.get_text().strip() if element.get_text() not in not_needed else ''
+                #     if text and (text not in not_needed):
+                #         extracted_content_list.append({'type': 'text-div', 'content':text})
+                #         extracted_text_list.append(text)
+                elif element.name == 'span' and (not element.find_all('p')) and (not element.find_all('span')):    # span为文本类型的末端节点
                     text = element.get_text().strip() if element.get_text() not in not_needed else ''
-                    if text:
+                    if text and (text not in not_needed):
                         extracted_content_list.append({'type': 'text-span', 'content':text})
                         extracted_text_list.append(text)
                 elif element.name == 'img':
+                    # print(f'---------------img element: {element}---------------')
                     # src的图片
                     img_src = element.get('src')
                     if img_src:
                         if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
-                            img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
+                            img_src = f"{domain}/{img_src.lstrip('/')}"
                         extracted_content_list.append({'type': 'img-src', 'content': img_src})
                     # data-src的图片
-                    else:
-                        img_src = element.get('data-src')
-                        if img_src:
-                            if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
-                                img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
-                            extracted_content_list.append({'type': 'img-data-src', 'content': img_src})
+                    img_src = element.get('data-src')
+                    if img_src:
+                        if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
+                            img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
+                        extracted_content_list.append({'type': 'img-data-src', 'content': img_src})
                 elif element.name == 'video':
+                    print(f'---------------video element: {element}---------------')
                     src = element.get('src')
                     if src:
+                        if not src.startswith(('http://', 'https://')):  # 如果是相对路径，将其转换为绝对路径
+                            src = f"{domain}/{src.lstrip('/')}"
                         extracted_content_list.append({'type': 'video', 'content': src})
                     else:
                         # 查找 <source> 标签中的视频链接
@@ -229,14 +235,29 @@ class Urls_Content_Retriever():
                         video_sources = [source.get('src') for source in sources if source.get('src')]
                         if video_sources:
                             extracted_content_list.append({'type': 'video', 'content': video_sources[0]})
-                else:
-                    # 继续递归遍历其他嵌套元素
-                    for child in element.children:
-                        _extract_elements(child)
+                elif element.name == 'a':
+                    src = element.get('href')
+                    if src and ('mp4' in src or 'video' in src):
+                        print(f'---------------video element: {element}---------------')
+                        if not src.startswith(('http://', 'https://')):  # 如果是相对路径，将其转换为绝对路径
+                            src = f"{domain}/{src.lstrip('/')}"
+                        extracted_content_list.append({'type': 'video', 'content': src})
+                    else:
+                        # 查找 <source> 标签中的视频链接
+                        sources = element.find_all('source')
+                        video_sources = [source.get('src') for source in sources if source.get('src')]
+                        if video_sources:
+                            extracted_content_list.append({'type': 'video', 'content': video_sources[0]})
+                # else:
+                # 继续递归遍历其他嵌套元素
+                for child in element.children:
+                    _extract_elements(child)
             elif isinstance(element, str):
                 pass
                 # 添加非标签字符串文本
-                # extracted_content.append({'type': 'text', 'content': element})
+                # extracted_content_list.append({'type': 'text', 'content': element})
+
+            # return found
 
         # 从 body 元素开始提取内容
         if body:
@@ -266,15 +287,19 @@ class Urls_Content_Retriever():
     #
     #         return text_content
 async def main():
+    url = 'https://www.xvideos.com/tags/porn'
+    domain = 'https://www.xvideos.com'
+    # url = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
+    # url = 'https://www.xvideos.com/tags/porn'
     # url = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
-    url = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
+    # url = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     # url = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
     # url = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
     # url = 'http://www.news.cn/politics/xxjxs/index.htm'
 
-    async with Urls_Content_Retriever(in_use_proxy=False) as r:
-    # async with Urls_Content_Retriever(in_use_proxy=True) as r:
-        await r._get_url_content(url)
+    # async with Urls_Content_Retriever(in_use_proxy=False) as r:
+    async with Urls_Content_Retriever(in_use_proxy=True) as r:
+        await r._get_url_content(url, domain)
 
         # print(f'text: "{r.results[url]["text"]}"')
 
