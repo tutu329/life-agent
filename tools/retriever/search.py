@@ -7,7 +7,7 @@ import re
 import asyncio
 from colorama import Fore, Style
 
-from tools.retriever.html2text import html2text
+from tools.retriever.legacy_wrong_html2text import html2text
 from utils.print_tools import print_long_content_with_urls, get_string_of_long_content_with_urls
 from tools.qa.long_content_qa import multi_contents_qa_concurrently, multi_contents_qa_concurrently_yield
 from utils.task import Flicker_Task

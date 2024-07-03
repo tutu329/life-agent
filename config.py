@@ -62,9 +62,11 @@ class Global():
 
     # V2Ray代理
     playwright_proxy = {
-        "server": "http://127.0.0.1:7890",
+        "server": "http://127.0.0.1:10808",
+        # "server": "http://127.0.0.1:7890",
     }
-    playwright_get_url_content_time_out = 3000 # 超时设置ms
+    playwright_get_url_content_time_out = 3000          # 超时设置ms
+    playwright_url_content_not_needed = ['\xa0', '']    # 获取url内容时，不需要的内容
 
     ddgs_proxies = {
         "http": "http://127.0.0.1:7890",

@@ -7,7 +7,8 @@ from playwright.async_api import async_playwright   # playwright install
 from bs4 import BeautifulSoup, Tag                  # pip install playwright beautifulsoup4 lxml
 
 from config import dred, dgreen, dblue, Global
-from tools.retriever.html2text import html2text
+from tools.retriever.legacy_wrong_html2text import html2text
+from utils.url import remove_rightmost_path
 
 class Urls_Content_Retriever():
     def __init__(
@@ -42,6 +43,12 @@ class Urls_Content_Retriever():
                     headless=True,
                     proxy=Global.playwright_proxy
                 )   # 启动chrome
+                # 关于报错：A "socket" was not created for HTTP request before 3000ms
+                self.context = await self.browser.new_context(
+                    proxy={
+                        "server": Global.playwright_proxy['server'],
+                    },
+                )
             else:
                 dgreen('playwright未启动代理.')
 
@@ -49,8 +56,9 @@ class Urls_Content_Retriever():
                     channel="chrome",
                     headless=True
                 )   # 启动chrome
+                self.context = await self.browser.new_context()
 
-            self.context = await self.browser.new_context()
+
             print('playwright启动完毕, context已获得.')
         except Exception as e:
             dred(f"Error during browser initialization: {e}")
@@ -118,15 +126,15 @@ class Urls_Content_Retriever():
 
         try:
             self.results[url] = [None, None]
-
             response = await self.context.request.get(
                 url,
+                # proxies=proxies,
                 timeout=Global.playwright_get_url_content_time_out,
             )
 
             html_content = await response.text()
-            title, text = self._html_to_text(html_content)
-            text_media = await self._get_text_and_media(html_content)
+            title, text = await self._html_to_text(html_content)
+            text_and_media_list = await self._get_text_and_media(html_content, url)
             # print(f'text_media: {text_media}')
 
             self.results[url] = {
@@ -134,7 +142,7 @@ class Urls_Content_Retriever():
                 'html_content': html_content,
                 'title': title,
                 'text': text,
-                'text_media': text_media,
+                'text_and_media_list': text_and_media_list,
             }
 
         except Exception as e:
@@ -144,7 +152,7 @@ class Urls_Content_Retriever():
             else:
                 self.results[url] = (404, '获取网页内容失败.')
 
-    def _html_to_text(self, html):
+    async def _html_to_text(self, html):
         # 使用 BeautifulSoup 解析 HTML 并提取正文
         soup = BeautifulSoup(html, 'html.parser')
 
@@ -162,25 +170,46 @@ class Urls_Content_Retriever():
 
         return title, text_content
 
-    async def _get_text_and_media(self, html) -> list:
+    async def _get_text_and_media(self, html, url) -> list:
         # 使用 BeautifulSoup 解析 HTML 并提取正文
         soup = BeautifulSoup(html, 'html.parser')
+
+        extracted_content = []
+
+        title_tag = soup.find('title')
+        title = title_tag.get_text() if title_tag else ''
+        title = title.strip()
+        extracted_content.append({'type': 'title', 'content': title})
+
         body = soup.find('body')
 
         # 准备提取的内容列表
-        extracted_content = []
 
         # 定义一个递归函数，用于遍历并提取文本和媒体元素
-        def extract_elements(element):
+        def _extract_elements(element):
+            not_needed = Global.playwright_url_content_not_needed
+            def foo():
+                pass
+
             if isinstance(element, Tag):
                 if element.name == 'p':
-                    extracted_content.append({'type': 'p', 'content': element.get_text()})
+                    extracted_content.append({'type': 'text-p', 'content': element.get_text()}) if element.get_text() not in not_needed else foo()
                 elif element.name == 'span':
-                    extracted_content.append({'type': 'span', 'content': element.get_text()})
+                    extracted_content.append({'type': 'text-span', 'content': element.get_text()}) if element.get_text() not in not_needed else foo()
                 elif element.name == 'img':
-                    src = element.get('src')
-                    if src:
-                        extracted_content.append({'type': 'img', 'content': src})
+                    # src的图片
+                    img_src = element.get('src')
+                    if img_src:
+                        if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
+                            img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
+                        extracted_content.append({'type': 'img-src', 'content': img_src})
+                    # data-src的图片
+                    else:
+                        img_src = element.get('data-src')
+                        if img_src:
+                            if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
+                                img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
+                            extracted_content.append({'type': 'img-data-src', 'content': img_src})
                 elif element.name == 'video':
                     src = element.get('src')
                     if src:
@@ -194,7 +223,7 @@ class Urls_Content_Retriever():
                 else:
                     # 继续递归遍历其他嵌套元素
                     for child in element.children:
-                        extract_elements(child)
+                        _extract_elements(child)
             elif isinstance(element, str):
                 pass
                 # 添加非标签字符串文本
@@ -202,7 +231,7 @@ class Urls_Content_Retriever():
 
         # 从 body 元素开始提取内容
         if body:
-            extract_elements(body)
+            _extract_elements(body)
 
         return extracted_content
 
@@ -228,14 +257,18 @@ class Urls_Content_Retriever():
     #
     #         return text_content
 async def main():
-    url = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
+    # url = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
+    # url = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     # url = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
+    # url = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
+    url = 'http://www.news.cn/politics/xxjxs/index.htm'
 
-    async with Urls_Content_Retriever() as r:
+    async with Urls_Content_Retriever(in_use_proxy=False) as r:
+    # async with Urls_Content_Retriever(in_use_proxy=True) as r:
         await r._get_url_content(url)
         # print(f'title: "{r.results[url]["title"]}"')
         # print(f'text: "{r.results[url]["text"]}"')
-        data_list = r.results[url]["text_media"]
+        data_list = r.results[url]["text_and_media_list"]
         for item in data_list:
             print(item)
         # print(r.results[url]['html_content'])
