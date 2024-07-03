@@ -49,11 +49,20 @@ class Urls_Content_Retriever():
             print('playwright启动完毕, context已获得.')
         except Exception as e:
             dred(f"Error during browser initialization: {e}")
-        # finally:
-        #     print(f"finally async_playwright stopped.")
-        #     await self.async_playwright.stop()
-        # print(f"finally async_playwright stopped.")
-        # await self.async_playwright.stop()
+
+        return self
+
+    async def __aenter__(self):
+        return await self.init()
+
+    async def __aexit__(
+            self,
+            exc_type,       # The type of the exception (e.g., ValueError, RuntimeError).
+            exc_val,        # The exception instance itself.
+            exc_tb          # The traceback object. （这三个参数必须写，否则报错：TypeError: Urls_Content_Retriever.__aexit__() takes 1 positional argument but 4 were given）
+    ):
+        await self.close()
+
     async def close(self):
         if self.context:
             await self.context.close()
@@ -62,53 +71,48 @@ class Urls_Content_Retriever():
         if self.async_playwright:
             await self.async_playwright.stop()  # 如果没有stop，会报错：ValueError: I/O operation on closed pipe
 
-    # async def get_raw_pages(self, urls):
-    #     # 封装异步任务
-    #     tasks = []
-    #     for url in urls:
-    #         tasks.append(asyncio.create_task(self._func_get_one_page(self.context, url)))
-    #
-    #     await asyncio.wait(tasks, timeout=100)
-    #
-    #     return self.results
-    #
-    # async def _func_get_one_page(self, context, url):
-    #     # dred(f'get_page: url({url})')
-    #     # 开启事件监听
-    #     # page.on('response',printdata)
-    #     # 进入子页面
-    #     response = None
-    #
-    #     # page = await self.context.new_page()
-    #     try:
-    #         self.results[url] = [None, None]
-    #
-    #         # response = await page.request.get(
-    #         response = await context.request.get(
-    #             url,
-    #             timeout=Global.playwright_get_url_content_time_out,
-    #         )
-    #         # 等待子页面加载完毕
-    #         self.results[url] = (response.status, await response.text())
-    #         # dred(f'{"-"*80}')
-    #         # dblue( self.results[url][1])
-    #     except Exception as e:
-    #         dred(f'func_get_one_page(url={url}) error: {e}')
-    #         if response is not None:
-    #             self.results[url] = (response.status, '')
-    #         else:
-    #             self.results[url] = (404, '获取网页内容失败.')
+    async def _get_raw_pages(self, urls):
+        # 封装异步任务
+        tasks = []
+        for url in urls:
+            tasks.append(asyncio.create_task(self._get_url_content(self.context, url)))
+
+        await asyncio.wait(tasks, timeout=100)
+
+        return self.results
+
+    async def _get_url_content(self, url):
+        # dred(f'get_page: url({url})')
+        # 开启事件监听
+        # page.on('response',printdata)
+        # 进入子页面
+        response = None
+
+        # page = await self.context.new_page()
+        try:
+            self.results[url] = [None, None]
+
+            # response = await page.request.get(
+            response = await self.context.request.get(
+                url,
+                timeout=Global.playwright_get_url_content_time_out,
+            )
+            # 等待子页面加载完毕
+            self.results[url] = (response.status, await response.text())
+            # dred(f'{"-"*80}')
+            # dblue( self.results[url][1])
+        except Exception as e:
+            dred(f'func_get_one_page(url={url}) error: {e}')
+            if response is not None:
+                self.results[url] = (response.status, '')
+            else:
+                self.results[url] = (404, '获取网页内容失败.')
 
 async def main():
     import time
-    r = Urls_Content_Retriever()
-    await r.init()
-    await r.close()
+    async with Urls_Content_Retriever() as r:
+        await r._get_url_content('http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html')
+        print(r.results)
 
 if __name__ == '__main__':
-    import sys
-
-    # if sys.platform == 'win32':
-    #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
     asyncio.run(main())
