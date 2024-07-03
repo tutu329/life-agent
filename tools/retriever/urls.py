@@ -129,7 +129,7 @@ class Urls_Content_Retriever():
             )
 
             html_content = await response.text()
-            # title, text = await self._html_to_text(html_content)
+            # all_text = await self._html_to_text(html_content)
             title, text, text_and_media_list = await self._get_text_and_media(html_content, url, domain=domain)
             # print(f'text_media: {text_media}')
 
@@ -137,6 +137,7 @@ class Urls_Content_Retriever():
                 'status': response.status,
                 'html_content': html_content,
                 'title': title,
+                # 'text': all_text,
                 'text': text,
                 'text_and_media_list': text_and_media_list,
             }
@@ -152,10 +153,6 @@ class Urls_Content_Retriever():
         # 使用 BeautifulSoup 解析 HTML 并提取正文
         soup = BeautifulSoup(html, 'html.parser')
 
-        title_tag = soup.find('title')
-        title = title_tag.get_text() if title_tag else ''
-        title = title.strip()
-
         # 提取正文内容
         # 你可以根据实际情况调整选择器
         body = soup.find('body')  # 获取页面的 <body> 内容
@@ -164,7 +161,7 @@ class Urls_Content_Retriever():
         # 将所有段落的文本合并成一个字符串
         text_content = '\n'.join([p.get_text() for p in paragraphs])
 
-        return title, text_content
+        return text_content
 
     async def _get_text_and_media(self, html, url, domain=None) -> list:
         # 使用 BeautifulSoup 解析 HTML 并提取正文
@@ -287,11 +284,11 @@ class Urls_Content_Retriever():
     #
     #         return text_content
 async def main():
-    url = 'https://www.xvideos.com/tags/porn'
-    domain = 'https://www.xvideos.com'
+    # url = 'https://www.xvideos.com/tags/porn'
+    # domain = 'https://www.xvideos.com'
     # url = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
     # url = 'https://www.xvideos.com/tags/porn'
-    # url = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
+    url = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
     # url = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     # url = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
     # url = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
@@ -299,13 +296,13 @@ async def main():
 
     # async with Urls_Content_Retriever(in_use_proxy=False) as r:
     async with Urls_Content_Retriever(in_use_proxy=True) as r:
-        await r._get_url_content(url, domain)
-
-        # print(f'text: "{r.results[url]["text"]}"')
+        await r._get_url_content(url)
 
         data_list = r.results[url]["text_and_media_list"]
+        txt = r.results[url]["text"]
         for item in data_list:
             print(item)
+        print(txt)
 
 
 if __name__ == '__main__':
