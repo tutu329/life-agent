@@ -1,8 +1,11 @@
 import json5 as json
 import asyncio
+import re
+from typing import List
 from playwright.async_api import async_playwright
 
 from config import dred, dgreen, dblue, Global
+from tools.retriever.html2text import html2text
 
 class Urls_Content_Retriever():
     def __init__(
@@ -81,38 +84,65 @@ class Urls_Content_Retriever():
 
         return self.results
 
+    def _html_2_text_paras(self, html: str) -> List[str]:
+        if html is None:
+            return []
+
+        paras = html2text(html).split("\n")
+        paras = self._pre_filter(paras)
+        return paras
+
+    def _pre_filter(self, paragraphs):
+        # sorted_paragraphs = sorted(paragraphs, key=lambda x: len(x))
+        # if len(sorted_paragraphs[-1]) < 10:
+        #     return []
+        ret = []
+        for item in paragraphs:
+            item = item.strip()
+            item = re.sub(r"\[\d+\]", "", item)
+            if len(item) < 50:
+                continue
+            if len(item) > 1200:
+                item = item[:1200] + "..."
+            ret.append(item)
+        return ret
+
+    # 获取url的html内容
     async def _get_url_content(self, url):
-        # dred(f'get_page: url({url})')
-        # 开启事件监听
-        # page.on('response',printdata)
-        # 进入子页面
+
+
+        dgreen(f'获取网页"{url}"的内容...')
         response = None
 
-        # page = await self.context.new_page()
         try:
             self.results[url] = [None, None]
 
-            # response = await page.request.get(
             response = await self.context.request.get(
                 url,
                 timeout=Global.playwright_get_url_content_time_out,
             )
-            # 等待子页面加载完毕
-            self.results[url] = (response.status, await response.text())
-            # dred(f'{"-"*80}')
-            # dblue( self.results[url][1])
+
+            html_content = await response.text()
+            paras = self._html_2_text_paras(html_content)
+            content = "\n".join(paras)
+
+            self.results[url] = {
+                'status': response.status,
+                'content': content
+            }
+
         except Exception as e:
-            dred(f'func_get_one_page(url={url}) error: {e}')
+            dred(f'_get_url_content() error: {e}')
             if response is not None:
                 self.results[url] = (response.status, '')
             else:
                 self.results[url] = (404, '获取网页内容失败.')
 
 async def main():
-    import time
+    url = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
     async with Urls_Content_Retriever() as r:
-        await r._get_url_content('http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html')
-        print(r.results)
+        await r._get_url_content(url)
+        print(r.results[url]['content'])
 
 if __name__ == '__main__':
     asyncio.run(main())
