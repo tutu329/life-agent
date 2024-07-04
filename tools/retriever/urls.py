@@ -142,8 +142,8 @@ class Urls_Content_Retriever():
     #         ret.append(item)
     #     return ret
 
-    def get_parsed_text(self, url):
-        text =  self.results[url]['parsed_text']
+    def get_parsed_text(self, url, raw_text=True):
+        text =  self.results[url]['raw_text'] if raw_text else self.results[url]['parsed_text']
         return text
 
     # 将url的text、img、video等内容解析出来
@@ -200,7 +200,9 @@ class Urls_Content_Retriever():
 
         # 获取body下完整的文本
         # text_content = body.get_text(strip=True)
-        text_content = body.get_text(strip=False)
+
+        text_content = body.get_text(separator='\n',strip=True)
+
         # print(f'text_content:{text_content}')
         return text_content
 
@@ -331,7 +333,7 @@ async def quick_get_url_text(url, use_proxy=False):
 
     return result_text
 
-async def quick_get_urls_text(urls, use_proxy=False):
+async def quick_get_urls_text(urls, use_proxy=False, raw_text=True):
     results_text_dict = {
         # 'url': text
     }
@@ -342,7 +344,7 @@ async def quick_get_urls_text(urls, use_proxy=False):
 
     async def _get_url_text(url, use_proxy=False):
         await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
-        results_text_dict[url] = urls_content_retriever.get_parsed_text(url)
+        results_text_dict[url] = urls_content_retriever.get_parsed_text(url, raw_text=raw_text)
 
     for url in urls:
         tasks.append(asyncio.create_task(_get_url_text(url, use_proxy=use_proxy)))
@@ -368,8 +370,8 @@ async def main():
     # print(txt1)
     # print(txt2)
 
-    results = await quick_get_urls_text([url1, url2], use_proxy=False)
-    # results = await quick_get_urls_text([url1, url2], use_proxy=True)
+    # results = await quick_get_urls_text([url1, url2], use_proxy=True, raw_text=True)
+    results = await quick_get_urls_text([url1, url2], use_proxy=False, raw_text=False)
     print(results[url1])
     print(results[url2])
 
