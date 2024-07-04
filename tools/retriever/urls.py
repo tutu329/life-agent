@@ -499,8 +499,10 @@ async def async_search_main():
 
 def sync_search_main():
     results = quick_get_bing_search_result(query='霍去病', result_num=200, use_proxy=False)
+    results = [item['url'] for item in results]
     for i, item in enumerate(results):
-        print(f"{i+1:>2d}) {item['title']}: {item['url']}")
+        print(f"{i+1:>2d}) {item}")
+        # print(f"{i+1:>2d}) {item['title']}: {item['url']}")
 
 def bs4_test():
     from bs4 import BeautifulSoup
