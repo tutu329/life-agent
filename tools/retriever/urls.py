@@ -60,17 +60,17 @@ class Urls_Content_Retriever():
         if self.inited:
             return self
 
-        print('启动chrome: await async_playwright().start()')
+        # print('启动chrome: await async_playwright().start()')
 
         p = await async_playwright().start()
         self.async_playwright = p
         # p = sync_playwright().start()
-        print('启动chrome: await p.chromium.launch(channel="chrome", headless=True)')
+        # print('启动chrome: await p.chromium.launch(channel="chrome", headless=True)')
 
         try:
             # 启动浏览器
             # if self.use_proxy:
-            dred(f'playwright启动 browser-with-proxy: "{Global.playwright_proxy}".')
+            dgreen(f'playwright启动 browser-with-proxy: "{Global.playwright_proxy}".')
 
             self.browser_with_proxy = await p.chromium.launch(
                 channel="chrome",
@@ -80,7 +80,7 @@ class Urls_Content_Retriever():
             self.context_with_proxy = await self.browser_with_proxy.new_context()
 
             # else:
-            dred('playwright启动普通browser.')
+            dgreen('playwright启动 browser.')
 
             self.browser = await p.chromium.launch(
                 channel="chrome",
@@ -396,6 +396,7 @@ async def async_quick_get_urls_resource_list(urls, res_type_list=['video', 'imag
 
     await urls_content_retriever.close()
     return results_dict
+
 def quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
     urls_content_retriever = Urls_Content_Retriever()
 
