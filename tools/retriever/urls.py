@@ -121,39 +121,6 @@ class Urls_Content_Retriever():
         if self.async_playwright:
             await self.async_playwright.stop()  # 如果没有stop，会报错：ValueError: I/O operation on closed pipe
 
-    # async def _get_raw_pages(self, urls):
-    #     # 封装异步任务
-    #     tasks = []
-    #     for url in urls:
-    #         tasks.append(asyncio.create_task(self.parse_url_content(self.context, url)))
-    #
-    #     await asyncio.wait(tasks, timeout=100)
-    #
-    #     return self.results
-
-    # def _html_2_text_paras(self, html: str) -> List[str]:
-    #     if html is None:
-    #         return []
-    #
-    #     paras = html2text(html).split("\n")
-    #     paras = self._pre_filter(paras)
-    #     return paras
-
-    # def _pre_filter(self, paragraphs):
-    #     # sorted_paragraphs = sorted(paragraphs, key=lambda x: len(x))
-    #     # if len(sorted_paragraphs[-1]) < 10:
-    #     #     return []
-    #     ret = []
-    #     for item in paragraphs:
-    #         item = item.strip()
-    #         item = re.sub(r"\[\d+\]", "", item)
-    #         if len(item) < 50:
-    #             continue
-    #         if len(item) > 1200:
-    #             item = item[:1200] + "..."
-    #         ret.append(item)
-    #     return ret
-
     def get_parsed_text(self, url, raw_text=True):
         text =  self.results[url]['raw_text'] if raw_text else self.results[url]['parsed_text']
         return text
@@ -321,28 +288,65 @@ class Urls_Content_Retriever():
 
         return extracted_title, '\n'.join(extracted_text_list), extracted_content_list
 
-    # page.goto(url)的方式，速度很慢
-    # async def _legacy_get_page_content(self, url: str) -> str:
-    #     async with async_playwright() as p:
-    #         browser = await p.chromium.launch(headless=True)  # 你可以将 headless=True 改为 False 以查看浏览器操作
-    #         page = await browser.new_page()
-    #         await page.goto(url)
-    #         content = await page.content()  # 获取页面的 HTML 内容
-    #         await browser.close()
-    #
-    #         # 使用 BeautifulSoup 解析 HTML 并提取正文
-    #         soup = BeautifulSoup(content, 'html.parser')
-    #
-    #         # 提取正文内容
-    #         # 你可以根据实际情况调整选择器
-    #         body = soup.find('body')  # 获取页面的 <body> 内容
-    #         paragraphs = body.find_all('p') if body else []  # 获取所有 <p> 标签内容
-    #
-    #         # 将所有段落的文本合并成一个字符串
-    #         text_content = '\n'.join([p.get_text() for p in paragraphs])
-    #
-    #         return text_content
+    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50):
+        results = []
 
+        # 获得context
+        context = self.context_with_proxy if use_proxy else self.context
+
+        try:
+            # 进行搜索
+            page = await context.new_page()
+
+            # url = f"https://www.bing.com/search?q={query}&count={show_results_in_one_page}"
+            # await page.goto(url)
+            # # await page.wait_for_load_state('networkidle', timeout=2000)
+            # await page.wait_for_load_state('networkidle', timeout=Global.playwright_bing_search_time_out)
+            #
+            # # 解析搜索结果
+            # # print(f'page: {page}')
+            # search_results = await page.query_selector_all('.b_algo h2')
+            # # print(f'search_results: {search_results}')
+
+            # Loop through all required pages
+
+            pages_to_scrape = result_num // show_results_in_one_page +1
+            i=0
+            for page_num in range(0, pages_to_scrape):
+                start = page_num * show_results_in_one_page + 1
+                url = f"https://www.bing.com/search?q={query}&count={show_results_in_one_page}&first={start}"
+
+                await page.goto(url)
+                await page.wait_for_load_state('networkidle', timeout=show_results_in_one_page/30*Global.playwright_bing_search_time_out)
+
+                results_on_page = await page.query_selector_all('.b_algo h2 a')
+                for result in results_on_page:
+                    title = await result.inner_text()
+                    link = await result.get_attribute('href')
+                    if i < result_num:
+                        results.append({'title': title, 'url': link})
+                    i += 1
+
+        except Exception as e:
+            dred(f'get_bing_search_result() error: {e}')
+            return []
+
+        # i = 0
+        # for result in search_results:
+        #     i += 1
+        #     title = await result.inner_text()
+        #     a_tag = await result.query_selector('a')
+        #     if not a_tag: continue
+        #     url = await a_tag.get_attribute('href')
+        #     if not url:
+        #         continue
+        #
+        #     results.append({
+        #         'title': title,
+        #         'url': url
+        #     })
+
+        return results
 
 async def quick_get_url_text(url, use_proxy=False):
     urls_content_retriever = Urls_Content_Retriever()
@@ -375,6 +379,29 @@ async def quick_get_urls_text(urls, use_proxy=False, raw_text=True):
 
     await urls_content_retriever.close()
     return results_text_dict
+
+async def async_quick_get_bing_search_result(query,use_proxy=False, result_num=10, show_results_in_one_page=50):
+    urls_content_retriever = Urls_Content_Retriever()
+    await urls_content_retriever.init()
+
+    results = await urls_content_retriever.get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page)
+
+    await urls_content_retriever.close()
+    return results
+
+def quick_get_bing_search_result(query,use_proxy=False, result_num=10, show_results_in_one_page=50):
+    urls_content_retriever = Urls_Content_Retriever()
+    async def _quick_get_bing_search_result(query,use_proxy=False, result_num=result_num, show_results_in_one_page=50):
+        await urls_content_retriever.init()
+
+        results = await urls_content_retriever.get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page)
+
+        await urls_content_retriever.close()
+        return results
+
+
+    results = urls_content_retriever.loop.run_until_complete(_quick_get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page))
+    return results
 
 async def async_quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
     results_dict = {
@@ -440,7 +467,7 @@ url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe
 url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
 url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
 
-async def main():
+async def async_main():
     res_list = await async_quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
 
     print('links1:')
@@ -464,6 +491,16 @@ def sync_main():
     if url2 in res_list:
         for item in res_list[url2]:
             print(item)
+
+async def async_search_main():
+    results = await async_quick_get_bing_search_result(query='李白是谁？', use_proxy=False)
+    for item in results:
+        print(f"{item['title']}: {item['url']}")
+
+def sync_search_main():
+    results = quick_get_bing_search_result(query='霍去病', result_num=200, use_proxy=False)
+    for i, item in enumerate(results):
+        print(f"{i+1:>2d}) {item['title']}: {item['url']}")
 
 def bs4_test():
     from bs4 import BeautifulSoup
@@ -503,5 +540,9 @@ def bs4_test():
 
 if __name__ == '__main__':
     # sync_main()
-    asyncio.run(main())
+
+    sync_search_main()
+    # asyncio.run(async_search_main())
+
+    # asyncio.run(async_main())
     # bs4_test()
