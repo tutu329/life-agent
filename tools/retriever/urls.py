@@ -1,20 +1,37 @@
+import time
+
 import json5 as json
 import asyncio
 import re
 from typing import List
+from singleton import singleton
 
 from playwright.async_api import async_playwright   # playwright install
 from bs4 import BeautifulSoup, Tag                  # pip install playwright beautifulsoup4 lxml
+from dataclasses import dataclass, asdict, field
+from typing import Any
 
 from config import dred, dgreen, dblue, Global
 from tools.retriever.legacy_wrong_html2text import html2text
 from utils.url import remove_rightmost_path
+from utils.decorator import timer
 
+@dataclass
+class Url_Content_Parsed_Result():
+    status:Any = None
+    html_content:Any = None
+    title:Any = None
+    raw_text:Any = None             # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+    parsed_text:Any = None          # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
+    text_and_media_list:Any = None
+
+@singleton
 class Urls_Content_Retriever():
     def __init__(
             self,
-            in_use_proxy=False,
     ):
+        self.inited = False
+
         self.loop = None    # Urls实例对应的loop(主要用于win下streamlit等特定场景)
 
         self.async_playwright = None
@@ -23,9 +40,18 @@ class Urls_Content_Retriever():
 
         self.results = {}
 
-        self.use_proxy = in_use_proxy   # 使用v2ray代理
+        self.use_proxy = None   # 使用v2ray代理
 
-    async def init(self):
+    async def init(
+            self,
+            in_use_proxy=False,
+    ):
+        if self.inited:
+            return self
+
+
+        self.use_proxy = in_use_proxy
+
         print('启动chrome: await async_playwright().start()')
 
         p = await async_playwright().start()
@@ -59,10 +85,12 @@ class Urls_Content_Retriever():
         except Exception as e:
             dred(f"Error during browser initialization: {e}")
 
+        self.inited = True
         return self
 
-    async def __aenter__(self):
-        return await self.init()
+    async def __aenter__(self, in_use_proxy=False):
+        dgreen('__aenter__() try to init.')
+        return await self.init(in_use_proxy=in_use_proxy)
 
     async def __aexit__(
             self,
@@ -70,6 +98,7 @@ class Urls_Content_Retriever():
             exc_val,        # The exception instance itself.
             exc_tb          # The traceback object. （这三个参数必须写，否则报错：TypeError: Urls_Content_Retriever.__aexit__() takes 1 positional argument but 4 were given）
     ):
+        dgreen('__aexit__() try to close.')
         await self.close()
 
     async def close(self):
@@ -84,7 +113,7 @@ class Urls_Content_Retriever():
         # 封装异步任务
         tasks = []
         for url in urls:
-            tasks.append(asyncio.create_task(self._get_url_content(self.context, url)))
+            tasks.append(asyncio.create_task(self.parse_url_content(self.context, url)))
 
         await asyncio.wait(tasks, timeout=100)
 
@@ -113,8 +142,16 @@ class Urls_Content_Retriever():
             ret.append(item)
         return ret
 
-    # 获取url的html内容
-    async def _get_url_content(self, url, domain=None):
+    def get_parsed_text(self, url):
+        text =  self.results[url]['parsed_text']
+        return text
+
+    # 将url的text、img、video等内容解析出来
+    async def parse_url_content(
+            self,
+            url,
+            domain_name=None,   # 主要用于将img、video等资源的相对url合成为绝对url
+    ):
 
 
         dgreen(f'获取网页"{url}"的内容...')
@@ -129,18 +166,19 @@ class Urls_Content_Retriever():
             )
 
             html_content = await response.text()
-            # all_text = await self._html_to_text(html_content)
-            title, text, text_and_media_list = await self._get_text_and_media(html_content, url, domain=domain)
+            raw_text = await self._html_to_text(html_content)
+            title, parsed_text, text_and_media_list = await self._get_text_and_media(html_content, url, domain=domain_name)
             # print(f'text_media: {text_media}')
 
-            self.results[url] = {
-                'status': response.status,
-                'html_content': html_content,
-                'title': title,
-                # 'text': all_text,
-                'text': text,
-                'text_and_media_list': text_and_media_list,
-            }
+            result = Url_Content_Parsed_Result(
+                status=response.status,
+                html_content=html_content,
+                title=title,
+                raw_text=raw_text,              # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+                parsed_text=parsed_text,        # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
+                text_and_media_list=text_and_media_list,
+            )
+            self.results[url] = asdict(result)
 
         except Exception as e:
             dred(f'_get_url_content() error: {e}')
@@ -156,11 +194,12 @@ class Urls_Content_Retriever():
         # 提取正文内容
         # 你可以根据实际情况调整选择器
         body = soup.find('body')  # 获取页面的 <body> 内容
-        paragraphs = body.find_all('p') if body else []  # 获取所有 <p> 标签内容
+        # paragraphs = body.find_all('p') if body else []  # 获取所有 <p> 标签内容
 
-        # 将所有段落的文本合并成一个字符串
-        text_content = '\n'.join([p.get_text() for p in paragraphs])
-
+        # 获取body下完整的文本
+        # text_content = body.get_text(strip=True)
+        text_content = body.get_text(strip=False)
+        # print(f'text_content:{text_content}')
         return text_content
 
     async def _get_text_and_media(self, html, url, domain=None) -> list:
@@ -189,23 +228,17 @@ class Urls_Content_Retriever():
 
             # print(f'---------------element: {element}---------------')
             if isinstance(element, Tag):
-                # if element.name == 'p' and ([element.children]==[]):       # p为末端节点
-                if element.name == 'p' and (not element.find_all('span')) and (not element.find_all('span')):       # p为文本类型的末端节点
-                    text = element.get_text().strip() if element.get_text() not in not_needed else ''
-                    if text:
-                        extracted_content_list.append({'type': 'text-p', 'content':text})
-                        extracted_text_list.append(text)
-                # elif element.name == 'div' and (not element.find_all('p')) and (not element.find_all('span')):    # div标签下没有p标签的text
-                #     text = element.get_text().strip() if element.get_text() not in not_needed else ''
-                #     if text and (text not in not_needed):
-                #         extracted_content_list.append({'type': 'text-div', 'content':text})
-                #         extracted_text_list.append(text)
-                elif element.name == 'span' and (not element.find_all('p')) and (not element.find_all('span')):    # span为文本类型的末端节点
-                    text = element.get_text().strip() if element.get_text() not in not_needed else ''
-                    if text and (text not in not_needed):
-                        extracted_content_list.append({'type': 'text-span', 'content':text})
-                        extracted_text_list.append(text)
-                elif element.name == 'img':
+                if element.name == 'div' or element.name == 'p' or element.name == 'span':
+                    text = ''
+                    try:
+                        text = next(element.strings).strip()    # 获取<div>、<p>、<span>等标签后面的文本，但可能获取到<div><p>text1</p></div>的<div>的text1，导致div和p重复获取text1
+                    except StopIteration:
+                        pass
+                    finally:
+                        if text and (not element.find_all('p')) and (not element.find_all('span')):
+                            extracted_content_list.append({'type': element.name, 'content':text})
+                            extracted_text_list.append(text)
+                if element.name == 'img':
                     # print(f'---------------img element: {element}---------------')
                     # src的图片
                     img_src = element.get('src')
@@ -283,27 +316,102 @@ class Urls_Content_Retriever():
     #         text_content = '\n'.join([p.get_text() for p in paragraphs])
     #
     #         return text_content
+
+urls_content_retriever = Urls_Content_Retriever()
+
+async def quick_get_url_text(url, in_use_proxy=False):
+    await urls_content_retriever.init(in_use_proxy=in_use_proxy)
+
+    await urls_content_retriever.parse_url_content(url)
+    return urls_content_retriever.get_parsed_text(url)
+
+async def quick_get_urls_text(urls, in_use_proxy=False):
+    results_text_dict = {
+        # 'url': text
+    }
+
+    tasks = []
+    await urls_content_retriever.init(in_use_proxy=in_use_proxy)
+
+    async def _get_url_text(url, in_use_proxy=False):
+        await urls_content_retriever.parse_url_content(url)
+        results_text_dict[url] = urls_content_retriever.get_parsed_text(url)
+
+    for url in urls:
+        tasks.append(asyncio.create_task(_get_url_text(url, in_use_proxy=in_use_proxy)))
+
+    await asyncio.wait(tasks, timeout=3000)
+
+    return results_text_dict
+
 async def main():
     # url = 'https://www.xvideos.com/tags/porn'
     # domain = 'https://www.xvideos.com'
     # url = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
     # url = 'https://www.xvideos.com/tags/porn'
-    url = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
-    # url = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
-    # url = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
-    # url = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
-    # url = 'http://www.news.cn/politics/xxjxs/index.htm'
+    # url = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
+    url1 = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
+    url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
+    url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
+    url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
+
+    # txt1 = await quick_get_url_text(url1)
+    # txt2 = await quick_get_url_text(url2)
+    # print(txt1)
+    # print(txt2)
+
+    results = await quick_get_urls_text([url1, url2])
+    print(results[url1])
+    print(results[url2])
 
     # async with Urls_Content_Retriever(in_use_proxy=False) as r:
-    async with Urls_Content_Retriever(in_use_proxy=True) as r:
-        await r._get_url_content(url)
+    # # async with Urls_Content_Retriever(in_use_proxy=True) as r:
+    #     await r.parse_url_content(url)
+    #     print(r.get_parsed_text(url))
 
-        data_list = r.results[url]["text_and_media_list"]
-        txt = r.results[url]["text"]
-        for item in data_list:
-            print(item)
-        print(txt)
+        # data_list = r.results[url]["text_and_media_list"]
+        # for item in data_list:
+        #     print(item)
+        # print(r.results[url]["raw_text"])
 
+        # print(r.results[url]["parsed_text"])
+
+def bs4_test():
+    from bs4 import BeautifulSoup
+
+    html = '''<div><p>This is a paragraph1.</p>
+    <p>This is a paragraph2.</p>
+    <p>This is a paragraph3.</p>
+    <p>This is a paragraph4.</p>
+    And some more text.
+</div>
+'''
+
+    soup = BeautifulSoup(html, 'html.parser')
+    div = soup.div
+
+    print('[origin]')
+    print(f"'{html}'")
+
+    # 方法 1
+    print('[1]')
+    print(div.string)  # 这会返回 None，因为 div 有多个子节点
+    print(f'{next(div.strings).strip()!r}')  # 这会返回 None，因为 div 有多个子节点
+    # print('text'!r)
+
+    # 方法 2
+    print('[2]')
+    print(f'"{div.get_text(strip=True)}"')
+    print(f'"{div.get_text(strip=False)}"')
+
+    # 方法 3
+    print('[3]')
+    print(''.join(child for child in div.contents if isinstance(child, str)).strip())
+
+    # 方法 4
+    print('[4]')
+    print(' '.join(div.find_all(text=True, recursive=False)).strip())
 
 if __name__ == '__main__':
     asyncio.run(main())
+    # bs4_test()
