@@ -25,7 +25,7 @@ class Url_Content_Parsed_Result():
     parsed_text:Any = None          # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
     text_and_media_list:Any = None
 
-@singleton
+# @singleton
 class Urls_Content_Retriever():
     def __init__(
             self,
@@ -44,13 +44,9 @@ class Urls_Content_Retriever():
 
     async def init(
             self,
-            in_use_proxy=False,
     ):
         if self.inited:
             return self
-
-
-        self.use_proxy = in_use_proxy
 
         print('启动chrome: await async_playwright().start()')
 
@@ -61,25 +57,25 @@ class Urls_Content_Retriever():
 
         try:
             # 启动浏览器
-            if self.use_proxy:
-                dred(f'playwright启动代理: "{Global.playwright_proxy}".')
+            # if self.use_proxy:
+            dred(f'playwright启动 browser-with-proxy: "{Global.playwright_proxy}".')
 
-                self.browser = await p.chromium.launch(
-                    channel="chrome",
-                    headless=True,
-                    proxy=Global.playwright_proxy   # 关于win下报错：A "socket" was not created for HTTP request before 3000ms，查看internet选项的局域网设置中的代理服务器设置，port和该设置一致就行，如shadowsocket是10809而非10808
-                )   # 启动chrome
+            self.browser_with_proxy = await p.chromium.launch(
+                channel="chrome",
+                headless=True,
+                proxy=Global.playwright_proxy   # 关于win下报错：A "socket" was not created for HTTP request before 3000ms，查看internet选项的局域网设置中的代理服务器设置，port和该设置一致就行，如shadowsocket是10809而非10808
+            )   # 启动chrome
+            self.context_with_proxy = await self.browser_with_proxy.new_context()
 
-            else:
-                dgreen('playwright未启动代理.')
+            # else:
+            dred('playwright启动普通browser.')
 
-                self.browser = await p.chromium.launch(
-                    channel="chrome",
-                    headless=True
-                )   # 启动chrome
+            self.browser = await p.chromium.launch(
+                channel="chrome",
+                headless=True
+            )   # 启动chrome
 
             self.context = await self.browser.new_context()
-
 
             print('playwright启动完毕, context已获得.')
         except Exception as e:
@@ -88,9 +84,9 @@ class Urls_Content_Retriever():
         self.inited = True
         return self
 
-    async def __aenter__(self, in_use_proxy=False):
+    async def __aenter__(self):
         dgreen('__aenter__() try to init.')
-        return await self.init(in_use_proxy=in_use_proxy)
+        return await self.init()
 
     async def __aexit__(
             self,
@@ -104,43 +100,47 @@ class Urls_Content_Retriever():
     async def close(self):
         if self.context:
             await self.context.close()
+        if self.context_with_proxy:
+            await self.context_with_proxy.close()
         if self.browser:
             await self.browser.close()
+        if self.browser_with_proxy:
+            await self.browser_with_proxy.close()
         if self.async_playwright:
             await self.async_playwright.stop()  # 如果没有stop，会报错：ValueError: I/O operation on closed pipe
 
-    async def _get_raw_pages(self, urls):
-        # 封装异步任务
-        tasks = []
-        for url in urls:
-            tasks.append(asyncio.create_task(self.parse_url_content(self.context, url)))
+    # async def _get_raw_pages(self, urls):
+    #     # 封装异步任务
+    #     tasks = []
+    #     for url in urls:
+    #         tasks.append(asyncio.create_task(self.parse_url_content(self.context, url)))
+    #
+    #     await asyncio.wait(tasks, timeout=100)
+    #
+    #     return self.results
 
-        await asyncio.wait(tasks, timeout=100)
+    # def _html_2_text_paras(self, html: str) -> List[str]:
+    #     if html is None:
+    #         return []
+    #
+    #     paras = html2text(html).split("\n")
+    #     paras = self._pre_filter(paras)
+    #     return paras
 
-        return self.results
-
-    def _html_2_text_paras(self, html: str) -> List[str]:
-        if html is None:
-            return []
-
-        paras = html2text(html).split("\n")
-        paras = self._pre_filter(paras)
-        return paras
-
-    def _pre_filter(self, paragraphs):
-        # sorted_paragraphs = sorted(paragraphs, key=lambda x: len(x))
-        # if len(sorted_paragraphs[-1]) < 10:
-        #     return []
-        ret = []
-        for item in paragraphs:
-            item = item.strip()
-            item = re.sub(r"\[\d+\]", "", item)
-            if len(item) < 50:
-                continue
-            if len(item) > 1200:
-                item = item[:1200] + "..."
-            ret.append(item)
-        return ret
+    # def _pre_filter(self, paragraphs):
+    #     # sorted_paragraphs = sorted(paragraphs, key=lambda x: len(x))
+    #     # if len(sorted_paragraphs[-1]) < 10:
+    #     #     return []
+    #     ret = []
+    #     for item in paragraphs:
+    #         item = item.strip()
+    #         item = re.sub(r"\[\d+\]", "", item)
+    #         if len(item) < 50:
+    #             continue
+    #         if len(item) > 1200:
+    #             item = item[:1200] + "..."
+    #         ret.append(item)
+    #     return ret
 
     def get_parsed_text(self, url):
         text =  self.results[url]['parsed_text']
@@ -150,6 +150,7 @@ class Urls_Content_Retriever():
     async def parse_url_content(
             self,
             url,
+            use_proxy=False,
             domain_name=None,   # 主要用于将img、video等资源的相对url合成为绝对url
     ):
 
@@ -159,9 +160,10 @@ class Urls_Content_Retriever():
 
         try:
             self.results[url] = [None, None]
-            response = await self.context.request.get(
+
+            context = self.context_with_proxy if use_proxy else self.context
+            response = await context.request.get(
                 url,
-                # proxies=proxies,
                 timeout=Global.playwright_get_url_content_time_out,
             )
 
@@ -317,31 +319,37 @@ class Urls_Content_Retriever():
     #
     #         return text_content
 
-urls_content_retriever = Urls_Content_Retriever()
 
-async def quick_get_url_text(url, in_use_proxy=False):
-    await urls_content_retriever.init(in_use_proxy=in_use_proxy)
+async def quick_get_url_text(url, use_proxy=False):
+    urls_content_retriever = Urls_Content_Retriever()
+    await urls_content_retriever.init()
 
-    await urls_content_retriever.parse_url_content(url)
-    return urls_content_retriever.get_parsed_text(url)
+    await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
 
-async def quick_get_urls_text(urls, in_use_proxy=False):
+    result_text =  urls_content_retriever.get_parsed_text(url)
+    await urls_content_retriever.close()
+
+    return result_text
+
+async def quick_get_urls_text(urls, use_proxy=False):
     results_text_dict = {
         # 'url': text
     }
 
     tasks = []
-    await urls_content_retriever.init(in_use_proxy=in_use_proxy)
+    urls_content_retriever = Urls_Content_Retriever()
+    await urls_content_retriever.init()
 
-    async def _get_url_text(url, in_use_proxy=False):
-        await urls_content_retriever.parse_url_content(url)
+    async def _get_url_text(url, use_proxy=False):
+        await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
         results_text_dict[url] = urls_content_retriever.get_parsed_text(url)
 
     for url in urls:
-        tasks.append(asyncio.create_task(_get_url_text(url, in_use_proxy=in_use_proxy)))
+        tasks.append(asyncio.create_task(_get_url_text(url, use_proxy=use_proxy)))
 
     await asyncio.wait(tasks, timeout=3000)
 
+    await urls_content_retriever.close()
     return results_text_dict
 
 async def main():
@@ -349,18 +357,19 @@ async def main():
     # domain = 'https://www.xvideos.com'
     # url = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
     # url = 'https://www.xvideos.com/tags/porn'
-    # url = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
+    # url1 = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
     url1 = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
     url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
     url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
 
-    # txt1 = await quick_get_url_text(url1)
+    # txt1 = await quick_get_url_text(url1, use_proxy=True)
     # txt2 = await quick_get_url_text(url2)
     # print(txt1)
     # print(txt2)
 
-    results = await quick_get_urls_text([url1, url2])
+    results = await quick_get_urls_text([url1, url2], use_proxy=False)
+    # results = await quick_get_urls_text([url1, url2], use_proxy=True)
     print(results[url1])
     print(results[url2])
 
