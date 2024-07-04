@@ -65,7 +65,7 @@ class Global():
         "server": "http://127.0.0.1:10809", # windows
         # "server": "http://127.0.0.1:7890",
     }
-    playwright_get_url_content_time_out = 3000          # 超时设置ms
+    playwright_get_url_content_time_out = 5000          # 超时设置ms
     playwright_url_content_not_needed = ['\xa0', '']    # 获取url内容时，不需要的内容
 
     ddgs_proxies = {

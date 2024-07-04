@@ -28,6 +28,8 @@ from streamlit.web.server.websocket_headers import _get_websocket_headers
 from utils.extract import get_ajs_anonymous_id_from_cookie
 import pickle
 
+from tools.retriever.urls import quick_get_url_text
+
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
 # 配置(必须第一个调用)
@@ -633,6 +635,7 @@ def ask_llm(prompt, paras):
             # 如果填了url
             searcher = Bing_Searcher.create_searcher_and_loop()
             result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
+            # result = await quick_get_url_text(url_prompt)
             all_prompt = f'请严格根据URL(网页链接)返回的内容回答问题, URL(网页链接)返回的具体内容为: \n#############################################\n"{result}"\n#############################################\n'
             mem_llm.set_role_prompt(all_prompt)
 

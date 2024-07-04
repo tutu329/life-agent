@@ -5,6 +5,7 @@ import asyncio
 import re
 from typing import List
 from singleton import singleton
+import platform
 
 from playwright.async_api import async_playwright   # playwright install
 from bs4 import BeautifulSoup, Tag                  # pip install playwright beautifulsoup4 lxml
@@ -49,6 +50,17 @@ class Urls_Content_Retriever():
         if self.inited:
             return self
 
+        # 初始化loop环境
+        if platform.system() == 'Windows':
+            # 如果为win环境
+            print(f'设置asyncio.get_event_loop_policy()之前: {type(asyncio.get_event_loop_policy())}')
+            from asyncio import (WindowsProactorEventLoopPolicy)
+            asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
+            print(f'设置asyncio.get_event_loop_policy()之后: {type(asyncio.get_event_loop_policy())}')
+
+        self.loop = asyncio.new_event_loop()
+        # 后续可以self.run_async(some_async_func())
+
         print('启动chrome: await async_playwright().start()')
 
         p = await async_playwright().start()
@@ -84,6 +96,10 @@ class Urls_Content_Retriever():
 
         self.inited = True
         return self
+
+    # 同步环境下运行async调用
+    def run_async(self, async_func):
+        self.loop.run_until_complete(async_func())
 
     async def __aenter__(self):
         dgreen('__aenter__() try to init.')
@@ -357,7 +373,7 @@ async def quick_get_urls_text(urls, use_proxy=False, raw_text=True):
     for url in urls:
         tasks.append(asyncio.create_task(_get_url_text(url, use_proxy=use_proxy)))
 
-    await asyncio.wait(tasks, timeout=3000)
+    await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
 
     await urls_content_retriever.close()
     return results_text_dict
@@ -378,7 +394,7 @@ async def quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 't
     for url in urls:
         tasks.append(asyncio.create_task(_get_url_res(url, use_proxy=use_proxy)))
 
-    await asyncio.wait(tasks, timeout=3000)
+    await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
 
     await urls_content_retriever.close()
     return results_dict
