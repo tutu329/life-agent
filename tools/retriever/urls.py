@@ -14,6 +14,7 @@ from typing import Any
 from config import dred, dgreen, dblue, Global
 from tools.retriever.legacy_wrong_html2text import html2text
 from utils.url import remove_rightmost_path
+from utils.url import get_domain
 from utils.decorator import timer
 
 @dataclass
@@ -23,7 +24,7 @@ class Url_Content_Parsed_Result():
     title:Any = None
     raw_text:Any = None             # 通过body.get_text()获得的全部text，肯定正确，但没有换行
     parsed_text:Any = None          # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
-    text_and_media_list:Any = None
+    text_and_media_list:Any = None  # 'type'为 'image' | 'video' | 'text'
 
 # @singleton
 class Urls_Content_Retriever():
@@ -146,12 +147,19 @@ class Urls_Content_Retriever():
         text =  self.results[url]['raw_text'] if raw_text else self.results[url]['parsed_text']
         return text
 
+    def get_parsed_resource_list(self, url, res_type_list=['video', 'image', 'text']):
+        res_list =  self.results[url]['text_and_media_list']
+        rtn_list = []
+        for item in res_list:
+            if item['type'] in res_type_list:
+                rtn_list.append(item)
+        return rtn_list
+
     # 将url的text、img、video等内容解析出来
     async def parse_url_content(
             self,
             url,
             use_proxy=False,
-            domain_name=None,   # 主要用于将img、video等资源的相对url合成为绝对url
     ):
 
 
@@ -169,7 +177,7 @@ class Urls_Content_Retriever():
 
             html_content = await response.text()
             raw_text = await self._html_to_text(html_content)
-            title, parsed_text, text_and_media_list = await self._get_text_and_media(html_content, url, domain=domain_name)
+            title, parsed_text, text_and_media_list = await self._get_text_and_media(html_content, url)
             # print(f'text_media: {text_media}')
 
             result = Url_Content_Parsed_Result(
@@ -206,7 +214,7 @@ class Urls_Content_Retriever():
         # print(f'text_content:{text_content}')
         return text_content
 
-    async def _get_text_and_media(self, html, url, domain=None) -> list:
+    async def _get_text_and_media(self, html, url) -> list:
         # 使用 BeautifulSoup 解析 HTML 并提取正文
         soup = BeautifulSoup(html, 'html.parser')
 
@@ -240,7 +248,7 @@ class Urls_Content_Retriever():
                         pass
                     finally:
                         if text and (not element.find_all('p')) and (not element.find_all('span')):
-                            extracted_content_list.append({'type': element.name, 'content':text})
+                            extracted_content_list.append({'type': 'text', 'raw_type':element.name, 'content':text})
                             extracted_text_list.append(text)
                 if element.name == 'img':
                     # print(f'---------------img element: {element}---------------')
@@ -248,20 +256,20 @@ class Urls_Content_Retriever():
                     img_src = element.get('src')
                     if img_src:
                         if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
-                            img_src = f"{domain}/{img_src.lstrip('/')}"
-                        extracted_content_list.append({'type': 'img-src', 'content': img_src})
+                            img_src = f"{get_domain(url)}/{img_src.lstrip('/')}"
+                        extracted_content_list.append({'type': 'image', 'raw_type':'src', 'content': img_src})
                     # data-src的图片
                     img_src = element.get('data-src')
                     if img_src:
                         if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
                             img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
-                        extracted_content_list.append({'type': 'img-data-src', 'content': img_src})
+                        extracted_content_list.append({'type': 'image', 'raw_type':'data-src', 'content': img_src})
                 elif element.name == 'video':
-                    print(f'---------------video element: {element}---------------')
+                    # print(f'---------------video element: {element}---------------')
                     src = element.get('src')
                     if src:
                         if not src.startswith(('http://', 'https://')):  # 如果是相对路径，将其转换为绝对路径
-                            src = f"{domain}/{src.lstrip('/')}"
+                            src = f"{get_domain(url)}/{src.lstrip('/')}"
                         extracted_content_list.append({'type': 'video', 'content': src})
                     else:
                         # 查找 <source> 标签中的视频链接
@@ -272,9 +280,9 @@ class Urls_Content_Retriever():
                 elif element.name == 'a':
                     src = element.get('href')
                     if src and ('mp4' in src or 'video' in src):
-                        print(f'---------------video element: {element}---------------')
+                        # print(f'---------------video element: {element}---------------')
                         if not src.startswith(('http://', 'https://')):  # 如果是相对路径，将其转换为绝对路径
-                            src = f"{domain}/{src.lstrip('/')}"
+                            src = f"{get_domain(url)}/{src.lstrip('/')}"
                         extracted_content_list.append({'type': 'video', 'content': src})
                     else:
                         # 查找 <source> 标签中的视频链接
@@ -354,38 +362,45 @@ async def quick_get_urls_text(urls, use_proxy=False, raw_text=True):
     await urls_content_retriever.close()
     return results_text_dict
 
+async def quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
+    results_dict = {
+        # 'url': res_list
+    }
+
+    tasks = []
+    urls_content_retriever = Urls_Content_Retriever()
+    await urls_content_retriever.init()
+
+    async def _get_url_res(url, use_proxy=False):
+        await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
+        results_dict[url] = urls_content_retriever.get_parsed_resource_list(url, res_type_list=res_type_list)
+
+    for url in urls:
+        tasks.append(asyncio.create_task(_get_url_res(url, use_proxy=use_proxy)))
+
+    await asyncio.wait(tasks, timeout=3000)
+
+    await urls_content_retriever.close()
+    return results_dict
+
 async def main():
-    # url = 'https://www.xvideos.com/tags/porn'
-    # domain = 'https://www.xvideos.com'
-    # url = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
-    # url = 'https://www.xvideos.com/tags/porn'
-    # url1 = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
+    surl1 = 'https://www.xvideos.com/tags/porn'
+    surl2 = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
+    surl3 = 'https://www.xvideos.com/tags/porn'
+    surl4 = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
     url1 = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
     url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
     url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
 
-    # txt1 = await quick_get_url_text(url1, use_proxy=True)
-    # txt2 = await quick_get_url_text(url2)
-    # print(txt1)
-    # print(txt2)
+    res_list = await quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
 
-    # results = await quick_get_urls_text([url1, url2], use_proxy=True, raw_text=True)
-    results = await quick_get_urls_text([url1, url2], use_proxy=False, raw_text=False)
-    print(results[url1])
-    print(results[url2])
-
-    # async with Urls_Content_Retriever(in_use_proxy=False) as r:
-    # # async with Urls_Content_Retriever(in_use_proxy=True) as r:
-    #     await r.parse_url_content(url)
-    #     print(r.get_parsed_text(url))
-
-        # data_list = r.results[url]["text_and_media_list"]
-        # for item in data_list:
-        #     print(item)
-        # print(r.results[url]["raw_text"])
-
-        # print(r.results[url]["parsed_text"])
+    print('links1:')
+    for item in res_list[surl1]:
+        print(item)
+    print('links2:')
+    for item in res_list[url2]:
+        print(item)
 
 def bs4_test():
     from bs4 import BeautifulSoup
