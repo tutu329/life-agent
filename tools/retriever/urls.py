@@ -34,8 +34,6 @@ class Urls_Content_Retriever():
     ):
         self.inited = False
 
-        self.loop = None    # Urls实例对应的loop(主要用于win下streamlit等特定场景)
-
         self.async_playwright = None
         self.browser = None
         self.context = None
@@ -43,12 +41,6 @@ class Urls_Content_Retriever():
         self.results = {}
 
         self.use_proxy = None   # 使用v2ray代理
-
-    async def init(
-            self,
-    ):
-        if self.inited:
-            return self
 
         # 初始化loop环境
         if platform.system() == 'Windows':
@@ -58,8 +50,15 @@ class Urls_Content_Retriever():
             asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
             print(f'设置asyncio.get_event_loop_policy()之后: {type(asyncio.get_event_loop_policy())}')
 
+        # Urls实例对应的loop(主要用于win下streamlit等特定场景), 后续可以self.loop.run_until_complete(some_async_func(arg1, arg2, ...))
+        # self.loop = asyncio.get_event_loop()
         self.loop = asyncio.new_event_loop()
-        # 后续可以self.run_async(some_async_func())
+
+    async def init(
+            self,
+    ):
+        if self.inited:
+            return self
 
         print('启动chrome: await async_playwright().start()')
 
@@ -96,10 +95,6 @@ class Urls_Content_Retriever():
 
         self.inited = True
         return self
-
-    # 同步环境下运行async调用
-    def run_async(self, async_func):
-        self.loop.run_until_complete(async_func())
 
     async def __aenter__(self):
         dgreen('__aenter__() try to init.')
@@ -177,8 +172,6 @@ class Urls_Content_Retriever():
             url,
             use_proxy=False,
     ):
-
-
         dgreen(f'获取网页"{url}"的内容...')
         response = None
 
@@ -205,13 +198,18 @@ class Urls_Content_Retriever():
                 text_and_media_list=text_and_media_list,
             )
             self.results[url] = asdict(result)
-
         except Exception as e:
             dred(f'_get_url_content() error: {e}')
-            if response is not None:
-                self.results[url] = (response.status, '')
-            else:
-                self.results[url] = (404, '获取网页内容失败.')
+            status = response.status if response is not None else 404
+            result = Url_Content_Parsed_Result(
+                status=status,
+                html_content='',
+                title='',
+                raw_text='',                # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+                parsed_text='',             # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
+                text_and_media_list=[],
+            )
+            self.results[url] = asdict(result)
 
     async def _html_to_text(self, html):
         # 使用 BeautifulSoup 解析 HTML 并提取正文
@@ -378,7 +376,7 @@ async def quick_get_urls_text(urls, use_proxy=False, raw_text=True):
     await urls_content_retriever.close()
     return results_text_dict
 
-async def quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
+async def async_quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
     results_dict = {
         # 'url': res_list
     }
@@ -398,25 +396,73 @@ async def quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 't
 
     await urls_content_retriever.close()
     return results_dict
+def quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
+    urls_content_retriever = Urls_Content_Retriever()
+
+    async def _quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
+        # dgreen(f'urls: {urls}')
+        # dgreen(f'res_type_list: {res_type_list}')
+        # dgreen(f'use_proxy: {use_proxy}')
+        results_dict = {
+            # 'url': res_list
+        }
+
+        tasks = []
+        await urls_content_retriever.init()
+
+        async def _get_url_res(url, use_proxy=False):
+            await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
+            results_dict[url] = urls_content_retriever.get_parsed_resource_list(url, res_type_list=res_type_list)
+
+        for url in urls:
+            tasks.append(asyncio.create_task(_get_url_res(url, use_proxy=use_proxy)))
+
+        await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
+
+        await urls_content_retriever.close()
+        return results_dict
+
+    # print(f'urls: {urls}')
+    # print(f'res_type_list: {res_type_list}')
+    # print(f'use_proxy: {use_proxy}')
+    results_dict = urls_content_retriever.loop.run_until_complete(_quick_get_urls_resource_list(urls, res_type_list, use_proxy))
+    # print(f'results_dict: {results_dict}')
+
+    return results_dict
+
+surl1 = 'https://www.xvideos.com/tags/porn'
+surl2 = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
+surl3 = 'https://www.xvideos.com/tags/porn'
+surl4 = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
+url1 = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
+url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
+url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
+url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
 
 async def main():
-    surl1 = 'https://www.xvideos.com/tags/porn'
-    surl2 = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
-    surl3 = 'https://www.xvideos.com/tags/porn'
-    surl4 = 'https://cn.nytimes.com/opinion/20230214/have-more-sex-please/'
-    url1 = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
-    url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
-    url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
-    url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
-
-    res_list = await quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
+    res_list = await async_quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
 
     print('links1:')
-    for item in res_list[surl1]:
-        print(item)
+    if surl1 in res_list:
+        for item in res_list[surl1]:
+            print(item)
     print('links2:')
-    for item in res_list[url2]:
-        print(item)
+    if url2 in res_list:
+        for item in res_list[url2]:
+            print(item)
+
+def sync_main():
+    res_list = quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
+    # res_list = await quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
+
+    print('links1:')
+    if surl1 in res_list:
+        for item in res_list[surl1]:
+            print(item)
+    print('links2:')
+    if url2 in res_list:
+        for item in res_list[url2]:
+            print(item)
 
 def bs4_test():
     from bs4 import BeautifulSoup
@@ -455,5 +501,6 @@ def bs4_test():
     print(' '.join(div.find_all(text=True, recursive=False)).strip())
 
 if __name__ == '__main__':
+    # sync_main()
     asyncio.run(main())
     # bs4_test()
