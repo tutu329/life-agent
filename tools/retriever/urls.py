@@ -316,8 +316,10 @@ class Urls_Content_Retriever():
                 start = page_num * show_results_in_one_page + 1
                 url = f"https://www.bing.com/search?q={query}&count={show_results_in_one_page}&first={start}"
 
+                timeout = show_results_in_one_page/30*Global.playwright_bing_search_time_out
+                print(f'try to goto page: "{url}" with use_proxy: {use_proxy} with timeout:{timeout}')
                 await page.goto(url)
-                await page.wait_for_load_state('networkidle', timeout=show_results_in_one_page/30*Global.playwright_bing_search_time_out)
+                await page.wait_for_load_state('networkidle', timeout=timeout)
 
                 results_on_page = await page.query_selector_all('.b_algo h2 a')
                 for result in results_on_page:
@@ -498,11 +500,11 @@ async def async_search_main():
         print(f"{item['title']}: {item['url']}")
 
 def sync_search_main():
-    results = quick_get_bing_search_result(query='霍去病', result_num=200, use_proxy=False)
-    results = [item['url'] for item in results]
+    results = quick_get_bing_search_result(query='porn', result_num=50, use_proxy=True)
+    # results = [item['url'] for item in results]
     for i, item in enumerate(results):
-        print(f"{i+1:>2d}) {item}")
-        # print(f"{i+1:>2d}) {item['title']}: {item['url']}")
+        # print(f"{i+1:>2d}) {item}")
+        print(f"{i+1:>2d}) {item['title']}: {item['url']}")
 
 def bs4_test():
     from bs4 import BeautifulSoup

@@ -8,8 +8,8 @@ import config
 from config import dred, dgreen, dblue, dcyan
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
-from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
-from agent.tool_agent import Tool_Agent
+# from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
+# from agent.tool_agent import Tool_Agent
 from tools.t2i.api_client_comfy import Comfy, Work_Flow_Type
 
 import time
@@ -27,6 +27,8 @@ from streamlit import runtime
 from streamlit.web.server.websocket_headers import _get_websocket_headers
 from utils.extract import get_ajs_anonymous_id_from_cookie
 import pickle
+
+from tools.retriever.urls import quick_get_urls_resource_list, quick_get_bing_search_result
 
 from tools.retriever.urls import quick_get_url_text
 
@@ -389,6 +391,354 @@ def agent_init():
     # agent.init()
 
 @timer
+# def ask_llm(prompt, paras):
+#     role_prompt = paras['role_prompt']
+#     url_prompt = paras['url_prompt']
+#     connecting_internet = paras['connecting_internet']
+#     draw = paras['draw']
+#     is_agent = paras['is_agent']
+#     system_prompt = paras['system_prompt']
+#     files = paras['files']
+# # def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
+#     # =================================agent功能=================================
+#     if draw:
+#
+#         answer = draw_llm.ask_prepare(
+#             in_question=f'''
+# 请将描述"{prompt}"转换为stable diffusion的英文的出图提示词，返回的提示词风格如下（注意必须全部为英文，且只返回引号内的内容）:
+# "Energetic (puppy playing in a water fountain:1.5) in a (lively urban park:1.4), with (splashing water droplets:1.4) and (amused onlookers:1.3), intricate details, (vibrant blue and green tones:1.4), (joyful playful atmosphere:1.5), (bright sunny daylight:1.4), high-definition, sharp focus, perfect composition, (modern photography:1.5) (smartphone camera:1.5) (social media post:1.5)"
+# ''',
+#             in_temperature=st.session_state.session_data['paras']['local_llm_temperature'],
+#             in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
+#             in_system_prompt=system_prompt,
+#         ).get_answer_and_sync_print()
+#         place_holder = st.chat_message('assistant').empty()
+#         place_holder.markdown(answer)
+#
+#         client = Comfy()
+#         client.set_server_address('192.168.124.33:7869')
+#         client.set_workflow_type(Work_Flow_Type.simple)
+#         client.set_simple_work_flow(
+#             positive=answer,
+#             negative='low quality, low res, bad face, bad hands, ugly, bad fingers, bad legs, text, watermark',
+#             # seed=seed,
+#             ckpt_name='sdxl_lightning_2step.safetensors',
+#             height=1024,
+#             width=1024,
+#             batch_size=2,
+#         )
+#         images = client.get_images()
+#         rtn_images_data = {
+#             'type':'pics',
+#             'data':[]
+#         }
+#         one_image_data = {
+#             'caption':'',
+#             'data':None,
+#         }
+#
+#         for node_id in images:
+#             for image_data in images[node_id]:
+#                 from PIL import Image
+#                 import io
+#                 image = Image.open(io.BytesIO(image_data))
+#                 place_holder.image(image, caption=prompt, use_column_width=True)
+#
+#                 # 一张图的标题和data
+#                 one_image_data['caption'] = prompt
+#                 one_image_data['data'] = image
+#
+#                 # list添加新图
+#                 rtn_images_data['data'].append(copy.deepcopy(one_image_data))
+#
+#                 # image.save(f'{self.temp_dir}/{self.client_id}_{i}.jpg')
+#         # client.save_images_to_temp_dir()
+#         return None, None, answer, rtn_images_data
+#
+#     if is_agent:
+#         final_answer_list = []
+#         status_data = {
+#             'type':'status',
+#             'title':'Agent',
+#             'status_list':[],
+#         }
+#         status = st.status(label=":green[Agent]", expanded=True)
+#         status.markdown('任务(ReAct模式)已启动...')
+#
+#         assistant = st.chat_message('assistant')
+#         placeholder1 = assistant.empty()
+#
+#         # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1/')
+#         tools = [Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
+#         print(f'工具: [')
+#         for tool in tools:
+#             print(tool.name+', ')
+#         print(f'] 已加载.')
+#         agent = Tool_Agent(
+#             in_query=prompt,
+#             in_tool_classes=tools,
+#             inout_status_list=status_data['status_list'],
+#             in_status_stream_buf=status.markdown,
+#             inout_output_list=final_answer_list,
+#             in_output_stream_buf=placeholder1.markdown,
+#         )
+#         agent.init()
+#         success = agent.run()
+#         print(f'final_answer_list: {final_answer_list}')
+#         status_list = status_data["status_list"]
+#         print(f'status_list: {status_list}')
+#
+#         status.update(label=f":green[Agent已完成任务]", state='complete', expanded=True)
+#         return status_data, None, '\n'.join(final_answer_list), None
+#     # if is_agent:
+#     #     final_answer = ''
+#     #     status_data = {
+#     #         'type':'status',
+#     #         'title':'调用Agent',
+#     #         'status_list':[],
+#     #     }
+#     #     status = st.status(label=":green[Agent已启动...]", expanded=True)
+#     #
+#     #     assistant = st.chat_message('assistant')
+#     #     placeholder1 = assistant.empty()
+#     #
+#     #     status_data['status_list'].append("搜索引擎bing.com调用中...")
+#     #     status.markdown(status_data['status_list'][-1])
+#     #     searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=placeholder1.markdown)
+#     #
+#     #     # flicker1 = Flicker_Task(in_stream_buf_callback=placeholder1.markdown)
+#     #     # flicker1.init(in_streamlit=True).start()
+#     #     status_data['status_list'].append("搜索结果已返回, 尝试解读中...")
+#     #     status.markdown(status_data['status_list'][-1])
+#     #     gen = searcher.search_and_ask_yield(prompt, in_max_new_tokens=1024)
+#     #     status_data['status_list'].append("搜索引擎bing.com调用中...")
+#     #     status.markdown(status_data['status_list'][-1])
+#     #     for res in gen:
+#     #         chunk = res['response']
+#     #         if res['response_type']=='debug':
+#     #             status_data['status_list'].append(chunk)
+#     #             status.markdown(status_data['status_list'][-1])
+#     #         elif res['response_type']=='final':
+#     #             final_answer += chunk
+#     #             placeholder1.markdown(final_answer)
+#     #         # placeholder1.markdown(final_answer + flicker1.get_flicker())
+#     #     # flicker1.set_stop()
+#     #     status.update(label=f":green[Agent调用完毕]", state='complete', expanded=True)
+#     #     return status_data, None, final_answer, None
+#     # =================================搜索并llm=================================
+#     if connecting_internet:
+#         # =================================搜索=================================
+#         status = st.status(label=":green[启动联网解读任务...]", expanded=False)
+#         status.markdown("搜索引擎bing.com调用中...")
+#         assistant = st.chat_message('assistant')
+#
+#         # if not connecting_internet_detail:
+#         #     # 不包含明细的联网搜索和解读
+#         #     placeholder1 = assistant.empty()
+#         #     # searcher = search_init(concurrent_num=st.session_state.concurrent_num)
+#         #     # print(f'********1 placeholder.markdown: {placeholder.markdown}')
+#         #     searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.empty().markdown)
+#         #     rtn, search_urls = searcher.legacy_search_and_ask(prompt)
+#         #
+#         #     final_answer = ''
+#         #     placeholder2 = assistant.empty()
+#         #     # print(f'********2 placeholder.markdown: {placeholder.markdown}')
+#         #     for chunk in rtn.get_answer_generator():
+#         #         final_answer += chunk
+#         #         placeholder2.markdown(final_answer + searcher.flicker.get_flicker())
+#         #     placeholder2.markdown('\n\n')
+#         #     final_answer += '\n\n'
+#         #     i = 0
+#         #     print(f'-------------------------------{search_urls}+++++++++++++')
+#         #     for search_url in search_urls:
+#         #         i += 1
+#         #         url_md = f'[{search_url[:30]}...]({search_url} "{search_url}")'
+#         #         url_string = f'【{i}】{url_md} \n\n'
+#         #         final_answer += url_string
+#         #         placeholder2.markdown(url_string)
+#         #
+#         #     return None, None, final_answer, None
+#
+#         searcher = search_init(concurrent_num=st.session_state.session_data['paras']['concurrent_num'])
+#
+#         async_llms = async_llm_local_response_concurrently(
+#             in_st=assistant,
+#             in_prompt=prompt,
+#             in_role_prompt=role_prompt,
+#             in_concurrent_num=st.session_state.session_data['paras']['concurrent_num'],
+#         )
+#         # 非联网llm调用，用于和联网llm解读结果对比
+#         #async_llm = Async_LLM()
+#         #async_llm.init(
+#         #    assistant.empty().markdown,
+#         #    prompt,
+#         #    in_role_prompt=role_prompt,
+#         #    in_extra_suffix=' ${}^{【local】}$ \n\n',
+#         #    in_streamlit=True
+#         #)
+#         #async_llm.start()
+#
+#         internet_search_result = searcher.search(prompt)
+#         # print(f'internet_search_result: {internet_search_result}')
+#         status.markdown("搜索引擎bing.com调用完毕.")
+#
+#         # 为调用Concurrent_LLMs准备输入参数
+#         num = len(internet_search_result)
+#         prompts = [prompt]*(num)    # 所有的question
+#         suffixes = []
+#         contents = []
+#         callbacks = []
+#
+#         # 显示非联网的解读结果stream[0]作为参考、以及所有联网解读结果stream[k]
+#         # assistant = st.chat_message('assistant')
+#         first_placeholder = None
+#         for i in range(num):
+#             # 所有需要理解的文本（需要嵌入question）
+#             content = '\n'.join(internet_search_result[i][1])
+#             contents.append(content)
+#             # 所有llm的stream输出用的bufs，注意这里需要在st.chat_message('assistant')下生成stream
+#             placeholder = assistant.empty()
+#             if i==0:
+#                 first_placeholder = placeholder
+#             callbacks.append(placeholder.markdown)
+#
+#             url = internet_search_result[i][0]
+#             url_md = f'[{url[:30]}...]({url} "{url}") \n\n'
+#             index = f'【{i+1}】'
+#             suffix = '\n\n${}^{' + index + '}$' + url_md + '\n\n'    # 用markdown格式显示[1]为上标
+#             suffixes.append(suffix)
+#         # 用于显示临时信息，vllm全速输出时，会覆盖这个临时信息
+#         # first_placeholder.markdown('解读结果即将返回...')
+#
+#         # 初始化Concurrent_LLMs并运行输出status
+#         llms = Concurrent_LLMs()
+#         llms.init(prompts, contents, callbacks, in_extra_suffixes=suffixes)
+#         for task_status in llms.start_and_get_status():
+#             status.update(label=f":green[{task_status['describe']}]", state=task_status['type'], expanded=False)
+#             status.markdown(task_status['detail'])
+#
+#
+#         for llm in async_llms:
+#             llm.wait()
+#
+#         # 将完整的输出结果，返回
+#         final_answer = ''
+#         # final_answer += async_llm.final_response
+#         for answer in task_status['llms_full_responses']:
+#             # 这里task_status是llms.start_and_get_status()结束后的最终状态
+#             final_answer += answer
+#         return None, async_llms, final_answer, None
+#     else:
+#         # =================================local llm=================================
+#         all_prompt = role_prompt
+#         mem_llm.set_role_prompt(all_prompt)
+#
+#         if url_prompt:
+#             # 如果填了url
+#             searcher = Bing_Searcher.create_searcher_and_loop()
+#             result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
+#             # result = await quick_get_url_text(url_prompt)
+#             all_prompt = f'请严格根据URL(网页链接)返回的内容回答问题, URL(网页链接)返回的具体内容为: \n#############################################\n"{result}"\n#############################################\n'
+#             mem_llm.set_role_prompt(all_prompt)
+#
+#         files_info_dict = st.session_state.session_data['paras']['file_column_raw_data']
+#         if 'file_content' in files_info_dict:
+#             # result = StringIO(f.getvalue().decode("utf-8")).read()
+#             result = files_info_dict['file_content'][0]
+#             dred(f'===========file_content===========\n"{result}"')
+#             fname = files_info_dict['file_name'][0]
+#             all_prompt = f'请严格根据文件({fname})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
+#             mem_llm.set_role_prompt(all_prompt)
+#
+#             # ans = mem_llm.ask_prepare(
+#             #     in_question='文件目录返回给我',
+#             #     in_temperature=st.session_state.local_llm_temperature,
+#             #     in_max_new_tokens=st.session_state.local_llm_max_new_token,
+#             #     in_system_prompt=system_prompt,
+#             # ).get_answer_and_sync_print()
+#             # st.markdown(ans)
+#
+#         place_holder = st.chat_message('assistant').empty()
+#         full_res = ''
+#
+#         # 如果需要将query翻译为英文，并调用擅长英语的模型
+#         # if st.session_state.session_data['paras']['input_translate']:
+#         #     translate_llm = LLM_Client(
+#         #         history=False,
+#         #         url=st.session_state.session_data['paras']['main_llm_url'],
+#         #         print_input=False,
+#         #     )
+#         #
+#         #     dblue(f'需翻译的输入: "{prompt}"')
+#         #     # translate_llm.set_role_prompt('不管输入是什么，你都不会对输入的内容进行解读，都直接将输入翻译为英文，且绝对不增加额外的引号')
+#         #     translated_input = translate_llm.ask_prepare(
+#         #         in_question=f'将"{prompt}"翻译为英文，不要增加额外的引号',
+#         #         in_temperature = st.session_state.session_data['paras']['local_llm_temperature'],
+#         #         in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
+#         #         in_system_prompt = '你擅长将中文翻译为英语'
+#         #     ).get_answer_and_sync_print()
+#         #     dblue(f'翻译后的输入: "{translated_input}"')
+#         #
+#         #     prompt = translated_input
+#         #
+#         #     mem_llm.refresh_endpoint(
+#         #         st.session_state.session_data['paras']['english_llm_url'],
+#         #         st.session_state.session_data['paras']['english_llm_key'],
+#         #         st.session_state.session_data['paras']['english_llm_model_id'],
+#         #     )
+#
+#
+#         # llm输出、统计输出时间
+#         start_time1 = time.time()
+#
+#         gen = mem_llm.ask_prepare(
+#             in_question=prompt,
+#             in_temperature=st.session_state.session_data['paras']['local_llm_temperature'],
+#             in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
+#             in_system_prompt=system_prompt,
+#         ).get_answer_generator()
+#
+#
+#         wait_first_token = True
+#         for res in gen:
+#             if res and wait_first_token:
+#                 start_time2 = time.time()
+#                 wait_first_token = False
+#
+#             full_res += res
+#             place_holder.markdown(full_res)
+#
+#         if wait_first_token:
+#             # 可能输出为空，则这里要开始计时
+#             start_time2 = time.time()
+#
+#         p_tokens = mem_llm.get_prompt_tokens()
+#         c_tokens = mem_llm.get_completion_tokens()
+#         all_tokens = p_tokens+c_tokens
+#
+#         end_time = time.time()
+#         input_time = start_time2 - start_time1
+#         output_time = end_time - start_time2
+#         input_time_str = f'{input_time:.1f}'
+#         output_time_str = f'{output_time:.1f}'
+#         all_time_str = f'{input_time+output_time:.1f}'
+#
+#         try:
+#             input_ts_str = f'{p_tokens/input_time:.1f}'
+#             output_ts_str = f'{c_tokens/output_time:.1f}'
+#
+#             # 显示: 输入、输出token，首字时间、输出时间，首字前t/s、输出t/s
+#             # 10445 ( 10039 + 406 ) tokens in 31.6 ( 10.6 + 21.0 ) secs, 946.3 t/s, 19.3 t/s
+#             full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens in {all_time_str} ( {input_time_str} + {output_time_str} ) secs, {input_ts_str} t/s, {output_ts_str} t/s ]'
+#             # full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
+#         except Exception as e:
+#             dred(f'统计时间为0.')
+#
+#
+#         place_holder.markdown(full_res)
+#         # dred(f'full_res: {full_res}')
+#         return None, None, full_res, None
+
 def ask_llm(prompt, paras):
     role_prompt = paras['role_prompt']
     url_prompt = paras['url_prompt']
@@ -525,107 +875,25 @@ def ask_llm(prompt, paras):
     #     return status_data, None, final_answer, None
     # =================================搜索并llm=================================
     if connecting_internet:
-        # =================================搜索=================================
-        status = st.status(label=":green[启动联网解读任务...]", expanded=False)
-        status.markdown("搜索引擎bing.com调用中...")
-        assistant = st.chat_message('assistant')
-
-        # if not connecting_internet_detail:
-        #     # 不包含明细的联网搜索和解读
-        #     placeholder1 = assistant.empty()
-        #     # searcher = search_init(concurrent_num=st.session_state.concurrent_num)
-        #     # print(f'********1 placeholder.markdown: {placeholder.markdown}')
-        #     searcher = search_init(concurrent_num=st.session_state.concurrent_num, in_stream_buf_callback=assistant.empty().markdown)
-        #     rtn, search_urls = searcher.legacy_search_and_ask(prompt)
-        #
-        #     final_answer = ''
-        #     placeholder2 = assistant.empty()
-        #     # print(f'********2 placeholder.markdown: {placeholder.markdown}')
-        #     for chunk in rtn.get_answer_generator():
-        #         final_answer += chunk
-        #         placeholder2.markdown(final_answer + searcher.flicker.get_flicker())
-        #     placeholder2.markdown('\n\n')
-        #     final_answer += '\n\n'
-        #     i = 0
-        #     print(f'-------------------------------{search_urls}+++++++++++++')
-        #     for search_url in search_urls:
-        #         i += 1
-        #         url_md = f'[{search_url[:30]}...]({search_url} "{search_url}")'
-        #         url_string = f'【{i}】{url_md} \n\n'
-        #         final_answer += url_string
-        #         placeholder2.markdown(url_string)
-        #
-        #     return None, None, final_answer, None
-
-        searcher = search_init(concurrent_num=st.session_state.session_data['paras']['concurrent_num'])
-
-        async_llms = async_llm_local_response_concurrently(
-            in_st=assistant,
-            in_prompt=prompt,
-            in_role_prompt=role_prompt,
-            in_concurrent_num=st.session_state.session_data['paras']['concurrent_num'],
-        )
-        # 非联网llm调用，用于和联网llm解读结果对比
-        #async_llm = Async_LLM()
-        #async_llm.init(
-        #    assistant.empty().markdown, 
-        #    prompt, 
-        #    in_role_prompt=role_prompt,
-        #    in_extra_suffix=' ${}^{【local】}$ \n\n',
-        #    in_streamlit=True
-        #)
-        #async_llm.start()
-        
-        internet_search_result = searcher.search(prompt)
-        # print(f'internet_search_result: {internet_search_result}')
-        status.markdown("搜索引擎bing.com调用完毕.")
-
-        # 为调用Concurrent_LLMs准备输入参数
-        num = len(internet_search_result)
-        prompts = [prompt]*(num)    # 所有的question
-        suffixes = []
-        contents = []
-        callbacks = []
-
-        # 显示非联网的解读结果stream[0]作为参考、以及所有联网解读结果stream[k]
-        # assistant = st.chat_message('assistant')
-        first_placeholder = None
-        for i in range(num):
-            # 所有需要理解的文本（需要嵌入question）
-            content = '\n'.join(internet_search_result[i][1])
-            contents.append(content)
-            # 所有llm的stream输出用的bufs，注意这里需要在st.chat_message('assistant')下生成stream
-            placeholder = assistant.empty()
-            if i==0:
-                first_placeholder = placeholder
-            callbacks.append(placeholder.markdown)
-
-            url = internet_search_result[i][0]
-            url_md = f'[{url[:30]}...]({url} "{url}") \n\n'
-            index = f'【{i+1}】'
-            suffix = '\n\n${}^{' + index + '}$' + url_md + '\n\n'    # 用markdown格式显示[1]为上标
-            suffixes.append(suffix)
-        # 用于显示临时信息，vllm全速输出时，会覆盖这个临时信息
-        # first_placeholder.markdown('解读结果即将返回...')
-
+        place_holder = st.chat_message('assistant').empty()
         # 初始化Concurrent_LLMs并运行输出status
-        llms = Concurrent_LLMs()
-        llms.init(prompts, contents, callbacks, in_extra_suffixes=suffixes)
-        for task_status in llms.start_and_get_status():
-            status.update(label=f":green[{task_status['describe']}]", state=task_status['type'], expanded=False)
-            status.markdown(task_status['detail'])
-
-
-        for llm in async_llms:
-            llm.wait()
-
-        # 将完整的输出结果，返回
-        final_answer = ''
-        # final_answer += async_llm.final_response
-        for answer in task_status['llms_full_responses']:
-            # 这里task_status是llms.start_and_get_status()结束后的最终状态
-            final_answer += answer
-        return None, async_llms, final_answer, None
+        results = quick_get_bing_search_result(query=prompt, use_proxy=True, result_num=3)
+        for item in results:
+            place_holder.markdown(item['url'])
+        urls = [item['url'] for item in results]
+        print(f'urls: {urls}')
+        res_list = quick_get_urls_resource_list(urls=urls, res_type_list=['image', 'video'], use_proxy=True)
+        print(f'res_list: {res_list}')
+        res = []
+        for k, v in res_list.items():
+            for item in v:
+                if item['type']=='image':
+                    # place_holder.image(item['content'])
+                    res.append({'type':'image', 'url':item['content']})
+                elif item['type']=='video':
+                    # place_holder.video(item['content'])
+                    res.append({'type': 'video', 'url': item['content']})
+        return None, None, None, res
     else:
         # =================================local llm=================================
         all_prompt = role_prompt
@@ -690,7 +958,7 @@ def ask_llm(prompt, paras):
         start_time1 = time.time()
 
         gen = mem_llm.ask_prepare(
-            in_question=prompt, 
+            in_question=prompt,
             in_temperature=st.session_state.session_data['paras']['local_llm_temperature'],
             in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
             in_system_prompt=system_prompt,
@@ -1077,6 +1345,10 @@ def streamlit_refresh_loop():
     for message in st.session_state.session_data['msgs']:
         if type(message)==dict:
             # print(f'dict message: {message}')
+            if message.get('type') and message['type'] == 'image':
+                st.image(message['content'])
+            if message.get('type') and message['type'] == 'video':
+                st.image(message['content'])
             if message.get('type') and message['type']=='status':
                 # 添加已完成的status
                 status_title = message['title']
@@ -1092,14 +1364,20 @@ def streamlit_refresh_loop():
                 with st.chat_message(message['role']):
                     st.markdown(message['content'])
         elif type(message)==list:
-            with st.chat_message('assistant'):
-                num = len(message)
-                cols = st.columns([1]*num)
-                i=0
-                for col in cols:
-                    col.markdown(message[i])
-                    # col.container(border=True).markdown(message[i])
-                    i += 1
+            print(f'message: {message}')
+            for item in message:
+                if item['type']=='image':
+                    st.image(item['url'])
+                if item['type']=='video':
+                    st.markdown(item['url'])
+            # with st.chat_message('assistant'):
+            #     num = len(message)
+            #     cols = st.columns([1]*num)
+            #     i=0
+            #     for col in cols:
+            #         col.markdown(message[i])
+            #         # col.container(border=True).markdown(message[i])
+            #         i += 1
 
         # st.status('测试下status')
 
