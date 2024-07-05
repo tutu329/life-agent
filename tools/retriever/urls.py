@@ -17,6 +17,7 @@ from config import dred, dgreen, dblue, Global
 from tools.retriever.legacy_wrong_html2text import html2text
 from utils.url import remove_rightmost_path
 from utils.url import get_domain
+from utils.string_util import str_replace_multiple_newlines_with_one_newline
 from utils.decorator import timer
 
 @dataclass
@@ -128,8 +129,10 @@ class Urls_Content_Retriever():
         if self.async_playwright:
             await self.async_playwright.stop()  # 如果没有stop，会报错：ValueError: I/O operation on closed pipe
 
-    def get_parsed_text(self, url, raw_text=True):
+    def get_parsed_text(self, url, raw_text=False, one_new_line=True):
         text =  self.results[url]['raw_text'] if raw_text else self.results[url]['parsed_text']
+        if one_new_line:
+            text = str_replace_multiple_newlines_with_one_newline(text)
         return text
 
     def get_parsed_resource_list(self, url, res_type_list=['video', 'image', 'text']):
@@ -240,20 +243,29 @@ class Urls_Content_Retriever():
             def foo():
                 pass
 
+            def get_node_direct_text(element):
+                return ''.join(text for text in element.find_all(string=True, recursive=False)).strip()
+
             # print(f'---------------element: {element}---------------')
             if isinstance(element, Tag):
-                if element.name == 'div' or element.name == 'p' or element.name == 'span':
-                    text = ''
-                    try:
-                        text = next(element.strings).strip()    # 获取<div>、<p>、<span>等标签后面的文本，但可能获取到<div><p>text1</p></div>的<div>的text1，导致div和p重复获取text1
-                    except StopIteration:
-                        pass
-                    finally:
-                        if text and (not element.find_all('p')) and (not element.find_all('span')):
-                            data = Text_and_Media(type='text', raw_type=element.name, content=text)
-                            extracted_content_list.append(asdict(data))
-                            # extracted_content_list.append({'type': 'text', 'raw_type':element.name, 'content':text})
-                            extracted_text_list.append(text)
+                if element.name in Global.html_text_tags:   # 文本类
+                    text = get_node_direct_text(element)
+                    data = Text_and_Media(type='text', raw_type=element.name, content=text)
+                    extracted_content_list.append(asdict(data))
+                    # extracted_content_list.append({'type': 'text', 'raw_type':element.name, 'content':text})
+                    extracted_text_list.append(text)
+                # if element.name == 'div' or element.name == 'p' or element.name == 'span':
+                #     text = ''
+                #     try:
+                #         text = next(element.strings).strip()    # 获取<div>、<p>、<span>等标签后面的文本，但可能获取到<div><p>text1</p></div>的<div>的text1，导致div和p重复获取text1
+                #     except StopIteration:
+                #         pass
+                #     finally:
+                #         if text and (not element.find_all('p')) and (not element.find_all('span')):
+                #             data = Text_and_Media(type='text', raw_type=element.name, content=text)
+                #             extracted_content_list.append(asdict(data))
+                #             # extracted_content_list.append({'type': 'text', 'raw_type':element.name, 'content':text})
+                #             extracted_text_list.append(text)
                 if element.name == 'img':
                     # print(f'---------------img element: {element}---------------')
                     # src的图片
@@ -387,23 +399,23 @@ class Urls_Content_Retriever():
 
         return results
 
-async def async_quick_get_url_text(url, use_proxy=False):
+async def async_quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True):
     urls_content_retriever = Urls_Content_Retriever()
     await urls_content_retriever.init()
 
     await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
 
-    result_text =  urls_content_retriever.get_parsed_text(url)
+    result_text =  urls_content_retriever.get_parsed_text(url, raw_text=raw_text, one_new_line=one_new_line)
     await urls_content_retriever.close()
 
     return result_text
 
-def quick_get_url_text(url, use_proxy=False, raw_text=False):
+def quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True):
     urls_content_retriever = Urls_Content_Retriever()
     async def _get_url_text():
         await urls_content_retriever.init()
         await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
-        result_text = urls_content_retriever.get_parsed_text(url, raw_text=raw_text)
+        result_text = urls_content_retriever.get_parsed_text(url, raw_text=raw_text, one_new_line=one_new_line)
 
         await urls_content_retriever.close()
         return result_text
@@ -411,7 +423,7 @@ def quick_get_url_text(url, use_proxy=False, raw_text=False):
     result_text = urls_content_retriever.loop.run_until_complete(_get_url_text())
     return result_text
 
-async def quick_get_urls_text(urls, use_proxy=False, raw_text=True):
+async def quick_get_urls_text(urls, use_proxy=False, raw_text=False, one_new_line=True):
     results_text_dict = {
         # 'url': text
     }
@@ -422,7 +434,7 @@ async def quick_get_urls_text(urls, use_proxy=False, raw_text=True):
 
     async def _get_url_text(url, use_proxy=False):
         await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
-        results_text_dict[url] = urls_content_retriever.get_parsed_text(url, raw_text=raw_text)
+        results_text_dict[url] = urls_content_retriever.get_parsed_text(url, raw_text=raw_text, one_new_line=one_new_line)
 
     for url in urls:
         tasks.append(asyncio.create_task(_get_url_text(url, use_proxy=use_proxy)))
@@ -559,7 +571,14 @@ def sync_search_main():
 def bs4_test():
     from bs4 import BeautifulSoup
 
-    html = '''<div><p>This is a paragraph1.</p>
+    html1 = '''<div><p>This is a paragraph1.</p>
+    <p>This is a paragraph2.</p>
+    <p>This is a paragraph3.</p>
+    <p>This is a paragraph4.</p>
+    And some more text.
+</div>
+'''
+    html2 = '''<div>div_text<p>This is a paragraph1.</p>
     <p>This is a paragraph2.</p>
     <p>This is a paragraph3.</p>
     <p>This is a paragraph4.</p>
@@ -607,10 +626,11 @@ if __name__ == '__main__':
             return body_text
 
     # url='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
-    url='https://segmentfault.com/a/1190000044298001'
+    # url='https://segmentfault.com/a/1190000044298001'
+    url='https://www.jianshu.com/p/01c905aaf661'
 
     # print(get_body_text(url))
-    print(quick_get_url_text(url, use_proxy=False, raw_text=True))
+    print(f'{quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True)}')
 
     # sync_main()
 

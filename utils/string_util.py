@@ -1,3 +1,5 @@
+import re
+
 # str1和str2的交集，且该交集起始和str2起始一致
 def _str_has_partial_stop(str, stop):
     same_str = ''
@@ -60,6 +62,9 @@ def str_remove_partial_stops(str, stops):
             min_str = str1
         # print(f'str: "{str}", stop: "{stop}"')
     return min_str
+
+def str_replace_multiple_newlines_with_one_newline(text):
+    return re.sub(r'\n{2,}', '\n', text)
 
 def main():
     # str1 = "['search_tool','code_tool','energy_investment_plan_tool','qa_url_content_tool'] 。aaaaaaa 'search_tool' stopfabc> </stop1[结束<res_stop>【结束<stop>1"

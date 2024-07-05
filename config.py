@@ -68,6 +68,19 @@ class Global():
     playwright_bing_search_time_out = 10000              # 超时设置ms
     playwright_get_url_content_time_out = 5000          # 超时设置ms
     playwright_url_content_not_needed = ['\xa0', '']    # 获取url内容时，不需要的内容
+    html_text_tags = [
+        'div', 'p', 'span', 'a',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'strong', 'em', 'b', 'i', 'u', 'small', 'mark', 'del', 'ins',
+        'sup', 'sub', 'blockquote', 'q', 'cite', 'abbr', 'code', 'pre',
+        'li', 'dt', 'dd', 'summary', 'label', 'legend', 'figcaption'
+    ]
+    # html_text_tags = [
+    #     'div', 'p', 'span', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    #     'strong', 'em', 'b', 'i', 'u', 'small', 'mark', 'del', 'ins',
+    #     'sup', 'sub', 'blockquote', 'q', 'cite', 'abbr', 'code', 'pre',
+    #     'li', 'dt', 'dd', 'summary', 'label', 'legend', 'figcaption'
+    # ]
 
     ddgs_proxies = {
         "http": "http://127.0.0.1:7890",
