@@ -7,6 +7,7 @@ from typing import List
 from singleton import singleton
 import platform
 
+from playwright.sync_api import sync_playwright
 from playwright.async_api import async_playwright   # playwright install
 from bs4 import BeautifulSoup, Tag                  # pip install playwright beautifulsoup4 lxml
 from dataclasses import dataclass, asdict, field
@@ -19,13 +20,19 @@ from utils.url import get_domain
 from utils.decorator import timer
 
 @dataclass
+class Text_and_Media():
+    type:       Any = None      # 'type'为 'image' | 'video' | 'text'
+    raw_type:   Any = None      # 'raw_type'为 element.name | 'src' | 'data-src'
+    content:    Any = None      # 'content'为 text | url_link
+
+@dataclass
 class Url_Content_Parsed_Result():
-    status:Any = None
-    html_content:Any = None
-    title:Any = None
-    raw_text:Any = None             # 通过body.get_text()获得的全部text，肯定正确，但没有换行
-    parsed_text:Any = None          # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
-    text_and_media_list:Any = None  # 'type'为 'image' | 'video' | 'text'
+    status:                 Any = None
+    html_content:           Any = None
+    title:                  Any = None
+    raw_text:               Any = None              # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+    parsed_text:            Any = None              # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
+    text_and_media_list:    Text_and_Media = None
 
 # @singleton
 class Urls_Content_Retriever():
@@ -146,18 +153,31 @@ class Urls_Content_Retriever():
             self.results[url] = [None, None]
 
             context = self.context_with_proxy if use_proxy else self.context
-            response = await context.request.get(
-                url,
-                timeout=Global.playwright_get_url_content_time_out,
-            )
 
-            html_content = await response.text()
+            # ============获取静态html内容============
+            # response = await context.request.get(
+            #     url,
+            #     timeout=Global.playwright_get_url_content_time_out,
+            # )
+            # html_content = await response.text()
+
+            # ============获取动态页面的html内容============
+            page = await context.new_page()
+            await page.goto(url)
+            # 等待页面加载完成
+            await page.wait_for_load_state('networkidle')
+            # 获取 <body> 下的文本
+            # body_text = page.evaluate('document.body.innerText')
+            # 获取html
+            html_content = await page.evaluate('() => document.documentElement.outerHTML')
+
+
             raw_text = await self._html_to_text(html_content)
             title, parsed_text, text_and_media_list = await self._get_text_and_media(html_content, url)
             # print(f'text_media: {text_media}')
 
             result = Url_Content_Parsed_Result(
-                status=response.status,
+                # status=response.status,
                 html_content=html_content,
                 title=title,
                 raw_text=raw_text,              # 通过body.get_text()获得的全部text，肯定正确，但没有换行
@@ -167,9 +187,9 @@ class Urls_Content_Retriever():
             self.results[url] = asdict(result)
         except Exception as e:
             dred(f'_get_url_content() error: {e}')
-            status = response.status if response is not None else 404
+            # status = response.status if response is not None else 404
             result = Url_Content_Parsed_Result(
-                status=status,
+                # status=status,
                 html_content='',
                 title='',
                 raw_text='',                # 通过body.get_text()获得的全部text，肯定正确，但没有换行
@@ -181,6 +201,7 @@ class Urls_Content_Retriever():
     async def _html_to_text(self, html):
         # 使用 BeautifulSoup 解析 HTML 并提取正文
         soup = BeautifulSoup(html, 'html.parser')
+        # print(f'soup: {soup}')
 
         # 提取正文内容
         # 你可以根据实际情况调整选择器
@@ -190,7 +211,8 @@ class Urls_Content_Retriever():
         # 获取body下完整的文本
         # text_content = body.get_text(strip=True)
 
-        text_content = body.get_text(separator='\n',strip=True)
+        # print(f'body: {body}')
+        text_content = body.get_text(separator='\n',strip=True) if body is not None else ''
 
         # print(f'text_content:{text_content}')
         return text_content
@@ -204,8 +226,7 @@ class Urls_Content_Retriever():
         extracted_text_list = []
 
         title_tag = soup.find('title')
-        title = title_tag.get_text() if title_tag else ''
-        title = title.strip()
+        title = title_tag.get_text().strip() if title_tag else ''
         extracted_content_list.append({'type': 'title', 'content': title})
         extracted_title = title
 
@@ -229,7 +250,9 @@ class Urls_Content_Retriever():
                         pass
                     finally:
                         if text and (not element.find_all('p')) and (not element.find_all('span')):
-                            extracted_content_list.append({'type': 'text', 'raw_type':element.name, 'content':text})
+                            data = Text_and_Media(type='text', raw_type=element.name, content=text)
+                            extracted_content_list.append(asdict(data))
+                            # extracted_content_list.append({'type': 'text', 'raw_type':element.name, 'content':text})
                             extracted_text_list.append(text)
                 if element.name == 'img':
                     # print(f'---------------img element: {element}---------------')
@@ -238,39 +261,51 @@ class Urls_Content_Retriever():
                     if img_src:
                         if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
                             img_src = f"{get_domain(url)}/{img_src.lstrip('/')}"
-                        extracted_content_list.append({'type': 'image', 'raw_type':'src', 'content': img_src})
+                        data = Text_and_Media(type='image', raw_type='src', content=img_src)
+                        extracted_content_list.append(asdict(data))
+                        # extracted_content_list.append({'type': 'image', 'raw_type':'src', 'content': img_src})
                     # data-src的图片
                     img_src = element.get('data-src')
                     if img_src:
                         if not img_src.startswith(('http://', 'https://')): # 如果是相对路径，将其转换为绝对路径
                             img_src = f"{remove_rightmost_path(url.rstrip('/'))}/{img_src.lstrip('/')}"
-                        extracted_content_list.append({'type': 'image', 'raw_type':'data-src', 'content': img_src})
+                        data = Text_and_Media(type='image', raw_type='data-src', content=img_src)
+                        extracted_content_list.append(asdict(data))
+                        # extracted_content_list.append({'type': 'image', 'raw_type':'data-src', 'content': img_src})
                 elif element.name == 'video':
                     # print(f'---------------video element: {element}---------------')
                     src = element.get('src')
                     if src:
                         if not src.startswith(('http://', 'https://')):  # 如果是相对路径，将其转换为绝对路径
                             src = f"{get_domain(url)}/{src.lstrip('/')}"
-                        extracted_content_list.append({'type': 'video', 'content': src})
+                        data = Text_and_Media(type='video', raw_type='src', content=src)
+                        extracted_content_list.append(asdict(data))
+                        # extracted_content_list.append({'type': 'video', 'content': src})
                     else:
                         # 查找 <source> 标签中的视频链接
                         sources = element.find_all('source')
                         video_sources = [source.get('src') for source in sources if source.get('src')]
                         if video_sources:
-                            extracted_content_list.append({'type': 'video', 'content': video_sources[0]})
+                            data = Text_and_Media(type='video', raw_type='src', content=video_sources[0])
+                            extracted_content_list.append(asdict(data))
+                            # extracted_content_list.append({'type': 'video', 'content': video_sources[0]})
                 elif element.name == 'a':
                     src = element.get('href')
                     if src and ('mp4' in src or 'video' in src):
                         # print(f'---------------video element: {element}---------------')
                         if not src.startswith(('http://', 'https://')):  # 如果是相对路径，将其转换为绝对路径
                             src = f"{get_domain(url)}/{src.lstrip('/')}"
-                        extracted_content_list.append({'type': 'video', 'content': src})
+                        data = Text_and_Media(type='video', raw_type='src', content=src)
+                        extracted_content_list.append(asdict(data))
+                        # extracted_content_list.append({'type': 'video', 'content': src})
                     else:
                         # 查找 <source> 标签中的视频链接
                         sources = element.find_all('source')
                         video_sources = [source.get('src') for source in sources if source.get('src')]
                         if video_sources:
-                            extracted_content_list.append({'type': 'video', 'content': video_sources[0]})
+                            data = Text_and_Media(type='video', raw_type='src', content=video_sources[0])
+                            extracted_content_list.append(asdict(data))
+                            # extracted_content_list.append({'type': 'video', 'content': video_sources[0]})
                 # else:
                 # 继续递归遍历其他嵌套元素
                 for child in element.children:
@@ -285,6 +320,8 @@ class Urls_Content_Retriever():
         # 从 body 元素开始提取内容
         if body:
             _extract_elements(body)
+        else:
+            dred('网页body为空.')
 
         return extracted_title, '\n'.join(extracted_text_list), extracted_content_list
 
@@ -350,7 +387,7 @@ class Urls_Content_Retriever():
 
         return results
 
-async def quick_get_url_text(url, use_proxy=False):
+async def async_quick_get_url_text(url, use_proxy=False):
     urls_content_retriever = Urls_Content_Retriever()
     await urls_content_retriever.init()
 
@@ -359,6 +396,19 @@ async def quick_get_url_text(url, use_proxy=False):
     result_text =  urls_content_retriever.get_parsed_text(url)
     await urls_content_retriever.close()
 
+    return result_text
+
+def quick_get_url_text(url, use_proxy=False, raw_text=False):
+    urls_content_retriever = Urls_Content_Retriever()
+    async def _get_url_text():
+        await urls_content_retriever.init()
+        await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
+        result_text = urls_content_retriever.get_parsed_text(url, raw_text=raw_text)
+
+        await urls_content_retriever.close()
+        return result_text
+
+    result_text = urls_content_retriever.loop.run_until_complete(_get_url_text())
     return result_text
 
 async def quick_get_urls_text(urls, use_proxy=False, raw_text=True):
@@ -482,7 +532,7 @@ async def async_main():
             print(item)
 
 def sync_main():
-    res_list = quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
+    res_list = quick_get_urls_resource_list([surl1, url1], res_type_list=['video', 'image', 'text'], use_proxy=True)
     # res_list = await quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
 
     print('links1:')
@@ -490,8 +540,8 @@ def sync_main():
         for item in res_list[surl1]:
             print(item)
     print('links2:')
-    if url2 in res_list:
-        for item in res_list[url2]:
+    if url1 in res_list:
+        for item in res_list[url1]:
             print(item)
 
 async def async_search_main():
@@ -543,9 +593,28 @@ def bs4_test():
     print(' '.join(div.find_all(text=True, recursive=False)).strip())
 
 if __name__ == '__main__':
+    def get_body_text(url):
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            page.goto(url)
+            # 等待页面加载完成
+            page.wait_for_load_state('networkidle')
+            # 获取 <body> 下的文本
+            body_text = page.evaluate('() => document.documentElement.outerHTML')
+            # body_text = page.evaluate('document.body.innerText')
+            browser.close()
+            return body_text
+
+    # url='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
+    url='https://segmentfault.com/a/1190000044298001'
+
+    # print(get_body_text(url))
+    print(quick_get_url_text(url, use_proxy=False, raw_text=True))
+
     # sync_main()
 
-    sync_search_main()
+    # sync_search_main()
     # asyncio.run(async_search_main())
 
     # asyncio.run(async_main())

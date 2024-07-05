@@ -30,7 +30,7 @@ import pickle
 
 from tools.retriever.urls import quick_get_urls_resource_list, quick_get_bing_search_result
 
-from tools.retriever.urls import quick_get_url_text
+from tools.retriever.urls import async_quick_get_url_text
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
