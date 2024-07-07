@@ -29,6 +29,7 @@ from utils.extract import get_ajs_anonymous_id_from_cookie
 import pickle
 
 from tools.retriever.urls import quick_get_urls_resource_list, quick_get_bing_search_result
+from tools.retriever.urls import quick_get_url_text
 
 from tools.retriever.urls import async_quick_get_url_text
 
@@ -901,8 +902,11 @@ def ask_llm(prompt, paras):
 
         if url_prompt:
             # 如果填了url
-            searcher = Bing_Searcher.create_searcher_and_loop()
-            result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
+            # searcher = Bing_Searcher.create_searcher_and_loop()
+            # result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
+            result = quick_get_url_text(url_prompt, use_proxy=False, raw_text=False, one_new_line=True)
+
+
             # result = await quick_get_url_text(url_prompt)
             all_prompt = f'请严格根据URL(网页链接)返回的内容回答问题, URL(网页链接)返回的具体内容为: \n#############################################\n"{result}"\n#############################################\n'
             mem_llm.set_role_prompt(all_prompt)
