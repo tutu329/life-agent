@@ -169,6 +169,7 @@ class Urls_Content_Retriever():
 
             # ============获取动态页面的html内容============
             page = await context.new_page()
+            # await page.set_extra_http_headers({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
             await page.goto(url)
             # 等待页面加载完成
             await page.wait_for_load_state('networkidle')
@@ -176,6 +177,10 @@ class Urls_Content_Retriever():
             # body_text = page.evaluate('document.body.innerText')
             # 获取html
             html_content = await page.evaluate('() => document.documentElement.outerHTML')
+            # import chardet
+            # print(f"----------------------------------{chardet.detect(html_content)['encoding']}------------------------------")
+            # print(f'----------------------------------{html_content}------------------------------')
+            # html_content.decode('utf-8')
 
 
             raw_text = await self._html_to_text(html_content)
@@ -575,7 +580,7 @@ async def async_search_main():
         print(f"{item['title']}: {item['url']}")
 
 def sync_search_main():
-    results = quick_get_bing_search_result(query='porn', result_num=50, use_proxy=True)
+    results = quick_get_bing_search_result(query='如何安装ubuntu', result_num=50, use_proxy=True)
     # results = [item['url'] for item in results]
     for i, item in enumerate(results):
         # print(f"{i+1:>2d}) {item}")
@@ -637,21 +642,23 @@ if __name__ == '__main__':
             # body_text = page.evaluate('document.body.innerText')
             browser.close()
             return body_text
+    # print(get_body_text(url))
 
     # url='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     # url='https://segmentfault.com/a/1190000044298001'
     # url='https://www.jianshu.com/p/01c905aaf661'
     # url='https://www.reddit.com/r/QualityAssurance/comments/145mskt/page_object_model_on_playwright/'   # reddit，必须用其api
     # url='https://baijiahao.baidu.com/s?id=1803695466127542316'
-    url='https://blog.csdn.net/qq_45058208/article/details/137617049'
+    url='https://zhuanlan.zhihu.com/p/135953477'    # 正文乱码
+    # url='https://zhuanlan.zhihu.com/p/379049774'    # 正文乱码
+    # url='https://ubuntu.letout.cn/guide/prepare/native.html'
 
-    # print(get_body_text(url))
+    # url='https://zh.wikihow.com/%E5%AE%89%E8%A3%85Ubuntu-Linux'
+    # url='https://blog.csdn.net/qq_45058208/article/details/137617049'
+    # url='https://blog.csdn.net/Python_0011/article/details/131633534'
+
     print(f'{quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True)}')
 
     # sync_main()
 
     # sync_search_main()
-    # asyncio.run(async_search_main())
-
-    # asyncio.run(async_main())
-    # bs4_test()
