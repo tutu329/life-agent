@@ -649,13 +649,13 @@ if __name__ == '__main__':
     # url='https://www.jianshu.com/p/01c905aaf661'
     # url='https://www.reddit.com/r/QualityAssurance/comments/145mskt/page_object_model_on_playwright/'   # reddit，必须用其api
     # url='https://baijiahao.baidu.com/s?id=1803695466127542316'
-    url='https://zhuanlan.zhihu.com/p/135953477'    # 正文乱码
+    # url='https://zhuanlan.zhihu.com/p/135953477'    # 正文乱码
     # url='https://zhuanlan.zhihu.com/p/379049774'    # 正文乱码
     # url='https://ubuntu.letout.cn/guide/prepare/native.html'
 
     # url='https://zh.wikihow.com/%E5%AE%89%E8%A3%85Ubuntu-Linux'
     # url='https://blog.csdn.net/qq_45058208/article/details/137617049'
-    # url='https://blog.csdn.net/Python_0011/article/details/131633534'
+    url='https://blog.csdn.net/Python_0011/article/details/131633534'
 
     print(f'{quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True)}')
 
