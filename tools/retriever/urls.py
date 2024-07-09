@@ -20,6 +20,8 @@ from utils.url import get_domain
 from utils.string_util import str_replace_multiple_newlines_with_one_newline
 from utils.decorator import timer
 
+from playwright.async_api import TimeoutError as Playwright_TimeoutError
+
 @dataclass
 class Text_and_Media():
     type:       Any = None      # 'type'为 'image' | 'video' | 'text'
@@ -53,10 +55,10 @@ class Urls_Content_Retriever():
         # 初始化loop环境
         if platform.system() == 'Windows':
             # 如果为win环境
-            print(f'设置asyncio.get_event_loop_policy()之前: {type(asyncio.get_event_loop_policy())}')
+            dgreen(f'[Urls_Content_Retriever] os为Windows. 设置set_event_loop_policy()之前: {type(asyncio.get_event_loop_policy())}')
             from asyncio import (WindowsProactorEventLoopPolicy)
             asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
-            print(f'设置asyncio.get_event_loop_policy()之后: {type(asyncio.get_event_loop_policy())}')
+            dgreen(f'[Urls_Content_Retriever] os为Windows. 设置set_event_loop_policy()之后: {type(asyncio.get_event_loop_policy())}')
 
         # Urls实例对应的loop(主要用于win下streamlit等特定场景), 后续可以self.loop.run_until_complete(some_async_func(arg1, arg2, ...))
         # self.loop = asyncio.get_event_loop()
@@ -78,7 +80,7 @@ class Urls_Content_Retriever():
         try:
             # 启动浏览器
             # if self.use_proxy:
-            dgreen(f'playwright启动 browser-with-proxy: "{Global.playwright_proxy}".')
+            dgreen(f'[Urls_Content_Retriever] playwright启动 browser1(with-proxy): "{Global.playwright_proxy}".')
 
             self.browser_with_proxy = await p.chromium.launch(
                 channel="chrome",
@@ -88,7 +90,7 @@ class Urls_Content_Retriever():
             self.context_with_proxy = await self.browser_with_proxy.new_context()
 
             # else:
-            dgreen('playwright启动 browser.')
+            dgreen('[Urls_Content_Retriever] playwright启动 browser2(without-proxy).')
 
             self.browser = await p.chromium.launch(
                 channel="chrome",
@@ -97,15 +99,15 @@ class Urls_Content_Retriever():
 
             self.context = await self.browser.new_context()
 
-            print('playwright启动完毕, context已获得.')
+            # print('playwright启动完毕, context已获得.')
         except Exception as e:
-            dred(f"Error during browser initialization: {e}")
+            dred(f'[Urls_Content_Retriever] Urls_Content_Retriever.Init() error ({type(e)}): "{e}"')
 
         self.inited = True
         return self
 
     async def __aenter__(self):
-        dgreen('__aenter__() try to init.')
+        dgreen('[Urls_Content_Retriever] __aenter__() try to init.')
         return await self.init()
 
     async def __aexit__(
@@ -114,10 +116,11 @@ class Urls_Content_Retriever():
             exc_val,        # The exception instance itself.
             exc_tb          # The traceback object. （这三个参数必须写，否则报错：TypeError: Urls_Content_Retriever.__aexit__() takes 1 positional argument but 4 were given）
     ):
-        dgreen('__aexit__() try to close.')
+        dgreen('[Urls_Content_Retriever] __aexit__() try to close.')
         await self.close()
 
     async def close(self):
+        dgreen('[Urls_Content_Retriever] try to close.')
         if self.context:
             await self.context.close()
         if self.context_with_proxy:
@@ -149,7 +152,7 @@ class Urls_Content_Retriever():
             url,
             use_proxy=False,
     ):
-        dgreen(f'获取网页"{url}"的内容...')
+        dgreen(f'[Urls_Content_Retriever] 获取网页"{url}"的内容...')
         response = None
 
         try:
@@ -188,8 +191,18 @@ class Urls_Content_Retriever():
                 text_and_media_list=text_and_media_list,
             )
             self.results[url] = asdict(result)
+        except Playwright_TimeoutError as e:
+            dred(f'[Urls_Content_Retriever] Playwright_TimeoutError: "{e}"')
+            result = Url_Content_Parsed_Result(
+                html_content='',
+                title='',
+                raw_text='',                # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+                parsed_text='',             # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
+                text_and_media_list=[],
+            )
+            self.results[url] = asdict(result)
         except Exception as e:
-            dred(f'_get_url_content() error: {e}')
+            dred(f'[Urls_Content_Retriever] error({type(e)}): "{e}"')
             # status = response.status if response is not None else 404
             result = Url_Content_Parsed_Result(
                 # status=status,
@@ -333,7 +346,7 @@ class Urls_Content_Retriever():
         if body:
             _extract_elements(body)
         else:
-            dred('网页body为空.')
+            dred('[Urls_Content_Retriever] 网页body为空.')
 
         return extracted_title, '\n'.join(extracted_text_list), extracted_content_list
 
@@ -366,7 +379,7 @@ class Urls_Content_Retriever():
                 url = f"https://www.bing.com/search?q={query}&count={show_results_in_one_page}&first={start}"
 
                 timeout = show_results_in_one_page/30*Global.playwright_bing_search_time_out
-                print(f'try to goto page: "{url}" with use_proxy: {use_proxy} with timeout:{timeout}')
+                # print(f'try to goto page: "{url}" with use_proxy: {use_proxy} with timeout:{timeout}')
                 await page.goto(url)
                 await page.wait_for_load_state('networkidle', timeout=timeout)
 
@@ -379,7 +392,7 @@ class Urls_Content_Retriever():
                     i += 1
 
         except Exception as e:
-            dred(f'get_bing_search_result() error: {e}')
+            dred(f'[Urls_Content_Retriever] error ({type(e)}): "{e}"')
             return []
 
         # i = 0
@@ -629,7 +642,8 @@ if __name__ == '__main__':
     # url='https://segmentfault.com/a/1190000044298001'
     # url='https://www.jianshu.com/p/01c905aaf661'
     # url='https://www.reddit.com/r/QualityAssurance/comments/145mskt/page_object_model_on_playwright/'   # reddit，必须用其api
-    url='https://baijiahao.baidu.com/s?id=1803695466127542316'
+    # url='https://baijiahao.baidu.com/s?id=1803695466127542316'
+    url='https://blog.csdn.net/qq_45058208/article/details/137617049'
 
     # print(get_body_text(url))
     print(f'{quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True)}')
