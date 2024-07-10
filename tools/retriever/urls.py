@@ -356,7 +356,7 @@ class Urls_Content_Retriever():
         return '\n'.join(extracted_text_list), extracted_content_list
 
     async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50):
-        results = []
+        result_url_list = []
 
         # 获得context
         context = self.context_with_proxy if use_proxy else self.context
@@ -365,18 +365,7 @@ class Urls_Content_Retriever():
             # 进行搜索
             page = await context.new_page()
 
-            # url = f"https://www.bing.com/search?q={query}&count={show_results_in_one_page}"
-            # await page.goto(url)
-            # # await page.wait_for_load_state('networkidle', timeout=2000)
-            # await page.wait_for_load_state('networkidle', timeout=Global.playwright_bing_search_time_out)
-            #
-            # # 解析搜索结果
-            # # print(f'page: {page}')
-            # search_results = await page.query_selector_all('.b_algo h2')
-            # # print(f'search_results: {search_results}')
-
-            # Loop through all required pages
-
+            # 获取如100+个搜索结果(每页如50个，则翻页num/50+1次)，汇总为list
             pages_to_scrape = result_num // show_results_in_one_page +1
             i=0
             for page_num in range(0, pages_to_scrape):
@@ -391,31 +380,19 @@ class Urls_Content_Retriever():
                 results_on_page = await page.query_selector_all('.b_algo h2 a')
                 for result in results_on_page:
                     title = await result.inner_text()
-                    link = await result.get_attribute('href')
+                    result_url = await result.get_attribute('href')
                     if i < result_num:
-                        results.append({'title': title, 'url': link})
+                        result_url_list.append(result_url)
                     i += 1
 
+        except Playwright_TimeoutError as e:
+            dred(f'[Urls_Content_Retriever] get_bing_search_result() Playwright_TimeoutError: "{e}"')
+            return []
         except Exception as e:
-            dred(f'[Urls_Content_Retriever] error ({type(e)}): "{e}"')
+            dred(f'[Urls_Content_Retriever] get_bing_search_result() error ({type(e)}): "{e}"')
             return []
 
-        # i = 0
-        # for result in search_results:
-        #     i += 1
-        #     title = await result.inner_text()
-        #     a_tag = await result.query_selector('a')
-        #     if not a_tag: continue
-        #     url = await a_tag.get_attribute('href')
-        #     if not url:
-        #         continue
-        #
-        #     results.append({
-        #         'title': title,
-        #         'url': url
-        #     })
-
-        return results
+        return result_url_list
 
 # 同步：获取url的文本
 def get_url_text(url, use_proxy=False):
@@ -457,33 +434,25 @@ def get_urls_text(urls, use_proxy=False)->dict:
     results_text_dict = ret.loop.run_until_complete(_get_urls_text())
     return results_text_dict
 
-# 异步：获取bing的搜索结果
-async def aget_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50):
-    urls_content_retriever = Urls_Content_Retriever()
-    await urls_content_retriever.init()
-
-    results = await urls_content_retriever.get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page)
-
-    await urls_content_retriever.close()
-    return results
-
 # 同步：获取bing的搜索结果
 def get_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50):
-    urls_content_retriever = Urls_Content_Retriever()
-    async def _quick_get_bing_search_result(query,use_proxy=False, result_num=result_num, show_results_in_one_page=50):
-        await urls_content_retriever.init()
+    ret = Urls_Content_Retriever()
+    async def _quick_get_bing_search_result():
+        await ret.init()
 
-        results = await urls_content_retriever.get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page)
+        results = await ret.get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page)
 
-        await urls_content_retriever.close()
+        await ret.close()
         return results
 
-
-    results = urls_content_retriever.loop.run_until_complete(_quick_get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page))
+    results = ret.loop.run_until_complete(_quick_get_bing_search_result())
     return results
 
 # 同步：获取多个urls的图文
 def get_urls_content_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
+    if not urls:
+        return {}
+
     ret = Urls_Content_Retriever()
 
     async def _get_urls_content_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
@@ -529,61 +498,6 @@ url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe
 url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
 url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
 
-async def async_search_main():
-    results = await aget_bing_search_result(query='李白是谁？', use_proxy=False)
-    for item in results:
-        print(f"{item['title']}: {item['url']}")
-
-def sync_search_main():
-    results = get_bing_search_result(query='如何安装ubuntu', result_num=50, use_proxy=True)
-    # results = [item['url'] for item in results]
-    for i, item in enumerate(results):
-        # print(f"{i+1:>2d}) {item}")
-        print(f"{i+1:>2d}) {item['title']}: {item['url']}")
-
-def __bs4_test():
-    from bs4 import BeautifulSoup
-
-    html1 = '''<div><p>This is a paragraph1.</p>
-    <p>This is a paragraph2.</p>
-    <p>This is a paragraph3.</p>
-    <p>This is a paragraph4.</p>
-    And some more text.
-</div>
-'''
-    html2 = '''<div>div_text<p>This is a paragraph1.</p>
-    <p>This is a paragraph2.</p>
-    <p>This is a paragraph3.</p>
-    <p>This is a paragraph4.</p>
-    And some more text.
-</div>
-'''
-
-    soup = BeautifulSoup(html, 'html.parser')
-    div = soup.div
-
-    print('[origin]')
-    print(f"'{html}'")
-
-    # 方法 1
-    print('[1]')
-    print(div.string)  # 这会返回 None，因为 div 有多个子节点
-    print(f'{next(div.strings).strip()!r}')  # 这会返回 None，因为 div 有多个子节点
-    # print('text'!r)
-
-    # 方法 2
-    print('[2]')
-    print(f'"{div.get_text(strip=True)}"')
-    print(f'"{div.get_text(strip=False)}"')
-
-    # 方法 3
-    print('[3]')
-    print(''.join(child for child in div.contents if isinstance(child, str)).strip())
-
-    # 方法 4
-    print('[4]')
-    print(' '.join(div.find_all(text=True, recursive=False)).strip())
-
 if __name__ == '__main__':
     url1='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     # url='https://segmentfault.com/a/1190000044298001'
@@ -601,27 +515,36 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
-    # 获取多个urls下的content的list
+    # ===获取bing搜索结果===
+    # result_url_list = get_bing_search_result(query='如何安装ubuntu', result_num=100, use_proxy=False)
+    # for i, item in enumerate(result_url_list):
+    #     print(f"{i+1:>2d}) {item}")
+
+    url_list = get_bing_search_result(query='如何安装ubuntu', result_num=2, use_proxy=False)
+    content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
+    for url in (url_list):
+        print(f'================================={url}==========================================')
+        for item in content_list[url]:
+            print(item)
+
+
+    # ===获取多个urls下的content的list===
     # res = get_urls_content_list([url1, url2], res_type_list=['video', 'image', 'text'], use_proxy=False)
     # for item in res[url1]:
     #     print(item)
     # for item in res[url2]:
     #     print(item)
 
-    # 获取一个url下的content的list
-    res = get_url_content_list(url1, res_type_list=['video', 'image', 'text'], use_proxy=False)
-    for item in res:
-        print(item)
+    # ===获取一个url下的content的list===
+    # res = get_url_content_list(url1, res_type_list=['video', 'image', 'text'], use_proxy=False)
+    # for item in res:
+    #     print(item)
 
-    # 获取多个urls的文本
+    # ===获取多个urls的文本===
     # dict = get_urls_text([url1, url2])
     # print(dict[url1])
     # print(dict[url2])
 
-    # 获取一个url的文本
+    # ===获取一个url的文本===
     # txt = get_url_text(url)
     # print(txt)
-
-    # sync_main()
-
-    # sync_search_main()

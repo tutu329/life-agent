@@ -20,10 +20,10 @@ def get_clean_html(html):
     doc = Document(html)
     clean_html = doc.summary()
     title = doc.title()
-    print(f'-----------------------clean_html----------------------------')
-    print(f'[get_clean_html]: title, "{title}"')
-    print(f'[get_clean_html]: clean html, "{clean_html}"')
-    print(f'-------------------------------------------------------------')
+    # print(f'-----------------------clean_html----------------------------')
+    # print(f'[get_clean_html]: title, "{title}"')
+    # print(f'[get_clean_html]: clean html, "{clean_html}"')
+    # print(f'-------------------------------------------------------------')
     return title, clean_html
 
 # 获取url的域名如"https://github.com/"
