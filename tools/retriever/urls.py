@@ -23,6 +23,9 @@ from utils.url import get_clean_html
 
 from playwright.async_api import TimeoutError as Playwright_TimeoutError
 
+# 提供User-Agent的模拟数据
+from fake_useragent import UserAgent    # pip install fake-useragent
+
 @dataclass
 class Text_and_Media():
     type:       Any = None      # 'type'为 'image' | 'video' | 'text'
@@ -88,7 +91,7 @@ class Urls_Content_Retriever():
                 headless=True,
                 proxy=Global.playwright_proxy   # 关于win下报错：A "socket" was not created for HTTP request before 3000ms，查看internet选项的局域网设置中的代理服务器设置，port和该设置一致就行，如shadowsocket是10809而非10808
             )   # 启动chrome
-            self.context_with_proxy = await self.browser_with_proxy.new_context()
+            self.context_with_proxy = await self.browser_with_proxy.new_context(user_agent=UserAgent().random)
 
             # else:
             dgreen('[Urls_Content_Retriever] playwright启动 browser2(without-proxy).')
@@ -98,7 +101,7 @@ class Urls_Content_Retriever():
                 headless=True
             )   # 启动chrome
 
-            self.context = await self.browser.new_context()
+            self.context = await self.browser.new_context(user_agent=UserAgent().random)
 
             # print('playwright启动完毕, context已获得.')
         except Exception as e:
@@ -185,11 +188,12 @@ class Urls_Content_Retriever():
             # 获取html
 
             html_content = await page.evaluate('() => document.documentElement.outerHTML')
+            # print(f'----------------------------------raw html:{html_content}------------------------------')
             # 非常关键的步骤，将html中非正文的部分都清除干净
             title, html_content = get_clean_html(html_content)
 
             # html_content = await page.inner_text('body')
-            # print(f'----------------------------------{html_content}------------------------------')
+            # print(f'----------------------------------clean html:{html_content}------------------------------')
 
             # import chardet
             # print(f"----------------------------------{chardet.detect(html_content)['encoding']}------------------------------")
@@ -510,6 +514,10 @@ if __name__ == '__main__':
 
     # url='https://zh.wikihow.com/%E5%AE%89%E8%A3%85Ubuntu-Linux'
     url2='https://blog.csdn.net/qq_45058208/article/details/137617049'
+    url3='https://www.zhihu.com/zvideo/1503506180123537408?utm_id=0'    # 知乎带视频（解析不出来）
+    url4='https://www.jianshu.com/p/748435a16acc'    # 简书（解析ok）
+    url5='https://zhuanlan.zhihu.com/p/534134247'    # 知乎专栏
+    url6='https://zhuanlan.zhihu.com/python-programming'    # 知乎专栏
     # url='https://blog.csdn.net/Python_0011/article/details/131633534'
 
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
@@ -520,12 +528,12 @@ if __name__ == '__main__':
     # for i, item in enumerate(result_url_list):
     #     print(f"{i+1:>2d}) {item}")
 
-    url_list = get_bing_search_result(query='如何安装ubuntu', result_num=2, use_proxy=False)
-    content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
-    for url in (url_list):
-        print(f'================================={url}==========================================')
-        for item in content_list[url]:
-            print(item)
+    # url_list = get_bing_search_result(query='如何安装ubuntu', result_num=2, use_proxy=False)
+    # content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
+    # for url in (url_list):
+    #     print(f'================================={url}==========================================')
+    #     for item in content_list[url]:
+    #         print(item)
 
 
     # ===获取多个urls下的content的list===
@@ -536,9 +544,9 @@ if __name__ == '__main__':
     #     print(item)
 
     # ===获取一个url下的content的list===
-    # res = get_url_content_list(url1, res_type_list=['video', 'image', 'text'], use_proxy=False)
-    # for item in res:
-    #     print(item)
+    res = get_url_content_list(url6, res_type_list=['video', 'image', 'text'], use_proxy=False)
+    for item in res:
+        print(item)
 
     # ===获取多个urls的文本===
     # dict = get_urls_text([url1, url2])
