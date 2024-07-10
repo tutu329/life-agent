@@ -34,7 +34,7 @@ class Url_Content_Parsed_Result():
     status:                 Any = None
     html_content:           Any = None
     title:                  Any = None
-    raw_text:               Any = None              # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+    # raw_text:               Any = None              # 通过body.get_text()获得的全部text，肯定正确，但没有换行
     parsed_text:            Any = None              # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
     text_and_media_list:    Text_and_Media = None
 
@@ -133,15 +133,21 @@ class Urls_Content_Retriever():
         if self.async_playwright:
             await self.async_playwright.stop()  # 如果没有stop，会报错：ValueError: I/O operation on closed pipe
 
-    def get_parsed_text(self, url, raw_text=False, one_new_line=True):
-        text =  self.results[url]['raw_text'] if raw_text else self.results[url]['parsed_text']
-        if one_new_line:
-            text = str_replace_multiple_newlines_with_one_newline(text)
+    def get_title(self, url):
+        return self.results[url]['title']
+
+    def get_parsed_text(self, url):
+        # text =  self.results[url]['raw_text'] if raw_text else self.results[url]['parsed_text']
+        # if one_new_line:
+        #     text = str_replace_multiple_newlines_with_one_newline(text)
+        # return text
+        text =  self.results[url]['parsed_text']
         return text
 
-    def get_parsed_resource_list(self, url, res_type_list=['video', 'image', 'text']):
+    def get_parsed_content_list(self, url, res_type_list=['video', 'image', 'text']):
         res_list =  self.results[url]['text_and_media_list']
         rtn_list = []
+        rtn_list.append({'type': 'text', 'raw_type': 'title', 'content': self.results[url]['title'] })
         for item in res_list:
             if item['type'] in res_type_list:
                 rtn_list.append(item)
@@ -180,7 +186,7 @@ class Urls_Content_Retriever():
 
             html_content = await page.evaluate('() => document.documentElement.outerHTML')
             # 非常关键的步骤，将html中非正文的部分都清除干净
-            html_content = get_clean_html(html_content)
+            title, html_content = get_clean_html(html_content)
 
             # html_content = await page.inner_text('body')
             # print(f'----------------------------------{html_content}------------------------------')
@@ -190,15 +196,15 @@ class Urls_Content_Retriever():
             # html_content.decode('utf-8')
 
 
-            raw_text = await self._html_to_text(html_content)
-            title, parsed_text, text_and_media_list = await self._get_text_and_media(html_content, url)
+            # raw_text = await self._html_to_text(html_content)
+            parsed_text, text_and_media_list = await self._get_text_and_media(html_content, url)
             # print(f'text_media: {text_media}')
 
             result = Url_Content_Parsed_Result(
                 # status=response.status,
                 html_content=html_content,
                 title=title,
-                raw_text=raw_text,              # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+                # raw_text=raw_text,              # 通过body.get_text()获得的全部text，肯定正确，但没有换行
                 parsed_text=parsed_text,        # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
                 text_and_media_list=text_and_media_list,
             )
@@ -208,7 +214,7 @@ class Urls_Content_Retriever():
             result = Url_Content_Parsed_Result(
                 html_content='',
                 title='',
-                raw_text='',                # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+                # raw_text='',                # 通过body.get_text()获得的全部text，肯定正确，但没有换行
                 parsed_text='',             # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
                 text_and_media_list=[],
             )
@@ -220,7 +226,7 @@ class Urls_Content_Retriever():
                 # status=status,
                 html_content='',
                 title='',
-                raw_text='',                # 通过body.get_text()获得的全部text，肯定正确，但没有换行
+                # raw_text='',                # 通过body.get_text()获得的全部text，肯定正确，但没有换行
                 parsed_text='',             # 通过递归调用next(element.strings())获得的全部text，可能存在解析问题，但具有换行
                 text_and_media_list=[],
             )
@@ -250,13 +256,13 @@ class Urls_Content_Retriever():
         soup = BeautifulSoup(html, 'html.parser')
 
         extracted_content_list = []
-        extracted_title = ''
+        # extracted_title = ''
         extracted_text_list = []
 
-        title_tag = soup.find('title')
-        title = title_tag.get_text().strip() if title_tag else ''
-        extracted_content_list.append({'type': 'title', 'content': title})
-        extracted_title = title
+        # title_tag = soup.find('title')
+        # title = title_tag.get_text().strip() if title_tag else ''
+        # extracted_content_list.append({'type': 'title', 'content': title})
+        # extracted_title = title
 
         body = soup.find('body')
 
@@ -266,35 +272,18 @@ class Urls_Content_Retriever():
         def _extract_elements(
                 element,
         ):
-            not_needed = Global.playwright_url_content_not_needed
-            def foo():
-                pass
-
-            def get_node_direct_text(element):
+            def _get_node_direct_text(element):
                 return ''.join(text for text in element.find_all(string=True, recursive=False)).strip()
 
             # print(f'---------------element: {element}---------------')
             if isinstance(element, Tag):
                 if element.name in Global.html_text_tags:   # 文本类
-                    text = get_node_direct_text(element)
+                    text = _get_node_direct_text(element)
                     if text:
                         data = Text_and_Media(type='text', raw_type=element.name, content=text)
                         extracted_content_list.append(asdict(data))
                         # extracted_content_list.append({'type': 'text', 'raw_type':element.name, 'content':text})
                         extracted_text_list.append(text)
-
-                # if element.name == 'div' or element.name == 'p' or element.name == 'span':
-                #     text = ''
-                #     try:
-                #         text = next(element.strings).strip()    # 获取<div>、<p>、<span>等标签后面的文本，但可能获取到<div><p>text1</p></div>的<div>的text1，导致div和p重复获取text1
-                #     except StopIteration:
-                #         pass
-                #     finally:
-                #         if text and (not element.find_all('p')) and (not element.find_all('span')):
-                #             data = Text_and_Media(type='text', raw_type=element.name, content=text)
-                #             extracted_content_list.append(asdict(data))
-                #             # extracted_content_list.append({'type': 'text', 'raw_type':element.name, 'content':text})
-                #             extracted_text_list.append(text)
                 if element.name == 'img':
                     # print(f'---------------img element: {element}---------------')
                     # src的图片
@@ -364,7 +353,7 @@ class Urls_Content_Retriever():
         else:
             dred('[Urls_Content_Retriever] 网页body为空.')
 
-        return extracted_title, '\n'.join(extracted_text_list), extracted_content_list
+        return '\n'.join(extracted_text_list), extracted_content_list
 
     async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50):
         results = []
@@ -428,56 +417,48 @@ class Urls_Content_Retriever():
 
         return results
 
-# 异步：获取url的文本
-async def async_quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True):
-    urls_content_retriever = Urls_Content_Retriever()
-    await urls_content_retriever.init()
-
-    await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
-
-    result_text =  urls_content_retriever.get_parsed_text(url, raw_text=raw_text, one_new_line=one_new_line)
-    await urls_content_retriever.close()
-
-    return result_text
-
 # 同步：获取url的文本
-def quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True):
-    urls_content_retriever = Urls_Content_Retriever()
+def get_url_text(url, use_proxy=False):
+    ret = Urls_Content_Retriever()
     async def _get_url_text():
-        await urls_content_retriever.init()
-        await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
-        result_text = urls_content_retriever.get_parsed_text(url, raw_text=raw_text, one_new_line=one_new_line)
+        await ret.init()
+        await ret.parse_url_content(url, use_proxy=use_proxy)
+        result_text = ret.get_title(url) + '\n'
+        result_text += ret.get_parsed_text(url)
 
-        await urls_content_retriever.close()
+        await ret.close()
         return result_text
 
-    result_text = urls_content_retriever.loop.run_until_complete(_get_url_text())
+    result_text = ret.loop.run_until_complete(_get_url_text())
     return result_text
 
 # 同步：获取多个urls的文本
-async def quick_get_urls_text(urls, use_proxy=False, raw_text=False, one_new_line=True):
-    results_text_dict = {
-        # 'url': text
-    }
+def get_urls_text(urls, use_proxy=False)->dict:
+    ret = Urls_Content_Retriever()
+    async def _get_urls_text():
+        results_text_dict = {
+            # 'url': text
+        }
 
-    tasks = []
-    urls_content_retriever = Urls_Content_Retriever()
-    await urls_content_retriever.init()
+        tasks = []
+        await ret.init()
+        async def _get_url_text(url):
+            await ret.parse_url_content(url, use_proxy=use_proxy)
+            results_text_dict[url] = ret.get_title(url) + '\n'
+            results_text_dict[url] += ret.get_parsed_text(url)
 
-    async def _get_url_text():
-        await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
-        results_text_dict[url] = urls_content_retriever.get_parsed_text(url, raw_text=raw_text, one_new_line=one_new_line)
+        for url in urls:
+            tasks.append(asyncio.create_task(_get_url_text(url)))
 
-    for url in urls:
-        tasks.append(asyncio.create_task(_get_url_text(url, use_proxy=use_proxy)))
+        await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
+        await ret.close()
+        return results_text_dict
 
-    await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
-
-    await urls_content_retriever.close()
+    results_text_dict = ret.loop.run_until_complete(_get_urls_text())
     return results_text_dict
 
 # 异步：获取bing的搜索结果
-async def async_quick_get_bing_search_result(query,use_proxy=False, result_num=10, show_results_in_one_page=50):
+async def aget_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50):
     urls_content_retriever = Urls_Content_Retriever()
     await urls_content_retriever.init()
 
@@ -487,7 +468,7 @@ async def async_quick_get_bing_search_result(query,use_proxy=False, result_num=1
     return results
 
 # 同步：获取bing的搜索结果
-def quick_get_bing_search_result(query,use_proxy=False, result_num=10, show_results_in_one_page=50):
+def get_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50):
     urls_content_retriever = Urls_Content_Retriever()
     async def _quick_get_bing_search_result(query,use_proxy=False, result_num=result_num, show_results_in_one_page=50):
         await urls_content_retriever.init()
@@ -501,33 +482,11 @@ def quick_get_bing_search_result(query,use_proxy=False, result_num=10, show_resu
     results = urls_content_retriever.loop.run_until_complete(_quick_get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page))
     return results
 
-# 异步：获取多个urls的图文
-async def async_quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
-    results_dict = {
-        # 'url': res_list
-    }
-
-    tasks = []
-    urls_content_retriever = Urls_Content_Retriever()
-    await urls_content_retriever.init()
-
-    async def _get_url_res():
-        await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
-        results_dict[url] = urls_content_retriever.get_parsed_resource_list(url, res_type_list=res_type_list)
-
-    for url in urls:
-        tasks.append(asyncio.create_task(_get_url_res(url, use_proxy=use_proxy)))
-
-    await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
-
-    await urls_content_retriever.close()
-    return results_dict
-
 # 同步：获取多个urls的图文
-def quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
-    urls_content_retriever = Urls_Content_Retriever()
+def get_urls_content_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
+    ret = Urls_Content_Retriever()
 
-    async def _quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
+    async def _get_urls_content_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
         # dgreen(f'urls: {urls}')
         # dgreen(f'res_type_list: {res_type_list}')
         # dgreen(f'use_proxy: {use_proxy}')
@@ -536,27 +495,30 @@ def quick_get_urls_resource_list(urls, res_type_list=['video', 'image', 'text'],
         }
 
         tasks = []
-        await urls_content_retriever.init()
+        await ret.init()
 
-        async def _get_url_res():
-            await urls_content_retriever.parse_url_content(url, use_proxy=use_proxy)
-            results_dict[url] = urls_content_retriever.get_parsed_resource_list(url, res_type_list=res_type_list)
+        async def _get_url_res(url):
+            await ret.parse_url_content(url, use_proxy=use_proxy)
+            results_dict[url] = ret.get_parsed_content_list(url, res_type_list=res_type_list)
 
         for url in urls:
-            tasks.append(asyncio.create_task(_get_url_res()))
+            tasks.append(asyncio.create_task(_get_url_res(url)))
 
         await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
-
-        await urls_content_retriever.close()
+        await ret.close()
         return results_dict
 
     # print(f'urls: {urls}')
     # print(f'res_type_list: {res_type_list}')
     # print(f'use_proxy: {use_proxy}')
-    results_dict = urls_content_retriever.loop.run_until_complete(_quick_get_urls_resource_list(urls, res_type_list, use_proxy))
+    results_dict = ret.loop.run_until_complete(_get_urls_content_list(urls, res_type_list, use_proxy))
     # print(f'results_dict: {results_dict}')
 
     return results_dict
+
+def get_url_content_list(url, res_type_list=['video', 'image', 'text'], use_proxy=False):
+    res = get_urls_content_list([url], res_type_list=res_type_list, use_proxy=use_proxy)
+    return res[url]
 
 surl1 = 'https://www.xvideos.com/tags/porn'
 surl2 = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
@@ -567,38 +529,13 @@ url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe
 url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
 url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
 
-async def async_main():
-    res_list = await async_quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
-
-    print('links1:')
-    if surl1 in res_list:
-        for item in res_list[surl1]:
-            print(item)
-    print('links2:')
-    if url2 in res_list:
-        for item in res_list[url2]:
-            print(item)
-
-def sync_main():
-    res_list = quick_get_urls_resource_list([surl1, url1], res_type_list=['video', 'image', 'text'], use_proxy=True)
-    # res_list = await quick_get_urls_resource_list([surl1, url2], res_type_list=['video', 'image', 'text'], use_proxy=True)
-
-    print('links1:')
-    if surl1 in res_list:
-        for item in res_list[surl1]:
-            print(item)
-    print('links2:')
-    if url1 in res_list:
-        for item in res_list[url1]:
-            print(item)
-
 async def async_search_main():
-    results = await async_quick_get_bing_search_result(query='李白是谁？', use_proxy=False)
+    results = await aget_bing_search_result(query='李白是谁？', use_proxy=False)
     for item in results:
         print(f"{item['title']}: {item['url']}")
 
 def sync_search_main():
-    results = quick_get_bing_search_result(query='如何安装ubuntu', result_num=50, use_proxy=True)
+    results = get_bing_search_result(query='如何安装ubuntu', result_num=50, use_proxy=True)
     # results = [item['url'] for item in results]
     for i, item in enumerate(results):
         # print(f"{i+1:>2d}) {item}")
@@ -648,21 +585,7 @@ def __bs4_test():
     print(' '.join(div.find_all(text=True, recursive=False)).strip())
 
 if __name__ == '__main__':
-    def get_body_text(url):
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-            page.goto(url)
-            # 等待页面加载完成
-            page.wait_for_load_state('networkidle')
-            # 获取 <body> 下的文本
-            body_text = page.evaluate('() => document.documentElement.outerHTML')
-            # body_text = page.evaluate('document.body.innerText')
-            browser.close()
-            return body_text
-    # print(get_body_text(url))
-
-    url='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
+    url1='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     # url='https://segmentfault.com/a/1190000044298001'
     # url='https://www.jianshu.com/p/01c905aaf661'
     # url='https://www.reddit.com/r/QualityAssurance/comments/145mskt/page_object_model_on_playwright/'   # reddit，必须用其api
@@ -672,14 +595,32 @@ if __name__ == '__main__':
     # url='https://ubuntu.letout.cn/guide/prepare/native.html'
 
     # url='https://zh.wikihow.com/%E5%AE%89%E8%A3%85Ubuntu-Linux'
-    # url='https://blog.csdn.net/qq_45058208/article/details/137617049'
+    url2='https://blog.csdn.net/qq_45058208/article/details/137617049'
     # url='https://blog.csdn.net/Python_0011/article/details/131633534'
 
-    # print(f'{quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True)}')
-    # print(f'{quick_get_url_text(url, use_proxy=False, raw_text=False, one_new_line=True)}')
-    res = quick_get_urls_resource_list([url], res_type_list=['video', 'image', 'text'], use_proxy=False)
-    for item in res[url]:
+    # print(f'{quick_get_url_text(url, use_proxy=False)}')
+    # print(f'{quick_get_url_text(url, use_proxy=False)}')
+
+    # 获取多个urls下的content的list
+    # res = get_urls_content_list([url1, url2], res_type_list=['video', 'image', 'text'], use_proxy=False)
+    # for item in res[url1]:
+    #     print(item)
+    # for item in res[url2]:
+    #     print(item)
+
+    # 获取一个url下的content的list
+    res = get_url_content_list(url1, res_type_list=['video', 'image', 'text'], use_proxy=False)
+    for item in res:
         print(item)
+
+    # 获取多个urls的文本
+    # dict = get_urls_text([url1, url2])
+    # print(dict[url1])
+    # print(dict[url2])
+
+    # 获取一个url的文本
+    # txt = get_url_text(url)
+    # print(txt)
 
     # sync_main()
 

@@ -67,7 +67,6 @@ class Global():
     }
     playwright_bing_search_time_out = 10000              # 超时设置ms
     playwright_get_url_content_time_out = 5000          # 超时设置ms
-    playwright_url_content_not_needed = ['\xa0', '']    # 获取url内容时，不需要的内容
     html_main_text_tags = [
         'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         # 'p', 'span', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',

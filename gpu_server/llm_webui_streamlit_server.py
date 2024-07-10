@@ -28,10 +28,10 @@ from streamlit.web.server.websocket_headers import _get_websocket_headers
 from utils.extract import get_ajs_anonymous_id_from_cookie
 import pickle
 
-from tools.retriever.urls import quick_get_urls_resource_list, quick_get_bing_search_result
-from tools.retriever.urls import quick_get_url_text
+from tools.retriever.urls import get_urls_content_list, get_bing_search_result
+from tools.retriever.urls import get_url_text
 
-from tools.retriever.urls import async_quick_get_url_text
+from tools.retriever.urls import aget_url_text
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
@@ -878,12 +878,12 @@ def ask_llm(prompt, paras):
     if connecting_internet:
         place_holder = st.chat_message('assistant').empty()
         # 初始化Concurrent_LLMs并运行输出status
-        results = quick_get_bing_search_result(query=prompt, use_proxy=True, result_num=3)
+        results = get_bing_search_result(query=prompt, use_proxy=True, result_num=3)
         for item in results:
             place_holder.markdown(item['url'])
         urls = [item['url'] for item in results]
         print(f'urls: {urls}')
-        res_list = quick_get_urls_resource_list(urls=urls, res_type_list=['image', 'video'], use_proxy=True)
+        res_list = get_urls_content_list(urls=urls, res_type_list=['image', 'video'], use_proxy=True)
         print(f'res_list: {res_list}')
         res = []
         for k, v in res_list.items():
@@ -904,7 +904,7 @@ def ask_llm(prompt, paras):
             # 如果填了url
             # searcher = Bing_Searcher.create_searcher_and_loop()
             # result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
-            result = quick_get_url_text(url_prompt, use_proxy=False, raw_text=False, one_new_line=True)
+            result = get_url_text(url_prompt, use_proxy=False, raw_text=False, one_new_line=True)
 
 
             # result = await quick_get_url_text(url_prompt)
