@@ -31,7 +31,7 @@ import pickle
 from tools.retriever.urls import get_urls_content_list, get_bing_search_result
 from tools.retriever.urls import get_url_text
 
-from tools.retriever.urls import aget_url_text
+# from tools.retriever.urls import aget_url_text
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
