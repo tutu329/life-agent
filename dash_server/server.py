@@ -90,6 +90,88 @@ app.layout = html.Div(
 app.clientside_callback(
     """
     function(n_clicks, state) {
+        const API_KEY = 'empty';
+        const API_URL = 'http://127.0.0.1/v1/chat/completions';
+        
+        
+
+        
+        console.log('start to fetch0...')
+        const fetch = require('node-fetch');
+        // require('dotenv').config(); // 用于从 .env 文件加载 API 密钥
+        
+        const API_KEY = 'empty';
+        const API_URL = 'http://127.0.0.1:8001/v1/chat/completions';
+        console.log('start to fetch1...')
+        async function streamChatCompletion() {
+          console.log('start to fetch2...')
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'qwen14',
+              messages: [
+                { role: 'system', content: 'You are a helpful assistant.' },
+                { role: 'user', content: '给我讲一个关于猫的笑话。' }
+              ],
+              stream: true // 启用流式输出
+            })
+          });
+        
+          if (!response.ok) {
+            console.error(`Error: ${response.status} ${response.statusText}`);
+            return;
+          }
+        
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+        
+          let done = false;
+          let buffer = '';
+        
+          while (!done) {
+            const { value, done: readerDone } = await reader.read();
+            done = readerDone;
+        
+            if (value) {
+              buffer += decoder.decode(value, { stream: true });
+        
+              const lines = buffer.split('\n').filter(line => line.trim() !== '');
+              buffer = lines.pop() || '';
+        
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const jsonData = line.slice(6);
+                  if (jsonData === '[DONE]') {
+                    console.log("\n\n[流式输出完成]");
+                    return;
+                  }
+        
+                  try {
+                    const parsed = JSON.parse(jsonData);
+                    const content = parsed.choices[0]?.delta?.content;
+                    if (content) {
+                      process.stdout.write(content);
+                    }
+                  } catch (error) {
+                    console.error('解析错误:', error);
+                  }
+                }
+              }
+            }
+          }
+        
+          console.log("\n\n[流式输出完成]");
+        }
+        
+        streamChatCompletion().catch(console.error);
+
+
+        
+        
         var input1 = state
         console.log('-----------------1------------------');
         console.log(input1);

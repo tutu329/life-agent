@@ -1211,8 +1211,8 @@ def main2():
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
     # llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
     llm.ask_prepare('你是谁', in_temperature=0.5, in_max_new_tokens=200).get_answer_and_sync_print()
-    llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
-    llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
+    # llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
+    # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 
 if __name__ == "__main__" :
     # main1()
