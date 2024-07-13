@@ -185,3 +185,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # r = redis.from_url('redis://localhost:6379/0')
+    # r.set('msg', 'hh')
+    # print(r.get('msg'))
