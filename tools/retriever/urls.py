@@ -535,7 +535,6 @@ if __name__ == '__main__':
     #     for item in content_list[url]:
     #         print(item)
 
-
     # ===获取多个urls下的content的list===
     # res = get_urls_content_list([url1, url2], res_type_list=['video', 'image', 'text'], use_proxy=False)
     # for item in res[url1]:

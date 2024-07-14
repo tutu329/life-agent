@@ -516,6 +516,8 @@ class LLM_Client:
                 stop=stop,
                 # stop_token_ids=[151329, 151336, 151338],    # glm9b-chat-1m
                 # Specifying stop words in streaming output format is not yet supported and is under development.
+
+                stream_options={"include_usage": True}, # 最新版本openai的要求
             )
             dprint(f'===self.openai.chat.completions.create() invoked.===')
             dprint(f'{"-" * 80}')
@@ -626,20 +628,29 @@ class LLM_Client:
                 if self.response_canceled:
                     break
 
-                if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
-                    if hasattr(chunk, 'usage'):
-                        # 输入和输出的token数量统计
-                        # dred(f'usage = {chunk.usage}')
-                        # dred(f'type(usage) = {type(chunk.usage)}')
-                        if type(chunk.usage) is openai.types.completion_usage.CompletionUsage:
-                            # deepseek API采用openai.types.completion_usage.CompletionUsage: CompletionUsage(completion_tokens=50, prompt_tokens=18, total_tokens=68)
-                            self.usage = {}
-                            self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
-                            self.usage['total_tokens'] = chunk.usage.total_tokens
-                            self.usage['completion_tokens'] = chunk.usage.completion_tokens
-                        else:
-                            # vllm API采用: {'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
-                            self.usage = chunk.usage
+                # print(f'chunk.choices[0].delta: {chunk.choices[0].delta}')
+                # print(f'chunk: {chunk}')
+                if hasattr(chunk, 'usage') and chunk.usage is not None:
+                    self.usage = {}
+                    self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
+                    self.usage['total_tokens'] = chunk.usage.total_tokens
+                    self.usage['completion_tokens'] = chunk.usage.completion_tokens
+
+                if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
+                    # if hasattr(chunk, 'usage') and chunk.usage is not None:
+                    #     print(f'chunk.usage: {chunk.usage}')
+                    #     # 输入和输出的token数量统计
+                    #     # dred(f'usage = {chunk.usage}')
+                    #     # dred(f'type(usage) = {type(chunk.usage)}')
+                    #     if type(chunk.usage) is openai.types.completion_usage.CompletionUsage:
+                    #         # deepseek API采用openai.types.completion_usage.CompletionUsage: CompletionUsage(completion_tokens=50, prompt_tokens=18, total_tokens=68)
+                    #         self.usage = {}
+                    #         self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
+                    #         self.usage['total_tokens'] = chunk.usage.total_tokens
+                    #         self.usage['completion_tokens'] = chunk.usage.completion_tokens
+                    #     else:
+                    #         # vllm API采用: {'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
+                    #         self.usage = chunk.usage
 
                     my_chunk = chunk.choices[0].delta.content
                     answer += my_chunk
