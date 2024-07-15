@@ -43,7 +43,7 @@ app = dash.Dash(
     # ],
     # background_callback_manager = background_callback_manager,
 )
-app.config["suppress_callback_exceptions"] = True   # 频闭一些callback找不到id的错误
+app.config["suppress_callback_exceptions"] = True   # 屏蔽一些callback找不到id的错误
 app.title = "Financial Report"
 server = app.server
 
