@@ -43,6 +43,7 @@ app = dash.Dash(
     # ],
     # background_callback_manager = background_callback_manager,
 )
+app.config["suppress_callback_exceptions"] = True   # 频闭一些callback找不到id的错误
 app.title = "Financial Report"
 server = app.server
 
@@ -51,9 +52,6 @@ app.layout = html.Div(
     [
         dcc.Location(id="url", refresh=False),
         html.Div(id="page-content"),
-        # html.P("你是谁111？", id='output', ),
-        # dcc.Input(id='llm-input', type='text', value='请输入你的问题...'),
-        # html.Button(id='submit-button', n_clicks=0, children='提交'),
     ]
 )
 
@@ -64,7 +62,7 @@ app.layout = html.Div(
 #   2) input输入框('llm-input')的'value'值
 # 输出：
 #   html控件(id为'output')的'children'值
-app.clientside_callback(
+clientside_callback(
     ClientsideFunction(
         namespace='llm_client',
         function_name='ask_llm'
@@ -72,6 +70,7 @@ app.clientside_callback(
     Output('output', 'children'),
     Input('submit-button', 'n_clicks'),
     State('llm-input', 'value'),
+    prevent_initial_call=True,
 )
 
 # 导航栏的callback
