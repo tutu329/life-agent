@@ -32,8 +32,12 @@ dgreen(f'[Dash_Server] background_callback_manager inited.')
 # --------------------------------------------------------------------------------------
 
 # Dash的配置
+from flask import Flask, request
+
+flask_server = Flask(__name__)
 app = dash.Dash(
     __name__,
+    server=flask_server,
     meta_tags=[
         {"name": "viewport", "content": "width=device-width"}
     ],
@@ -46,6 +50,15 @@ app = dash.Dash(
 app.config["suppress_callback_exceptions"] = True   # 屏蔽一些callback找不到id的错误
 app.title = "Financial Report"
 server = app.server
+print(f'flask server: {server}')
+
+
+
+
+# flask_server.secret_key = 'your_secret_key'  # 设置密钥以启用 session 功能
+# session_id = request.cookies.get('session')
+# print(f'flask server session_id: {session_id}')
+
 
 # 主页的html布局
 app.layout = html.Div(
@@ -103,3 +116,4 @@ def display_page(pathname):
 
 if __name__ == "__main__":
     app.run_server(debug=True, host='0.0.0.0', port=7861)
+
