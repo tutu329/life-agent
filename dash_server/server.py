@@ -2,7 +2,7 @@
 import time
 
 import dash
-from dash import Dash, dcc, html, Input, Output, State, callback, CeleryManager, set_props, clientside_callback
+from dash import Dash, dcc, html, Input, Output, State, callback, CeleryManager, set_props, clientside_callback, ClientsideFunction
 from dash.dependencies import Input, Output
 from dash_server.pages import (
     overview,
@@ -12,6 +12,7 @@ from dash_server.pages import (
     distributions,
     newsReviews,
 )
+from dash_extensions.javascript import assign    # pip install dash-extensions
 
 from config import dred, dgreen, dblue
 
@@ -33,12 +34,17 @@ dgreen(f'[Dash_Server] background_callback_manager inited.')
 
 app = dash.Dash(
     __name__,
-    meta_tags=[{"name": "viewport", "content": "width=device-width"}],
+    meta_tags=[
+        {"name": "viewport", "content": "width=device-width"}
+    ],
+    # external_scripts=[
+    #     'https://cdn.jsdelivr.net/npm/axios@1.2.0/dist/axios.min.js',
+    #     'https://cdn.jsdelivr.net/npm/eventsource-parser@1.1.2/dist/index.js',
+    # ],
     # background_callback_manager = background_callback_manager,
 )
 app.title = "Financial Report"
 server = app.server
-
 
 
 # @callback(
@@ -149,30 +155,37 @@ async function openaiChatCompletion() {
 openaiChatCompletion();
 """
 
-app.clientside_callback(
-    """
-    function(n_clicks, state) {
-        var input1 = state
-        console.log('-----------------1------------------');
-        console.log(input1);
-        console.log(input1.length);
-        for (let i = 0; i < input1.length; i++) {
-            setTimeout(() => {
-                var out_s = input1.slice(0,i)
-                console.log(out_s);
-                dash_clientside.set_props(
-                    "output",
-                    {
-                        'children': out_s,
-                        'style': {"color": "#ffffff"},
-                    },
-                )
-            }, i*10); // 10毫秒
+# chunk is:  data: {"id":"cmpl-af880ba0d02046eca5bcabbd36c7ee1a","created":1721032640,"model":"qwen14","choices":[{"index":0,"text":"。","logprobs":null,"finish_reason":null,"stop_reason":null}]}
+# chunk is:  data: {"id":"cmpl-af880ba0d02046eca5bcabbd36c7ee1a","created":1721032640,"model":"qwen14","choices":[{"index":0,"text":"","logprobs":null,"finish_reason":"stop","stop_reason":151643}]}
 
-        }
-        return dash_clientside.no_update;
-    }
-    """,
+app.clientside_callback(
+    # """
+    # function(n_clicks, state) {
+    #     var input1 = state
+    #     console.log('-----------------1------------------');
+    #     console.log(input1);
+    #     console.log(input1.length);
+    #     for (let i = 0; i < input1.length; i++) {
+    #         setTimeout(() => {
+    #             var out_s = input1.slice(0,i)
+    #             console.log(out_s);
+    #             dash_clientside.set_props(
+    #                 "output",
+    #                 {
+    #                     'children': out_s,
+    #                     'style': {"color": "#ffffff"},
+    #                 },
+    #             )
+    #         }, i*10); // 10毫秒
+    #
+    #     }
+    #     return dash_clientside.no_update;
+    # }
+    # """,
+    ClientsideFunction(
+        namespace='llm_client',
+        function_name='ask_llm'
+    ),
     Output('output', 'children'),
     Input('submit-button', 'n_clicks'),
     State('llm-input', 'value'),
