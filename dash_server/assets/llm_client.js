@@ -1,21 +1,10 @@
-console.log('llm_client.js invoked...');
-
-// console.log(axios);
-// // const createParser = window.EventSourceParser.createParser;
-// // const { createParser } = eventsourceParser;
-// const parser = createParser({
-//   feed(event) {
-//     // 处理解析后的事件
-//     console.log(event);
-//   }
-// });
-
+// 经过测试，Bash下的js是浏览器运行的js，和node.js有较大差别，/assets下存放js文件或直接用external_scripts=['https://cdn.jsdelivr.net/npm/axios@1.2.0/dist/axios.min.js']这样的方式
+// 能用一些外部js库，但是行为和node.js不一样，如response.data.on这样的数据监听报错等。
+// 因此，最后考虑用自带的fetch实现client侧的stream输出和set_props刷新
 
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     llm_client: {
         ask_llm: function(n_clicks, llm_input) {
-            console.log(llm_input);
-
             async function streamOutputFromOpenAI(prompt) {
               // 构建请求体
               const requestBody = {
@@ -31,10 +20,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 ],
                 stream: true, // 启用流式输出
                 "model": "qwen14", // 或者你选择的其他模型
-                // "prompt": prompt,
-                // "temperature": 0.7,
-                // "max_tokens": 256,
-                // "stream": true // 启用流式输出
+                "temperature": 0.7,
+                "max_tokens": 512,
               };
 
               // 使用 fetch 发送请求
@@ -59,8 +46,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
                   const chunk = decoder.decode(value);
 
-                  // console.log('chunk is: ', chunk)
-
                   // fetch方式调用后，采用reader方式读取，是返回一行一行的字符串，要从字符串中解析出text
                   const lines = chunk.split("\n");
                   for (const line of lines) {
@@ -83,7 +68,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                   }
                 }
               } else {
-                console.error("响应体为空");
+                console.error("streamOutputFromOpenAI() response为空.");
               }
             }
             // 示例调用

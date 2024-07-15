@@ -13,7 +13,6 @@ from dash_server.pages import (
     newsReviews,
 )
 from dash_extensions.javascript import assign    # pip install dash-extensions
-
 from config import dred, dgreen, dblue
 
 # ---------------连接Celery和Redis服务，以启动background_callback_manager------------------
@@ -32,6 +31,7 @@ background_callback_manager = CeleryManager(celery_app)
 dgreen(f'[Dash_Server] background_callback_manager inited.')
 # --------------------------------------------------------------------------------------
 
+# Dash的配置
 app = dash.Dash(
     __name__,
     meta_tags=[
@@ -46,43 +46,7 @@ app = dash.Dash(
 app.title = "Financial Report"
 server = app.server
 
-
-# @callback(
-#     Output('output', 'children'),
-#     Input('submit-button', 'n_clicks'),
-#     State('llm-input', 'value'),
-#     # background=True,
-# )
-# def update_output(n_clicks, input1):
-#     s = input1
-#     # s = '你是一个最美丽的人，那么你到底是谁，又或者你来自哪里？'
-#     length=len(input1)
-#     ss = s
-#     for i in range(length):
-#         ss = s[:i]
-#         time.sleep(0.1)
-#         print(ss)
-#         set_props(
-#             component_id = "output",
-#             props = {
-#                 'children':ss,
-#                 'style':{"color": "#ff0000"},
-#             },
-#         )
-#
-#     return ss
-
-# console.log(dash_clientside.callback_context);
-# dash_clientside.set_props(
-#     "output",
-#     {
-#         'children': input1,
-#         'style': {"color": "#ff0000"},
-#     },
-# )
-# return dash_clientside.no_update;
-
-# Describe the layout/ UI of the app
+# 主页的html布局
 app.layout = html.Div(
     [
         dcc.Location(id="url", refresh=False),
@@ -93,95 +57,14 @@ app.layout = html.Div(
     ]
 )
 
-"""
-const axios = require('axios');
-const { createParser } = require('eventsource-parser');
-
-async function openaiChatCompletion() {
-  try {
-    // 创建 HTTP 请求配置
-    const config = {
-      method: 'POST',
-      url: 'http://localhost:8001/v1/chat/completions', // 使用本地代理服务器
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer YOUR_OPENAI_API_KEY` // 替换为你的 OpenAI API 密钥
-      },
-      data: {
-        model: 'qwen14', // 替换为你想使用的模型
-        messages: [
-          {
-            role: 'system',
-            content: 'You are ChatGPT, a helpful assistant.'
-          },
-          {
-            role: 'user',
-            content: 'Tell me about Node.js.'
-          }
-        ],
-        stream: true // 启用流式输出
-      },
-      responseType: 'stream' // 使 `axios` 以流的形式接收数据
-    };
-
-    // 发起请求并处理流式输出
-    const response = await axios(config);
-    const parser = createParser(event => {
-      if (event.type === 'event') {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.choices && data.choices.length > 0) {
-            process.stdout.write(data.choices[0].delta.content || '');
-          }
-        } catch (error) {
-          console.error('Error parsing streaming data:', error);
-        }
-      }
-    });
-
-    response.data.on('data', (chunk) => {
-      parser.feed(chunk.toString());
-    });
-
-    response.data.on('end', () => {
-      console.log('\nStream ended.');
-    });
-  } catch (error) {
-    console.error('Error making OpenAI API request:', error);
-  }
-}
-
-// 调用函数
-openaiChatCompletion();
-"""
-
-# chunk is:  data: {"id":"cmpl-af880ba0d02046eca5bcabbd36c7ee1a","created":1721032640,"model":"qwen14","choices":[{"index":0,"text":"。","logprobs":null,"finish_reason":null,"stop_reason":null}]}
-# chunk is:  data: {"id":"cmpl-af880ba0d02046eca5bcabbd36c7ee1a","created":1721032640,"model":"qwen14","choices":[{"index":0,"text":"","logprobs":null,"finish_reason":"stop","stop_reason":151643}]}
-
+# 'submit-button'按钮的callback(clientside回调, 主要解决stream输出的实时刷新问题，不经过server端)
+# 'llm_client'和'ask_llm'均为llm_client.js中设置的名字
+# 输入：
+#   1) 按钮('submit-button')的'n_clicks'事件
+#   2) input输入框('llm-input')的'value'值
+# 输出：
+#   html控件(id为'output')的'children'值
 app.clientside_callback(
-    # """
-    # function(n_clicks, state) {
-    #     var input1 = state
-    #     console.log('-----------------1------------------');
-    #     console.log(input1);
-    #     console.log(input1.length);
-    #     for (let i = 0; i < input1.length; i++) {
-    #         setTimeout(() => {
-    #             var out_s = input1.slice(0,i)
-    #             console.log(out_s);
-    #             dash_clientside.set_props(
-    #                 "output",
-    #                 {
-    #                     'children': out_s,
-    #                     'style': {"color": "#ffffff"},
-    #                 },
-    #             )
-    #         }, i*10); // 10毫秒
-    #
-    #     }
-    #     return dash_clientside.no_update;
-    # }
-    # """,
     ClientsideFunction(
         namespace='llm_client',
         function_name='ask_llm'
@@ -191,7 +74,7 @@ app.clientside_callback(
     State('llm-input', 'value'),
 )
 
-# Update page
+# 导航栏的callback
 @app.callback(
     Output("page-content", "children"),
     [Input("url", "pathname")]
