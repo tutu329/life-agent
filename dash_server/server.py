@@ -63,6 +63,16 @@ print(f'flask server: {server}')
 # 主页的html布局
 app.layout = html.Div(
     [
+        # The memory store reverts to the default on every page refresh
+        dcc.Store(id='mem'),
+        # The local store will take the initial data
+        # only the first time the page is loaded
+        # and keep it until it is cleared.
+        dcc.Store(id='local-mem', storage_type='local'),
+        # Same as the local store but will lose the data
+        # when the browser/tab closes.
+        dcc.Store(id='session-mem', storage_type='session'),
+
         dcc.Location(id="url", refresh=False),
         html.Div(id="page-content"),
     ]
@@ -80,11 +90,46 @@ clientside_callback(
         namespace='llm_client',
         function_name='ask_llm'
     ),
+    # Output('show_mem', 'children'),
+    # Output('session-mem', 'data'),
     Output('output', 'children'),
     Input('submit-button', 'n_clicks'),
     State('llm-input', 'value'),
     prevent_initial_call=True,
 )
+
+# dcc.Store为Dash的会话机制(非常重要和高效)
+# dcc.Store作为input时，在on-page-load时，也会触发。（因此就不需要专门处理on-page-load了）
+@callback(
+    Input('mem', 'data'),
+    Input('local-mem', 'data'),
+    Input('session-mem', 'data'),
+    prevent_initial_call=True,
+)
+def on_local_mem_change(mem, local_mem, session_mem):
+    print(f'---------------------dcc.Store-------------------------')
+    print(f'mem: {mem}')
+    print(f'local-mem: {local_mem}')
+    print(f'session-mem: {session_mem}')
+    print(f'-------------------------------------------------------')
+
+# @callback(
+#     Output('show_mem', 'children'),
+#     Input('submit-button', 'n_clicks'),
+#     State('local', 'data'),
+#     prevent_initial_call=True,
+# )
+# def on_click(n_clicks, data):
+#     # if n_clicks is None:
+#     #     # prevent the None callbacks is important with the store component.
+#     #     # you don't want to update the store for nothing.
+#     #     raise PreventUpdate
+#
+#     # Give a default data dict with 0 clicks if there's no data.
+#     # data = data or {'clicks': 0}
+#     #
+#     # data['clicks'] = data['clicks'] + 1
+#     return data
 
 # 导航栏的callback
 @app.callback(
@@ -115,5 +160,5 @@ def display_page(pathname):
         return overview.create_layout(app)
 
 if __name__ == "__main__":
-    app.run_server(debug=True, host='0.0.0.0', port=7861)
+    app.run_server(debug=True, host='0.0.0.0', port=5110)
 
