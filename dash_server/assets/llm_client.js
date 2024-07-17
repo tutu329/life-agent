@@ -93,15 +93,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             }
             // 示例调用
             let result = await streamOutputFromOpenAI(llm_input);
-            console.log('result:', result);
+
+            var dict = {
+                'chat_result': result,
+            };
 
             dash_clientside.set_props(
               "local-mem",
               {
-                  'data': result,
+                  'data': dict,
               },
             )
             // 注意，js下无法和python一样返回多个参数，必须返回多个output的list(但仍然有问题，返回多个output会导致prevent_initial_call=True无效！)
+            console.log('dict:', dict);
+            console.log('result:', result);
             return result;
             // return [result+'_show', result+'_mem', result];
         }

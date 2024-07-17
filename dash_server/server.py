@@ -98,23 +98,42 @@ clientside_callback(
     prevent_initial_call=True,
 )
 
-# dcc.Store为Dash的会话机制(非常重要和高效)
+# ----------------------dcc.Store为Dash的会话机制(非常重要和高效)----------------------
 # dcc.Store作为input时，在on-page-load时，也会触发。（因此就不需要专门处理on-page-load了）
 @callback(
-    # Output('show_mem', 'children'),
-    Input('mem', 'data'),
-    Input('local-mem', 'data'),
-    Input('session-mem', 'data'),
-    prevent_initial_call=True,
+    output=[Output('show_local_mem', 'children')],
+    inputs=[
+        Input('mem', 'data'),
+        Input('local-mem', 'data'),
+        Input('session-mem', 'data'),
+    ],
+    # 这里确保on-page-load时，被调用
+    # prevent_initial_call=True,
 )
-def on_local_mem_change(mem, local_mem, session_mem):
-    # 非常奇怪，如果增加了Output，这里的print就不会执行，因此改用set_props
-    print(f'---------------------dcc.Store-------------------------', flush=True)
-    print(f'mem: {mem}', flush=True)
-    print(f'local-mem: {local_mem}, flush=True')
-    print(f'session-mem: {session_mem}', flush=True)
-    print(f'-------------------------------------------------------', flush=True)
-    set_props("show_local_mem", {'children': local_mem})
+def on_mem_change(mem, local_mem, session_mem):
+    # ----------------------是否为on-page-load----------------------
+    if mem is None:
+        # ----------------------on-page-load-----------------------
+        print(f'---------------------dcc.Store-------------------------', flush=True)
+        print(f'mem: {mem!r}', flush=True)  # 刷新页面就会为None
+        print(f'local-mem: {local_mem!r}', flush=True)  # persistent(常用，类似与浏览器对应的session_id会话)
+        print(f'session-mem: {session_mem!r}', flush=True)  # persistent但是关闭浏览器标签时会为None
+        print(f'-------------------------------------------------------', flush=True)
+
+        # 1、设置page已经loaded的标识
+        set_props("mem", {'data': 'page_loaded'})
+
+        # 2、读取local-mem(这里就是通过后面的return，读取local-mem的值到html某个控件中)
+
+        # ---------------------------------------------------------
+    else:
+        # 非on-page-load
+        pass
+
+    # 测试用的输出显示
+
+    result = f'local-mem: {local_mem!r}'
+    return [result]
 
 # @callback(
 #     Output('show_mem', 'children'),
