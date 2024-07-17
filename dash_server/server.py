@@ -83,6 +83,7 @@ app.layout = html.Div(
 # 输入：
 #   1) 按钮('submit-button')的'n_clicks'事件
 #   2) input输入框('llm-input')的'value'值
+#   3) persistent量('local-mem')的'data'值
 # 输出：
 #   html控件(id为'output')的'children'值
 clientside_callback(
@@ -92,9 +93,12 @@ clientside_callback(
     ),
     # Output('show_mem', 'children'),
     # Output('session-mem', 'data'),
-    Output('output', 'children'),
-    Input('submit-button', 'n_clicks'),
-    State('llm-input', 'value'),
+    output=Output('output', 'children'),
+    inputs=Input('submit-button', 'n_clicks'),
+    state=[
+        State('llm-input', 'value'),    # llm-input是输出参数
+        State('local-mem', 'data'),     # local-mem是persistent量，交给callback，callback中会将结果保存到local-mem中
+    ],
     prevent_initial_call=True,
 )
 

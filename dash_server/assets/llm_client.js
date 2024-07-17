@@ -4,7 +4,7 @@
 
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     llm_client: {
-        ask_llm: async function(n_clicks, llm_input) {
+        ask_llm: async function(n_clicks, llm_input, local_mem) {
             async function streamOutputFromOpenAI(prompt) {
               // 构建请求体
               const requestBody = {
@@ -94,19 +94,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             // 示例调用
             let result = await streamOutputFromOpenAI(llm_input);
 
-            var dict = {
-                'chat_result': result,
-            };
-
+            console.log('local_mem: ', local_mem);
+            local_mem.chat_result = result
             dash_clientside.set_props(
               "local-mem",
               {
-                  'data': dict,
+                  'data': local_mem,
               },
             )
             // 注意，js下无法和python一样返回多个参数，必须返回多个output的list(但仍然有问题，返回多个output会导致prevent_initial_call=True无效！)
-            console.log('dict:', dict);
+            // console.log('dict:', dict);
             console.log('result:', result);
+
             return result;
             // return [result+'_show', result+'_mem', result];
         }
