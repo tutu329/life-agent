@@ -102,6 +102,13 @@ clientside_callback(
     prevent_initial_call=True,
 )
 
+# 测试html元素内容改变后是否能触发callback
+@callback(
+    inputs=Input('output', 'children'),
+)
+def on_data_change(changed_data):
+    print(f'changed_data: {changed_data}')
+
 # ----------------------dcc.Store为Dash的会话机制(非常重要和高效)----------------------
 # dcc.Store作为input时，在on-page-load时，也会触发。（因此就不需要专门处理on-page-load了）
 @callback(
