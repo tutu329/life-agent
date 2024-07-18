@@ -61,8 +61,8 @@ def get_menu():
     menu = html.Div(
         [
             dcc.Link(
-                "Overview",
-                href="/dash-financial-report/overview",
+                "Chat",
+                href="/dash-financial-report/chat",
                 className="tab first",
             ),
             dcc.Link(

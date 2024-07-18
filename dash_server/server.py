@@ -5,6 +5,7 @@ import dash
 from dash import Dash, dcc, html, Input, Output, State, callback, CeleryManager, set_props, clientside_callback, ClientsideFunction
 from dash.dependencies import Input, Output
 from dash_server.pages import (
+    chat,
     overview,
     pricePerformance,
     portfolioManagement,
@@ -170,7 +171,9 @@ def on_mem_change(mem, local_mem, session_mem):
     [Input("url", "pathname")]
 )
 def display_page(pathname):
-    if pathname == "/dash-financial-report/price-performance":
+    if pathname == "/dash-financial-report/chat":
+        return chat.create_layout(app)
+    elif pathname == "/dash-financial-report/price-performance":
         return pricePerformance.create_layout(app)
     elif pathname == "/dash-financial-report/portfolio-management":
         return portfolioManagement.create_layout(app)
