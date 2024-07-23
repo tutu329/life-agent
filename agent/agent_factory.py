@@ -1,7 +1,7 @@
-import time
+import time, random
 from threading import Thread
 
-from tools.llm.api_client_qwen_openai import *
+from tools.llm.api_client import LLM_Client
 from agent.async_environment import *
 
 
@@ -66,7 +66,7 @@ class Base_Agent():
         self.test_env=None
         self.test_action_question = action_question
 
-        self.test_llm = LLM_Qwen()
+        self.test_llm = LLM_Client()
         # role_prompt = '你是一位书籍收藏爱好者，对于国内外各领域经典著作了如指掌。'
         if example_prompts is None:
             example_prompts = [
@@ -247,4 +247,4 @@ def main_gr():
 
 if __name__ == "__main__":
     main()
-    main_gr()
+    # main_gr()
