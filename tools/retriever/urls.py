@@ -543,9 +543,9 @@ if __name__ == '__main__':
     #     print(item)
 
     # ===获取一个url下的content的list===
-    res = get_url_content_list(url6, res_type_list=['video', 'image', 'text'], use_proxy=False)
-    for item in res:
-        print(item)
+    # res = get_url_content_list(url6, res_type_list=['video', 'image', 'text'], use_proxy=False)
+    # for item in res:
+    #     print(item)
 
     # ===获取多个urls的文本===
     # dict = get_urls_text([url1, url2])
@@ -553,5 +553,5 @@ if __name__ == '__main__':
     # print(dict[url2])
 
     # ===获取一个url的文本===
-    # txt = get_url_text(url)
-    # print(txt)
+    txt = get_url_text(url1)
+    print(txt)

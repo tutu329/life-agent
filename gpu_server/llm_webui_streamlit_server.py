@@ -904,7 +904,12 @@ def ask_llm(prompt, paras):
             # 如果填了url
             # searcher = Bing_Searcher.create_searcher_and_loop()
             # result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url_prompt))
-            result = get_url_text(url_prompt, use_proxy=False, raw_text=False, one_new_line=True)
+            result = get_url_text(url_prompt, use_proxy=False)
+            dred(f'----------------get content from url----------------')
+            dred(f'[url]: {url_prompt}')
+            dred(f'[content]: {result}')
+            dred(f'----------------------------------------------------')
+            # result = get_url_text(url_prompt, use_proxy=False, raw_text=False, one_new_line=True)
 
 
             # result = await quick_get_url_text(url_prompt)
@@ -1003,7 +1008,6 @@ def ask_llm(prompt, paras):
             # full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
         except Exception as e:
             dred(f'统计时间为0.')
-
 
         place_holder.markdown(full_res)
         # dred(f'full_res: {full_res}')

@@ -1216,7 +1216,8 @@ def main2():
         history_max_turns=50,
         history_clear_method='pop',
         temperature=0.7,
-        url='http://localhost:8001/v1/'
+        url='http://192.168.124.33:8001/v1/'
+        # url='http://localhost:8001/v1/'
     )
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
