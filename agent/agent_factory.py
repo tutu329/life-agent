@@ -66,7 +66,7 @@ class Base_Agent():
         self.test_env=None
         self.test_action_question = action_question
 
-        self.test_llm = LLM_Client()
+        self.test_llm = LLM_Client(url='http://192.168.124.33:8001/v1')
         # role_prompt = '你是一位书籍收藏爱好者，对于国内外各领域经典著作了如指掌。'
         if example_prompts is None:
             example_prompts = [
