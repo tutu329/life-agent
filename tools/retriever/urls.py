@@ -493,6 +493,36 @@ def get_url_content_list(url, res_type_list=['video', 'image', 'text'], use_prox
     res = get_urls_content_list([url], res_type_list=res_type_list, use_proxy=use_proxy)
     return res[url]
 
+async def try_to_get_urls_of_some_search_site(url, result_num=100):
+    result_url_list = []
+
+    p = await async_playwright().start()
+    browser = await p.chromium.launch(
+        channel="chrome",
+        headless=True,
+        # proxy=Global.playwright_proxy
+    )
+    context = await browser.new_context(user_agent=UserAgent().random)
+
+    page = await context.new_page()
+    await page.goto(url)
+    await page.wait_for_load_state('networkidle', timeout=Global.playwright_bing_search_time_out)
+    results_on_page = await page.query_selector_all('.opr-toplist1-table_544Ty div div div a')
+    # results_on_page = await page.query_selector_all('.ttp-hot-board ol li a')
+    print(f'results_on_page: {results_on_page}')
+
+    i=0
+    for result in results_on_page:
+        title = await result.inner_text()
+        result_url = await result.get_attribute('href')
+        if i < result_num:
+            result_url_list.append(result_url)
+        i += 1
+
+    for url in result_url_list:
+        print(f'url: https://www.baidu.com{url}')
+
+
 surl1 = 'https://www.xvideos.com/tags/porn'
 surl2 = 'https://www.xvideos.com/video.mdvtou3e47/eroticax_couple_s_porn_young_love'
 surl3 = 'https://www.xvideos.com/tags/porn'
@@ -524,10 +554,11 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
     # ===获取bing搜索结果===
-    # result_url_list = get_bing_search_result(query='如何安装ubuntu', result_num=100, use_proxy=False)
+    # result_url_list = get_bing_search_result(query='今日热点', result_num=100, use_proxy=False)
     # for i, item in enumerate(result_url_list):
     #     print(f"{i+1:>2d}) {item}")
 
+    # ===获取bing搜索结果对应url的所有content===
     # url_list = get_bing_search_result(query='如何安装ubuntu', result_num=2, use_proxy=False)
     # content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
     # for url in (url_list):
@@ -553,5 +584,13 @@ if __name__ == '__main__':
     # print(dict[url2])
 
     # ===获取一个url的文本===
-    txt = get_url_text(url1)
-    print(txt)
+    # url = 'https://so.toutiao.com/search?dvpf=pc&source=input&keyword=%E4%BB%8A%E6%97%A5%E7%83%AD%E7%82%B9'
+    # txt = get_url_text(url)
+    # print(txt)
+
+    # 测试，如头条、热点等入口网站的urls获取
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(try_to_get_urls_of_some_search_site(url='https://www.baidu.com/s?ie=utf-8&f=3&rsv_bp=1&rsv_idx=1&tn=baidu&wd=foo'))
+    # loop.run_until_complete(try_to_get_urls_of_some_search_site(url='https://www.toutiao.com'))
+    while(True):
+        time.sleep(1)
