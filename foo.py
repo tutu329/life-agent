@@ -2,12 +2,13 @@ from openai import OpenAI
 
 # 设置api-key和LLM的地址
 oai = OpenAI(
-    api_key='empty',
+    # api_key='empty',
+    # base_url='http://172.27.67.106:8001/v1',
     # base_url='http://127.0.0.1:8001/v1',
-    base_url='http://172.27.67.106:8001/v1',
+
     # base_url='http://localhost:8001/v1',
-    # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-    # base_url='https://api.deepseek.com',
+    api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+    base_url='https://api.deepseek.com',
 )
 
 # 流式输出的调用
