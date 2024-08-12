@@ -21,14 +21,14 @@ def main():
     try:
         # 获取LLM服务器上的具体模型id
         model_id = oai.models.list().data[0].id
-        print(f'模型id：{model_id}')
+        print(f'模型id：{model_id!r}')
 
         messages = [{'role': 'system','content': 'You are a helpful assistant.'},{'role': 'user','content': '你是谁？'}]
 
         # 向LLM发送messages
-        mid=model_id
-        # mid='deepseek-chat',
-        # mid='deepseek-coder',
+        # mid=model_id
+        mid='deepseek-chat'
+        # mid='deepseek-coder'
         gen = oai.chat.completions.create(model=mid,temperature=0.7,messages=messages,stream=True,max_tokens=1024,)
 
         # 流式输出LLM的回复
