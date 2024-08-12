@@ -8,7 +8,7 @@ oai = OpenAI(
 
     # base_url='http://localhost:8001/v1',
     api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-    base_url='https://api.deepseek.com',
+    base_url='https://api.deepseek.com/v1',
 )
 
 # 流式输出的调用
