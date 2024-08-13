@@ -27,8 +27,8 @@ def main():
 
         # 向LLM发送messages
         # mid=model_id
-        mid='deepseek-chat'
-        # mid='deepseek-coder'
+        # mid='deepseek-chat'
+        mid='deepseek-coder'
         gen = oai.chat.completions.create(model=mid,temperature=0.7,messages=messages,stream=True,max_tokens=1024,)
 
         # 流式输出LLM的回复
