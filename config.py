@@ -37,7 +37,6 @@ class Global():
     line:str = f'{80 * "-"}\n\n'
     llm_max_chat_turns = 200    # 对话超过llm_max_chat_turns轮，则pop最前面的对话
 
-    llm_url:str = 'http://192.168.124.33:8001/v1/'
     llm_max_new_tokens:int = 1024
     llm_temperature:float = 0.7
     # llm_url:str = 'http://116.62.63.204:8001/v1'
@@ -57,6 +56,15 @@ class Global():
 
     comfy_url:str = 'http://localhost:5100'
 
+    # win
+    llm_url:str = 'http://172.27.67.106:8001/v1'
+    redis_server_ip:str = 'localhost'
+    redis_server_port:int = 6379
+
+    # ubuntu
+    # llm_url:str = 'http://192.168.124.33:8001/v1/'
+    # redis_server_ip:str = '192.168.124.33'
+    # redis_server_port:int = 8010
 
     redis_proxy_server_sleep_time:float = 0.05    # redis task server循环的sleep时间
 

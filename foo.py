@@ -1,9 +1,12 @@
 from openai import OpenAI
 
+import config
+
 # 设置api-key和LLM的地址
 oai = OpenAI(
     api_key='empty',
-    base_url='http://172.27.67.106:8001/v1',
+    base_url=config.Global.llm_url,
+    # base_url='http://172.27.67.106:8001/v1',
     # base_url='http://127.0.0.1:8001/v1',
 
     # base_url='http://localhost:8001/v1',
