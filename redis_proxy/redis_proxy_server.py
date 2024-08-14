@@ -166,7 +166,8 @@ def server_init():
     IS_SERVER = True
     if IS_SERVER:
         # 启动 Redis Task Server
-        s_redis_client = Redis_Client(host='192.168.124.33', port=8010, invoker='redis_proxy_server')  # ubuntu-server
+        s_redis_client = Redis_Client(host='localhost', port=6379, invoker='redis_proxy_server')  # ubuntu-server
+        # s_redis_client = Redis_Client(host='192.168.124.33', port=8010, invoker='redis_proxy_server')  # ubuntu-server
         # redis清空所有数据
         s_redis_client.flushall()
 
