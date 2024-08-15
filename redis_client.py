@@ -160,7 +160,8 @@ def main():
 
     # client = Redis_Client(host='localhost')
 
-    client = Redis_Client(host='localhost', port=6379)  # win-server
+    client = Redis_Client(host='172.27.67.106', port=6380)  # win-server
+    # client = Redis_Client(host='localhost', port=6379)  # win-server
     # client = Redis_Client(host='192.168.124.33', port=8010)  # ubuntu-server
     d = {
         'aa':22,
@@ -182,9 +183,49 @@ def main():
     # r = redis.Redis(host='116.62.63.201')
     # r.set('msg', 'hh')
 
+def tls_test():
+    import redis
+    import ssl
+
+    # 配置连接参数
+    redis_host = '172.27.67.106'
+    redis_port = 6380  # 假设 Redis 使用的是启用 TLS 的端口
+    redis_password = ''  # 如果 Redis 设置了密码，请填写此处
+
+    # SSL/TLS 相关参数
+    ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+    ssl_context.check_hostname = False  # 如果不验证主机名，可以将其设置为 False
+    ssl_context.verify_mode = ssl.CERT_NONE  # 如果不验证证书，可以将其设置为 CERT_NONE
+
+    # 创建 Redis 连接对象
+    redis_client = redis.StrictRedis(
+        host=redis_host,
+        port=redis_port,
+        password=redis_password,
+        ssl=True,
+        ssl_cert_reqs=None,
+        ssl_ca_certs=None,
+        ssl_keyfile='d:\\models\\redis.key',
+        ssl_certfile='d:\\models\\redis.crt',
+    )
+
+    # 测试连接
+    try:
+        pong = redis_client.ping()
+        if pong:
+            print('Connected to Redis server with SSL/TLS successfully!')
+
+        redis_client.set('msg', 'hh')
+        rtn = redis_client.get('msg')
+        print(f'rtn: {rtn}')
+        print('python以tls方式，访问redis-stack-servertls成功！')
+
+    except Exception as e:
+        print(f'Error connecting to Redis server: {e}')
 
 if __name__ == "__main__":
-    main()
+    # main()
+    tls_test()
     # r = redis.from_url('redis://localhost:6379/0')
     # r.set('msg', 'hh')
     # print(r.get('msg'))
