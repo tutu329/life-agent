@@ -215,9 +215,14 @@ def tls_test():
         if pong:
             print('Connected to Redis server with SSL/TLS successfully!')
 
-        redis_client.set('msg', 'hh')
-        rtn = redis_client.get('msg')
-        print(f'rtn: {rtn}')
+        key_set = 'msg'
+        content_set = '欢迎来到redis tls.'
+        print(f'\t设置     ：key[{key_set}], value[{content_set}]')
+        redis_client.set(key_set, content_set)
+        rtn1 = redis_client.get(key_set)
+        rtn2 = redis_client.get(key_set).decode('utf-8')
+        print(f'\t读取  raw: key[{key_set}], value[{rtn1}]')
+        print(f'\t读取 utf8: key[{key_set}], value[{rtn2}]')
         print('python以tls方式，访问redis-stack-servertls成功！')
 
     except Exception as e:
