@@ -57,7 +57,7 @@ class Global():
     comfy_url:str = 'http://localhost:5100'
 
     # win
-    llm_url:str = 'http://172.27.67.106:8001/v1'
+    llm_url:str = 'https://172.27.67.106:8001/v1'
     redis_server_ip:str = 'localhost'
     redis_server_port:int = 6379
 
