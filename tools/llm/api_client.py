@@ -172,7 +172,7 @@ class LLM_Client:
             self.openai = OpenAI(
                 api_key=self.api_key,
                 base_url=self.url,
-                http_client=openai.DefaultHttpxClient(verify=False),    # 用于自建的vllm openai api的ssl访问(https访问)
+                # http_client=openai.DefaultHttpxClient(verify=False),    # 用于自建的vllm openai api的ssl访问(https访问)，# 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
             )
             if self.model_id is None or self.model_id=='':
                 try:
@@ -386,7 +386,7 @@ class LLM_Client:
         self.openai = OpenAI(
             api_key=self.api_key,
             base_url=self.url,
-            http_client=openai.DefaultHttpxClient(verify=False),  # 用于自建的vllm openai api的ssl访问(https访问)
+            # http_client=openai.DefaultHttpxClient(verify=False),  # 用于自建的vllm openai api的ssl访问(https访问)， # 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
         )
         try:
             if self.model_id is None or self.model_id=='':
@@ -940,8 +940,13 @@ def main2():
         history_max_turns=50,
         history_clear_method='pop',
         temperature=0.7,
-        # url='http://192.168.124.33:8001/v1/'
-        url='https://localhost:8001/v1/'
+        # url='https://192.168.124.33:8001/v1/'
+
+        # 测试https（阿里云购买的免费ssl证书，绑定在powerai.cc）
+        # url='https://172.27.67.106:8001/v1/'  # 不通
+        # url='https://116.62.63.204:8001/v1/'  # 不通
+        url='https://powerai.cc:8001/v1/'     # 通过
+        # url='https://localhost:8001/v1/'      # 不通
     )
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
