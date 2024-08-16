@@ -188,8 +188,9 @@ def tls_test():
     import ssl
 
     # 配置连接参数
-    redis_host = '172.27.67.106'
-    redis_port = 6380  # 假设 Redis 使用的是启用 TLS 的端口
+    redis_host = 'powerai.cc'
+    # redis_host = '172.27.67.106'
+    redis_port = 8002  # 假设 Redis 使用的是启用 TLS 的端口
     redis_password = ''  # 如果 Redis 设置了密码，请填写此处
 
     # SSL/TLS 相关参数
@@ -203,10 +204,14 @@ def tls_test():
         port=redis_port,
         password=redis_password,
         ssl=True,
-        ssl_cert_reqs=None,
-        ssl_ca_certs=None,
-        ssl_keyfile='d:\\models\\redis.key',
-        ssl_certfile='d:\\models\\redis.crt',
+        # ssl_cert_reqs=None,
+        # ssl_cert_reqs='required',
+
+        ssl_keyfile='d:\\models\\powerai.key',
+        ssl_certfile='d:\\models\\powerai_public.crt',
+        # ssl_cert_reqs=ssl.CERT_REQUIRED,
+        # ssl_ca_certs='d:\\models\\powerai_chain.crt',
+        # ssl_ca_certs='d:\\models\\powerai.pem',
     )
 
     # 测试连接
@@ -228,9 +233,27 @@ def tls_test():
     except Exception as e:
         print(f'Error connecting to Redis server: {e}')
 
+def tls_test2():
+    # !/bin/python
+    import redis
+
+    # 设置连接信息，分别将host、port、password的值分别替换为实例的连接地址、端口号、密码。
+    # ApsaraDB-CA-Chain.pem为证书文件名称。
+    client = redis.Redis(host="powerai.cc", port=8002,
+                         password="", ssl=True,
+                         ssl_cert_reqs="required",
+                         ssl_ca_certs="d:\\models\\fullchain.pem",
+                         ssl_keyfile='d:\\models\\powerai.key',
+                         ssl_certfile='d:\\models\\powerai_public.crt',
+                         )
+
+    client.set("hello", "world")
+    print(client.get("hello"))
+
 if __name__ == "__main__":
     # main()
     tls_test()
+    # tls_test2()
     # r = redis.from_url('redis://localhost:6379/0')
     # r.set('msg', 'hh')
     # print(r.get('msg'))
