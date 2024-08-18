@@ -4,9 +4,44 @@
 # 网页：https://github.com/openai/whisper
 
 import whisper
+from dataclasses import dataclass, field
+from config import dred,dgreen,dblue
 import os
 
-def stt(in_mp3_filename, in_model='base'):
+@dataclass
+class Model_Name:
+    BASE: str = 'base'
+    SMALL: str = 'small'
+    MEDIUM: str = 'medium'
+
+class AudioSTT:
+    def __init__(self, model_name:Model_Name=Model_Name.BASE):
+        self._model_name = model_name
+        self._model = None
+
+    def init(self):
+        if self._model is None:
+            try:
+                self._model = whisper.load_model(self._model_name)
+            except Exception as e:
+                self._model = None
+                dred(f'AudioSTT模型加载失败: "{e}"')
+            dgreen(f'AudioSTT模型加载成功, 模型类型为"{self._model_name}".')
+
+    def stt(self, file_name):
+        if self._model is None:
+            dred(f'AudioSTT模型尚未加载, stt()返回为空.')
+            return ''
+
+        audio = whisper.load_audio(file_name)
+        audio = whisper.pad_or_trim(audio)
+        mel = whisper.log_mel_spectrogram(audio).to(self._model.device)
+        _, probs = self._model.detect_language(mel)
+        options = whisper.DecodingOptions()
+        result = whisper.decode(self._model, mel, options)
+        return result.text
+
+def _legacy_stt_demo(in_mp3_filename, in_model='base'):
     # model = whisper.load_model("medium")
     # model = whisper.load_model("small")
     # model = whisper.load_model("base")
@@ -35,9 +70,14 @@ def stt(in_mp3_filename, in_model='base'):
 
 
 def main():
-    res = stt('C:\\Users\\tutu\\Downloads\\你是谁.m4a', in_model='medium')
-    # res = stt('/tools/output.mp3', in_model='medium')
-    print('语音所包含文字为：', res)
+    # res = stt('C:\\Users\\tutu\\Downloads\\你是谁.m4a', in_model='medium')
+    # # res = stt('/tools/output.mp3', in_model='medium')
+    # print('语音所包含文字为：', res)
+
+    server = AudioSTT(model_name=Model_Name.BASE)
+    server.init()
+    for i in range(5):
+        print(server.stt('C:\\Users\\tutu\\Downloads\\你是谁.m4a'))
 
 if __name__ == "__main__":
     main()
