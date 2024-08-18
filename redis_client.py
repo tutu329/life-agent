@@ -28,8 +28,8 @@ class Redis_Client:
 
     def __init__(
             self,
-            host=config.Global.redis_server_domain,       # domain
-            port=Port.redis,        # port
+            host=config.Domain.redis_server_domain,       # domain
+            port=Port.redis_client,        # port
             invoker=None,           # 调用方如‘redis_proxy_server’
             password='',            # 密码
             ssl=True,  # 是否通过ssl/tls连接

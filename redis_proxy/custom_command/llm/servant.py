@@ -30,7 +30,7 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
         if 'url' in arg_dict:
             url = arg_dict['url']
         else:
-            url = config.Global.llm_url
+            url = config.Domain.llm_url
 
         if 'history' in arg_dict:
             history = arg_dict['history']

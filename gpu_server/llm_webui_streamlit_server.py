@@ -176,14 +176,14 @@ def llm_init():
 
     # 初始化 mem_llm
     mem_llm = LLM_Client(
-        url=config.Global.llm_url,
+        url=config.Domain.llm_url,
         api_key=config.Global.llm_key,
         model_id=config.Global.llm_model,
         history=True,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
         print_input=False,
     )
     draw_llm = LLM_Client(
-        url=config.Global.llm_url,
+        url=config.Domain.llm_url,
         api_key=config.Global.llm_key,
         model_id=config.Global.llm_model,
         history=False,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
@@ -301,7 +301,7 @@ default_session_data = {
         'system_prompt': config.Global.llm_system_prompt,
         'role_prompt': '',
 
-        'main_llm_url': config.Global.llm_url,
+        'main_llm_url': config.Domain.llm_url,
         'main_llm_key': config.Global.llm_key,
         'main_llm_model_id': config.Global.llm_model,
 

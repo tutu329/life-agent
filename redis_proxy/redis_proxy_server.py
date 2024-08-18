@@ -167,8 +167,8 @@ def server_init():
     if IS_SERVER:
         # 启动 Redis Task Server
         s_redis_client = Redis_Client(
-            host=config.Global.redis_server_domain,
-            port=config.Port.redis,
+            host=config.Domain.redis_server_domain,
+            port=config.Port.redis_client,
             invoker='redis_proxy_server'
         )
 

@@ -34,7 +34,7 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
             if 'url' in arg_dict:
                 url = arg_dict['url']
             else:
-                url = config.Global.llm_url
+                url = config.Domain.llm_url
 
             # 注册obj
             task_data['command_system'][0]['obj'] = Comfy()

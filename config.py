@@ -28,9 +28,7 @@ class Prompt_Limitation():
     # 例如搜索结果文本的最大分段数：
     concurrent_max_paras:int = 1                    # 返回文本(content)字符串list的最大长度
 
-
     concurrent_summary_max_len:int = 1000       # content总结后最大长度(是让llm总结后的长度，llm不一定能完全按要求控制长度)
-
 
 @dataclass
 class Global():
@@ -46,24 +44,9 @@ class Global():
     # llm_key:str = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
     # llm_model:str = 'deepseek-chat'
 
-    # llm_url2:str = 'http://192.168.124.33:8000/v1'
-    # llm_key2:str = 'empty'
-    # llm_model2:str = None
-
-    # llm_system:str = "你是甄嬛。"
-    # llm_system:str = "你是一个助理。"
+    # llm_system_prompt:str = "你是甄嬛。"
+    # llm_system_prompt:str = "你是一个助理。"
     llm_system_prompt:str = "You are a helpful assistant."
-
-    comfy_url:str = 'http://localhost:5100'
-
-    # win
-    llm_url:str = 'https://172.27.67.106:8001/v1'
-    redis_server_domain:str = 'powerai.cc'
-
-    # ubuntu
-    # llm_url:str = 'http://192.168.124.33:8001/v1/'
-    # redis_server_ip:str = '192.168.124.33'
-    # redis_server_port:int = 8010
 
     redis_proxy_server_sleep_time:float = 0.05    # redis task server循环的sleep时间
 
@@ -124,7 +107,7 @@ class Port():
     chroma_api:int=8004 # chroma单独的api
 
     redis_monitor:int=8009      # redis monitor
-    redis:int=8010              # redis消息服务
+    redis_client:int=8010              # redis消息服务
 
     # 工作环境
     jupyter:int         = 7862
@@ -133,4 +116,19 @@ class Port():
     # sd:int              = 7868  # stable diffusion
     # comfy:int           = 7869  # ComfyUI
     comfy:int           = 5100  # ComfyUI
+
+@dataclass
+class Domain():
+    server_domain:str = 'powerai.cc'
+    # win
+    llm_url:str = f'https://{server_domain}:{Port.llm_api1}/v1'
+    # llm_url:str = 'https://172.27.67.106:8001/v1'
+    redis_server_domain:str = server_domain
+
+    # ubuntu
+    # llm_url:str = 'http://192.168.124.33:8001/v1/'
+    # redis_server_ip:str = '192.168.124.33'
+    # redis_server_port:int = 8010
+
+
 

@@ -6,6 +6,7 @@ from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 from utils.extract import extract_code, extract_dict_string
 from tools.retriever.search import Bing_Searcher
 from config import Global
+import config
 from colorama import Fore, Style
 
 import json5
@@ -451,7 +452,7 @@ class QA_Url_Content_Tool(Base_Tool):
         print(f'QA_Url_Content_Tool.call(): url is: "{url}"')
         print(f'QA_Url_Content_Tool.call(): question is: "{question}"')
 
-        llm = LLM_Client(history=False, max_new_tokens=1024, print_input=False, temperature=0, url=Global.llm_url)
+        llm = LLM_Client(history=False, max_new_tokens=1024, print_input=False, temperature=0, url=config.Domain.llm_url)
 
         searcher = Bing_Searcher.create_searcher_and_loop()
         result = searcher.loop.run_until_complete(searcher.get_url_content(in_url=url))
