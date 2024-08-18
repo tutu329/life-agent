@@ -33,6 +33,7 @@ def stt(in_mp3_filename, in_model='base'):
     # print(result.text)
     return result.text
 
+
 def main():
     res = stt('C:\\Users\\tutu\\Downloads\\你是谁.m4a', in_model='medium')
     # res = stt('/tools/output.mp3', in_model='medium')
