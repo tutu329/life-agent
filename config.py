@@ -58,8 +58,7 @@ class Global():
 
     # win
     llm_url:str = 'https://172.27.67.106:8001/v1'
-    redis_server_ip:str = 'localhost'
-    redis_server_port:int = 6379
+    redis_server_domain:str = 'powerai.cc'
 
     # ubuntu
     # llm_url:str = 'http://192.168.124.33:8001/v1/'

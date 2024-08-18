@@ -15,7 +15,7 @@ from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I, T2I
 import random, json5
 
 
-s_redis = Redis_Client(host=config.Global.redis_server_ip, port=config.Global.redis_server_port, invoker='redis_proxy_client')  # win-server
+s_redis = Redis_Client(host=config.Global.redis_server_domain, port=config.Port.redis, invoker='redis_proxy_client')  # win-server
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton

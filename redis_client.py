@@ -1,6 +1,7 @@
 import redis
 import json5 as json
 
+import config
 from config import Port, dred
 from utils.byte_convert import data_convert_from_byte_to_str
 
@@ -25,64 +26,91 @@ class Redis_Client:
         # 'stream_key2': 'stream_last_id2',
     }
 
-    def __init__(self, host='localhost', port=Port.redis, invoker=None):
+    def __init__(
+            self,
+            host=config.Global.redis_server_domain,       # domain
+            port=Port.redis,        # port
+            invoker=None,           # 调用方如‘redis_proxy_server’
+            password='',            # 密码
+            ssl=True,  # 是否通过ssl/tls连接
+            ssl_keyfile='d:\\models\\powerai.key',
+            ssl_certfile='d:\\models\\powerai_public.crt',
+    ):
         if invoker is not None:
             print(f'【Redis_Client inited with invoker】{invoker}')
         # print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@host:{host}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
         self.host = host
         self.port = port
+        self.password = password
+        self.ssl = ssl
+        self.ssl_keyfile = ssl_keyfile
+        self.ssl_certfile = ssl_certfile
 
-        self.__client = None
+        self._client = None
 
-    def __connect(self):
-        if self.__client is None:
+    def _connect(self):
+        if self._client is None:
             try:
-                self.__client = redis.Redis(host=self.host, port=self.port, db=0)
+                if self.ssl:
+                    self._client = redis.StrictRedis(
+                        host=self.host,
+                        port=self.port,
+                        password=self.password,
+                        ssl=True,
+                        ssl_keyfile=self.ssl_keyfile,
+                        ssl_certfile=self.ssl_certfile,
+                    )
+                else:
+                    self._client = redis.Redis(
+                        host=self.host,
+                        port=self.port,
+                        db=0
+                    )
             except redis.exceptions.TimeoutError as e:
                 dred(f'Redis_Client.connect(): failed.({e})')
-                self.__client = None
+                self._client = None
 
     def flushall(self):
-        self.__connect()
-        self.__client.flushall()
+        self._connect()
+        self._client.flushall()
 
     def set_string(self, key, value_string):
-        self.__connect()
+        self._connect()
 
         try:
-            self.__client.set(key, value_string)
+            self._client.set(key, value_string)
         except redis.exceptions.TimeoutError as e:
             dred(f'Redis_Client.set(key={key}, value={value_string}): failed.({e})')
-            self.__client = None
+            self._client = None
 
     def get_string(self, key):
-        self.__connect()
+        self._connect()
 
         try:
-            result = self.__client.get(key)
+            result = self._client.get(key)
             if result:
                 return result.decode('utf-8')
             else:
                 return ''
         except redis.exceptions.TimeoutError as e:
             dred(f'Redis_Client.get(key={key}): failed.({e})')
-            self.__client = None
+            self._client = None
             return None
 
     def set_dict(self, key, value_dict):
-        self.__connect()
+        self._connect()
 
         try:
-            self.__client.set(key, json.dumps(value_dict))
+            self._client.set(key, json.dumps(value_dict))
         except redis.exceptions.TimeoutError as e:
             dred(f'Redis_Client.set_dict(key={key}, value={value_dict}): failed.({e})')
-            self.__client = None
+            self._client = None
 
     def get_dict(self, key):
-        self.__connect()
+        self._connect()
 
         try:
-            string = self.__client.get(key)
+            string = self._client.get(key)
             # print(f'string: {string}')
             if string:
                 return json.loads(string)
@@ -90,7 +118,7 @@ class Redis_Client:
                 return {}
         except redis.exceptions.TimeoutError as e:
             dred(f'Redis_Client.get_dict(key={key}): failed.({e})')
-            self.__client = None
+            self._client = None
             return {}
 
     def add_stream(
@@ -98,11 +126,11 @@ class Redis_Client:
             stream_key,
             data
     ) -> str:                   # 返回message_id
-        self.__connect()
+        self._connect()
 
         # 向流中添加消息
         # message_id = self.__client.xadd(stream_key, {'key1': 'value1', 'key2': 'value2'})
-        message_id = self.__client.xadd(stream_key, data)
+        message_id = self._client.xadd(stream_key, data)
         dprint(f'Message added with ID: {message_id}')
         return message_id
 
@@ -115,7 +143,7 @@ class Redis_Client:
             count=100,          # 返回数据个数
             block=100           # 阻塞时间ms
     ) -> List[Dict]:   # 返回last_id
-        self.__connect()
+        self._connect()
 
         # 处理stream_key下的stream_last_id
         if stream_key in self.s_stream_last_ids:
@@ -124,7 +152,7 @@ class Redis_Client:
             last_id = '0-0'
 
         # 读取新的消息
-        messages = self.__client.xread({stream_key: last_id}, count=count, block=block)
+        messages = self._client.xread({stream_key: last_id}, count=count, block=block)
         # print(f'messages: {messages}')
 
         rtn_data_list = []
@@ -190,13 +218,8 @@ def tls_test():
     # 配置连接参数
     redis_host = 'powerai.cc'
     # redis_host = '172.27.67.106'
-    redis_port = 8002  # 假设 Redis 使用的是启用 TLS 的端口
+    redis_port = 8010  # 假设 Redis 使用的是启用 TLS 的端口
     redis_password = ''  # 如果 Redis 设置了密码，请填写此处
-
-    # SSL/TLS 相关参数
-    ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-    ssl_context.check_hostname = False  # 如果不验证主机名，可以将其设置为 False
-    ssl_context.verify_mode = ssl.CERT_NONE  # 如果不验证证书，可以将其设置为 CERT_NONE
 
     # 创建 Redis 连接对象
     redis_client = redis.StrictRedis(
@@ -210,9 +233,8 @@ def tls_test():
         ssl_keyfile='d:\\models\\powerai.key',
         ssl_certfile='d:\\models\\powerai_public.crt',
         # ssl_cert_reqs=ssl.CERT_REQUIRED,
-        # ssl_ca_certs='d:\\models\\powerai_chain.crt',
-        # ssl_ca_certs='d:\\models\\powerai.pem',
     )
+    print(redis_client)
 
     # 测试连接
     try:
@@ -233,27 +255,11 @@ def tls_test():
     except Exception as e:
         print(f'Error connecting to Redis server: {e}')
 
-def tls_test2():
-    # !/bin/python
-    import redis
-
-    # 设置连接信息，分别将host、port、password的值分别替换为实例的连接地址、端口号、密码。
-    # ApsaraDB-CA-Chain.pem为证书文件名称。
-    client = redis.Redis(host="powerai.cc", port=8002,
-                         password="", ssl=True,
-                         ssl_cert_reqs="required",
-                         ssl_ca_certs="d:\\models\\fullchain.pem",
-                         ssl_keyfile='d:\\models\\powerai.key',
-                         ssl_certfile='d:\\models\\powerai_public.crt',
-                         )
-
-    client.set("hello", "world")
-    print(client.get("hello"))
-
 if __name__ == "__main__":
     # main()
-    tls_test()
-    # tls_test2()
-    # r = redis.from_url('redis://localhost:6379/0')
-    # r.set('msg', 'hh')
-    # print(r.get('msg'))
+
+    # tls_test()
+
+    r = Redis_Client()
+    r.set_string('client_string1', '你是谁')
+    print(r.get_string('client_string1'))
