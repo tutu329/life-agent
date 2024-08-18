@@ -34,7 +34,8 @@ def stt(in_mp3_filename, in_model='base'):
     return result.text
 
 def main():
-    res = stt('/tools/output.mp3', in_model='medium')
+    res = stt('C:\\Users\\tutu\\Downloads\\你是谁.m4a', in_model='medium')
+    # res = stt('/tools/output.mp3', in_model='medium')
     print('语音所包含文字为：', res)
 
 if __name__ == "__main__":
