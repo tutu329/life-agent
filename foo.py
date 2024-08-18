@@ -43,7 +43,7 @@ def main():
     except Exception as e:
         print(f'访问LLM服务器报错：{e}')
 
-def audio():
+def call_qwen2_audio():
     from io import BytesIO
     from urllib.request import urlopen
     import librosa
@@ -85,9 +85,13 @@ def audio():
 
     print(response)
 
+def call_funasr():
+    pass
+
 if __name__ == '__main__':
     # main()
-    audio()
+    call_funasr()
+    # call_qwen2_audio()
 
 
 
