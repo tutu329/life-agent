@@ -69,8 +69,10 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
             # temperature
             if 'temperature' in arg_dict:
                 temperature = arg_dict['temperature']
+                dred(f'------------servant-llm_callback(): ask_prepare() started.------------')
                 gen = llm_obj.ask_prepare(in_question=question, in_temperature=temperature).get_answer_generator()
             else:
+                dred(f'------------servant-llm_callback(): ask_prepare() started.------------')
                 gen = llm_obj.ask_prepare(in_question=question).get_answer_generator()
 
             # llm返回数据给redis的stream
