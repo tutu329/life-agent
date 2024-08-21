@@ -1,0 +1,1 @@
+frps -c frps.ini
