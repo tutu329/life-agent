@@ -122,7 +122,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
         # show living per 10*redis_proxy_server_sleep_time
         # if count % 10 == 0:
-        dgreen(f"Redis Proxy Server ({thread_status['status']}) living...")
+        # dgreen(f"Redis Proxy Server ({thread_status['status']}) living...")
 
         # time.sleep(2)
         time.sleep(config.Global.redis_proxy_server_sleep_time)
