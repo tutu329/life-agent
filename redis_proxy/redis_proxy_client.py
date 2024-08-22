@@ -239,8 +239,8 @@ def main_llm():
 
     t2=Redis_Proxy_Client()
     arg1 = LLM_Init_Para(url=config.Domain.llm_url, max_new_tokens=1024)
-    arg2 = LLM_Ask_Para(question='你是谁？我叫土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
-    arg3 = LLM_Ask_Para(question='我刚才告诉你我叫什么？', temperature=0.6)
+    arg2 = LLM_Ask_Para(question='你是谁？我的名字是土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
+    arg3 = LLM_Ask_Para(question='还记得我的名字是什么？', temperature=0.6)
     (t2.new_task(Redis_Task_Type.LLM)
      .send_command(command=Redis_Proxy_Command_LLM.INIT, args=arg1)
      .send_command(command=Redis_Proxy_Command_LLM.ASK, args=arg2)

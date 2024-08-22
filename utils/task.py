@@ -119,6 +119,9 @@ class Task_Base():
         dprint(f"{self.task_info['task_name']}.cancel()")
         self.task_info['status'] = Status.Cancelling
 
+    def join(self):
+        self.thread.join()
+
 class Task(Task_Base):
     def __init__(self):
         super().__init__()

@@ -1,3 +1,5 @@
+import pprint
+
 import config
 
 from utils.task import Status
@@ -104,7 +106,8 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
                 # 执行所有command
                 for command_para_dict in dict_list:
-                    dred(f'exec_command: {command_para_dict}')
+                    dred(f'exec_command: ')
+                    pprint.pprint(command_para_dict)
                     __exec_command(**command_para_dict)
 
     # Redis Proxy Server 主循环
@@ -143,7 +146,7 @@ def server_init():
         #         'task_command_key_bridged':'Task_{task_id}_Command_Bridged',  # 这一行由servant注入，如果有了，表明现需要对command stream进行桥接
         #         'task_type' : str(Redis_Task_Type.LLM),
         #         'task_status_key' : '',
-        #         'task_result_key' : '',
+        #         'task_result_key' : '',   # 完整的cmd key是：data['task_result_key'] + "_cmd_xxxx"
         #         'command_system' : [
         #             {
         #                 'obj': llm_client,

@@ -1,3 +1,4 @@
+import uuid
 from enum import Enum, unique
 from redis_proxy.custom_command.llm.servant import llm_servant
 from redis_proxy.custom_command.t2i.servant import t2i_servant
@@ -12,6 +13,8 @@ class Redis_Task_Type(Enum):
 
 # 执行command
 def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dict):
+    cid = arg_dict['client_id']
+    tid = arg_dict['task_id']
     command = arg_dict['command']
 
     dgreen(f'server_invoking_command() invoked.')
@@ -20,11 +23,24 @@ def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dic
     for k, v in arg_dict.items():
         dgreen(f'\t {k}: {v}')
 
+    cmd_id = str(uuid.uuid4())
+    cmd_data = s_redis_proxy_server_data[cid][tid]['command_system']
+    status_key = f'Task_{tid}_Status_CMD_{cmd_id}'
+    result_key = f'Task_{tid}_Result_CMD_{cmd_id}'
+    # ===========添加新的cmd的信息===========
+    # cmd_data['obj'] = None
+    # cmd_data['thread'] = None
+    cmd_data[cmd_id] = {
+        'cmd_status_key': status_key,
+        'cmd_result_key': result_key,
+    }
+    # ===================================
+
     if 'Redis_Proxy_Command_LLM' in command:
-        llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict)
+        llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, cmd_id, **arg_dict)
 
     if 'Redis_Proxy_Command_T2I' in command:
-        t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict)
+        t2i_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, cmd_id,  **arg_dict)
 
 # 注册各种类型的任务( [1]task <-> [n]command )
 def server_add_task(inout_client_data, task_id, task_type):
@@ -32,16 +48,20 @@ def server_add_task(inout_client_data, task_id, task_type):
 
     # data = None
     # if task_type == str(Redis_Task_Type.LLM):
+
+    # =================添加新的task的信息=================
     data = {
         'task_type': task_type,
         'task_status_key': f'Task_{task_id}_Status',
         'task_result_key': f'Task_{task_id}_Result',
-        'command_system': [
-            {
-                'obj': None,
-                'thread': None,
-            },
-        ],
+        'command_system': {
+            # 'obj': None,
+            # 'thread': None,
+            # 'cmd_id': {
+            #     'cmd_status_key': None, # 'cmd_status_key': f'Task_{task_id}_Status_CMD_{cmd_id}
+            #     'cmd_result_key': None, # 'cmd_result_key': f'Task_{task_id}_Result_CMD_{cmd_id}
+            # },
+        },
         # 由于某一类command对应n个bridge，因此bridge不是某个task或者某个task下的某个command的一部分
         # 因此bridge_system是client的一部分
         # 'bridge_system':[
@@ -51,7 +71,6 @@ def server_add_task(inout_client_data, task_id, task_type):
         #     },
         # ],
     }
-
-
     inout_client_data[task_id] = data
+    # =================================================
 

@@ -2,6 +2,10 @@ from enum import Enum, unique
 from typing import List, Any
 from dataclasses import dataclass, asdict, field
 
+@dataclass
+class Config():
+    command_parallel: bool = False
+
 # LLM命令
 @unique
 class Redis_Proxy_Command_LLM(Enum):
