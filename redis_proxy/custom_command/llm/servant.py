@@ -45,7 +45,7 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
         )
 
         # 初始化 Task_Worker_Thread
-        task_data['command_system'][0]['thread'] = Task_Worker_Thread()
+        # task_data['command_system'][0]['thread'] = Task_Worker_Thread()
 
     # ASK
     if command==str(Redis_Proxy_Command_LLM.ASK):
@@ -92,6 +92,10 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
             }
             s_redis_client.add_stream(stream_key=result_key, data=data)
             s_redis_client.set_string(key=status_key,value_string='completed')
+
+        # ***************每一个command需要新增一个thread，但后续必须核实command_id的问题*****************
+        task_data['command_system'][0]['thread'] = Task_Worker_Thread()
+        # ***************每一个command需要新增一个thread，但后续必须核实command_id的问题*****************
 
         llm = task_data['command_system'][0]['obj']
         # print(f'llm: {llm}')

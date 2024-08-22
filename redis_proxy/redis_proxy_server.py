@@ -104,6 +104,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 
                 # 执行所有command
                 for command_para_dict in dict_list:
+                    dred(f'exec_command: {command_para_dict}')
                     __exec_command(**command_para_dict)
 
     # Redis Proxy Server 主循环
