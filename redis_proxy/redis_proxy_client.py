@@ -135,7 +135,12 @@ class Redis_Proxy_Client():
             for cmd_info_dict in cmd_info_dict_list:
                 for k,v in cmd_info_dict.items():
                     stream_key = f'Task_{task_id}_Result_CMD_{k}'
-                    while True:
+                    if v=='completed':
+                        continue
+
+                    finished = False
+                    while not finished:
+
                         dict_list = s_redis.pop_stream(stream_key=stream_key)
                         # print('====================================================')
                         for item in dict_list:
@@ -152,7 +157,7 @@ class Redis_Proxy_Client():
                                 yield item['chunk']
                             else:
                                 # pass
-                                break
+                                finished = True
 
     def save_image_to_file(self, image_data, file_name):
         from PIL import Image
