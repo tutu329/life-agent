@@ -30,6 +30,7 @@ def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dic
     # ===========添加新的cmd的信息===========
     # cmd_data['obj'] = None
     # cmd_data['thread'] = None
+    # cmd_data['returned_cmd_ids'] = None
     cmd_data[cmd_id] = {
         'cmd_status_key': status_key,
         'cmd_result_key': result_key,

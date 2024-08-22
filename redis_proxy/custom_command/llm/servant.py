@@ -47,6 +47,7 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_ke
             max_new_tokens=max_new_tokens,
             temperature=temperature,
         )
+        cmd_data['responsing_cmds_info'] = {}
 
 
         dred(f'----------cmd_data->obj: {cmd_data["obj"]}--------------')
@@ -85,6 +86,10 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_ke
                 # dred(f'------------servant-llm_callback(): ask_prepare() started.------------')
                 gen = llm_obj.ask_prepare(in_question=question).get_answer_generator()
 
+            # 设置responsing_cmds_info
+            cmd_data['responsing_cmds_info'][cmd_id] = 'running'
+            s_redis_client.add_stream(stream_key=f'responsing_cmds_info_{tid}', data=cmd_data['responsing_cmds_info'])
+
             # llm返回数据给redis的stream
             for chunk in gen:
                 # print(chunk, end='', flush=True)
@@ -103,6 +108,10 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_ke
             }
             s_redis_client.add_stream(stream_key=result_key, data=data)
             s_redis_client.set_string(key=status_key,value_string='completed')
+
+            # 设置responsing_cmds_info
+            cmd_data['responsing_cmds_info'][cmd_id] = 'completed'
+            s_redis_client.add_stream(stream_key=f'responsing_cmds_info_{tid}', data=cmd_data['responsing_cmds_info'])
 
         # ***************每一个command需要新增一个thread，但后续必须核实command_id的问题*****************
         cmd_data['thread'] = Task_Worker_Thread()

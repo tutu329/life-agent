@@ -123,28 +123,36 @@ class Redis_Proxy_Client():
     def get_result_gen(self):       # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
         task_id = self.task_id
 
+        # 返回的commands的信息的stream key
+        cmds_stream_key = f'responsing_cmds_info_{task_id}'
+
         # 返回stream_key为'Task_xxxid_Result'（该数据由server填充）的最新数据
-        stream_key = f'Task_{task_id}_Result'
+
 
         # 读取最新stream数据
         while True:
-            dict_list = s_redis.pop_stream(stream_key=stream_key)
-            # print('====================================================')
-            for item in dict_list:
+            cmd_info_dict_list = s_redis.pop_stream(cmds_stream_key)
+            for cmd_info_dict in cmd_info_dict_list:
+                for k,v in cmd_info_dict.items():
+                    stream_key = f'Task_{task_id}_Result_CMD_{k}'
+                    while True:
+                        dict_list = s_redis.pop_stream(stream_key=stream_key)
+                        # print('====================================================')
+                        for item in dict_list:
 
-                # 打印获取的stream的dict
-                # print('received dict:')
-                # for k, v in item.items():
-                #     if len(v)>100:
-                #         print(f'\t{k}: {v[:10]}...(len: {len(v)})')
-                #     else:
-                #         print(f'\t{k}: {v}')
+                            # 打印获取的stream的dict
+                            # print('received dict:')
+                            # for k, v in item.items():
+                            #     if len(v)>100:
+                            #         print(f'\t{k}: {v[:10]}...(len: {len(v)})')
+                            #     else:
+                            #         print(f'\t{k}: {v}')
 
-                if item['status'] != 'completed':
-                    yield item['chunk']
-                else:
-                    # pass
-                    return
+                            if item['status'] != 'completed':
+                                yield item['chunk']
+                            else:
+                                # pass
+                                break
 
     def save_image_to_file(self, image_data, file_name):
         from PIL import Image
