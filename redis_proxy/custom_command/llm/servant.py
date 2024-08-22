@@ -95,6 +95,7 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_ke
                     'status': 'running',
                 }
                 s_redis_client.add_stream(stream_key=result_key, data=data)
+                s_redis_client.set_string(key=status_key,value_string='running')
 
             # 结束的状态返回给redis
             data = {

@@ -147,16 +147,18 @@ def server_init():
         #         'task_type' : str(Redis_Task_Type.LLM),
         #         'task_status_key' : '',
         #         'task_result_key' : '',   # 完整的cmd key是：data['task_result_key'] + "_cmd_xxxx"
-        #         'command_system' : [
-        #             {
-        #                 'obj': llm_client,
-        #                 'thread': llm_client_thread,
-        #             },
-        #             {
-        #                 'obj': tts_client,
-        #                 'thread': tts_client_thread,
-        #             },
-        #         ],
+        #         'command_system' : {
+        #               'obj': llm_client,
+        #               'thread': llm_client_thread,
+        #               'cmd_id1': {
+        #                   'cmd_status_key': None, # 'cmd_status_key': f'Task_{task_id}_Status_CMD_{cmd_id}
+        #                   'cmd_result_key': None, # 'cmd_result_key': f'Task_{task_id}_Result_CMD_{cmd_id}
+        #               },
+        #               'cmd_id2': {
+        #                   'cmd_status_key': None, # 'cmd_status_key': f'Task_{task_id}_Status_CMD_{cmd_id}
+        #                   'cmd_result_key': None, # 'cmd_result_key': f'Task_{task_id}_Result_CMD_{cmd_id}
+        #               },
+        #         },
         #     },
         #     'task-id2' : {
         #         'task_type' : str(Redis_Task_Type.LLM),
