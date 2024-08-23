@@ -217,8 +217,18 @@ class Redis_Proxy_Server:
         self.server_thread.start()
         dgreen(f'{self.server_data.server_id}的polling线程已启动.')
 
-    def _callback(self, out_task_info_must_be_here):
+    def _polling_new_task(self):
         pass
+
+    def _polling_new_command(self):
+        pass
+
+    def _callback(self, out_task_info_must_be_here):
+        # polling线程的回调内容
+        while True:
+            self._polling_new_task()
+            self._polling_new_command()
+            time.sleep(config.Global.redis_proxy_server_sleep_time)
 
     def init(self):
         if self.inited:
