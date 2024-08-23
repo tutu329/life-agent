@@ -28,7 +28,7 @@ def call_custom_command(
         output_callback,    # output_callback(output_string:str, use_byte:bool)
         finished_callback,  # finished_callback()
         **command_data_dict
-):
+):  # 返回task_obj
     # LLM
     if str(Redis_Task_Type.LLM) in task_type:
         return call_llm_servant(

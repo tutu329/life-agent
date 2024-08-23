@@ -172,7 +172,6 @@ def server_init():
 @dataclass
 class Command_Data:
     cmd_id: str = ''
-    cmd_thread: Any = None
     cmd_status_key: Optional[str] = None
     cmd_result_key: Optional[str] = None
 
@@ -182,7 +181,8 @@ class Task_Data:
     task_type: str = ''
     task_status_key: str = ''
     task_result_key: str = ''
-    task_obj: Any = None
+    task_obj: Any = None        # 接口对象的obj
+    task_thread: Any = None     # 1个task分配1个线程，而不是1个command1个线程
     commands: Dict[str, Command_Data] = field(default_factory=dict)
     # task_command_key_bridged: Optional[str] = None
     # task_status: str = ''
@@ -234,7 +234,7 @@ class Redis_Proxy_Server:
 
     def _start_server_thread(self):
         self.server_thread = Redis_Proxy_Server_Thread()
-        self.server_thread.init(self._callback)
+        self.server_thread.init(self._server_thread_callback)
         self.server_thread.start()
         dgreen(f'{self.server_data.server_id}的polling线程已启动.')
 
@@ -275,7 +275,7 @@ class Redis_Proxy_Server:
             dgreen(f'-------------------------------------------------')
 
     # yield每一个task_id
-    def _search_all_tasks_gen(self):
+    def _get_all_tasks_id_gen(self):
         for k1,v1 in self.server_data.clients.items():
             # 获取client_data
             client_data = v1
@@ -285,13 +285,89 @@ class Redis_Proxy_Server:
                 # 返回task_id
                 yield task_data.task_id
 
+    # yield某一个task_id下的每一个command_id
+    def _get_all_commands_id_gen(self, task_id):
+        # 获取client注册command的stream_key名称
+        commands_key_format = Key_Name_Space.Commands_Register
+        commands_stream_key = commands_key_format.format(task_id=task_id)
 
+        # 遍历所有command
+        gen = self.redis_client.pop_stream_gen(stream_key=commands_stream_key)
+        for command_data_dict in gen:
+            yield command_data_dict['command_id']
+
+    # task执行完成后，删除redis中对应的数据
+    def _delete_redis_task_data(self, task_id):
+        results_key_format = Key_Name_Space.Results_Register
+
+        for cmd_id in self._get_all_commands_id_gen(task_id):
+            # 获取client注册result的stream_key名称
+            results_stream_key = results_key_format.format(task_id=task_id, command_id=cmd_id)
+            self.redis_client.delete(results_stream_key)
+        dred(f'redis中的task数据已删除[task_id:"{task_id}"].')
+
+
+    # task_thread的回调函数，用于执行每一个command
+    # 每一个command调用时，都会等待上一个command结束，并新建线程调用本函数
+    def _task_thread_callback(
+            self,
+            out_task_info_must_be_here,
+            task_type,
+            client_id,
+            task_id,
+            command,
+            command_id,
+            task_obj,
+            **command_data_dict
+    ):
+
+        # client输出chunk(可以是text stream的chunk，也可以是一张图片string)的回调函数
+        def _client_output_callback(output_string: str, use_byte: bool):
+            result_stream_key = Key_Name_Space.Results_Register.format(task_id=task_id, command_id=command_id)
+            chunk_data = {
+                'chunk': output_string,
+                'chunk_use_byte': int(use_byte),
+                'status': 'running',
+            }
+            self.redis_client.add_stream(stream_key=result_stream_key, data=chunk_data)
+
+        # client输出结束的回调函数
+        def _client_finished_callback():
+            result_stream_key = Key_Name_Space.Results_Register.format(task_id=task_id, command_id=command_id)
+            chunk_data = {
+                'status': 'completed',
+            }
+            self.redis_client.add_stream(stream_key=result_stream_key, data=chunk_data)
+
+        dgreen(f'-----------------task thread entered[cmd:"{command}"]----------------')
+        # 获取全局唯一的tasks_data_dict
+        task_data_dict = self.server_data.clients[client_id].tasks[task_id]
+
+        return_task_obj = call_custom_command(
+            task_type=task_type,
+            command=command,
+            command_id=command_id,
+            task_obj=task_obj,
+            output_callback=_client_output_callback,
+            finished_callback=_client_finished_callback,
+            **command_data_dict
+        )
+
+        # 创建server侧的command信息
+        task_data_dict.add_command_data(
+            command_id=command_id,
+            command_data=command_data_dict,
+            task_obj=return_task_obj
+        )
+        dgreen(f'-----------------task thread exited [cmd:"{command}"]----------------')
+
+    # 查询new command，并视情况初始化task_obj和task_thread
     def _polling_new_command(self):
         # 获取client注册command的stream_key名称
         commands_key_format = Key_Name_Space.Commands_Register
 
         # 遍历所有task_id
-        for task_id in self._search_all_tasks_gen():
+        for task_id in self._get_all_tasks_id_gen():
             # dred(f'-----------------task_id:{task_id}----------------')
             # 获取task_stream_key，如：'Task_{task_id}_Commands'.format(task_id=task_id)
             commands_stream_key = commands_key_format.format(task_id=task_id)
@@ -311,60 +387,47 @@ class Redis_Proxy_Server:
                 del command_data_dict['command_id']
                 del command_data_dict['command']
 
-                # 获取tasks_data_dict
+                # 获取全局唯一的tasks_data_dict
                 task_data_dict = self.server_data.clients[client_id].tasks[task_id]
 
                 # 调用自定义command的servant
                 task_type = task_data_dict.task_type
                 task_obj = task_data_dict.task_obj
 
-                # client输出chunk(可以是text stream的chunk，也可以是一张图片string)的回调函数
-                def _output_callback(output_string:str, use_byte:bool):
-                    result_stream_key = Key_Name_Space.Results_Register.format(task_id=task_id, command_id=command_id)
-                    chunk_data = {
-                        'chunk': output_string,
-                        'chunk_use_byte': int(use_byte),
-                        'status': 'running',
-                    }
-                    self.redis_client.add_stream(stream_key=result_stream_key, data=chunk_data)
+                # 获取或新建task_thread，在task独立的线程中处理command
+                if task_data_dict.task_thread is None:
+                    # -------------task中新的cmd(通常是init)，新建线程-------------
+                    task_data_dict.task_thread = Task_Worker_Thread()
+                    task_data_dict.task_thread.init(
+                        in_callback_func=self._task_thread_callback,
+                        task_type=task_type,
+                        client_id=client_id,
+                        task_id=task_id,
+                        command=command,
+                        command_id=command_id,
+                        task_obj=task_obj,
+                        **command_data_dict
+                    )
+                    task_data_dict.task_thread.start()
+                else:
+                    # -------------task中的后续cmd，等待前一个cmd完成-------------
+                    task_data_dict.task_thread.join()
 
-                # client输出结束的回调函数
-                def _finished_callback():
-                    result_stream_key = Key_Name_Space.Results_Register.format(task_id=task_id, command_id=command_id)
-                    chunk_data = {
-                        'status': 'completed',
-                    }
-                    self.redis_client.add_stream(stream_key=result_stream_key, data=chunk_data)
+                    # 新建线程
+                    task_data_dict.task_thread = Task_Worker_Thread()
+                    task_data_dict.task_thread.init(
+                        in_callback_func=self._task_thread_callback,
+                        task_type=task_type,
+                        client_id=client_id,
+                        task_id=task_id,
+                        command=command,
+                        command_id=command_id,
+                        task_obj=task_obj,
+                        **command_data_dict
+                    )
+                    task_data_dict.task_thread.start()
 
-                return_task_obj = call_custom_command(
-                    task_type=task_type,
-                    command=command,
-                    command_id=command_id,
-                    task_obj=task_obj,
-                    output_callback=_output_callback,
-                    finished_callback=_finished_callback,
-                    **command_data_dict
-                )
-
-                # 创建server侧的command信息
-                task_data_dict.add_command_data(
-                    command_id=command_id,
-                    command_data=command_data_dict,
-                    task_obj=return_task_obj
-                )
-
-                # server_invoking_command(
-                #     self.server_data,
-                #     self.redis_client,
-                #     task_id=task_id,
-                #     client_id=client_id,
-                #     command=command,
-                #     command_id=command_id,
-                #     **command_data_dict
-                # )
-                dgreen(f'-----------------------------------------------')
-
-    def _callback(self, out_task_info_must_be_here):
+    def _server_thread_callback(self, out_task_info_must_be_here):
         # polling线程的回调内容
         while True:
             self._polling_new_task()

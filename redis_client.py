@@ -70,9 +70,14 @@ class Redis_Client:
                 dred(f'Redis_Client.connect(): failed.({e})')
                 self._client = None
 
+    # 清空当前client下的所有数据
     def flushdb(self):
         self._connect()
         self._client.flushdb()  # 注意: flushdb是清空自己数据，flushall是清空服务器上所有数据
+
+    # 删除string或stream
+    def delete(self, key):
+        self._client.delete(key)
 
     def set_string(self, key, value_string):
         self._connect()
