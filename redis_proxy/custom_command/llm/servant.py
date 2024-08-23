@@ -14,7 +14,8 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_ke
     cid = arg_dict['client_id']
     tid = arg_dict['task_id']
     command = arg_dict['command']
-    cmd_data = s_redis_proxy_server_data[cid][tid]['command_system']
+    cmd_data = s_redis_proxy_server_data.clients[cid].tasks[tid].commands
+    # cmd_data = s_redis_proxy_server_data[cid][tid]['command_system']
 
     # 公有参数
     if 'max_new_tokens' in arg_dict:

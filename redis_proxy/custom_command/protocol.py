@@ -33,8 +33,10 @@ def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dic
     for k, v in arg_dict.items():
         dgreen(f'\t {k}: {v}')
 
-    cmd_id = str(uuid.uuid4())
-    cmd_data = s_redis_proxy_server_data[cid][tid]['command_system']
+    cmd_id = arg_dict['command_id']
+    # cmd_id = str(uuid.uuid4())
+    cmd_data = s_redis_proxy_server_data.clients[cid].tasks[tid].commands
+    # cmd_data = s_redis_proxy_server_data[cid][tid]['command_system']
     status_key = f'Task_{tid}_Status_CMD_{cmd_id}'
     result_key = f'Task_{tid}_Result_CMD_{cmd_id}'
     # ===========添加新的cmd的信息===========

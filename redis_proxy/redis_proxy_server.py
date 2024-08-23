@@ -291,6 +291,7 @@ class Redis_Proxy_Server:
             for command_data_dict in gen:
                 dgreen(f'-----------------获得new command----------------')
                 pprint(command_data_dict)
+                server_invoking_command(self.server_data, self.redis_client, **command_data_dict)
                 dgreen(f'-----------------------------------------------')
 
     def _callback(self, out_task_info_must_be_here):
