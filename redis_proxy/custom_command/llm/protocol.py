@@ -1,6 +1,6 @@
 from enum import Enum, unique
-from typing import List, Any
 from dataclasses import dataclass, asdict, field
+from typing import Dict, List, Optional, Any
 
 @dataclass
 class Config():

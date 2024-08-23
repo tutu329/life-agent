@@ -15,6 +15,7 @@ from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I, T2I
 import random, json5
 
 from redis_proxy.protocol import Key_Name_Space, Client_New_Task_Paras
+from redis_proxy.custom_command.protocol import Client_New_Command_Paras
 
 
 s_redis = Redis_Client(host=config.Domain.redis_server_domain, port=config.Port.redis_client, invoker='redis_proxy_client')  # win-server
@@ -87,11 +88,17 @@ class Redis_Proxy_Client():
     ):
         task_id = self.task_id
         # 封装redis的data
-        data = {
-            'client_id': self.client_id,
-            'task_id': task_id,
-            'command': str(command),    # 例如：str(Redis_LLM_Command.INIT)
-        }
+        # data = {
+        #     'client_id': self.client_id,
+        #     'task_id': task_id,
+        #     'command': str(command),    # 例如：str(Redis_LLM_Command.INIT)
+        # }
+        data = asdict(Client_New_Command_Paras(
+            client_id=self.client_id,
+            task_id=task_id,
+            command_id='cmd_'+str(uuid.uuid4()),
+            command=str(command),    # 例如：str(Redis_LLM_Command.INIT)
+        ))
 
         if args is not None:
             arg_dict = asdict(args)
@@ -107,7 +114,7 @@ class Redis_Proxy_Client():
 
         # 发送command
         s_redis.add_stream(
-            stream_key=f'Task_{task_id}_Command',   # 与task_id一一对应的stream_key
+            stream_key=f'Task_{task_id}_Commands',   # 与task_id一一对应的stream_key
             data=data,
         )
 

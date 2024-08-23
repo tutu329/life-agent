@@ -103,7 +103,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                     stream_key = task_data['task_command_key_bridged']
                     # dblue(f'stream_key1: {stream_key}')
                 else:
-                    stream_key = f'Task_{task_id}_Command'
+                    stream_key = f'Task_{task_id}_Commands'
                     # dblue(f'stream_key0: {stream_key}')
 
                 dict_list = __pop_stream(key=stream_key)
@@ -200,7 +200,7 @@ class Server_Data:
     server_id: str = ''
     clients: Dict[str, Client_Data] = field(default_factory=dict)
 
-    def check_client_data(self, client_id):
+    def check_if_new_client_data(self, client_id):
         if client_id in self.clients:
             pass
         else:
@@ -233,7 +233,7 @@ class Redis_Proxy_Server:
 
     # 查询client是否有新的task，将task信息存入server_data
     def _polling_new_task(self):
-        # 获取注册task的stream_key名称
+        # 获取client注册task的stream_key名称
         tasks_stream_key = Key_Name_Space.Task_Register
         # 读取redis中的task的stream
         gen = self.redis_client.pop_stream_gen(tasks_stream_key)
@@ -246,25 +246,52 @@ class Redis_Proxy_Server:
             dgreen(f'-----------------new task信息创建前----------------')
             pprint(self.server_data)
 
-
+            # 读取来自client侧的注册信息
             client_id = task_data_dict['client_id']
             task_id = task_data_dict['task_id']
+            task_type = task_data_dict['task_type']
 
-            # 若没用client_data，需要新建
-            self.server_data.check_client_data(client_id)
+            # 若server_data没用client_data，需要新建client_data
+            self.server_data.check_if_new_client_data(client_id)
 
             # 新建task_data
             task_data = Task_Data(
-                task_id=task_data_dict['task_id'],
-                task_type=task_data_dict['task_type'],
+                task_id=task_id,
+                task_type=task_type,
             )
             self.server_data.clients[client_id].add_task_data(task_data)
             dgreen(f'-----------------new task信息已创建----------------')
             pprint(self.server_data)
             dgreen(f'-------------------------------------------------')
 
+    # yield每一个task_id
+    def _search_all_tasks_gen(self):
+        for k1,v1 in self.server_data.clients.items():
+            # 获取client_data
+            client_data = v1
+            for k2,v2 in client_data.tasks.items():
+                # 获取task_data
+                task_data = v2
+                # 返回task_id
+                yield task_data.task_id
+
+
     def _polling_new_command(self):
-        pass
+        # 获取client注册command的stream_key名称
+        commands_key_format = Key_Name_Space.Commands_Register
+
+        # 遍历所有task_id
+        for task_id in self._search_all_tasks_gen():
+            # dred(f'-----------------task_id:{task_id}----------------')
+            # 获取task_stream_key，如：'Task_{task_id}_Commands'.format(task_id=task_id)
+            commands_stream_key = commands_key_format.format(task_id=task_id)
+
+            # 遍历所有command
+            gen = self.redis_client.pop_stream_gen(stream_key=commands_stream_key)
+            for command_data_dict in gen:
+                dgreen(f'-----------------获得new command----------------')
+                pprint(command_data_dict)
+                dgreen(f'-----------------------------------------------')
 
     def _callback(self, out_task_info_must_be_here):
         # polling线程的回调内容
