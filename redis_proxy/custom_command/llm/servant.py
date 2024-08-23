@@ -10,12 +10,11 @@ from redis_proxy.thread import Task_Worker_Thread
 from redis_proxy.custom_command.llm.protocol import Config
 
 def call_llm_servant(
-        # command,
-        # command_id,
+        command,
+        command_id,
         task_obj,
         **command_data_dict
 ):
-    command = command_data_dict['command']
     if command == str(Redis_Proxy_Command_LLM.INIT):
         obj = LLM_Client(
                 url=command_data_dict['url'],
@@ -28,11 +27,12 @@ def call_llm_servant(
     if command == str(Redis_Proxy_Command_LLM.ASK):
         return task_obj
 
-def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, cmd_id, **arg_dict):
+def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, task_id, client_id, command, command_id,  **arg_dict):
     # dgreen(f'command from client: {arg_dict}')
-    cid = arg_dict['client_id']
-    tid = arg_dict['task_id']
-    command = arg_dict['command']
+    cid = client_id
+    tid = task_id
+    command = command
+    cmd_id = command_id
     cmd_data = s_redis_proxy_server_data.clients[cid].tasks[tid].commands
     # cmd_data = s_redis_proxy_server_data[cid][tid]['command_system']
 

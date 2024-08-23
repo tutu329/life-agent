@@ -23,16 +23,16 @@ class Client_New_Command_Paras:    # new task是顶层命令，不适合放在cu
 
 def call_custom_command(
         task_type,
-        # command,
-        # command_id,
+        command,
+        command_id,
         task_obj,
         **command_data_dict
 ):
     # 选择具体的command
     if str(Redis_Task_Type.LLM) in task_type:
         return call_llm_servant(
-            # command=command_data_dict['command'],
-            # command_id=command_id,
+            command=command,
+            command_id=command_id,
             task_obj=task_obj,
             **command_data_dict
         )
@@ -41,10 +41,10 @@ def call_custom_command(
         return call_t2i_servant()
 
 # 执行command
-def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dict):
-    cid = arg_dict['client_id']
-    tid = arg_dict['task_id']
-    command = arg_dict['command']
+def server_invoking_command(s_redis_proxy_server_data, s_redis_client, task_id, client_id, command, command_id, **arg_dict):
+    cid = client_id
+    tid = task_id
+    command = command
 
     dgreen(f'server_invoking_command() invoked.')
     # dgreen(f'command: {command}')
@@ -52,7 +52,7 @@ def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dic
     for k, v in arg_dict.items():
         dgreen(f'\t {k}: {v}')
 
-    cmd_id = arg_dict['command_id']
+    cmd_id = command_id
     # cmd_id = str(uuid.uuid4())
     cmd_data = s_redis_proxy_server_data.clients[cid].tasks[tid].commands
     # cmd_data = s_redis_proxy_server_data[cid][tid]['command_system']
@@ -69,7 +69,7 @@ def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dic
     # ===================================
 
     if 'Redis_Proxy_Command_LLM' in command:
-        llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, cmd_id, **arg_dict)
+        llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, task_id, client_id, command, command_id, **arg_dict)
 
     if 'Redis_Proxy_Command_T2I' in command:
         t2i_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, cmd_id,  **arg_dict)

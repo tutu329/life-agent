@@ -187,9 +187,9 @@ class Task_Data:
     # task_command_key_bridged: Optional[str] = None
     # task_status: str = ''
 
-    def add_command_data(self, command_data, task_obj):
+    def add_command_data(self, command_id, command_data, task_obj):
         self.task_obj = task_obj
-        cmd_id = command_data['command_id']
+        cmd_id = command_id
         cmd_data = asdict(Command_Data(
             cmd_id=cmd_id,
         ))
@@ -303,7 +303,13 @@ class Redis_Proxy_Server:
                 pprint(command_data_dict)
                 client_id = command_data_dict['client_id']
                 task_id = command_data_dict['task_id']
+                command = command_data_dict['command']
                 command_id = command_data_dict['command_id']
+
+                del command_data_dict['client_id']
+                del command_data_dict['task_id']
+                del command_data_dict['command_id']
+                del command_data_dict['command']
 
                 # 获取tasks_data_dict
                 task_data_dict = self.server_data.clients[client_id].tasks[task_id]
@@ -311,19 +317,30 @@ class Redis_Proxy_Server:
                 # 调用自定义command的servant
                 task_type = task_data_dict.task_type
                 task_obj = task_data_dict.task_obj
-                command = command_data_dict['command']
                 return_task_obj = call_custom_command(
                     task_type=task_type,
-                    # command=command,
-                    # command_id=command_id,
+                    command=command,
+                    command_id=command_id,
                     task_obj=task_obj,
                     **command_data_dict
                 )
 
                 # 创建server侧的command信息
-                task_data_dict.add_command_data(command_data=command_data_dict, task_obj=return_task_obj)
+                task_data_dict.add_command_data(
+                    command_id=command_id,
+                    command_data=command_data_dict,
+                    task_obj=return_task_obj
+                )
 
-                server_invoking_command(self.server_data, self.redis_client, **command_data_dict)
+                server_invoking_command(
+                    self.server_data,
+                    self.redis_client,
+                    task_id=task_id,
+                    client_id=client_id,
+                    command=command,
+                    command_id=command_id,
+                    **command_data_dict
+                )
                 dgreen(f'-----------------------------------------------')
 
     def _callback(self, out_task_info_must_be_here):
