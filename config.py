@@ -1,5 +1,26 @@
+import socket, requests
+
 from dataclasses import dataclass, field
 from colorama import Fore, Back, Style
+
+def get_local_ip():
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    return local_ip
+
+def get_public_ip():
+    try:
+        response = requests.get('https://powerai.cc')
+        response.raise_for_status()  # 如果响应状态码不是200，抛出异常
+        data = response.json()
+        return data['ip']
+    except requests.RequestException as e:
+        print(f"Error fetching public IP: {e}")
+        return None
+
+def get_hostname():
+    hostname = socket.gethostname()
+    return hostname
 
 def _dcolor(in_color, *args, **kwargs):
     print(in_color, end='', flush=True)

@@ -32,7 +32,7 @@ class Task_Worker_Thread(Task_Base):
     def start(self):
         super().start()
 
-@singleton
+# @singleton
 class Redis_Proxy_Server_Thread(Task_Base):
     def __init__(self):
         super().__init__()
@@ -46,7 +46,7 @@ class Redis_Proxy_Server_Thread(Task_Base):
              **in_callback_func_kwargs
             ):
         if not self.inited:
-            dgreen(f'Redis Proxy Server (id="{in_name}") started.')
+            dgreen(f'polling thread(id="{in_name}") started.')
 
         super().init(
              in_callback_func,

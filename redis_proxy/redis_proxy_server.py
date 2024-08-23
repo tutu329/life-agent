@@ -1,5 +1,8 @@
 import pprint
 
+from singleton import singleton
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any
 import config
 
 from utils.task import Status
@@ -134,40 +137,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
 def server_init():
     global s_redis_proxy_server_data, s_redis_client, s_redis_proxy_server_thread
 
-    s_redis_proxy_server_data = {
-        # 'client-id1' : {
-        #     'bridge_system' : [
-        #         'bridge_type1': {
-        #             'obj': None,
-        #             'thread': None,
-        #         },
-        #     ],
-        #     'task-id1' : {
-        #         'task_command_key_bridged':'Task_{task_id}_Command_Bridged',  # 这一行由servant注入，如果有了，表明现需要对command stream进行桥接
-        #         'task_type' : str(Redis_Task_Type.LLM),
-        #         'task_status_key' : '',
-        #         'task_result_key' : '',   # 完整的cmd key是：data['task_result_key'] + "_cmd_xxxx"
-        #         'command_system' : {
-        #               'obj': llm_client,
-        #               'thread': llm_client_thread,
-        #               'cmd_id1': {
-        #                   'cmd_status_key': None, # 'cmd_status_key': f'Task_{task_id}_Status_CMD_{cmd_id}
-        #                   'cmd_result_key': None, # 'cmd_result_key': f'Task_{task_id}_Result_CMD_{cmd_id}
-        #               },
-        #               'cmd_id2': {
-        #                   'cmd_status_key': None, # 'cmd_status_key': f'Task_{task_id}_Status_CMD_{cmd_id}
-        #                   'cmd_result_key': None, # 'cmd_result_key': f'Task_{task_id}_Result_CMD_{cmd_id}
-        #               },
-        #         },
-        #     },
-        #     'task-id2' : {
-        #         'task_type' : str(Redis_Task_Type.LLM),
-        #         'task_status': '',
-        #     },
-        # },
-        # 'client-id2' : {
-        # },
-    }
+    s_redis_proxy_server_data = {}
 
     IS_SERVER = True
     if IS_SERVER:
@@ -175,11 +145,11 @@ def server_init():
         s_redis_client = Redis_Client(
             host=config.Domain.redis_server_domain,
             port=config.Port.redis_client,
-            invoker='redis_proxy_server'
+            invoker='redis_proxy_server(legacy)'
         )
 
         # redis清空所有数据
-        s_redis_client.flushall()
+        s_redis_client.flushdb()
 
         # s_redis_client = Redis_Client(host='localhost', port=6379)  # win-server
         s_redis_proxy_server_thread = Redis_Proxy_Server_Thread()
@@ -187,10 +157,144 @@ def server_init():
         # s_redis_task_server.init(Redis_Task_Server_Callback, in_timeout=5)
         s_redis_proxy_server_thread.start()
 
+# @dataclass
+# class Bridge_Data:
+#     obj: Optional[Any] = None
+#     thread: Optional[Any] = None
+#
+# @dataclass
+# class Bridge_System:
+#     bridge_types: Dict[str, Bridge_Data] = field(default_factory=dict)
+
+@dataclass
+class Command_Data:
+    cmd_id: str = ''
+    cmd_thread: Any = None
+    cmd_status_key: Optional[str] = None
+    cmd_result_key: Optional[str] = None
+
+@dataclass
+class Task_Data:
+    task_id: str = ''
+    task_type: str = ''
+    task_status_key: str = ''
+    task_result_key: str = ''
+    task_obj: Any = None
+    commands: Dict[str, Command_Data] = field(default_factory=dict)
+    # task_command_key_bridged: Optional[str] = None
+    # task_status: str = ''
+
+@dataclass
+class Client_Data:
+    client_id: str = ''
+    tasks: Dict[str, Task_Data] = field(default_factory=dict)
+    # bridge_system: Optional[Bridge_System] = None
+
+@dataclass
+class Server_Data:
+    server_id: str = ''
+    clients: Dict[str, Client_Data] = field(default_factory=dict)
+
+
+# Redis_Proxy_Server（单体）
+# 功能：实现server侧资源的异步调用（如LLM、LLM-Agent、SD等）
+# server侧所维护对象的关系：
+#   [1]redis_proxy_server   <-> [i]client   # 多个client需要自己不同的状态
+#   [1]client               <-> [j]task     # 1个client可以有多个不同或相同类型的task(如不同的LLM对话、SD应用)
+#   [1]task                 <-> [k]command  # 1个client的1个task中可以有多个command(如1个LLM的历史相关的多次ask)
+@singleton
+class Redis_Proxy_Server:
+    def __init__(self):
+        self.server_thread = None           # server的polling线程
+        self.server_data = Server_Data()    # server的clients状态数据
+        self.redis_client = None            # server的redis调用接口
+
+        self.inited = False                 # server是否完成初始化
+
+    def _start_server_thread(self):
+        self.server_thread = Redis_Proxy_Server_Thread()
+        self.server_thread.init(self._callback)
+        self.server_thread.start()
+        dgreen(f'{self.server_data.server_id}的polling线程已启动.')
+
+    def _callback(self, out_task_info_must_be_here):
+        pass
+
+    def init(self):
+        if self.inited:
+            return
+        # 初始化server信息
+        self.server_data.server_hostname = config.get_hostname()
+        self.server_data.server_local_ip = config.get_local_ip()
+        self.server_data.server_id = f'Redis_Proxy_Server(singleton: {self.server_data.server_hostname}, { self.server_data.server_local_ip})'
+        dgreen(f'{self.server_data.server_id}初始化中...')
+
+        # 初始化redis_client
+        self.redis_client = Redis_Client(
+            host=config.Domain.redis_server_domain,
+            port=config.Port.redis_client,
+            invoker='Redis_Proxy_Server(singleton)'
+        )
+        dgreen(f'{self.server_data.server_id}的Redis_Client({config.Domain.redis_server_domain}:{config.Port.redis_client})初始化完毕.')
+
+        # 清空本应用再redis server上的数据
+        self.redis_client.flushdb()
+        dgreen(f'{self.server_data.server_id}清空redis数据库完毕.')
+
+        # 启动polling线程
+        self._start_server_thread()
+
+        self.inited = True
+        dgreen(f'{self.server_data.server_id}初始化完毕.')
+
+# Redis_Proxy_Server（单体）的legacy数据示意
+# s_redis_proxy_server_data = {
+    # 'client-id1' : {
+    #     'bridge_system' : [
+    #         'bridge_type1': {
+    #             'obj': None,
+    #             'thread': None,
+    #         },
+    #     ],
+    #     'task-id1' : {
+    #         'task_command_key_bridged':'Task_{task_id}_Command_Bridged',  # 这一行由servant注入，如果有了，表明现需要对command stream进行桥接
+    #         'task_type' : str(Redis_Task_Type.LLM),
+    #         'task_status_key' : '',
+    #         'task_result_key' : '',   # 完整的cmd key是：data['task_result_key'] + "_cmd_xxxx"
+    #         'command_system' : {
+    #               'obj': llm_client,
+    #               'thread': llm_client_thread,
+    #               'cmd_id1': {
+    #                   'cmd_status_key': None, # 'cmd_status_key': f'Task_{task_id}_Status_CMD_{cmd_id}
+    #                   'cmd_result_key': None, # 'cmd_result_key': f'Task_{task_id}_Result_CMD_{cmd_id}
+    #               },
+    #               'cmd_id2': {
+    #                   'cmd_status_key': None, # 'cmd_status_key': f'Task_{task_id}_Status_CMD_{cmd_id}
+    #                   'cmd_result_key': None, # 'cmd_result_key': f'Task_{task_id}_Result_CMD_{cmd_id}
+    #               },
+    #         },
+    #     },
+    #     'task-id2' : {
+    #         'task_type' : str(Redis_Task_Type.LLM),
+    #         'task_status': '',
+    #     },
+    # },
+    # 'client-id2' : {
+    # },
+# }
+
 def main():
     server_init()
     while(1):
         time.sleep(1)
 
 if __name__ == "__main__":
+    print(config.get_local_ip())
+    # print(config.get_public_ip())
+    print(config.get_hostname())
+    s1 = Redis_Proxy_Server()
+    s2 = Redis_Proxy_Server()
+    print(s1==s2)
+    s1.init()
+    s2.init()
     main()
