@@ -244,6 +244,7 @@ class Redis_Proxy_Server:
         # 启动polling线程
         self._start_server_thread()
 
+
         self.inited = True
         dgreen(f'{self.server_data.server_id}初始化完毕.')
 
