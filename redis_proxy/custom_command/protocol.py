@@ -24,19 +24,21 @@ class Client_New_Command_Paras:    # new task是顶层命令，不适合放在cu
 def call_custom_command(
         task_type,
         command,
-        command_id,
         task_obj,
+        output_callback,    # output_callback(output_string:str, use_byte:bool)
+        finished_callback,  # finished_callback()
         **command_data_dict
 ):
-    # 选择具体的command
+    # LLM
     if str(Redis_Task_Type.LLM) in task_type:
         return call_llm_servant(
             command=command,
-            command_id=command_id,
             task_obj=task_obj,
+            output_callback=output_callback,
+            finished_callback=finished_callback,
             **command_data_dict
         )
-
+    # T2I
     if str(Redis_Task_Type.T2I) in task_type:
         return call_t2i_servant()
 

@@ -317,11 +317,33 @@ class Redis_Proxy_Server:
                 # 调用自定义command的servant
                 task_type = task_data_dict.task_type
                 task_obj = task_data_dict.task_obj
+
+                # client输出chunk(可以是text stream的chunk，也可以是一张图片string)的回调函数
+                def _output_callback(output_string:str, use_byte:bool):
+                    result_stream_key = Key_Name_Space.Results_Register.format(task_id=task_id, command_id=command_id)
+                    chunk_data = {
+                        'chunk_data_type': 'text',
+                        'chunk': output_string,
+                        'chunk_use_byte': int(use_byte),
+                        'status': 'running',
+                    }
+                    self.redis_client.add_stream(stream_key=result_stream_key, data=chunk_data)
+
+                # client输出结束的回调函数
+                def _finished_callback():
+                    result_stream_key = Key_Name_Space.Results_Register.format(task_id=task_id, command_id=command_id)
+                    chunk_data = {
+                        'status': 'completed',
+                    }
+                    self.redis_client.add_stream(stream_key=result_stream_key, data=chunk_data)
+
                 return_task_obj = call_custom_command(
                     task_type=task_type,
                     command=command,
                     command_id=command_id,
                     task_obj=task_obj,
+                    output_callback=_output_callback,
+                    finished_callback=_finished_callback,
                     **command_data_dict
                 )
 

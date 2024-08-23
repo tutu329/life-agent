@@ -11,10 +11,11 @@ from redis_proxy.custom_command.llm.protocol import Config
 
 def call_llm_servant(
         command,
-        command_id,
         task_obj,
+        output_callback,    # output_callback(output_string:str, use_byte:bool)
+        finished_callback,  # finished_callback()
         **command_data_dict
-):
+):  # 返回task_obj
     if command == str(Redis_Proxy_Command_LLM.INIT):
         obj = LLM_Client(
                 url=command_data_dict['url'],
