@@ -13,3 +13,4 @@ class Client_New_Task_Paras:
     client_id: str = ''     # client_id由client提供，可以是str(uuid.uuid4())
     task_type: str = ''     # 见custom_command.protocol中的Redis_Task_Type
     task_id: str = ''       # task_id由client提供，可以是str(uuid.uuid4())
+
