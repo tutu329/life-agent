@@ -353,15 +353,15 @@ class Redis_Proxy_Server:
                     task_obj=return_task_obj
                 )
 
-                server_invoking_command(
-                    self.server_data,
-                    self.redis_client,
-                    task_id=task_id,
-                    client_id=client_id,
-                    command=command,
-                    command_id=command_id,
-                    **command_data_dict
-                )
+                # server_invoking_command(
+                #     self.server_data,
+                #     self.redis_client,
+                #     task_id=task_id,
+                #     client_id=client_id,
+                #     command=command,
+                #     command_id=command_id,
+                #     **command_data_dict
+                # )
                 dgreen(f'-----------------------------------------------')
 
     def _callback(self, out_task_info_must_be_here):

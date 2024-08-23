@@ -2,6 +2,7 @@ import config
 from singleton import singleton
 from dataclasses import asdict
 import uuid
+from pprint import pprint
 
 from redis_client import Redis_Client
 from config import Global, dred, dgreen
@@ -29,6 +30,8 @@ class Redis_Proxy_Client():
         self.client_id = 'Client_' + str(uuid.uuid4())
 
         self.task_id = None
+
+        self.cmd_ids = []
 
     # 向server发送一个消息，在server构造一个task
     def new_task(
@@ -93,12 +96,15 @@ class Redis_Proxy_Client():
         #     'task_id': task_id,
         #     'command': str(command),    # 例如：str(Redis_LLM_Command.INIT)
         # }
+        cmd_id = 'cmd_'+str(uuid.uuid4())
         data = asdict(Client_New_Command_Paras(
             client_id=self.client_id,
             task_id=task_id,
-            command_id='cmd_'+str(uuid.uuid4()),
+            command_id=cmd_id,
             command=str(command),    # 例如：str(Redis_LLM_Command.INIT)
         ))
+        if 'INIT' not in str(command):
+            self.cmd_ids.append(cmd_id)
 
         if args is not None:
             arg_dict = asdict(args)
@@ -129,49 +135,61 @@ class Redis_Proxy_Client():
         return status
 
     def print_stream(self):
-        for chunk in self.get_result_gen():
-            print(chunk, end='', flush=True)
-        print()
+        pprint(self.cmd_ids)
+        for cmd_id in self.cmd_ids:
+            result_stream_key = Key_Name_Space.Results_Register.format(task_id=self.task_id, command_id=cmd_id)
+            dred(f'result_stream_key:{result_stream_key}')
+            for chunk in self.get_result_gen(result_stream_key):
+                print(chunk, end='', flush=True)
+            print()
 
     # 返回task的result数据
-    def get_result_gen(self):       # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
+    def get_result_gen(self, result_stream_key):       # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
         task_id = self.task_id
 
         # 返回的commands的信息的stream key
-        cmds_stream_key = f'responsing_cmds_info_{task_id}'
+        cmds_stream_key = result_stream_key
+        # cmds_stream_key = f'responsing_cmds_info_{task_id}'
 
         # 返回stream_key为'Task_xxxid_Result'（该数据由server填充）的最新数据
 
+        while True:
+            gen = s_redis.pop_stream_gen(cmds_stream_key)
+            for msg in gen:
+                if msg['status'] != 'completed':
+                    yield msg['chunk']
+                else:
+                    return
 
         # 读取最新stream数据
-        while True:
-            cmd_info_dict_list = s_redis.pop_stream(cmds_stream_key)
-            for cmd_info_dict in cmd_info_dict_list:
-                for k,v in cmd_info_dict.items():
-                    stream_key = f'Task_{task_id}_Result_CMD_{k}'
-                    if v=='completed':
-                        continue
-
-                    finished = False
-                    while not finished:
-
-                        dict_list = s_redis.pop_stream(stream_key=stream_key)
-                        # print('====================================================')
-                        for item in dict_list:
-
-                            # 打印获取的stream的dict
-                            # print('received dict:')
-                            # for k, v in item.items():
-                            #     if len(v)>100:
-                            #         print(f'\t{k}: {v[:10]}...(len: {len(v)})')
-                            #     else:
-                            #         print(f'\t{k}: {v}')
-
-                            if item['status'] != 'completed':
-                                yield item['chunk']
-                            else:
-                                # pass
-                                finished = True
+        # while True:
+        #     cmd_info_dict_list = s_redis.pop_stream(cmds_stream_key)
+        #     for cmd_info_dict in cmd_info_dict_list:
+        #         for k,v in cmd_info_dict.items():
+        #             stream_key = f'Task_{task_id}_Result_CMD_{k}'
+        #             if v=='completed':
+        #                 continue
+        #
+        #             finished = False
+        #             while not finished:
+        #
+        #                 dict_list = s_redis.pop_stream(stream_key=stream_key)
+        #                 # print('====================================================')
+        #                 for item in dict_list:
+        #
+        #                     # 打印获取的stream的dict
+        #                     # print('received dict:')
+        #                     # for k, v in item.items():
+        #                     #     if len(v)>100:
+        #                     #         print(f'\t{k}: {v[:10]}...(len: {len(v)})')
+        #                     #     else:
+        #                     #         print(f'\t{k}: {v}')
+        #
+        #                     if item['status'] != 'completed':
+        #                         yield item['chunk']
+        #                     else:
+        #                         # pass
+        #                         finished = True
 
     def save_image_to_file(self, image_data, file_name):
         from PIL import Image
