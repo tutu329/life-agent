@@ -16,6 +16,8 @@ from redis_proxy.custom_bridge.protocol import server_add_and_start_bridge_serva
 from redis_proxy.thread import Task_Worker_Thread, Redis_Proxy_Server_Thread
 from protocol import Key_Name_Space
 
+from redis_proxy.custom_command.protocol import call_custom_command
+
 from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM
 
 from redis_proxy.custom_command.llm.servant import llm_servant
@@ -304,14 +306,22 @@ class Redis_Proxy_Server:
                 command_id = command_data_dict['command_id']
 
                 # 获取tasks_data_dict
-                tasks_data_dict = self.server_data.clients[client_id].tasks[task_id]
+                task_data_dict = self.server_data.clients[client_id].tasks[task_id]
 
                 # 调用自定义command的servant
-                task_obj = None
-                # task_obj = call_servant()
+                task_type = task_data_dict.task_type
+                task_obj = task_data_dict.task_obj
+                command = command_data_dict['command']
+                return_task_obj = call_custom_command(
+                    task_type=task_type,
+                    # command=command,
+                    # command_id=command_id,
+                    task_obj=task_obj,
+                    **command_data_dict
+                )
 
                 # 创建server侧的command信息
-                tasks_data_dict.add_command_data(command_data=command_data_dict, task_obj=task_obj)
+                task_data_dict.add_command_data(command_data=command_data_dict, task_obj=return_task_obj)
 
                 server_invoking_command(self.server_data, self.redis_client, **command_data_dict)
                 dgreen(f'-----------------------------------------------')

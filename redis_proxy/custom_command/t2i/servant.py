@@ -8,6 +8,9 @@ from redis_proxy.thread import Task_Worker_Thread
 
 import random
 
+def call_t2i_servant():
+    pass
+
 def _get_arg(arg_str, default, **arg_dict):
     arg = default
     if arg_str in arg_dict:

@@ -3,8 +3,8 @@ from enum import Enum, unique
 from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Optional, Any
 
-from redis_proxy.custom_command.llm.servant import llm_servant
-from redis_proxy.custom_command.t2i.servant import t2i_servant
+from redis_proxy.custom_command.llm.servant import llm_servant, call_llm_servant
+from redis_proxy.custom_command.t2i.servant import t2i_servant, call_t2i_servant
 
 from config import dred, dgreen
 
@@ -20,6 +20,25 @@ class Client_New_Command_Paras:    # new task是顶层命令，不适合放在cu
     task_id: str = ''       # task_id由client提供，可以是str(uuid.uuid4())
     command_id: str = ''    # command_id由client提供，可以是str(uuid.uuid4())
     command: str = ''  # Redis_Proxy_Command_LLM
+
+def call_custom_command(
+        task_type,
+        # command,
+        # command_id,
+        task_obj,
+        **command_data_dict
+):
+    # 选择具体的command
+    if str(Redis_Task_Type.LLM) in task_type:
+        return call_llm_servant(
+            # command=command_data_dict['command'],
+            # command_id=command_id,
+            task_obj=task_obj,
+            **command_data_dict
+        )
+
+    if str(Redis_Task_Type.T2I) in task_type:
+        return call_t2i_servant()
 
 # 执行command
 def server_invoking_command(s_redis_proxy_server_data, s_redis_client, **arg_dict):
