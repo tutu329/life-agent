@@ -322,7 +322,6 @@ class Redis_Proxy_Server:
                 def _output_callback(output_string:str, use_byte:bool):
                     result_stream_key = Key_Name_Space.Results_Register.format(task_id=task_id, command_id=command_id)
                     chunk_data = {
-                        'chunk_data_type': 'text',
                         'chunk': output_string,
                         'chunk_use_byte': int(use_byte),
                         'status': 'running',
