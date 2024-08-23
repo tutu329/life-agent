@@ -26,6 +26,14 @@ def call_llm_servant(
         return obj
 
     if command == str(Redis_Proxy_Command_LLM.ASK):
+        gen = task_obj.ask_prepare(
+            in_question=command_data_dict['question'],
+            in_temperature=command_data_dict['temperature'],
+        ).get_answer_generator()
+        for chunk in gen:
+            output_callback(output_string=chunk, use_byte=False)
+        finished_callback()
+
         return task_obj
 
 def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, task_id, client_id, command, command_id,  **arg_dict):
