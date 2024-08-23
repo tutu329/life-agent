@@ -1,4 +1,4 @@
-import pprint
+from pprint import pprint
 
 from singleton import singleton
 from dataclasses import dataclass, field
@@ -14,6 +14,7 @@ import time, json5
 from redis_proxy.custom_command.protocol import server_add_task, server_invoking_command
 from redis_proxy.custom_bridge.protocol import server_add_and_start_bridge_servant
 from redis_proxy.thread import Task_Worker_Thread, Redis_Proxy_Server_Thread
+from protocol import Key_Name_Space
 
 from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM
 
@@ -110,7 +111,7 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
                 # 执行所有command
                 for command_para_dict in dict_list:
                     dred(f'exec_command: ')
-                    pprint.pprint(command_para_dict)
+                    pprint(command_para_dict)
                     __exec_command(**command_para_dict)
 
     # Redis Proxy Server 主循环
@@ -123,9 +124,9 @@ def Redis_Proxy_Server_Callback(out_task_info_must_be_here):
             dred(f"Redis Task Server ({thread_status['task_name']}) cancelled")
             break
 
-        polling_new_tasks()
-        polling_new_bridge()
-        polling_task_commands()
+        # polling_new_tasks()
+        # polling_new_bridge()
+        # polling_task_commands()
 
         # show living per 10*redis_proxy_server_sleep_time
         # if count % 10 == 0:
@@ -190,11 +191,21 @@ class Client_Data:
     tasks: Dict[str, Task_Data] = field(default_factory=dict)
     # bridge_system: Optional[Bridge_System] = None
 
+    def add_task_data(self, task_data):
+        task_id = task_data.task_id
+        self.tasks[task_id] = task_data
+
 @dataclass
 class Server_Data:
     server_id: str = ''
     clients: Dict[str, Client_Data] = field(default_factory=dict)
 
+    def check_client_data(self, client_id):
+        if client_id in self.clients:
+            pass
+        else:
+            client_data = Client_Data(client_id=client_id)
+            self.clients[client_id] = client_data
 
 # Redis_Proxy_Server（单体）
 # 功能：实现server侧资源的异步调用（如LLM、LLM-Agent、SD等）
@@ -217,8 +228,40 @@ class Redis_Proxy_Server:
         self.server_thread.start()
         dgreen(f'{self.server_data.server_id}的polling线程已启动.')
 
-    def _polling_new_task(self):
+    def _get_new_task_paras(self, task_data_dict):
         pass
+
+    # 查询client是否有新的task，将task信息存入server_data
+    def _polling_new_task(self):
+        # 获取注册task的stream_key名称
+        tasks_stream_key = Key_Name_Space.Task_Register
+        # 读取redis中的task的stream
+        gen = self.redis_client.pop_stream_gen(tasks_stream_key)
+        for task_data_dict in gen:
+            dgreen(f'-----------------获得new task----------------')
+            pprint(task_data_dict)
+            dgreen(f'--------------------------------------------')
+
+            # 在server_data中创建新的task信息
+            dgreen(f'-----------------new task信息创建前----------------')
+            pprint(self.server_data)
+
+
+            client_id = task_data_dict['client_id']
+            task_id = task_data_dict['task_id']
+
+            # 若没用client_data，需要新建
+            self.server_data.check_client_data(client_id)
+
+            # 新建task_data
+            task_data = Task_Data(
+                task_id=task_data_dict['task_id'],
+                task_type=task_data_dict['task_type'],
+            )
+            self.server_data.clients[client_id].add_task_data(task_data)
+            dgreen(f'-----------------new task信息已创建----------------')
+            pprint(self.server_data)
+            dgreen(f'-------------------------------------------------')
 
     def _polling_new_command(self):
         pass

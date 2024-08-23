@@ -14,6 +14,8 @@ from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM, LLM
 from redis_proxy.custom_command.t2i.protocol import Redis_Proxy_Command_T2I, T2I_Init_Para, T2I_Draw_Para
 import random, json5
 
+from redis_proxy.protocol import Key_Name_Space, Client_New_Task_Paras
+
 
 s_redis = Redis_Client(host=config.Domain.redis_server_domain, port=config.Port.redis_client, invoker='redis_proxy_client')  # win-server
 
@@ -35,12 +37,17 @@ class Redis_Proxy_Client():
         task_id = 'tid_' + str(uuid.uuid4())
 
         s_redis.add_stream(
-            stream_key='Task_Register',
-            data={
-                'client_id': self.client_id,
-                'task_type': str(task_type),
-                'task_id': task_id,
-            },
+            stream_key=Key_Name_Space.Task_Register,
+            # data={
+            #     'client_id': self.client_id,
+            #     'task_type': str(task_type),
+            #     'task_id': task_id,
+            # },
+            data = asdict(Client_New_Task_Paras(
+                client_id = self.client_id,
+                task_type = str(task_type),
+                task_id = task_id,
+            )),
         )
 
         self.task_id = task_id

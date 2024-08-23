@@ -183,6 +183,53 @@ class Redis_Client:
 
         return rtn_data_list
 
+    def pop_stream_gen(
+            self,
+            stream_key,
+            # inout_data_list,    # 返回的数据列表
+            use_byte=False,     # 是否使用byte格式的数据(b'xxx')
+            # last_id='0-0',      # 起始id(>该id，则返回)
+            count=100,          # 返回数据个数
+            block=100           # 阻塞时间ms
+    ):
+        self._connect()
+
+        # 处理stream_key下的stream_last_id
+        if stream_key in self.s_stream_last_ids:
+            last_id = self.s_stream_last_ids[stream_key]
+        else:
+            last_id = '0-0'
+
+        # 读取新的消息
+        messages = self._client.xread({stream_key: last_id}, count=count, block=block)
+        # print(f'messages: {messages}')
+
+        rtn_data_list = []
+
+        if messages:
+            for message in messages[0][1]:
+                message_id = message[0]
+                message_data = message[1]
+
+                # print(f'---------------------------------------------')
+                # for k, v in message_data.items():
+                #     if len(v)>100:
+                #         print(f'\t {k}: {v[:10]}...(len: {len(v)})')
+                #     else:
+                #         print(f'\t {k}: {v}')
+
+                if use_byte:
+                    yield message_data
+                else:
+                    yield data_convert_from_byte_to_str(message_data)
+                dprint(f'\t Received message ID: {message_id}, data: {message_data}', end='', flush=True)
+
+                # 更新 last_id 以避免重复读取
+                last_id = message_id.decode('utf-8')
+                self.s_stream_last_ids[stream_key] = last_id
+                dprint(f'\t msg id: "{last_id}"')
+            dprint()
+
 def main():
     # client = Redis_Client(host='116.62.63.201')
 
