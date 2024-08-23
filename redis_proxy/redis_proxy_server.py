@@ -1,7 +1,7 @@
 from pprint import pprint
 
 from singleton import singleton
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Any
 import config
 
@@ -185,6 +185,14 @@ class Task_Data:
     # task_command_key_bridged: Optional[str] = None
     # task_status: str = ''
 
+    def add_command_data(self, command_data, task_obj):
+        self.task_obj = task_obj
+        cmd_id = command_data['command_id']
+        cmd_data = asdict(Command_Data(
+            cmd_id=cmd_id,
+        ))
+        self.commands[cmd_id] = cmd_data
+
 @dataclass
 class Client_Data:
     client_id: str = ''
@@ -291,6 +299,20 @@ class Redis_Proxy_Server:
             for command_data_dict in gen:
                 dgreen(f'-----------------获得new command----------------')
                 pprint(command_data_dict)
+                client_id = command_data_dict['client_id']
+                task_id = command_data_dict['task_id']
+                command_id = command_data_dict['command_id']
+
+                # 获取tasks_data_dict
+                tasks_data_dict = self.server_data.clients[client_id].tasks[task_id]
+
+                # 调用自定义command的servant
+                task_obj = None
+                # task_obj = call_servant()
+
+                # 创建server侧的command信息
+                tasks_data_dict.add_command_data(command_data=command_data_dict, task_obj=task_obj)
+
                 server_invoking_command(self.server_data, self.redis_client, **command_data_dict)
                 dgreen(f'-----------------------------------------------')
 
