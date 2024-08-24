@@ -65,6 +65,7 @@ def status_to_redis(in_status: LLM_Client_Status):
     # redis.set_dict(f'client history_list', in_status.history_list)
     # redis.set_dict(f'client last_response', in_status.last_response)
 
+
 class LLM_Client:
     LLM_SERVER = 'http://127.0.0.1:8001/v1/'
     def __init__(self,
