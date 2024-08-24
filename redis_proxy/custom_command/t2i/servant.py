@@ -1,4 +1,4 @@
-
+import glob, os
 from config import dred, dgreen
 import config
 
@@ -7,6 +7,16 @@ from tools.t2i.api_client_comfy import Comfy, Work_Flow_Type
 from redis_proxy.thread import Task_Worker_Thread
 
 import random
+
+
+def get_json_files_list(directory):
+    # 使用 glob 模块匹配目录下的所有 .json 文件
+    json_files = glob.glob(os.path.join(directory, '*.json'))
+
+    # 提取文件名（不包括路径）
+    json_file_names = [os.path.basename(file) for file in json_files]
+
+    return json_file_names
 
 def call_t2i_servant(
         command,
@@ -30,16 +40,17 @@ def call_t2i_servant(
         if command == str(Redis_Proxy_Command_T2I.DRAWS):
             if int(command_paras_dict['using_template']) == 1:
                 # 随机调用模板出图
-                template_list = [
-                    'api_panty.json',
-                    'api-prone.json',
-                    'api-sexy.json',
-                    'back-lost-api.json',
-                    'api-sexy-back-liusu.json',
-                    'api1.json',
-                    'api2.json',
-                    'api3.json',
-                ]
+                # template_list = [
+                #     'api_panty.json',
+                #     'api-prone.json',
+                #     'api-sexy.json',
+                #     'back-lost-api.json',
+                #     'api-sexy-back-liusu.json',
+                #     'api2.json',
+                #     'api3.json',
+                # ]
+                template_list = get_json_files_list(config.Global.api_dir)
+                dred(f'---------------------template_json_file: "{template_list}"--------------------------')
                 template_json_file = random.choice(template_list)
                 dred(f'---------------------template_json_file: "{template_json_file}"--------------------------')
                 task_obj_already_exists.set_workflow_by_json_file(template_json_file)

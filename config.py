@@ -99,6 +99,7 @@ class Global():
 
     work_dir = '/home'   # 工作目录
     temp_dir = './temp'
+    api_dir = './custom_command/llm/api'
 
     @staticmethod
     def get_work_dir():

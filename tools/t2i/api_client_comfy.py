@@ -395,7 +395,7 @@ def main():
         )
     else:
         # client.set_workflow_by_json_file('api-sd3-tom.json', seed_node='271')
-        client.set_workflow_by_json_file('api-sexy-back-liusu.json', seed_node='16')
+        client.set_workflow_by_json_file('api-sexy-back-liusu.json')
         # client.set_workflow_by_json_file('api3.json')
     client.get_images()
     client.save_images_to_temp_dir()
