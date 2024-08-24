@@ -1,4 +1,5 @@
 from copy import deepcopy
+import base64, wave
 from pprint import pprint
 # import os, requests, torch
 
@@ -382,12 +383,33 @@ class LLM_Client:
             stop=None,
             system_prompt=None,
             role_prompt=None,
+            audio_string=None,
     ):
         self.temperature = config.LLM_Default.temperature if temperature is None else temperature
         self.max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
         clear_history = int(config.LLM_Default.clear_history if clear_history is None else clear_history)
         self.stream = int(config.LLM_Default.stream if stream is None else stream)
         # in_stop = config.LLM_Default.stop if in_stop is None else in_stop
+
+        if audio_string:
+            dgreen('-----------------------------获得音频数据--------------------------------')
+            dgreen(f'audio_string:"{audio_string[:100]}..."({len(audio_string)})')
+            if len(audio_string)>0:
+                wav_data = base64.b64decode(audio_string)
+                file_name = 'audio_from_glasses.wav'
+                channels = 2
+                sample_width = 2
+                frame_rate = 44100
+                # frame_rate = 44100
+                with wave.open(file_name, 'wb') as wav_file:
+                    wav_file.setnchannels(channels)
+                    wav_file.setsampwidth(sample_width)
+                    wav_file.setframerate(frame_rate)
+                    wav_file.writeframes(wav_data)
+                # with open(file_name, "wb") as wav_file:
+                #     wav_file.write(wav_data)
+                dgreen(f'WAV文件已成功保存为"{file_name}"')
+            dgreen('----------------------------------------------------------------------')
 
         if system_prompt is not None:
             self.set_system_prompt(system_prompt)
