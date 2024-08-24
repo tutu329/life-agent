@@ -18,8 +18,88 @@ import random, json5
 from redis_proxy.protocol import Key_Name_Space, Client_New_Task_Paras
 from redis_proxy.custom_command.protocol import Client_New_Command_Paras
 
+s_redis = Redis_Client(
+    host=config.Domain.redis_server_domain,
+    port=config.Port.redis_client,
+    invoker='redis_proxy_client'
+)  # win-server
 
-s_redis = Redis_Client(host=config.Domain.redis_server_domain, port=config.Port.redis_client, invoker='redis_proxy_client')  # win-server
+class Redis_Proxy_Client1:
+    def __init__(self):
+        self.client_id = 'cid_' + str(uuid.uuid4())
+        self.task_id = None
+        self.cmd_ids = []
+
+        self.redis = Redis_Client(
+            host=config.Domain.redis_server_domain,
+            port=config.Port.redis_client,
+            invoker='redis_proxy_client'
+        )
+
+    def new_task(self, task_type):
+        self.task_id = 'tid_' + str(uuid.uuid4())
+        self.redis.add_stream(
+            stream_key=Key_Name_Space.Task_Register,
+            data=asdict(Client_New_Task_Paras(
+                client_id=self.client_id,
+                task_type=str(task_type),
+                task_id=self.task_id,
+            )),
+        )
+        return self
+
+    def send_command(
+            self,
+            command,
+            args=None
+    ):
+        # 生成cmd_id
+        cmd_id = 'cmdid_'+str(uuid.uuid4())
+        # cmd_id存入cmd_ids
+        if 'INIT' not in str(command):
+            self.cmd_ids.append(cmd_id)
+
+        # 生成paras的基本部分(ids和command)
+        paras = asdict(Client_New_Command_Paras(
+            client_id=self.client_id,
+            task_id=self.task_id,
+            command_id=cmd_id,
+            command=str(command),    # 例如：str(Redis_LLM_Command.INIT)
+        ))
+
+        # 其他参数(接口参数)加入paras
+        if args is not None:
+            args_dict = asdict(args)
+            args_dict = {k: v for k, v in args_dict.items() if v is not None}     # 过滤掉args中的None值(redis无法存储None)
+            paras.update(args_dict)
+
+        # 向redis发送完整paras
+        print('---------------------------paras-------------------------------')
+        pprint(paras)
+        print('---------------------------------------------------------------')
+        self.redis.add_stream(
+            stream_key=Key_Name_Space.Commands_Register.format(task_id=self.task_id),
+            data=paras,
+        )
+
+        return self
+
+    def get_result_gen(self, result_stream_key):
+        while True:
+            gen = self.redis.pop_stream_gen(result_stream_key)
+            for msg in gen:
+                if msg['status'] != 'completed':
+                    yield msg['chunk']
+                else:
+                    return
+
+    def _print_result(self):
+        # pprint(self.cmd_ids)
+        for cmd_id in self.cmd_ids:
+            result_stream_key = Key_Name_Space.Results_Register.format(task_id=self.task_id, command_id=cmd_id)
+            for chunk in self.get_result_gen(result_stream_key):
+                print(chunk, end='', flush=True)
+            print()
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton
@@ -282,15 +362,16 @@ def main_llm():
     # t1.send_command(command=Redis_Proxy_Command_LLM.ASK, args=args)
     # t1.print_stream()
 
-    t2=Redis_Proxy_Client()
+    t2=Redis_Proxy_Client1()
     arg1 = LLM_Init_Para(url=config.Domain.llm_url, max_new_tokens=1024)
     arg2 = LLM_Ask_Para(question='你是谁？我的名字是土土', temperature=0.6, system_prompt='你扮演甄嬛', role_prompt='你扮演洪七公')
     arg3 = LLM_Ask_Para(question='还记得我的名字是什么？', temperature=0.6)
-    (t2.new_task(Redis_Task_Type.LLM)
-     .send_command(command=Redis_Proxy_Command_LLM.INIT, args=arg1)
-     .send_command(command=Redis_Proxy_Command_LLM.ASK, args=arg2)
-     .send_command(command=Redis_Proxy_Command_LLM.ASK, args=arg3))
-    t2.print_stream()
+    t2.new_task(Redis_Task_Type.LLM) \
+     .send_command(command=Redis_Proxy_Command_LLM.INIT, args=arg1) \
+     .send_command(command=Redis_Proxy_Command_LLM.ASK, args=arg2) \
+     .send_command(command=Redis_Proxy_Command_LLM.ASK, args=arg3)
+    t2._print_result()
+    # t1.print_stream()
 
 if __name__ == "__main__":
     main_llm()
