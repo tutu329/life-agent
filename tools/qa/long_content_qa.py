@@ -112,7 +112,7 @@ def multi_contents_qa_concurrently(
         final_question = f'"{answers}", 请综合考虑上述分段内容，回答问题"{in_prompt}"，回答是简略还是详细，一定要严格根据问题的要求来。'
 
     llm = llm.ask_prepare(
-        in_question=final_question,
+        question=final_question,
     )
     return llm
 def multi_contents_qa_concurrently_yield(
@@ -175,7 +175,7 @@ def multi_contents_qa_concurrently_yield(
     final_question = f'"{answers}", 请综合考虑上述小结内容及其来源可信度，回答问题"{in_prompt}"，回答一定要简明扼要、层次清晰，如果回答内容较多，请采用markdown对其进行格式化输出。'
 
     llm = llm.ask_prepare(
-        in_question=final_question,
+        question=final_question,
     )
     for chunk in llm.get_answer_generator():
         yield chunk

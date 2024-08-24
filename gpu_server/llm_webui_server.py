@@ -117,7 +117,7 @@ def llm_async_ask(message, history, temperature, max_new_tokens, request:gr.Requ
     # print(f'---------------history_with_current_message: ------------------------------------------')
     # print(f'{history_with_current_message}')
 
-    for item in llm.ask_prepare(history_with_current_message, in_temperature=temperature, in_max_new_tokens=max_new_tokens).get_answer_generator():
+    for item in llm.ask_prepare(history_with_current_message, temperature=temperature, max_new_tokens=max_new_tokens).get_answer_generator():
     # for item in llm.ask_prepare(message).get_answer_generator():
         yield item
 

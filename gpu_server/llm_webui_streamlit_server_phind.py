@@ -168,9 +168,9 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet):
         mem_llm.set_role_prompt(role_prompt)
         full_res = ''
         for res in mem_llm.ask_prepare(
-            in_question=prompt, 
-            in_temperature=st.session_state.local_llm_temperature,
-            in_max_new_tokens=st.session_state.local_llm_max_new_token,
+            question=prompt,
+            temperature=st.session_state.local_llm_temperature,
+            max_new_tokens=st.session_state.local_llm_max_new_token,
         ).get_answer_generator():
             full_res += res
             place_holder.markdown(full_res)

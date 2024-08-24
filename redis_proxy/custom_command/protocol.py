@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Any
 from redis_proxy.custom_command.llm.servant import llm_servant, call_llm_servant
 from redis_proxy.custom_command.t2i.servant import t2i_servant, call_t2i_servant
 
-from config import dred, dgreen
+from config import dred, dblue, dgreen
 
 @unique
 class Redis_Task_Type(Enum):
@@ -33,7 +33,7 @@ def call_custom_command(
     if str(Redis_Task_Type.LLM) in task_type:
         return call_llm_servant(
             command=command,
-            task_obj=task_obj,
+            task_obj_already_exists=task_obj,
             output_callback=output_callback,
             finished_callback=finished_callback,
             **command_data_dict

@@ -1,6 +1,6 @@
 import pprint
 
-from config import dred, dgreen
+from config import dred, dblue, dgreen
 import config
 
 from redis_proxy.custom_command.llm.protocol import Redis_Proxy_Command_LLM
@@ -11,30 +11,22 @@ from redis_proxy.custom_command.llm.protocol import Config
 
 def call_llm_servant(
         command,
-        task_obj,
+        task_obj_already_exists,
         output_callback,    # output_callback(output_string:str, use_byte:bool)
         finished_callback,  # finished_callback()
         **command_data_dict
-):  # 返回task_obj
+):  # 返回new_task_obj
     if command == str(Redis_Proxy_Command_LLM.INIT):
-        obj = LLM_Client(
-                url=command_data_dict['url'],
-                history=command_data_dict['history'],
-                max_new_tokens=command_data_dict['max_new_tokens'],
-                temperature=command_data_dict['temperature'],
-            )
-        return obj
+        new_task_obj = LLM_Client(**command_data_dict)
+        return new_task_obj
 
     if command == str(Redis_Proxy_Command_LLM.ASK):
-        gen = task_obj.ask_prepare(
-            in_question=command_data_dict['question'],
-            in_temperature=command_data_dict['temperature'],
-        ).get_answer_generator()
+        gen = task_obj_already_exists.ask_prepare(**command_data_dict).get_answer_generator()
         for chunk in gen:
             output_callback(output_string=chunk, use_byte=False)
         finished_callback()
 
-        return task_obj
+        return task_obj_already_exists
 
 def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, task_id, client_id, command, command_id,  **arg_dict):
     # dgreen(f'command from client: {arg_dict}')
@@ -110,10 +102,10 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_ke
                 temperature = arg_dict['temperature']
                 # dred(f'------------servant-llm_callback(): ask_prepare() started.------------')
                 # dred(f'----------history2: {llm_obj.history}--------------')
-                gen = llm_obj.ask_prepare(in_question=question, in_temperature=temperature).get_answer_generator()
+                gen = llm_obj.ask_prepare(question=question, temperature=temperature).get_answer_generator()
             else:
                 # dred(f'------------servant-llm_callback(): ask_prepare() started.------------')
-                gen = llm_obj.ask_prepare(in_question=question).get_answer_generator()
+                gen = llm_obj.ask_prepare(question=question).get_answer_generator()
 
             # 设置responsing_cmds_info
             cmd_data['responsing_cmds_info'][cmd_id] = 'running'

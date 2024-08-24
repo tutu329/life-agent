@@ -2,6 +2,7 @@ import socket, requests
 
 from dataclasses import dataclass, field
 from colorama import Fore, Back, Style
+from typing import Dict, List, Optional, Any
 
 def get_local_ip():
     hostname = socket.gethostname()
@@ -151,5 +152,13 @@ class Domain():
     # redis_server_ip:str = '192.168.124.33'
     # redis_server_port:int = 8010
 
-
-
+@dataclass
+class LLM_Default:
+    temperature:float   = 0.7
+    max_new_tokens:int  = 1024
+    # stop:List[str]      = field(default_factory=list)
+    stream:bool         = True
+    history:bool        = True
+    clear_history:bool  = False
+    api_key:str         = 'empty'
+    url:str             = Domain.llm_url

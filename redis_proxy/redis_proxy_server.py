@@ -346,7 +346,6 @@ class Redis_Proxy_Server:
         return_task_obj = call_custom_command(
             task_type=task_type,
             command=command,
-            command_id=command_id,
             task_obj=task_obj,
             output_callback=_client_output_callback,
             finished_callback=_client_finished_callback,

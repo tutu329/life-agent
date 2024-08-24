@@ -44,7 +44,8 @@ def _translate_command_args_stream(input_stream_key, output_stream_key, args, br
                 dred(f'翻译前的内容: "{arg_dict[arg_name]}"')
                 translated_arg = ''
                 if arg_dict[arg_name]:
-                    for chunk in llm.ask_prepare(in_question=question.format(content=arg_dict[arg_name])).get_answer_generator():
+                    for chunk in llm.ask_prepare(
+                            question=question.format(content=arg_dict[arg_name])).get_answer_generator():
                         translated_arg += chunk
                 dred(f'翻译后的内容: "{translated_arg}"')
                 # 翻译后回写到arg_dict

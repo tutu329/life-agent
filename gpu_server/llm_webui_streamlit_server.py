@@ -753,13 +753,13 @@ def ask_llm(prompt, paras):
     if draw:
 
         answer = draw_llm.ask_prepare(
-            in_question=f'''
+            question=f'''
 请将描述"{prompt}"转换为stable diffusion的英文的出图提示词，返回的提示词风格如下（注意必须全部为英文，且只返回引号内的内容）:
 "Energetic (puppy playing in a water fountain:1.5) in a (lively urban park:1.4), with (splashing water droplets:1.4) and (amused onlookers:1.3), intricate details, (vibrant blue and green tones:1.4), (joyful playful atmosphere:1.5), (bright sunny daylight:1.4), high-definition, sharp focus, perfect composition, (modern photography:1.5) (smartphone camera:1.5) (social media post:1.5)"
 ''',
-            in_temperature=st.session_state.session_data['paras']['local_llm_temperature'],
-            in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
-            in_system_prompt=system_prompt,
+            temperature=st.session_state.session_data['paras']['local_llm_temperature'],
+            max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
+            system_prompt=system_prompt,
         ).get_answer_and_sync_print()
         place_holder = st.chat_message('assistant').empty()
         place_holder.markdown(answer)
@@ -967,10 +967,10 @@ def ask_llm(prompt, paras):
         start_time1 = time.time()
 
         gen = mem_llm.ask_prepare(
-            in_question=prompt,
-            in_temperature=st.session_state.session_data['paras']['local_llm_temperature'],
-            in_max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
-            in_system_prompt=system_prompt,
+            question=prompt,
+            temperature=st.session_state.session_data['paras']['local_llm_temperature'],
+            max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
+            system_prompt=system_prompt,
         ).get_answer_generator()
 
 

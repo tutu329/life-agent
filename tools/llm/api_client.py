@@ -67,19 +67,26 @@ def status_to_redis(in_status: LLM_Client_Status):
 class LLM_Client:
     LLM_SERVER = 'http://127.0.0.1:8001/v1/'
     def __init__(self,
-                 history=True,
+                 history=None,
                  history_max_turns=config.Global.llm_max_chat_turns,
                  model_id=None,
                  history_clear_method='pop',
-                 api_key='empty',
+                 api_key=None,
                  # api_key='b1ad5dac212f563be4765b646543ca1b',
-                 temperature=0.7,
+                 temperature=None,
                  url=None,
-                 max_new_tokens=512,
+                 max_new_tokens=None,
                  print_input=True,
                  print_output=True
                  ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
+
+        history = config.LLM_Default.history if history is None else history
+        api_key = config.LLM_Default.api_key if api_key is None else api_key
+        temperature = config.LLM_Default.temperature if temperature is None else temperature
+        url = config.LLM_Default.url if url is None else url
+        max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
+
 
         if url is None:
             self.url = LLM_Client.Get_All_LLM_Server()
@@ -360,27 +367,39 @@ class LLM_Client:
     # 返回stream(generator)
     def ask_prepare(
             self,
-            in_question,
-            in_temperature=None,
-            in_max_new_tokens=None,
+            question,
+            temperature=None,
+            max_new_tokens=None,
             # in_top_p=None,
-            in_clear_history=False,
-            in_stream=True,
-            in_retry=False,
-            in_undo=False,
-            in_stop=None,
-            in_system_prompt=None,
+            clear_history=False,
+            stream=True,
+            retry=False,
+            undo=False,
+            stop=None,
+            system_prompt=None,
+            role_prompt=None,
     ):
+        temperature = config.LLM_Default.temperature if temperature is None else temperature
+        max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
+        clear_history = config.LLM_Default.clear_history if clear_history is None else clear_history
+        stream = config.LLM_Default.stream if stream is None else stream
+        # in_stop = config.LLM_Default.stop if in_stop is None else in_stop
+
+        if system_prompt is not None:
+            self.set_system_prompt(system_prompt)
+        if role_prompt is not None:
+            self.set_role_prompt(role_prompt)
+
         dprint(f'{"-" * 40}输入参数{"-" * 40}')
         dprint(f'self.url: "{self.url}"')
         dprint(f'self.model_id: "{self.model_id}"')
         dprint(f'self.api_key: "{self.api_key}"')
 
-        dprint(f'in_temperature: {in_temperature}')
-        dprint(f'in_stream: {in_stream}')
-        dprint(f'in_max_new_tokens: {in_max_new_tokens}')
-        dprint(f'in_stop: {in_stop}')
-        dprint(f'in_question: "【{in_question}】"')
+        dprint(f'in_temperature: {temperature}')
+        dprint(f'in_stream: {stream}')
+        dprint(f'in_max_new_tokens: {max_new_tokens}')
+        dprint(f'in_stop: {stop}')
+        dprint(f'in_question: "【{question}】"')
         dprint(f'{"-" * 40}采用参数{"-" * 40}')
 
         self.openai = OpenAI(
@@ -396,39 +415,39 @@ class LLM_Client:
             print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
             self.model_id = 'wrong'
 
-        if in_system_prompt is not None:
-            self.set_system_prompt(in_system_prompt)
+        if system_prompt is not None:
+            self.set_system_prompt(system_prompt)
         # else:
         #     self.set_system_prompt(config.Global.llm_system)
 
         self.usage = None   # 清空输入和输出的token数量统计
 
-        if not in_max_new_tokens:
+        if not max_new_tokens:
             max_new_tokens = self.max_new_tokens
         else:
-            max_new_tokens = in_max_new_tokens
+            max_new_tokens = max_new_tokens
         self.response_canceled = False
         # self.__history_add_last_turn_msg()
 
-        if in_clear_history:
+        if clear_history:
             self.__history_clear()
 
-        if type(in_question)==str:
+        if type(question)==str:
             # 输入仅为question字符串
-            msgs = self.__history_messages_with_system_and_new_question(in_question)
-        elif type(in_question)==list:
+            msgs = self.__history_messages_with_system_and_new_question(question)
+        elif type(question)==list:
             # 输入为history list([{"role": "user", "content":'xxx'}, ...])
-            msgs = in_question
+            msgs = question
         else:
             raise Exception('ask_prepare(): in_question must be str or list')
 
         # ==========================================================
         # print('发送到LLM的完整提示: ', msgs)
         # print(f'------------------------------------------------------------------------------------------')
-        if in_temperature is None:
+        if temperature is None:
             run_temperature = self.temperature
         else:
-            run_temperature = in_temperature
+            run_temperature = temperature
             
         # if in_top_p is None:
         #     run_top_p = self.top_p
@@ -458,7 +477,7 @@ class LLM_Client:
 
         if self.print_input:
             print('<User>\n', msgs[-1]['content'])
-        if in_stop is None:
+        if stop is None:
             # stop = ['<|im_end|>', '<|im_start|>']
             # stop = ['<|im_end|>', '<|im_start|>', 'assistant', 'Assistant', '<step>']
             # stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>']
@@ -467,7 +486,7 @@ class LLM_Client:
             # stop = ['<|im_end|>', '<|im_start|>'] + in_stop
             # stop = ['<|im_end|>', '<|im_start|>', 'assistant', 'Assistant', '<step>'] + in_stop
             # stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>'] + in_stop
-            stop = in_stop
+            stop = stop
 
         self.stop = stop
 
@@ -475,12 +494,12 @@ class LLM_Client:
         # dprint(f'self.openai: {self.openai}')
         dprint(f'self.model_id: "{self.model_id}"')
         dprint(f'run_temperature: {run_temperature}')
-        dprint(f'stream: {in_stream}')
+        dprint(f'stream: {stream}')
         dprint(f'max_tokens: {max_new_tokens}')
         dprint(f'stop: {stop}')
         dprint(f'messages: {msgs}')
 
-        self.status.question = in_question
+        self.status.question = question
         self.status.model_id = self.model_id
         self.status.temperature = run_temperature
         self.status.max_new_tokens = max_new_tokens
@@ -497,7 +516,7 @@ class LLM_Client:
                 # top_p = run_top_p,
                 # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
                 messages=msgs,
-                stream=in_stream,
+                stream=stream,
                 # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
                 max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
                 stop=stop,
@@ -511,12 +530,12 @@ class LLM_Client:
         except Exception as e:
             print(f'【LLM_Client异常】ask_prepare(): {e}')
             print('返回gen = None')
-            self.question_last_turn = in_question
+            self.question_last_turn = question
             return self
 
         self.gen = gen
 
-        self.question_last_turn = in_question
+        self.question_last_turn = question
         return self
 
     def get_answer_and_sync_print(self):
@@ -916,7 +935,7 @@ def main():
     )
     while True:
         query = input('User: ')
-        llm.ask_prepare(query, in_max_new_tokens=500).get_answer_and_sync_print()
+        llm.ask_prepare(query, max_new_tokens=500).get_answer_and_sync_print()
 
 def main1():
     print('main_call()')
@@ -931,7 +950,7 @@ def main1():
         url='http://116.62.63.204:8001/v1/'
     )
     # print('models: ', openai.models.list().data)
-    llm.ask_prepare('你是谁？', in_max_new_tokens=500).get_answer_and_sync_print()
+    llm.ask_prepare('你是谁？', max_new_tokens=500).get_answer_and_sync_print()
     # llm.ask_prepare(question, in_max_new_tokens=500).get_answer_and_sync_print()
 
 def main2():
@@ -951,7 +970,7 @@ def main2():
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
     # llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
-    llm.ask_prepare('你是谁', in_temperature=0.5, in_max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_prepare('你是谁', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
     # llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
     # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 

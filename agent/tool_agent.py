@@ -167,7 +167,7 @@ class Tool_Agent():
         print(Fore.RED, flush=True)
         print(f'self.response_stop: "{self.response_stop}"', flush=True)
         print(Style.RESET_ALL, flush=True)
-        gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.response_stop).get_answer_generator()
+        gen = self.llm.ask_prepare(self.agent_desc_and_action_history, stop=self.response_stop).get_answer_generator()
         # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
         # thoughts = ''
 
