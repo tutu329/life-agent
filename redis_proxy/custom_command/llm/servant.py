@@ -20,6 +20,8 @@ def call_llm_servant(
     # INIT
     if command == str(Redis_Proxy_Command_LLM.INIT):
         new_task_obj = LLM_Client(**command_paras_dict)
+
+        # 必须返回new_task_obj
         return new_task_obj
 
     # 后续command
@@ -29,6 +31,7 @@ def call_llm_servant(
             output_callback(output_string=chunk, use_byte=False)
         finished_callback()
 
+        # 必须返回task_obj_already_exists
         return task_obj_already_exists
 
 def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_key, task_id, client_id, command, command_id,  **arg_dict):
