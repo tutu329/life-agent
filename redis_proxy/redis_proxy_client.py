@@ -313,7 +313,8 @@ def main_t2i():
 
     # t1.new_bridge(bridge_para=bridge_para)
 
-    args = T2I_Init_Para(url='localhost:5100')
+    args = T2I_Init_Para(url='powerai.cc:5100')
+    # args = T2I_Init_Para(url='localhost:5100')
     t1.send_command(command=Redis_Proxy_Command_T2I.INIT, args=args)
 
     seed = random.randint(1, 1e14)
@@ -371,7 +372,7 @@ def main_t2i():
     # print(f'args: {args}')
 
     # t1.send_command(command=Redis_Proxy_Command_T2I.DRAW, args=args1)   # sd3，需要10G显存
-    for i in range(10):
+    for i in range(1):
         t1.send_command(command=Redis_Proxy_Command_T2I.DRAWS, args=args)
 
     t1._save_images_result()
