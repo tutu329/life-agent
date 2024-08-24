@@ -1017,7 +1017,7 @@ def on_clear_history():
     # st.session_state.messages = []
     st.session_state.session_data['msgs'] = []
     save_pickle()
-    mem_llm.clear_history()
+    mem_llm.delete_history()
     dred('-----------on_clear_history--------------')
 
 def on_cancel_response():

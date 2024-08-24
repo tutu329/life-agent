@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pprint import pprint
 # import os, requests, torch
 
 import sys, time
@@ -81,7 +82,7 @@ class LLM_Client:
                  ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
-        history = config.LLM_Default.history if history is None else history
+        history = int(config.LLM_Default.history if history is None else history)
         api_key = config.LLM_Default.api_key if api_key is None else api_key
         temperature = config.LLM_Default.temperature if temperature is None else temperature
         url = config.LLM_Default.url if url is None else url
@@ -259,6 +260,7 @@ class LLM_Client:
             answer = {"role": "assistant", "content": self.answer_last_turn}
             self.history_list.append(question)
             self.history_list.append(answer)
+            # pprint(self.history_list)
             if self.history_turn_num_now < self.history_max_turns:
                 self.history_turn_num_now += 1
             else:
@@ -278,11 +280,12 @@ class LLM_Client:
                     dred('======对话轮次超限，清空记忆======')
                     self.__history_clear()
 
-    def clear_history(self):
+    def delete_history(self):
         dred(f'----------------------------------------------------clear_history() invoked!----------------------------------------------------')
         self.__history_clear()
 
     def __history_clear(self):
+
         self.history_list.clear()
         # self.has_role_prompt = False
         self.set_role_prompt(self.role_prompt)
@@ -379,10 +382,10 @@ class LLM_Client:
             system_prompt=None,
             role_prompt=None,
     ):
-        temperature = config.LLM_Default.temperature if temperature is None else temperature
-        max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
-        clear_history = config.LLM_Default.clear_history if clear_history is None else clear_history
-        stream = config.LLM_Default.stream if stream is None else stream
+        self.temperature = config.LLM_Default.temperature if temperature is None else temperature
+        self.max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
+        clear_history = int(config.LLM_Default.clear_history if clear_history is None else clear_history)
+        self.stream = int(config.LLM_Default.stream if stream is None else stream)
         # in_stop = config.LLM_Default.stop if in_stop is None else in_stop
 
         if system_prompt is not None:
@@ -392,6 +395,8 @@ class LLM_Client:
 
         dprint(f'{"-" * 40}输入参数{"-" * 40}')
         dprint(f'self.url: "{self.url}"')
+        dprint(f'self.history: "{self.history}"')
+        dprint(f'clear_history: "{clear_history}"')
         dprint(f'self.model_id: "{self.model_id}"')
         dprint(f'self.api_key: "{self.api_key}"')
 
@@ -414,11 +419,6 @@ class LLM_Client:
             print(f'【LLM_Client异常】ask_prepare(): "{e}"')
             print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
             self.model_id = 'wrong'
-
-        if system_prompt is not None:
-            self.set_system_prompt(system_prompt)
-        # else:
-        #     self.set_system_prompt(config.Global.llm_system)
 
         self.usage = None   # 清空输入和输出的token数量统计
 
@@ -476,7 +476,9 @@ class LLM_Client:
         # ==========================================================
 
         if self.print_input:
-            print('<User>\n', msgs[-1]['content'])
+            print('\n<User>\n', msgs[-1]['content'])
+            print('</User>')
+
         if stop is None:
             # stop = ['<|im_end|>', '<|im_start|>']
             # stop = ['<|im_end|>', '<|im_start|>', 'assistant', 'Assistant', '<step>']
@@ -970,7 +972,8 @@ def main2():
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
     # llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
-    llm.ask_prepare('你是谁', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_prepare('你是谁？我的名字是土土', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_prepare('你还记得我的名字吗', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
     # llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
     # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 

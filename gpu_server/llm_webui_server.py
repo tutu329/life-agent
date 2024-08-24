@@ -149,7 +149,7 @@ def llm_retry(history, message):
 def llm_clear(request:gr.Request):
     print('执行llm_clear()')
 
-    llm.clear_history()
+    llm.delete_history()
     llm.print_history_and_system()
 
     print('清除g_session_data[session_id].chat_history')

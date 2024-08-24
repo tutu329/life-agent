@@ -178,7 +178,7 @@ def llm_response_concurrently(prompt, role_prompt, connecting_internet):
 
 def on_clear_history():
     st.session_state.messages = []
-    mem_llm.clear_history()
+    mem_llm.delete_history()
 
 def on_cancel_response():
     mem_llm.cancel_response()

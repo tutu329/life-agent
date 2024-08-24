@@ -157,8 +157,8 @@ class LLM_Default:
     temperature:float   = 0.7
     max_new_tokens:int  = 1024
     # stop:List[str]      = field(default_factory=list)
-    stream:bool         = True
-    history:bool        = True
-    clear_history:bool  = False
+    stream:int         = 1          # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
+    history:int        = 1          # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
+    clear_history:int  = 0          # 用于清空history_list, 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     api_key:str         = 'empty'
     url:str             = Domain.llm_url
