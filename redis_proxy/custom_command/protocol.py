@@ -27,8 +27,8 @@ def call_custom_command(
         task_obj,
         output_callback,    # output_callback(output_string:str, use_byte:bool)
         finished_callback,  # finished_callback()
-        **command_data_dict
-):  # 返回task_obj
+        **command_paras_dict
+):  # 必须返回new_task_obj或task_obj_already_exists
     # LLM
     if str(Redis_Task_Type.LLM) in task_type:
         return call_llm_servant(
@@ -36,7 +36,7 @@ def call_custom_command(
             task_obj_already_exists=task_obj,
             output_callback=output_callback,
             finished_callback=finished_callback,
-            **command_data_dict
+            **command_paras_dict
         )
     # T2I
     if str(Redis_Task_Type.T2I) in task_type:

@@ -14,14 +14,17 @@ def call_llm_servant(
         task_obj_already_exists,
         output_callback,    # output_callback(output_string:str, use_byte:bool)
         finished_callback,  # finished_callback()
-        **command_data_dict
-):  # 返回new_task_obj
+        **command_paras_dict
+):  # 必须返回new_task_obj或task_obj_already_exists
+
+    # INIT
     if command == str(Redis_Proxy_Command_LLM.INIT):
-        new_task_obj = LLM_Client(**command_data_dict)
+        new_task_obj = LLM_Client(**command_paras_dict)
         return new_task_obj
 
+    # 后续command
     if command == str(Redis_Proxy_Command_LLM.ASK):
-        gen = task_obj_already_exists.ask_prepare(**command_data_dict).get_answer_generator()
+        gen = task_obj_already_exists.ask_prepare(**command_paras_dict).get_answer_generator()
         for chunk in gen:
             output_callback(output_string=chunk, use_byte=False)
         finished_callback()
