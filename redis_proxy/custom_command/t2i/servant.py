@@ -53,7 +53,7 @@ def call_t2i_servant(
                 dred(f'---------------------template_json_file: "{template_list}"--------------------------')
                 template_json_file = random.choice(template_list)
                 dred(f'---------------------template_json_file: "{template_json_file}"--------------------------')
-                task_obj_already_exists.set_workflow_by_json_file(template_json_file)
+                task_obj_already_exists.set_workflow_by_json_file(config.Global.api_dir+'/'+template_json_file)
             else:
                 # 根据positive出图
                 task_obj_already_exists.set_sexy_workflow(**command_paras_dict)
