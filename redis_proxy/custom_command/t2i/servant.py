@@ -8,8 +8,59 @@ from redis_proxy.thread import Task_Worker_Thread
 
 import random
 
-def call_t2i_servant():
-    pass
+def call_t2i_servant(
+        command,
+        task_obj_already_exists,
+        output_callback,    # output_callback(output_string:str, use_byte:bool)
+        finished_callback,  # finished_callback()
+        **command_paras_dict
+):  # 必须返回new_task_obj或task_obj_already_exists
+
+    # INIT
+    if command == str(Redis_Proxy_Command_T2I.INIT):
+        new_task_obj = Comfy()
+
+        # 必须返回new_task_obj
+        return new_task_obj
+
+    # 后续command
+    if command == str(Redis_Proxy_Command_T2I.DRAW) or command == str(Redis_Proxy_Command_T2I.DRAWS):
+        dred(f'-----------------obj: {task_obj_already_exists}-----------------')
+        dred(f'-----------------command_paras_dict: {command_paras_dict}-----------------')
+        if command == str(Redis_Proxy_Command_T2I.DRAWS):
+            if int(command_paras_dict['using_template']) == 1:
+                # 随机调用模板出图
+                template_list = [
+                    'api_panty.json',
+                    'api-prone.json',
+                    'api-sexy.json',
+                    'back-lost-api.json',
+                    'api-sexy-back-liusu.json',
+                    'api1.json',
+                    'api2.json',
+                    'api3.json',
+                ]
+                template_json_file = random.choice(template_list)
+                dred(f'---------------------template_json_file: "{template_json_file}"--------------------------')
+                task_obj_already_exists.set_workflow_by_json_file(template_json_file)
+            else:
+                # 根据positive出图
+                task_obj_already_exists.set_sexy_workflow(**command_paras_dict)
+        if command == str(Redis_Proxy_Command_T2I.DRAW):
+            task_obj_already_exists.set_sd3_workflow(**command_paras_dict)
+
+        # t2i运行
+        images = task_obj_already_exists.get_images()
+
+        # t2i的images返回给redis
+        for node_id in images:
+            for image_data in images[node_id]:
+                output_callback(output_string=image_data, use_byte=True)
+
+        finished_callback()
+
+        # 必须返回task_obj_already_exists
+        return task_obj_already_exists
 
 def _get_arg(arg_str, default, **arg_dict):
     arg = default

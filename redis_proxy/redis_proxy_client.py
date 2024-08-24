@@ -1,3 +1,4 @@
+import os
 import config
 from singleton import singleton
 from dataclasses import asdict
@@ -29,6 +30,7 @@ class Redis_Proxy_Client1:
         self.client_id = 'cid_' + str(uuid.uuid4())
         self.task_id = None
         self.cmd_ids = []
+        self.temp_dir = Global.temp_dir
 
         self.redis = Redis_Client(
             host=config.Domain.redis_server_domain,
@@ -37,6 +39,11 @@ class Redis_Proxy_Client1:
         )
 
     def new_task(self, task_type):
+        # 在本地创建temp文件夹
+        if not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir)
+
+        # 在server侧创建task_id对应的信息
         self.task_id = 'tid_' + str(uuid.uuid4())
         self.redis.add_stream(
             stream_key=Key_Name_Space.Task_Register,
@@ -100,6 +107,20 @@ class Redis_Proxy_Client1:
             for chunk in self.get_result_gen(result_stream_key):
                 print(chunk, end='', flush=True)
             print()
+
+    def _save_image_to_file(self, image_data, file_name):
+        from PIL import Image
+        import io
+
+        image = Image.open(io.BytesIO(image_data))
+        image.save(f'{self.temp_dir}/{file_name}.jpg')
+
+    def _save_images_result(self):
+        # pprint(self.cmd_ids)
+        for cmd_id in self.cmd_ids:
+            result_stream_key = Key_Name_Space.Results_Register.format(task_id=self.task_id, command_id=cmd_id)
+            for image_data in self.get_result_gen(result_stream_key):
+                self._save_image_to_file(image_data, file_name=f'output_{uuid.uuid4()}')
 
 # client，仅通过redis发送启动任务的消息，所有任务由Redis_Task_Server后台异步解析和处理
 @singleton
@@ -223,6 +244,8 @@ class Redis_Proxy_Client():
                 print(chunk, end='', flush=True)
             print()
 
+
+
     # 返回task的result数据
     def get_result_gen(self, result_stream_key):       # 由new_task()返回的唯一的task_id，作为llm-obj等对象的容器id
         task_id = self.task_id
@@ -279,14 +302,15 @@ class Redis_Proxy_Client():
         image.save(f'{self.temp_dir}/{file_name}.jpg')
 
 def main_t2i():
-    t1 = Redis_Proxy_Client()
-    task_id = t1.new_task(Redis_Task_Type.T2I)
+    t1 = Redis_Proxy_Client1()
+    t1.new_task(Redis_Task_Type.T2I)
 
-    bridge_para = Bridge_Para()
-    bridge_para.bridge_type = Redis_Bridge_Type.TRANSLATE
-    bridge_para.bridge_io_type = 'input'
-    bridge_para.bridged_command = Redis_Proxy_Command_T2I.DRAW
-    bridge_para.bridged_command_args = ['positive', 'negative']     # 对所有args进行如translate的操作
+    # bridge_para = Bridge_Para()
+    # bridge_para.bridge_type = Redis_Bridge_Type.TRANSLATE
+    # bridge_para.bridge_io_type = 'input'
+    # bridge_para.bridged_command = Redis_Proxy_Command_T2I.DRAW
+    # bridge_para.bridged_command_args = ['positive', 'negative']     # 对所有args进行如translate的操作
+
     # t1.new_bridge(bridge_para=bridge_para)
 
     args = T2I_Init_Para(url='localhost:5100')
@@ -304,15 +328,16 @@ def main_t2i():
     #     # width=1024,
     # )
 
-    # args = T2I_Draw_Para(
-    #     # positive='星际迷航中的星际战舰企业号，出现在地球外层空间',
-    #     positive='瑞士雪山下的小村里，好多可爱的牛在吃草',
-    #     # positive='photo of young man in an grayed blue suit, light green shirt, and yellow tie. He has a neatly styled haircut with red and silver hair and is looking directly at the camera with a neutral expression. The background is seaside. The photograph is in colored, emphasizing contrasts and shadows. The man appears to be in his late twenties or early thirties, with fair skin and short.This man looks very like young Tom Cruise.',
-    #     negative='',
-    #     # negative='ugly face, bad hands, bad fingers, bad quality, poor quality, doll, disfigured, jpg, toy, bad anatomy, missing limbs, missing fingers, 3d, cgi',
-    # )
+    args1 = T2I_Draw_Para(
+        # positive='星际迷航中的星际战舰企业号，出现在地球外层空间',
+        positive='瑞士雪山下的小村里，好多可爱的牛在吃草',
+        # positive='photo of young man in an grayed blue suit, light green shirt, and yellow tie. He has a neatly styled haircut with red and silver hair and is looking directly at the camera with a neutral expression. The background is seaside. The photograph is in colored, emphasizing contrasts and shadows. The man appears to be in his late twenties or early thirties, with fair skin and short.This man looks very like young Tom Cruise.',
+        negative='',
+        # negative='ugly face, bad hands, bad fingers, bad quality, poor quality, doll, disfigured, jpg, toy, bad anatomy, missing limbs, missing fingers, 3d, cgi',
+    )
 
     args = T2I_Draw_Para(
+        using_template=1,
         # positive='a girl, standing on paris street, full body, long legs, cars',
         # positive='杰作, 最佳画质, 高清, 4k, 光线追踪, 完美的脸部, 完美的眼睛, 大量的细节, 一个女孩, 胸部, 看着viewer, 性感的姿势, (cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou, 白色的外套, 背后的视角,',
         # positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
@@ -344,13 +369,17 @@ def main_t2i():
         # lora4_wt = None,
     )
     # print(f'args: {args}')
-    # t1.send_command(command=Redis_Proxy_Command_T2I.DRAW, args=args)
-    t1.send_command(command=Redis_Proxy_Command_T2I.DRAWS, args=args)
 
-    i=0
-    for image_data in t1.get_result_gen():
-        i += 1
-        t1.save_image_to_file(image_data, file_name=f'output_{uuid.uuid4()}')
+    # t1.send_command(command=Redis_Proxy_Command_T2I.DRAW, args=args1)   # sd3，需要10G显存
+    for i in range(10):
+        t1.send_command(command=Redis_Proxy_Command_T2I.DRAWS, args=args)
+
+    t1._save_images_result()
+
+    # i=0
+    # for image_data in t1.get_result_gen():
+    #     i += 1
+    #     t1.save_image_to_file(image_data, file_name=f'output_{uuid.uuid4()}')
 
 def main_llm():
     # t1 = Redis_Proxy_Client()
@@ -374,6 +403,5 @@ def main_llm():
     # t1.print_stream()
 
 if __name__ == "__main__":
-    main_llm()
-
-    # main_t2i()
+    # main_llm()
+    main_t2i()

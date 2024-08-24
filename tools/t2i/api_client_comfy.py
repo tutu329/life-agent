@@ -15,6 +15,9 @@ import io
 from dataclasses import dataclass, field
 from colorama import Fore, Back, Style
 
+import config
+
+
 @dataclass
 class Work_Flow_Type():
     simple:int = 1
@@ -113,7 +116,7 @@ class Work_Flow_Template():
 from config import Port, Global
 class Comfy:
     def __init__(self):
-        self.server_address = f'127.0.0.1:{Port.comfy}' # 127.0.0.1:7869
+        self.server_address = config.Domain.comfyui_server_domain
         self.client_id = None
         self.images = None
         self.temp_dir = Global.temp_dir
@@ -165,6 +168,7 @@ class Comfy:
 
     def set_sexy_workflow(
             self,
+            using_template=1,    # 用于redis_proxy_server中
             positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
             negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
             template_json_file='api-sexy.json',
@@ -234,14 +238,27 @@ class Comfy:
         self.prompt['12']['inputs']['lora_name_4'] = lora4
         self.prompt['12']['inputs']['lora_wt_4'] = lora4_wt
 
-    def set_workflow_by_json_file(self, in_json_file, seed_node:str):
+    def set_workflow_by_json_file(self, in_json_file):
         with open(in_json_file, 'r', encoding='utf-8') as file:
             data = json.load(file)
             # print(data)
         self.prompt = data
-        seed = random.randint(1, 1e14)
-        print(f'seed: "{seed}"')
-        self.prompt[seed_node]['inputs']['seed'] = seed
+        # seed = random.randint(1, 1e14)
+        # print(f'seed: "{seed}"')
+        self.update_seed_in_json()
+        # self.prompt[seed_node]['inputs']['seed'] = seed
+
+    def update_seed_in_json(self):
+        for k,v in self.prompt.items():
+            node = k
+            node_dict = v
+            if 'inputs' in node_dict:
+                for k1,v1 in self.prompt[node]['inputs'].items():
+                    inputs_key = k1
+                    if inputs_key=='seed':
+                        # 更新seed随机数
+                        self.prompt[node]['inputs']['seed'] = random.randint(1, 1e14)
+
 
     def is_image_websocket_node(self, in_node):
         return self.prompt[str(in_node)]["class_type"] == "SaveImageWebsocket"
@@ -297,7 +314,7 @@ class Comfy:
         self.images = images
         return images
 
-    def set_server_address(self, address=f'127.0.0.1:{Port.comfy}'):
+    def set_server_address(self, address=config.Domain.comfyui_server_domain):
         self.server_address = address
 
     def set_temp_dir(self, dir=Global.temp_dir):

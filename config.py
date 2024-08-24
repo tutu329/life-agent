@@ -146,6 +146,7 @@ class Domain():
     llm_url:str = f'https://{server_domain}:{Port.llm_api1}/v1'
     # llm_url:str = 'https://172.27.67.106:8001/v1'
     redis_server_domain:str = server_domain
+    comfyui_server_domain:str = f'powerai.cc:{Port.comfy}'
 
     # ubuntu
     # llm_url:str = 'http://192.168.124.33:8001/v1/'

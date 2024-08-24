@@ -17,6 +17,8 @@ class T2I_Init_Para():
 # T2i调用(Draw)参数
 @dataclass
 class T2I_Draw_Para():
+    using_template:int = 1      # 由于redis，不能用bool
+
     positive:str = ''
     negative:Any = None
 

@@ -40,8 +40,13 @@ def call_custom_command(
         )
     # T2I
     if str(Redis_Task_Type.T2I) in task_type:
-        return call_t2i_servant()
-
+        return call_t2i_servant(
+            command=command,
+            task_obj_already_exists=task_obj,
+            output_callback=output_callback,
+            finished_callback=finished_callback,
+            **command_paras_dict
+        )
 # 执行command
 def server_invoking_command(s_redis_proxy_server_data, s_redis_client, task_id, client_id, command, command_id, **arg_dict):
     cid = client_id
