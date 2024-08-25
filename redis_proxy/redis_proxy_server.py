@@ -339,7 +339,7 @@ class Redis_Proxy_Server:
             }
             self.redis_client.add_stream(stream_key=result_stream_key, data=chunk_data)
 
-        dgreen(f'-----------------task thread entered[cmd:"{command}"]----------------')
+        # dgreen(f'-----------------task thread entered[cmd:"{command}"]----------------')
         # 获取全局唯一的tasks_data_daict
         task_data_dict = self.server_data.clients[client_id].tasks[task_id]
 
@@ -375,7 +375,7 @@ class Redis_Proxy_Server:
             gen = self.redis_client.pop_stream_gen(stream_key=commands_stream_key)
             for command_data_dict in gen:
                 dgreen(f'-----------------获得new command----------------')
-                pprint(command_data_dict)
+                # pprint(command_data_dict)
                 client_id = command_data_dict['client_id']
                 task_id = command_data_dict['task_id']
                 command = command_data_dict['command']

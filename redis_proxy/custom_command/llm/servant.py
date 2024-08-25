@@ -27,7 +27,7 @@ def call_llm_servant(
     # 后续command
     if command == str(Redis_Proxy_Command_LLM.ASK):
         dred(f'-----------------obj: {task_obj_already_exists}-----------------')
-        dred(f'-----------------command_paras_dict: {command_paras_dict}-----------------')
+        # dred(f'-----------------command_paras_dict: {command_paras_dict}-----------------')
         gen = task_obj_already_exists.ask_prepare(**command_paras_dict).get_answer_generator()
         for chunk in gen:
             output_callback(output_string=chunk, use_byte=False)

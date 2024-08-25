@@ -36,7 +36,7 @@ def call_t2i_servant(
     # 后续command
     if command == str(Redis_Proxy_Command_T2I.DRAW) or command == str(Redis_Proxy_Command_T2I.DRAWS):
         dred(f'-----------------obj: {task_obj_already_exists}-----------------')
-        dred(f'-----------------command_paras_dict: {command_paras_dict}-----------------')
+        # dred(f'-----------------command_paras_dict: {command_paras_dict}-----------------')
         if command == str(Redis_Proxy_Command_T2I.DRAWS):
             if int(command_paras_dict['using_template']) == 1:
                 # 随机调用模板出图
