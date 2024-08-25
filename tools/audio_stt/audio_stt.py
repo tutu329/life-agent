@@ -6,6 +6,7 @@
 import whisper
 from dataclasses import dataclass, field
 from config import dred,dgreen,dblue
+from singleton import singleton
 import os
 
 @dataclass
@@ -14,21 +15,29 @@ class Model_Name:
     SMALL: str = 'small'
     MEDIUM: str = 'medium'
 
+@singleton
 class AudioSTT:
-    def __init__(self, model_name:Model_Name=Model_Name.BASE):
+    def __init__(self, model_name:Model_Name=Model_Name.MEDIUM):
         self._model_name = model_name
         self._model = None
+        self._inited = False
 
-    def init(self):
+    def _init(self):
+        if self._inited==True:
+            return
+
         if self._model is None:
             try:
                 self._model = whisper.load_model(self._model_name)
+                self._inited = True
             except Exception as e:
                 self._model = None
                 dred(f'AudioSTT模型加载失败: "{e}"')
             dgreen(f'AudioSTT模型加载成功, 模型类型为"{self._model_name}".')
 
     def stt(self, file_name):
+        self._init()
+
         if self._model is None:
             dred(f'AudioSTT模型尚未加载, stt()返回为空.')
             return ''
@@ -74,10 +83,9 @@ def main():
     # # res = stt('/tools/output.mp3', in_model='medium')
     # print('语音所包含文字为：', res)
 
-    server = AudioSTT(model_name=Model_Name.BASE)
-    server.init()
     for i in range(5):
-        print(server.stt('C:\\Users\\tutu\\Downloads\\你是谁.m4a'))
+        print(AudioSTT().stt('C:\\Users\\tutu\\Downloads\\audio_from_glasses.wav'))
+        # print(server.stt('C:\\Users\\tutu\\Downloads\\你是谁.m4a'))
 
 if __name__ == "__main__":
     main()

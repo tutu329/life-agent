@@ -340,7 +340,7 @@ class Redis_Proxy_Server:
             self.redis_client.add_stream(stream_key=result_stream_key, data=chunk_data)
 
         dgreen(f'-----------------task thread entered[cmd:"{command}"]----------------')
-        # 获取全局唯一的tasks_data_dict
+        # 获取全局唯一的tasks_data_daict
         task_data_dict = self.server_data.clients[client_id].tasks[task_id]
 
         return_task_obj = call_custom_command(

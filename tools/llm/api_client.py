@@ -25,6 +25,8 @@ from dataclasses import dataclass, field, asdict
 from typing import List, Optional, Dict
 from redis_client import Redis_Client
 
+from tools.audio_stt.audio_stt import AudioSTT
+
 # DEBUG = True
 DEBUG = False
 
@@ -369,6 +371,25 @@ class LLM_Client:
         else:
             return 0
 
+    def audio_file_to_text(self, save_file_name):
+        # if len(audio_string) > 0:
+        #     wav_data = base64.b64decode(audio_string)
+        text = AudioSTT().stt(save_file_name)
+        return text
+
+    def audio_to_wav_file(self, save_file_name, audio_string):
+        if len(audio_string) > 0:
+            wav_data = base64.b64decode(audio_string)
+            file_name = save_file_name
+            channels = 1
+            sample_width = 2
+            frame_rate = 44100
+            with wave.open(file_name, 'wb') as wav_file:
+                wav_file.setnchannels(channels)
+                wav_file.setsampwidth(sample_width)
+                wav_file.setframerate(frame_rate)
+                wav_file.writeframes(wav_data)
+
     # 返回stream(generator)
     def ask_prepare(
             self,
@@ -391,25 +412,13 @@ class LLM_Client:
         self.stream = int(config.LLM_Default.stream if stream is None else stream)
         # in_stop = config.LLM_Default.stop if in_stop is None else in_stop
 
+        # 如果包含语音输入，则question直接改为语音对应的text
         if audio_string:
-            dgreen('-----------------------------获得音频数据--------------------------------')
-            dgreen(f'audio_string:"{audio_string[:100]}..."({len(audio_string)})')
-            if len(audio_string)>0:
-                wav_data = base64.b64decode(audio_string)
-                file_name = 'audio_from_glasses.wav'
-                channels = 2
-                sample_width = 2
-                frame_rate = 44100
-                # frame_rate = 44100
-                with wave.open(file_name, 'wb') as wav_file:
-                    wav_file.setnchannels(channels)
-                    wav_file.setsampwidth(sample_width)
-                    wav_file.setframerate(frame_rate)
-                    wav_file.writeframes(wav_data)
-                # with open(file_name, "wb") as wav_file:
-                #     wav_file.write(wav_data)
-                dgreen(f'WAV文件已成功保存为"{file_name}"')
-            dgreen('----------------------------------------------------------------------')
+            self.audio_to_wav_file('temp_stt.wav', audio_string)
+            question = self.audio_file_to_text('temp_stt.wav')
+            dgreen(f'--------------------------语音输入已转为文本---------------------------------')
+            dgreen(f'"{question}"')
+            dgreen(f'-------------------------------------------------------------------------')
 
         if system_prompt is not None:
             self.set_system_prompt(system_prompt)
