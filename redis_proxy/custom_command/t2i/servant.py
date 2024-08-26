@@ -40,15 +40,6 @@ def call_t2i_servant(
         if command == str(Redis_Proxy_Command_T2I.DRAWS):
             if int(command_paras_dict['using_template']) == 1:
                 # 随机调用模板出图
-                # template_list = [
-                #     'api_panty.json',
-                #     'api-prone.json',
-                #     'api-sexy.json',
-                #     'back-lost-api.json',
-                #     'api-sexy-back-liusu.json',
-                #     'api2.json',
-                #     'api3.json',
-                # ]
                 template_list = get_json_files_list(config.Global.api_dir)
                 dred(f'---------------------template_json_file: "{template_list}"--------------------------')
                 template_json_file = random.choice(template_list)

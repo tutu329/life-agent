@@ -245,10 +245,12 @@ class Comfy:
         self.prompt = data
         # seed = random.randint(1, 1e14)
         # print(f'seed: "{seed}"')
-        self.update_seed_in_json()
+        self._update_seed_in_json()
         # self.prompt[seed_node]['inputs']['seed'] = seed
 
-    def update_seed_in_json(self):
+    def _update_seed_in_json(self):
+        # 注意positive和修脸等节点的seed要一致
+        random_seed = random.randint(1, 1e14)
         for k,v in self.prompt.items():
             node = k
             node_dict = v
@@ -257,8 +259,7 @@ class Comfy:
                     inputs_key = k1
                     if inputs_key=='seed':
                         # 更新seed随机数
-                        self.prompt[node]['inputs']['seed'] = random.randint(1, 1e14)
-
+                        self.prompt[node]['inputs']['seed'] = random_seed
 
     def is_image_websocket_node(self, in_node):
         return self.prompt[str(in_node)]["class_type"] == "SaveImageWebsocket"
@@ -382,23 +383,36 @@ def main():
     client = Comfy()
     client.set_server_address('localhost:5100')
     # client.set_server_address('192.168.124.33:7869')
-    client.set_workflow_type(Work_Flow_Type.simple)
-    t = 0
-    if t==1:
-        client.set_simple_work_flow(
-            positive='super man',
-            # negative='ugly',
-            # seed=seed,
-            ckpt_name='sdxl_lightning_2step.safetensors',
-            height=512,
-            width=512,
-        )
-    else:
-        # client.set_workflow_by_json_file('api-sd3-tom.json', seed_node='271')
-        client.set_workflow_by_json_file('api-sexy-back-liusu.json')
-        # client.set_workflow_by_json_file('api3.json')
-    client.get_images()
-    client.save_images_to_temp_dir()
+
+    # client.set_workflow_type(Work_Flow_Type.simple)
+    # t = 0
+    # if t==1:
+    #     client.set_simple_work_flow(
+    #         positive='super man',
+    #         # negative='ugly',
+    #         # seed=seed,
+    #         ckpt_name='sdxl_lightning_2step.safetensors',
+    #         height=512,
+    #         width=512,
+    #     )
+    # else:
+    #     # client.set_workflow_by_json_file('api-sd3-tom.json', seed_node='271')
+    #     client.set_workflow_by_json_file('api-sexy-back-liusu.json')
+    #     # client.set_workflow_by_json_file('api3.json')
+
+    import glob,os
+    path = 'D:\\server\\life-agent\\redis_proxy\\custom_command\\t2i\\api'
+    json_files = glob.glob(os.path.join(path, '*.json'))
+    print(json_files)
+    for i in range(10):
+        template_json_file = random.choice(json_files)
+        print(template_json_file)
+        client.set_workflow_by_json_file(template_json_file)
+
+        client.get_images()
+        client.save_images_to_temp_dir()
+
+
 
 
 if __name__ == "__main__" :
