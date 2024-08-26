@@ -29,7 +29,6 @@ def call_t2i_servant(
     # INIT
     if command == str(Redis_Proxy_Command_T2I.INIT):
         new_task_obj = Comfy()
-
         # 必须返回new_task_obj
         return new_task_obj
 
