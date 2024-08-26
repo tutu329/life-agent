@@ -2,8 +2,7 @@
 #them being saved to disk
 
 import websocket #NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
-import uuid
-import json
+import uuid, json, glob, os
 import urllib.request
 import urllib.parse
 import random
@@ -168,7 +167,6 @@ class Comfy:
 
     def set_sexy_workflow(
             self,
-            using_template=1,    # 用于redis_proxy_server中
             positive='masterpiece,best quality,absurdres,highres,4k,ray tracing,perfect face,perfect eyes,intricate details,highly detailed, 1girl,(breasts:1.2),moyou,looking at viewer,sexy pose,(cowboy shot:1.2), <lora:Tassels Dudou:0.8>,Tassels Dudou,white dress,back,',
             negative='EasyNegativeV2,(badhandv4:1.2),bad-picture-chill-75v,BadDream,(UnrealisticDream:1.2),bad_prompt_v2,NegfeetV2,ng_deepnegative_v1_75t,ugly,(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,',
             template_json_file='api-sexy.json',
@@ -237,6 +235,12 @@ class Comfy:
         self.prompt['12']['inputs']['lora_wt_3'] = lora3_wt
         self.prompt['12']['inputs']['lora_name_4'] = lora4
         self.prompt['12']['inputs']['lora_wt_4'] = lora4_wt
+
+    def set_workflow_by_random_json_file(self, in_json_path):
+        json_files = glob.glob(os.path.join(in_json_path, '*.json'))
+        json_files_list = [file for file in json_files]
+        random_json_file = random.choice(json_files_list)
+        self.set_workflow_by_json_file(random_json_file)
 
     def set_workflow_by_json_file(self, in_json_file):
         with open(in_json_file, 'r', encoding='utf-8') as file:
@@ -404,10 +408,11 @@ def main():
     path = 'D:\\server\\life-agent\\redis_proxy\\custom_command\\t2i\\api'
     json_files = glob.glob(os.path.join(path, '*.json'))
     print(json_files)
-    for i in range(10):
-        template_json_file = random.choice(json_files)
-        print(template_json_file)
-        client.set_workflow_by_json_file(template_json_file)
+    for i in range(2):
+        client.set_workflow_by_random_json_file(path)
+        # template_json_file = random.choice(json_files)
+        # print(template_json_file)
+        # client.set_workflow_by_json_file(template_json_file)
 
         client.get_images()
         client.save_images_to_temp_dir()

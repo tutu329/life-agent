@@ -37,13 +37,14 @@ def call_t2i_servant(
         dred(f'-----------------obj: {task_obj_already_exists}-----------------')
         # dred(f'-----------------command_paras_dict: {command_paras_dict}-----------------')
         if command == str(Redis_Proxy_Command_T2I.DRAWS):
-            if int(command_paras_dict['using_template']) == 1:
+            if int(command_paras_dict['using_random_templates']) == 1:
                 # 随机调用模板出图
-                template_list = get_json_files_list(config.Global.api_dir)
-                dred(f'---------------------template_json_file: "{template_list}"--------------------------')
-                template_json_file = random.choice(template_list)
-                dred(f'---------------------template_json_file: "{template_json_file}"--------------------------')
-                task_obj_already_exists.set_workflow_by_json_file(config.Global.api_dir+'/'+template_json_file)
+                # template_list = get_json_files_list(config.Global.api_dir)
+                # dred(f'---------------------template_json_file: "{template_list}"--------------------------')
+                # template_json_file = random.choice(template_list)
+                # dred(f'---------------------template_json_file: "{template_json_file}"--------------------------')
+                # task_obj_already_exists.set_workflow_by_json_file(config.Global.api_dir+'/'+template_json_file)
+                task_obj_already_exists.set_workflow_by_random_json_file(config.Global.api_dir)
             else:
                 # 根据positive出图
                 task_obj_already_exists.set_sexy_workflow(**command_paras_dict)
