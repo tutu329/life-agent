@@ -7,6 +7,7 @@ import pathlib
 # get relative data folder
 PATH = pathlib.Path(__file__).parent
 
+
 def create_layout(app):
     # Page layouts
     return html.Div(

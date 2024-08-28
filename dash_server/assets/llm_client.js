@@ -2,6 +2,7 @@
 // 能用一些外部js库，但是行为和node.js不一样，如response.data.on这样的数据监听报错等。
 // 因此，最后考虑用自带的fetch实现client侧的stream输出和set_props刷新
 
+
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     llm_client: {
         ask_llm: async function(n_clicks, llm_input, local_mem) {

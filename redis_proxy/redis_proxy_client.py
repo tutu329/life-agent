@@ -305,6 +305,7 @@ def main_t2i():
     t1 = Redis_Proxy_Client1()
     t1.new_task(Redis_Task_Type.T2I)
 
+
     # bridge_para = Bridge_Para()
     # bridge_para.bridge_type = Redis_Bridge_Type.TRANSLATE
     # bridge_para.bridge_io_type = 'input'

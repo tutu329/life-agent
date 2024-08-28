@@ -9,6 +9,7 @@ class Task_Worker_Thread(Task_Base):
     def __init__(self):
         super().__init__()
 
+
     def init(self,
              in_callback_func,
              *in_callback_func_args,

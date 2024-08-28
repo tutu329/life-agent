@@ -360,6 +360,7 @@ class Redis_Proxy_Server:
         )
         dgreen(f'-----------------task thread exited [cmd:"{command}"]----------------')
 
+
     # 查询new command，并视情况初始化task_obj和task_thread
     def _polling_new_command(self):
         # 获取client注册command的stream_key名称

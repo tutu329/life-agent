@@ -139,6 +139,7 @@ class Redis_Client:
         dprint(f'Message added with ID: {message_id}')
         return message_id
 
+
     def pop_stream(
             self,
             stream_key,

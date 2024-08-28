@@ -16,6 +16,7 @@ oai = OpenAI(
     base_url='https://api.deepseek.com/v1',
 )
 
+
 # 流式输出的调用
 def message_stream(gen):
     for chunk in gen:

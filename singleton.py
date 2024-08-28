@@ -24,3 +24,4 @@ if __name__ == "__main__":
     obj2 = SingletonClass()
 
     print(obj1 is obj2)  # True
+

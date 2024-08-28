@@ -18,6 +18,7 @@ def get_json_files_list(directory):
 
     return json_file_names
 
+
 def call_t2i_servant(
         command,
         task_obj_already_exists,

@@ -10,6 +10,7 @@ st.set_page_config(
     layout="wide",
 )
 
+
 @st.cache_resource  # cache_resource主要用于访问db connection等仅调用一次的全局资源
 def redis_init():
     redis_client = Redis_Client()
