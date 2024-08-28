@@ -189,6 +189,7 @@ class LLM_Client:
             if self.model_id is None or self.model_id=='':
                 try:
                     self.model_id = self.openai.models.list().data[0].id
+                    dgreen(f'读取模型id成功: {self.model_id}')
                 except Exception as e:
                     dred(f'【LLM_Client异常】refresh_endpoint(): "{e}"')
                     dred(f'【LLM_Client异常】refresh_endpoint(): 可能是IP或Port设置错误，当前url为: {self.url}')
@@ -448,6 +449,7 @@ class LLM_Client:
         try:
             if self.model_id is None or self.model_id=='':
                 self.model_id = self.openai.models.list().data[0].id
+                dgreen(f'读取模型id成功: "{self.model_id}"')
         except Exception as e:
             print(f'【LLM_Client异常】ask_prepare(): "{e}"')
             print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
