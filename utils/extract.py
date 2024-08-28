@@ -8,6 +8,7 @@ def dprint(*args, **kwargs):
     else:
         pass
 
+
 # 解析字符串中的代码块（由于json5无法解析包含'''...'''或"""..."""的字符串，因此通过re抠出'''...'''或"""..."""内容）
 def extract_code(text):
     # triple_match1 = re.search(r"'''[^\n]*\n(.+?)'''", text, re.DOTALL)    # 这个不能匹配"""后没有换行的第一行字

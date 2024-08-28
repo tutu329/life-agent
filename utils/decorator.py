@@ -12,6 +12,7 @@ def timer(func):
         return result
     return wrapper
 
+
 def main():
     @timer
     def my_function(n, x=2, y=3):

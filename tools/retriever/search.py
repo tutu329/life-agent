@@ -15,7 +15,6 @@ from utils.task import Flicker_Task
 from config import Prompt_Limitation
 from config import Global, dred, dgreen, dblue
 
-
 SEARCH_TIME_OUT = 3000    # 超时ms
 
 def google_search(keywords: str, num_results: int = 50, time="m") -> str:

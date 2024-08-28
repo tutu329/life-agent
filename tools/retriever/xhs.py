@@ -15,7 +15,6 @@ def parse_note_json(data_list):
     #             print(f'{k}:{v}')
     #     print()
 
-
     for item in data_list:
         total += 1
         for k,v in item.items():

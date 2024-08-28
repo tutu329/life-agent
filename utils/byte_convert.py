@@ -20,6 +20,7 @@ def data_convert_from_byte_to_str(data):
     else:
         return data
 
+
 def main():
     data = [b'my string', b'heihei']
     # data = {b'key1': b'value1', b'key2': b'value2'}

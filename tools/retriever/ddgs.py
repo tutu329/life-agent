@@ -27,6 +27,7 @@ async def one_query_results(in_query):
 
     return results
 
+
 async def multi_queries_results(in_query_list):
     try:
         tasks = [one_query_results(w) for w in in_query_list]

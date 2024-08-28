@@ -15,6 +15,7 @@ class Model_Name:
     SMALL: str = 'small'
     MEDIUM: str = 'medium'
 
+
 @singleton
 class AudioSTT:
     def __init__(self, model_name:Model_Name=Model_Name.MEDIUM):

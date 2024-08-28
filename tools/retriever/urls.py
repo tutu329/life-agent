@@ -26,6 +26,7 @@ from playwright.async_api import TimeoutError as Playwright_TimeoutError
 # 提供User-Agent的模拟数据
 from fake_useragent import UserAgent    # pip install fake-useragent
 
+
 @dataclass
 class Text_and_Media():
     type:       Any = None      # 'type'为 'image' | 'video' | 'text'

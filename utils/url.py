@@ -15,6 +15,7 @@ def remove_rightmost_path(url):
     new_url = urlunparse(new_url_parts)
     return new_url
 
+
 # 非常关键的库，将html中非正文的部分都清除干净
 def get_clean_html(html):
     doc = Document(html)

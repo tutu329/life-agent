@@ -416,9 +416,7 @@ def main():
 
         client.get_images()
         client.save_images_to_temp_dir()
-
-
-
+##
 
 if __name__ == "__main__" :
     main()

@@ -6,6 +6,7 @@ from PIL import Image, PngImagePlugin, GifImagePlugin
 from copy import deepcopy
 import uuid
 
+
 class Stable_Diffusion():
     _negative_prompt_list = [
         '(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,badhandv4,ng_deepnegative_v1_75t',

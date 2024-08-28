@@ -223,6 +223,7 @@ class Flicker_Task(Task_Base):
         else:
             self.flicker=self.flicker1
 
+
 def Example_Callback(out_task_info_must_be_here, num):
     i=num
     while True:
