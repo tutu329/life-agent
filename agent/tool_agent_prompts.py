@@ -9,6 +9,7 @@ from config import Global
 import config
 from colorama import Fore, Style
 
+
 import json5
 
 PROMPT_REACT0 = """Answer the following questions as best you can. You have access to the following tools:

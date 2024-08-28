@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 from datetime import datetime
 
+
 class Event_Type():
     # 事件类型
     TEXT  = 'EVENT_TEXT'

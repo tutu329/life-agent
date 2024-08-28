@@ -3,7 +3,6 @@ from dash import dcc, html
 def Header(app):
     return html.Div([get_header(app), html.Br([]), get_menu()])
 
-
 def get_header(app):
     header = html.Div(
         [
