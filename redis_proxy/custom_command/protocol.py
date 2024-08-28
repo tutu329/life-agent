@@ -21,6 +21,7 @@ class Client_New_Command_Paras:    # new task是顶层命令，不适合放在cu
     command_id: str = ''    # command_id由client提供，可以是str(uuid.uuid4())
     command: str = ''  # Redis_Proxy_Command_LLM
 
+
 def call_custom_command(
         task_type,
         command,

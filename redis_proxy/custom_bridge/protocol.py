@@ -26,6 +26,7 @@ class Bridge_Para():
     bridge_type:Any = None              # 如: Redis_Bridge_Type.TRANSLATE
     bridge_io_type:str = None           # 如: 'input'或'output'
 
+
     # input或output
     bridged_command:Any = None          # 如: Redis_Proxy_Command_T2I.DRAW
     # input

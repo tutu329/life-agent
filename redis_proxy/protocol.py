@@ -11,6 +11,7 @@ class Key_Name_Space:
     Commands_Register: str = 'Task_{task_id}_Commands'
     Results_Register: str = 'Task_{task_id}_Command_{command_id}_Results'
 
+
 @dataclass
 class Client_New_Task_Paras:    # new task是顶层命令，不适合放在custom_command下面（与自定义的功能无关）
     client_id: str = ''     # client_id由client提供，可以是str(uuid.uuid4())

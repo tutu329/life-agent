@@ -9,6 +9,7 @@ class Redis_Proxy_Command_T2I(Enum):
     DRAW    = 'DRAW'
     DRAWS   = 'DRAWS'
 
+
 # T2I调用(Init)参数
 @dataclass
 class T2I_Init_Para():

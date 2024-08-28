@@ -17,6 +17,7 @@ class Redis_Proxy_Command_LLM(Enum):
     CANCEL  = 'CANCEL'
     ASK     = 'ASK'
 
+
 # LLM调用(Init)参数
 @dataclass
 class LLM_Init_Para():

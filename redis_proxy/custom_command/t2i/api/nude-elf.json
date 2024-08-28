@@ -1,0 +1,394 @@
+{
+  "12": {
+    "inputs": {
+      "input_mode": "simple",
+      "lora_count": 3,
+      "lora_name_1": "None",
+      "lora_wt_1": 1,
+      "model_str_1": 1,
+      "clip_str_1": 1,
+      "lora_name_2": "None",
+      "lora_wt_2": 0.4,
+      "model_str_2": 1,
+      "clip_str_2": 1,
+      "lora_name_3": "None",
+      "lora_wt_3": 0.7000000000000001,
+      "model_str_3": 1,
+      "clip_str_3": 1,
+      "lora_name_4": "None",
+      "lora_wt_4": 1,
+      "model_str_4": 1,
+      "clip_str_4": 1,
+      "lora_name_5": "None",
+      "lora_wt_5": 1,
+      "model_str_5": 1,
+      "clip_str_5": 1,
+      "lora_name_6": "None",
+      "lora_wt_6": 1,
+      "model_str_6": 1,
+      "clip_str_6": 1,
+      "lora_name_7": "None",
+      "lora_wt_7": 1,
+      "model_str_7": 1,
+      "clip_str_7": 1,
+      "lora_name_8": "None",
+      "lora_wt_8": 1,
+      "model_str_8": 1,
+      "clip_str_8": 1,
+      "lora_name_9": "None",
+      "lora_wt_9": 1,
+      "model_str_9": 1,
+      "clip_str_9": 1,
+      "lora_name_10": "None",
+      "lora_wt_10": 1,
+      "model_str_10": 1,
+      "clip_str_10": 1,
+      "lora_name_11": "None",
+      "lora_wt_11": 1,
+      "model_str_11": 1,
+      "clip_str_11": 1,
+      "lora_name_12": "None",
+      "lora_wt_12": 1,
+      "model_str_12": 1,
+      "clip_str_12": 1,
+      "lora_name_13": "None",
+      "lora_wt_13": 1,
+      "model_str_13": 1,
+      "clip_str_13": 1,
+      "lora_name_14": "None",
+      "lora_wt_14": 1,
+      "model_str_14": 1,
+      "clip_str_14": 1,
+      "lora_name_15": "None",
+      "lora_wt_15": 1,
+      "model_str_15": 1,
+      "clip_str_15": 1,
+      "lora_name_16": "None",
+      "lora_wt_16": 1,
+      "model_str_16": 1,
+      "clip_str_16": 1,
+      "lora_name_17": "None",
+      "lora_wt_17": 1,
+      "model_str_17": 1,
+      "clip_str_17": 1,
+      "lora_name_18": "None",
+      "lora_wt_18": 1,
+      "model_str_18": 1,
+      "clip_str_18": 1,
+      "lora_name_19": "None",
+      "lora_wt_19": 1,
+      "model_str_19": 1,
+      "clip_str_19": 1,
+      "lora_name_20": "None",
+      "lora_wt_20": 1,
+      "model_str_20": 1,
+      "clip_str_20": 1,
+      "lora_name_21": "None",
+      "lora_wt_21": 1,
+      "model_str_21": 1,
+      "clip_str_21": 1,
+      "lora_name_22": "None",
+      "lora_wt_22": 1,
+      "model_str_22": 1,
+      "clip_str_22": 1,
+      "lora_name_23": "None",
+      "lora_wt_23": 1,
+      "model_str_23": 1,
+      "clip_str_23": 1,
+      "lora_name_24": "None",
+      "lora_wt_24": 1,
+      "model_str_24": 1,
+      "clip_str_24": 1,
+      "lora_name_25": "None",
+      "lora_wt_25": 1,
+      "model_str_25": 1,
+      "clip_str_25": 1,
+      "lora_name_26": "None",
+      "lora_wt_26": 1,
+      "model_str_26": 1,
+      "clip_str_26": 1,
+      "lora_name_27": "None",
+      "lora_wt_27": 1,
+      "model_str_27": 1,
+      "clip_str_27": 1,
+      "lora_name_28": "None",
+      "lora_wt_28": 1,
+      "model_str_28": 1,
+      "clip_str_28": 1,
+      "lora_name_29": "None",
+      "lora_wt_29": 1,
+      "model_str_29": 1,
+      "clip_str_29": 1,
+      "lora_name_30": "None",
+      "lora_wt_30": 1,
+      "model_str_30": 1,
+      "clip_str_30": 1,
+      "lora_name_31": "None",
+      "lora_wt_31": 1,
+      "model_str_31": 1,
+      "clip_str_31": 1,
+      "lora_name_32": "None",
+      "lora_wt_32": 1,
+      "model_str_32": 1,
+      "clip_str_32": 1,
+      "lora_name_33": "None",
+      "lora_wt_33": 1,
+      "model_str_33": 1,
+      "clip_str_33": 1,
+      "lora_name_34": "None",
+      "lora_wt_34": 1,
+      "model_str_34": 1,
+      "clip_str_34": 1,
+      "lora_name_35": "None",
+      "lora_wt_35": 1,
+      "model_str_35": 1,
+      "clip_str_35": 1,
+      "lora_name_36": "None",
+      "lora_wt_36": 1,
+      "model_str_36": 1,
+      "clip_str_36": 1,
+      "lora_name_37": "None",
+      "lora_wt_37": 1,
+      "model_str_37": 1,
+      "clip_str_37": 1,
+      "lora_name_38": "None",
+      "lora_wt_38": 1,
+      "model_str_38": 1,
+      "clip_str_38": 1,
+      "lora_name_39": "None",
+      "lora_wt_39": 1,
+      "model_str_39": 1,
+      "clip_str_39": 1,
+      "lora_name_40": "None",
+      "lora_wt_40": 1,
+      "model_str_40": 1,
+      "clip_str_40": 1,
+      "lora_name_41": "None",
+      "lora_wt_41": 1,
+      "model_str_41": 1,
+      "clip_str_41": 1,
+      "lora_name_42": "None",
+      "lora_wt_42": 1,
+      "model_str_42": 1,
+      "clip_str_42": 1,
+      "lora_name_43": "None",
+      "lora_wt_43": 1,
+      "model_str_43": 1,
+      "clip_str_43": 1,
+      "lora_name_44": "None",
+      "lora_wt_44": 1,
+      "model_str_44": 1,
+      "clip_str_44": 1,
+      "lora_name_45": "None",
+      "lora_wt_45": 1,
+      "model_str_45": 1,
+      "clip_str_45": 1,
+      "lora_name_46": "None",
+      "lora_wt_46": 1,
+      "model_str_46": 1,
+      "clip_str_46": 1,
+      "lora_name_47": "None",
+      "lora_wt_47": 1,
+      "model_str_47": 1,
+      "clip_str_47": 1,
+      "lora_name_48": "None",
+      "lora_wt_48": 1,
+      "model_str_48": 1,
+      "clip_str_48": 1,
+      "lora_name_49": "None",
+      "lora_wt_49": 1,
+      "model_str_49": 1,
+      "clip_str_49": 1
+    },
+    "class_type": "LoRA Stacker",
+    "_meta": {
+      "title": "LoRA Stacker"
+    }
+  },
+  "13": {
+    "inputs": {
+      "ckpt_name": "fantastic_v20.safetensors",
+      "vae_name": "Baked VAE",
+      "clip_skip": -1,
+      "lora_name": "None",
+      "lora_model_strength": 0.8,
+      "lora_clip_strength": 0.8,
+      "positive": "<lora:ProneboneVaginal-v3:0.85> pronebone vaginal, full body, bed, close up, tanned, grabbing her cheeks, skinny\nBREAK\n(elf) (detailed face:1.2), (detailed blue eyes:1), (perfect eyes), (eye contact:1.2) (athletic body) (expression shocked:1.2) perfect teeth <lora:breastsizeslideroffset:0.1> <lora:weight_slider_v2:-0.5>\n(narrow waist:1.1), (fit body:1.2), petite, completely nude\nBREAK\n, fantastical mystical psychedelic natural patterns neon threads, photograph, close up, emotional, tears, , heavenly, kind, gentle, soft glow, rays of light, colorful, detailed, stunning,\nBREAK\nbackground fantasy grove, psychedelic fantasy mushrooms\nBREAK\ndlsr:0.7, high quality, high res, ultra detailed, intricate detail, intimate lighting, cinematic, Rembrandt, volumetric lighting, dynamic lighting, nsfw, hetero, (very sexy:1.2), intricate, (blush:0.5), (goosebumps:0.5), subsurface scattering (wind, windy:1.3)\n<lora:more_details:0.1>, (wind) nsfw,, photorealistic, photograph, photo, dlsr, Fuji Film, extremely high detail, (volumetric lighting), (dynamic lighiting), godrays, Rembrandt lighting, real shadows, intricate detail",
+      "negative": "((interlocked fingers)), (child:1.4), (infant) (very young) bad-hands-5 BadDream By bad artist -neg FastNegativeV2 JuggernautNegative-neg UnrealisticDream (uncircumcised) (condom) (protection) (safe), lgbt, futa, futanari, sfw, ugly teeth, broken teeth, crooked teeth, censored, mosaic censoring,, (worst quality:1.4), (low quality:1.4), (normal quality:1.4),\nBREAK\nbad composition, inaccurate eyes, paintings, sketches, deformed,blurry, bad anatomy, disfigured, mutation, mutated hands and fingers, extra limb, monochrome, grayscale,motion lines, motion blur,noise point, thin body, fat body,mismatched pupils and irises, symbol-shaped pupils, symbol-shaped irises, heterochromia, multicolored eyes, strange eyes, slit pupils, no pupils, bright pupils, asymmetrical pupils and irises, distorted pupils and irises, small pupils, asymmetrical eyes, uneven eyes,realistic eyes,gradient eyes, asymmetrical eyebrows, raised eyebrows,multiple and asymmetrical eye reflection, asymmetrical ears, missing limb,floating limbs, disconnected limbs, malformed hands,long neck, have more than 5 fingers, have less than 5 fingers, have more than 2 hands, have less than 2 hands, have more than 2 legs, have less than 2 legs, have more than 2 feets,have less than 2 feets, (interlocked fingers)\nBREAK\nwatermark, logo, jpeg, username,error, text, black screen, blank screen, signature,\nBREAK\nout of view,out of flame,picture flame,tattoo,cat ears,animal ears,hat,futanari,bag,hanging bag,\nBREAK\nbad-hands-5 BadDream By bad artist -neg FastNegativeV2 JuggernautNegative-neg UnrealisticDream sfw, (child:1.1),( infant:1.1) (young), washed out, monochrome, greyscale, Watermark, Text, censored, deformed, bad anatomy, disfigured, poorly drawn face, mutated, extra limb, ugly, poorly drawn hands, missing limb, floating limbs, disconnected limbs, disconnected head, malformed hands, long neck, mutated hands and fingers, bad hands, missing fingers, cropped, worst quality, low quality, mutation, poorly drawn, huge calf, bad hands, fused hand, missing hand, disappearing arms, disappearing thigh, disappearing calf, disappearing legs, missing fingers, fused fingers, abnormal eye proportion, Abnormal hands, abnormal legs, abnormal feet,  abnormal fingers, bad composition, inaccurate eyes, paintings, sketches, deformed,blurry,mismatched pupils and irises, symbol-shaped pupils, symbol-shaped irises, heterochromia, multicolored eyes, strange eyes, slit pupils, no pupils, bright pupils, asymmetrical pupils and irises, distorted pupils and irises, small pupils, asymmetrical eyes, uneven eyes,realistic eyes,gradient eyes, asymmetrical eyebrows, raised eyebrows,multiple and asymmetrical eye reflection",
+      "token_normalization": "none",
+      "weight_interpretation": "A1111",
+      "empty_latent_width": 512,
+      "empty_latent_height": 768,
+      "batch_size": 1,
+      "lora_stack": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "Efficient Loader",
+    "_meta": {
+      "title": "Efficient Loader"
+    }
+  },
+  "16": {
+    "inputs": {
+      "seed": 1092857010770977,
+      "steps": 40,
+      "cfg": 7,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "exponential",
+      "denoise": 1,
+      "preview_method": "auto",
+      "vae_decode": "true",
+      "model": [
+        "13",
+        0
+      ],
+      "positive": [
+        "13",
+        1
+      ],
+      "negative": [
+        "13",
+        2
+      ],
+      "latent_image": [
+        "13",
+        3
+      ],
+      "optional_vae": [
+        "13",
+        4
+      ]
+    },
+    "class_type": "KSampler (Efficient)",
+    "_meta": {
+      "title": "KSampler (Efficient)"
+    }
+  },
+  "19": {
+    "inputs": {
+      "images": [
+        "16",
+        5
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "20": {
+    "inputs": {
+      "guide_size": 384,
+      "guide_size_for": true,
+      "max_size": 1024,
+      "seed": 352174867910829,
+      "steps": 10,
+      "cfg": 5,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "denoise": 0.5,
+      "feather": 5,
+      "noise_mask": true,
+      "force_inpaint": true,
+      "bbox_threshold": 0.5,
+      "bbox_dilation": 10,
+      "bbox_crop_factor": 3,
+      "sam_detection_hint": "center-1",
+      "sam_dilation": 0,
+      "sam_threshold": 0.93,
+      "sam_bbox_expansion": 0,
+      "sam_mask_hint_threshold": 0.7000000000000001,
+      "sam_mask_hint_use_negative": "False",
+      "drop_size": 10,
+      "wildcard": "",
+      "cycle": 1,
+      "inpaint_model": false,
+      "noise_mask_feather": 20,
+      "image": [
+        "16",
+        5
+      ],
+      "model": [
+        "13",
+        0
+      ],
+      "clip": [
+        "13",
+        5
+      ],
+      "vae": [
+        "13",
+        4
+      ],
+      "positive": [
+        "13",
+        1
+      ],
+      "negative": [
+        "13",
+        2
+      ],
+      "bbox_detector": [
+        "21",
+        0
+      ],
+      "sam_model_opt": [
+        "22",
+        0
+      ],
+      "segm_detector_opt": [
+        "21",
+        1
+      ]
+    },
+    "class_type": "FaceDetailer",
+    "_meta": {
+      "title": "FaceDetailer"
+    }
+  },
+  "21": {
+    "inputs": {
+      "model_name": "bbox/face_yolov8n_v2.pt"
+    },
+    "class_type": "UltralyticsDetectorProvider",
+    "_meta": {
+      "title": "UltralyticsDetectorProvider"
+    }
+  },
+  "22": {
+    "inputs": {
+      "model_name": "sam_vit_b_01ec64.pth",
+      "device_mode": "AUTO"
+    },
+    "class_type": "SAMLoader",
+    "_meta": {
+      "title": "SAMLoader (Impact)"
+    }
+  },
+  "23": {
+    "inputs": {
+      "images": [
+        "20",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "24": {
+    "inputs": {
+      "images": [
+        "20",
+        0
+      ]
+    },
+    "class_type": "SaveImageWebsocket",
+    "_meta": {
+      "title": "SaveImageWebsocket"
+    }
+  }
+}
