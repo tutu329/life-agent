@@ -4,16 +4,16 @@ import openai
 # 设置api-key和LLM的地址
 oai = OpenAI(
     # http_client=openai.DefaultHttpxClient(verify=False),  # 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
-    api_key='empty',
+    # api_key='empty',
     # base_url='https://172.27.67.106:8001/v1',
-    base_url='https://powerai.cc:8001/v1',
+    # base_url='https://powerai.cc:8001/v1',
     # base_url=config.Global.llm_url,
     # base_url='https://localhost:8001/v1',
     # base_url='http://127.0.0.1:8001/v1',
 
     # base_url='http://localhost:8001/v1',
-    # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-    # base_url='https://api.deepseek.com/v1',
+    api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+    base_url='https://api.deepseek.com/v1',
 )
 
 # 流式输出的调用
@@ -89,8 +89,8 @@ def call_funasr():
     pass
 
 if __name__ == '__main__':
-    # main()
-    call_funasr()
+    main()
+    # call_funasr()
     # call_qwen2_audio()
 
 
