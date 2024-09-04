@@ -33,8 +33,8 @@ class Redis_Client:
             invoker=None,           # 调用方如‘redis_proxy_server’
             password='',            # 密码
             ssl=True,  # 是否通过ssl/tls连接
-            ssl_keyfile='d:\\models\\powerai.key',
-            ssl_certfile='d:\\models\\powerai_public.crt',
+            ssl_keyfile=config.Domain.ssl_keyfile,
+            ssl_certfile=config.Domain.ssl_certfile,
     ):
         if invoker is not None:
             print(f'【Redis_Client inited with invoker】{invoker}')

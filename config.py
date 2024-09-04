@@ -4,6 +4,21 @@ from dataclasses import dataclass, field
 from colorama import Fore, Back, Style
 from typing import Dict, List, Optional, Any
 
+import platform
+
+def get_os():
+    os_name = platform.system()
+    if os_name == "Linux":
+        # 进一步检查是否是Ubuntu
+        with open("/etc/os-release") as f:
+            if "ID=ubuntu" in f.read():
+                return "ubuntu"
+        return "linux"
+    elif os_name == "Windows":
+        return "windows"
+    else:
+        return "unknown"
+
 def get_local_ip():
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
@@ -144,11 +159,27 @@ class Port():
 
 @dataclass
 class Domain():
+    # 用于redis、streamlit的ssl证书文件path
+    if get_os()=='windows':
+        ssl_keyfile:str = 'd:\\models\\powerai.key'
+        ssl_certfile:str = 'd:\\models\\powerai_public.crt'
+    elif get_os()=='ubuntu':
+        ssl_keyfile:str = '/home/tutu/ssl/powerai.key'
+        ssl_certfile:str = '/home/tutu/ssl/powerai_public.crt'
+    elif get_os()=='linux':
+        ssl_keyfile:str = '/home/tutu/ssl/powerai.key'
+        ssl_certfile:str = '/home/tutu/ssl/powerai_public.crt'
+
     server_domain:str = 'powerai.cc'
     # win
     llm_url:str = f'https://{server_domain}:{Port.llm_api1}/v1'
     # llm_url:str = 'https://172.27.67.106:8001/v1'
     redis_server_domain:str = server_domain
+
+
+
+
+
     comfyui_server_domain:str = f'powerai.cc:{Port.comfy}'
 
     # ubuntu
@@ -166,3 +197,12 @@ class LLM_Default:
     clear_history:int  = 0          # 用于清空history_list, 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     api_key:str         = 'empty'
     url:str             = Domain.llm_url
+
+def main():
+    os = get_os()
+    print(os)
+    print(f'ssl_key: {Domain.ssl_keyfile}')
+    print(f'ssl_cert: {Domain.ssl_certfile}')
+
+if __name__ == "__main__":
+    main()
