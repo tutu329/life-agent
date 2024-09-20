@@ -1,4 +1,5 @@
 import copy
+import re
 
 import streamlit as st
 import pandas as pd
@@ -22,7 +23,7 @@ from tools.qa.file_qa import files_qa
 from tools.retriever.search import Bing_Searcher
 from utils.decorator import timer
 
-from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
+# from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
 from streamlit import runtime
 from streamlit.web.server.websocket_headers import _get_websocket_headers
 from utils.extract import get_ajs_anonymous_id_from_cookie
@@ -288,8 +289,10 @@ default_session_data = {
         'url_prompt': '',
         'multi_line_prompt': '',
         'is_agent': False,
+        'latex': False,
         'connecting_internet': False,
         'draw': False,
+
 
         'local_llm_temperature': 0.7,
         'local_llm_max_new_token': 4096,
@@ -392,7 +395,7 @@ def agent_init():
     # )
     # agent.init()
 
-@timer
+# @timer
 # def ask_llm(prompt, paras):
 #     role_prompt = paras['role_prompt']
 #     url_prompt = paras['url_prompt']
@@ -741,12 +744,47 @@ def agent_init():
 #         # dred(f'full_res: {full_res}')
 #         return None, None, full_res, None
 
+def show_string_container_latex(streamlit, s):
+    """
+    处理输入字符串，识别 LaTeX 表达式并使用 Streamlit 渲染。
+
+    Args:
+        s (str): 输入的字符串，包含 LaTeX 表达式。
+    """
+    # 正则表达式模式，匹配 \[ ... \] 或 \( ... \)
+    pattern = r'\\\[(.*?)\\\]|\\\((.*?)\\\)'
+
+    # 上一次匹配结束的位置
+    last_index = 0
+
+    # 遍历所有匹配的 LaTeX 表达式
+    for match in re.finditer(pattern, s):
+        start, end = match.span()
+
+        # 提取 LaTeX 表达式前的普通文本并渲染为 Markdown
+        if start > last_index:
+            markdown_text = s[last_index:start]
+            streamlit.markdown(markdown_text)
+
+        # 提取 LaTeX 表达式内容
+        latex_content = match.group(1) if match.group(1) else match.group(2)
+        streamlit.latex(latex_content)
+
+        # 更新最后处理的位置
+        last_index = end
+
+    # 处理最后一个 LaTeX 表达式后的文本
+    if last_index < len(s):
+        markdown_text = s[last_index:]
+        streamlit.markdown(markdown_text)
+
 def ask_llm(prompt, paras):
     role_prompt = paras['role_prompt']
     url_prompt = paras['url_prompt']
     connecting_internet = paras['connecting_internet']
     draw = paras['draw']
     is_agent = paras['is_agent']
+    using_latex = paras['latex']
     system_prompt = paras['system_prompt']
     files = paras['files']
 # def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
@@ -814,7 +852,7 @@ def ask_llm(prompt, paras):
         }
         status = st.status(label=":green[Agent]", expanded=True)
         status.markdown('任务(ReAct模式)已启动...')
-        
+
 
         assistant = st.chat_message('assistant')
         placeholder1 = assistant.empty()
@@ -936,7 +974,13 @@ def ask_llm(prompt, paras):
             # st.markdown(ans)
 
         place_holder = st.chat_message('assistant').empty()
-        full_res = ''
+        full_res = {}
+        if using_latex:
+            full_res['type'] = 'latex'
+        else:
+            full_res['type'] = 'text'
+
+        full_res['content'] = ''
 
         # 如果需要将query翻译为英文，并调用擅长英语的模型
         # if st.session_state.session_data['paras']['input_translate']:
@@ -982,8 +1026,13 @@ def ask_llm(prompt, paras):
                 start_time2 = time.time()
                 wait_first_token = False
 
-            full_res += res
-            place_holder.markdown(full_res)
+            full_res['content'] += res
+            full_res['content'] = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
+            if using_latex:
+                place_holder.latex(full_res['content'])
+                # show_string_container_latex(place_holder, full_res['content'])
+            else:
+                place_holder.markdown(full_res['content'])
 
         if wait_first_token:
             # 可能输出为空，则这里要开始计时
@@ -1006,13 +1055,24 @@ def ask_llm(prompt, paras):
 
             # 显示: 输入、输出token，首字时间、输出时间，首字前t/s、输出t/s
             # 10445 ( 10039 + 406 ) tokens in 31.6 ( 10.6 + 21.0 ) secs, 946.3 t/s, 19.3 t/s
-            full_res += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens in {all_time_str} ( {input_time_str} + {output_time_str} ) secs, {input_ts_str} t/s, {output_ts_str} t/s ]'
-            # full_res += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
+            full_res['content'] += f'\n\n:green[{all_tokens} ( {p_tokens} + {c_tokens} ) tokens in {all_time_str} ( {input_time_str} + {output_time_str} ) secs, {input_ts_str} t/s, {output_ts_str} t/s ]'
+            # full_res['content'] += f'\n\n:green[( {p_tokens}输入 + {c_tokens}输出 = {p_tokens+c_tokens} tokens )]'
         except Exception as e:
             dred(f'统计时间为0.')
 
-        place_holder.markdown(full_res)
-        # dred(f'full_res: {full_res}')
+        if using_latex:
+            str = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
+            # print(f'---------------------------------')
+            # print(str)
+            place_holder.latex(full_res['content'])
+            # show_string_container_latex(place_holder, full_res['content'])
+        else:
+            place_holder.markdown(full_res['content'])
+        # dred(f'full_res: {full_res['content']}')
+
+        # str = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
+        print(f'===================================')
+        print(full_res['content'])
         return None, None, full_res, None
 
 def on_clear_history():
@@ -1143,6 +1203,10 @@ def on_is_agent_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['is_agent'] = not s_paras['is_agent']
 
+def on_latex_change():
+    s_paras = st.session_state.session_data['paras']
+    s_paras['latex'] = not s_paras['latex']
+
 # def on_input_translate_change():
 #     s_paras = st.session_state.session_data['paras']
 #     s_paras['input_translate'] = not s_paras['input_translate']
@@ -1216,9 +1280,12 @@ def streamlit_refresh_loop():
     s_paras['url_prompt'] = exp1.text_input(label="URL:", label_visibility='collapsed', placeholder="请在这里输入您需要LLM解读的URL", value=s_paras['url_prompt'])
     s_paras['multi_line_prompt'] = exp1.text_area(label="多行指令:", label_visibility='collapsed', placeholder="请在这里输入您的多行指令", value=s_paras['multi_line_prompt'], disabled=st.session_state.processing)
 
-    col0, col1, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1])
+    print(s_paras)
+
+    col0, col1, col11, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1, 1])
     col0.checkbox('Agent', value=s_paras['is_agent'], disabled=st.session_state.processing, on_change=on_is_agent_change)
     col1.checkbox('联网', value=s_paras['connecting_internet'], disabled=st.session_state.processing, on_change=on_connecting_internet_change)
+    col11.checkbox('公式', value=s_paras['latex'], disabled=st.session_state.processing, on_change=on_latex_change)
     col2.checkbox('绘画', value=s_paras['draw'], disabled=st.session_state.processing, on_change=on_draw_change)
     # connecting_internet_detail = col2.checkbox('明细', value=False, disabled=st.session_state.processing)
     col3.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
@@ -1355,6 +1422,7 @@ def streamlit_refresh_loop():
     for message in st.session_state.session_data['msgs']:
         if type(message)==dict:
             # print(f'dict message: {message}')
+            print(f'--------------{message}-----------------')
             if message.get('type') and message['type'] == 'image':
                 st.image(message['content'])
             if message.get('type') and message['type'] == 'video':
@@ -1370,9 +1438,18 @@ def streamlit_refresh_loop():
                 # 添加图片list
                 for img in message['data']:
                     st.image(img['data'], caption=img['caption'], use_column_width=True)
+            elif message.get('type') and message['type'] == 'latex':
+                with st.chat_message(message['role']):
+                    st.latex(message['content'])
+                    # show_string_container_latex(st, message['content'])
+
+            elif message.get('type') and message['type'] == 'text':
+                with st.chat_message(message['role']):
+                    st.markdown(message['content'])
             else:
                 with st.chat_message(message['role']):
                     st.markdown(message['content'])
+
         elif type(message)==list:
             print(f'message: {message}')
             for item in message:
@@ -1423,9 +1500,12 @@ def streamlit_refresh_loop():
             num = len(async_llms)
             st.session_state.session_data['msgs'].append([async_llms[i].get_final_response() for i in range(num)])
         if completed_answer:
+            str = completed_answer['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
+            print(str)
             st.session_state.session_data['msgs'].append({
                 'role': 'assistant',
-                'content': completed_answer
+                'content': completed_answer['content'] ,
+                'type': completed_answer['type']
             })
         if images_data:
             st.session_state.session_data['msgs'].append(images_data)
