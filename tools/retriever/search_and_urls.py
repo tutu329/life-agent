@@ -585,7 +585,7 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
     # ===获取bing搜索结果===
-    result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=50, use_proxy=False)
+    result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=20, use_proxy=False)
     for i, item in enumerate(result_url_list):
         print(f"{i+1:>2d}) {item}")
 
