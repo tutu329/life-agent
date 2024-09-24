@@ -992,22 +992,25 @@ def main1():
 
 def main2():
     llm = LLM_Client(
-        history=True,
-        history_max_turns=50,
-        history_clear_method='pop',
-        temperature=0.7,
-        # url='https://192.168.124.33:8001/v1/'
-
-        # 测试https（阿里云购买的免费ssl证书，绑定在powerai.cc）
-        # url='https://172.27.67.106:8001/v1/'  # 不通
-        # url='https://116.62.63.204:8001/v1/'  # 不通
-        url='https://powerai.cc:8001/v1/'     # 通过
-        # url='https://localhost:8001/v1/'      # 不通
+        # history=True,
+        # history_max_turns=50,
+        # history_clear_method='pop',
+        # temperature=0.7,
+        # # url='https://192.168.124.33:8001/v1/'
+        #
+        # # 测试https（阿里云购买的免费ssl证书，绑定在powerai.cc）
+        # # url='https://172.27.67.106:8001/v1/'  # 不通
+        # # url='https://116.62.63.204:8001/v1/'  # 不通
+        # url='https://powerai.cc:8001/v1/'     # 通过
+        # # url='https://localhost:8001/v1/'      # 不通
     )
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
     # llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
-    llm.ask_prepare('你是谁？我的名字是土土', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
+    gen  = llm.ask_prepare('你是谁？我的名字是土土', temperature=0.5, max_new_tokens=200).get_answer_generator()
+    for chunk in gen:
+        print(chunk, end='', flush=True)
+
     llm.ask_prepare('你还记得我的名字吗', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
     # llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
     # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
