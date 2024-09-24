@@ -92,12 +92,9 @@ class LLM_Client:
         url = config.LLM_Default.url if url is None else url
         max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
 
+        dgreen(f'【LLM_Client】url="{url}"')
 
-        if url is None:
-            self.url = LLM_Client.Get_All_LLM_Server()
-        else:
-            self.url = url
-
+        self.url = url
         self.openai = None
         self.model_id = None
         self.api_key = api_key
