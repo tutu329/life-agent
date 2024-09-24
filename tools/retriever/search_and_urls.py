@@ -91,7 +91,8 @@ class Urls_Content_Retriever():
 
             self.browser_with_proxy = await p.chromium.launch(
                 channel="chrome",
-                headless=True,
+                headless=False,
+                # headless=True,
                 proxy=Global.playwright_proxy   # 关于win下报错：A "socket" was not created for HTTP request before 3000ms，查看internet选项的局域网设置中的代理服务器设置，port和该设置一致就行，如shadowsocket是10809而非10808
             )   # 启动chrome
             self.context_with_proxy = await self.browser_with_proxy.new_context(user_agent=UserAgent().random)
@@ -101,7 +102,8 @@ class Urls_Content_Retriever():
 
             self.browser = await p.chromium.launch(
                 channel="chrome",
-                headless=True
+                headless=False,
+                # headless=True,
             )   # 启动chrome
 
             self.context = await self.browser.new_context(user_agent=UserAgent().random)
@@ -389,9 +391,10 @@ class Urls_Content_Retriever():
                         # await page.wait_for_load_state('networkidle')
                         # await page.wait_for_load_state('networkidle', timeout=timeout)
                         # await page.wait_for_selector('.b_algo h2 a')
-                        # await page.wait_for_selector('.b_algo h2 a', timeout=timeout)
+                        await page.wait_for_selector('.b_algo h2 a', timeout=timeout)
                         # await page.wait_for_selector('.b_algo h2 a')
                         results_on_page = await page.query_selector_all('.b_algo h2 a')
+                        # results_on_page = await page.query_selector_all('.b_algo h2 a')
                         if len(results_on_page)>0:
                             success = True
                             break
@@ -585,7 +588,7 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
     # ===获取bing搜索结果===
-    result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=30, use_proxy=False)
+    result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=50, use_proxy=False)
     for i, item in enumerate(result_url_list):
         print(f"{i+1:>2d}) {item}")
 
