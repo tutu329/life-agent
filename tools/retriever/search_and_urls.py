@@ -555,17 +555,17 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
     # ===获取bing搜索结果===
-    result_url_list = get_bing_search_result(query='今日热点', result_num=100, use_proxy=False)
-    for i, item in enumerate(result_url_list):
-        print(f"{i+1:>2d}) {item}")
+    # result_url_list = get_bing_search_result(query='今日热点', result_num=100, use_proxy=False)
+    # for i, item in enumerate(result_url_list):
+    #     print(f"{i+1:>2d}) {item}")
 
     # ===获取bing搜索结果对应url的所有content===
-    # url_list = get_bing_search_result(query='如何安装ubuntu', result_num=2, use_proxy=False)
-    # content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
-    # for url in (url_list):
-    #     print(f'================================={url}==========================================')
-    #     for item in content_list[url]:
-    #         print(item)
+    url_list = get_bing_search_result(query='如何安装ubuntu', result_num=2, use_proxy=False)
+    content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
+    for url in (url_list):
+        print(f'================================={url}==========================================')
+        for item in content_list[url]:
+            print(item)
 
     # ===获取多个urls下的content的list===
     # res = get_urls_content_list([url1, url2], res_type_list=['video', 'image', 'text'], use_proxy=False)
