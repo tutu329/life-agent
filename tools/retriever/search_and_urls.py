@@ -362,29 +362,57 @@ class Urls_Content_Retriever():
 
         return '\n'.join(extracted_text_list), extracted_content_list
 
-    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50):
+    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50, max_retry=10):
         result_url_list = []
 
         # 获得context
         context = self.context_with_proxy if use_proxy else self.context
 
         try:
-            # 进行搜索
-            page = await context.new_page()
-
             # 获取如100+个搜索结果(每页如50个，则翻页num/50+1次)，汇总为list
-            pages_to_scrape = result_num // show_results_in_one_page +1
+            pages_to_scrape = result_num // show_results_in_one_page + 1
             i=0
             for page_num in range(0, pages_to_scrape):
                 start = page_num * show_results_in_one_page + 1
                 url = f"https://www.bing.com/search?q={query}&count={show_results_in_one_page}&first={start}"
 
                 timeout = show_results_in_one_page/30*Global.playwright_bing_search_time_out
-                # print(f'try to goto page: "{url}" with use_proxy: {use_proxy} with timeout:{timeout}')
-                await page.goto(url)
-                await page.wait_for_load_state('networkidle', timeout=timeout)
+                print(f'try to goto page: "{url}" with use_proxy: "{use_proxy}" with timeout:"{timeout:.1f}ms"')
 
-                results_on_page = await page.query_selector_all('.b_algo h2 a')
+                retry_num = 0
+                results_on_page = None
+                success = False
+                page = await context.new_page()
+                while retry_num < max_retry:
+                    try:
+                        await page.goto(url)
+                        # await page.wait_for_load_state('networkidle')
+                        # await page.wait_for_load_state('networkidle', timeout=timeout)
+                        # await page.wait_for_selector('.b_algo h2 a')
+                        # await page.wait_for_selector('.b_algo h2 a', timeout=timeout)
+                        # await page.wait_for_selector('.b_algo h2 a')
+                        results_on_page = await page.query_selector_all('.b_algo h2 a')
+                        if len(results_on_page)>0:
+                            success = True
+                            break
+                        retry_num += 1
+                        await page.wait_for_timeout(5000)  # 额外等待2秒后重新加载
+                        # await page.reload()
+                        page = await context.new_page()
+                        dred(f'【get_bing_search_result】 retry_num: {retry_num}')
+                    except Playwright_TimeoutError as e:
+                        retry_num += 1
+                        await page.wait_for_timeout(5000)  # 额外等待2秒后重新加载
+                        # await page.reload()
+                        page = await context.new_page()
+                        dred(f'【get_bing_search_result】 retry_num: {retry_num}')
+
+                if success:
+                    dgreen(f'【get_bing_search_result】 success with results num: {len(results_on_page)}')
+                else:
+                    dred(f'【get_bing_search_result】 failed.')
+                    return []
+
                 for result in results_on_page:
                     title = await result.inner_text()
                     result_url = await result.get_attribute('href')
@@ -557,17 +585,18 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
     # ===获取bing搜索结果===
-    # result_url_list = get_bing_search_result(query='今日热点', result_num=100, use_proxy=False)
-    # for i, item in enumerate(result_url_list):
-    #     print(f"{i+1:>2d}) {item}")
+    result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=50, use_proxy=False)
+    for i, item in enumerate(result_url_list):
+        print(f"{i+1:>2d}) {item}")
 
     # ===获取bing搜索结果对应url的所有content===
-    url_list = get_bing_search_result(query='电厂接入系统 建设必要性', result_num=1, use_proxy=False)
-    content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
-    for url in (url_list):
-        print(f'================================={url}==========================================')
-        for item in content_list[url]:
-            print(item)
+    # url_list = get_bing_search_result(query='万向创新聚能城', result_num=1, show_results_in_one_page=20, use_proxy=False)
+    # print(url_list)
+    # content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
+    # for url in (url_list):
+    #     print(f'================================={url}==========================================')
+    #     for item in content_list[url]:
+    #         print(item)
 
     # ===获取多个urls下的content的list===
     # res = get_urls_content_list([url1, url2], res_type_list=['video', 'image', 'text'], use_proxy=False)
