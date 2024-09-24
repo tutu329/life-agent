@@ -362,7 +362,7 @@ class Urls_Content_Retriever():
 
         return '\n'.join(extracted_text_list), extracted_content_list
 
-    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50, max_retry=10):
+    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50, max_retry=3):
         result_url_list = []
 
         # 获得context
@@ -370,7 +370,7 @@ class Urls_Content_Retriever():
 
         try:
             # 获取如100+个搜索结果(每页如50个，则翻页num/50+1次)，汇总为list
-            pages_to_scrape = result_num // show_results_in_one_page
+            pages_to_scrape = result_num // show_results_in_one_page + 1
             i=0
             for page_num in range(0, pages_to_scrape):
                 start = page_num * show_results_in_one_page + 1
@@ -585,7 +585,7 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
     # ===获取bing搜索结果===
-    result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=20, use_proxy=False)
+    result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=30, use_proxy=False)
     for i, item in enumerate(result_url_list):
         print(f"{i+1:>2d}) {item}")
 
