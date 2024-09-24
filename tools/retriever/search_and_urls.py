@@ -370,7 +370,7 @@ class Urls_Content_Retriever():
 
         try:
             # 获取如100+个搜索结果(每页如50个，则翻页num/50+1次)，汇总为list
-            pages_to_scrape = result_num // show_results_in_one_page + 1
+            pages_to_scrape = result_num // show_results_in_one_page
             i=0
             for page_num in range(0, pages_to_scrape):
                 start = page_num * show_results_in_one_page + 1
@@ -396,13 +396,13 @@ class Urls_Content_Retriever():
                             success = True
                             break
                         retry_num += 1
-                        await page.wait_for_timeout(5000)  # 额外等待2秒后重新加载
+                        await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
                         # await page.reload()
                         page = await context.new_page()
                         dred(f'【get_bing_search_result】 retry_num: {retry_num}')
                     except Playwright_TimeoutError as e:
                         retry_num += 1
-                        await page.wait_for_timeout(5000)  # 额外等待2秒后重新加载
+                        await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
                         # await page.reload()
                         page = await context.new_page()
                         dred(f'【get_bing_search_result】 retry_num: {retry_num}')
