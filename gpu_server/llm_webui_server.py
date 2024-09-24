@@ -5,7 +5,7 @@ import asyncio
 
 from tools.llm.api_client import LLM_Client
 from tools.doc.llm_doc import *
-from tools.retriever.search import simple_search, simple_search_gen, Bing_Searcher
+from tools.retriever.legacy_search import simple_search, simple_search_gen, Bing_Searcher
 
 import sys
 import platform

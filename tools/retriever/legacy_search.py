@@ -1,3 +1,6 @@
+from dataclasses import dataclass, asdict, field
+from typing import Dict, List, Optional, Any
+
 from playwright.async_api import async_playwright
 from playwright.sync_api import sync_playwright
 
@@ -7,6 +10,7 @@ import re
 import asyncio
 from colorama import Fore, Style
 
+import config
 from tools.retriever.legacy_wrong_html2text import html2text
 from utils.print_tools import print_long_content_with_urls, get_string_of_long_content_with_urls
 from tools.qa.long_content_qa import multi_contents_qa_concurrently, multi_contents_qa_concurrently_yield
@@ -38,7 +42,7 @@ def google_search(keywords: str, num_results: int = 50, time="m") -> str:
     # results = json.dumps(search_results, ensure_ascii=False, indent=4)
     return search_results
 
-class SearchResult:
+class Legacy_SearchResult:
     def __init__(self, title, url, snip) -> None:
         self.title = title
         self.url = url
@@ -54,12 +58,18 @@ class SearchResult:
     def __str__(self) -> str:
         return json.dumps(self.dump())
 
+@dataclass
+class Search_Result:
+    url: str = ''                                               # 搜索结果对应的url
+    content_para_list: List[str] = field(default_factory=list)  # 搜索结果的para_list
+
 class Bing_Searcher():
     global_searcher = None
 
     def __init__(self,
                  in_search_num=3,
-                 in_llm_api_url='http://127.0.0.1:8001/v1',
+                 in_llm_api_url=config.Domain.llm_url,
+                 # in_llm_api_url='http://127.0.0.1:8001/v1',
                  in_stream_buf_callback=None,
                  in_use_proxy = False,
                  ):
@@ -357,7 +367,11 @@ class Bing_Searcher():
         return None
 
     # 通过bing搜索，并返回结果
-    async def _query_bing_and_get_results(self, in_question, max_tries=3):
+    async def _query_bing_and_get_results(
+            self,
+            in_question,
+            max_tries=3
+    ) -> List[Search_Result] :
         # print('--------------------------3-----------------------------')
         res = await self._query_bing(in_question, max_tries=max_tries)
         # print('--------------------------3.1-----------------------------')
@@ -380,7 +394,9 @@ class Bing_Searcher():
             if response_status == 200:
                 if ''.join(content_para_list) != '' :
                     # 如果content_para_list内容不为空，才添加到结果
-                    results.append((url, content_para_list))
+                    search_result = Search_Result(url, content_para_list)
+                    results.append(search_result)
+                    # results.append((url, content_para_list))
                     num += 1
 
                 if num >= self.search_num:
@@ -451,8 +467,8 @@ class Bing_Searcher():
             # self.results[url] = (404, None)   # (response_status, response_html_text)
 
 # search的生成器（必须进行同步化改造，否则progress.tqdm(search_gen(message), desc='正在调用搜索引擎中...')报错！）
-def simple_search_gen(in_question):
-    async def async_search():
+def simple_search_gen(in_question)-> List[Search_Result]:
+    async def async_search()-> List[Search_Result]:
         async with Bing_Searcher() as searcher:
             results = await searcher._query_bing_and_get_results(in_question)
             return results
@@ -463,8 +479,8 @@ def simple_search_gen(in_question):
     yield results
 
 # search的最终的同步调用
-def simple_search(in_question):
-    async def search():
+def simple_search(in_question)-> List[Search_Result]:
+    async def search()-> List[Search_Result]:
         question = in_question
         async with Bing_Searcher() as searcher:
             results = await searcher._query_bing_and_get_results(question)
@@ -476,24 +492,6 @@ def simple_search(in_question):
         loop = asyncio.new_event_loop()     # gradio调用search()，必须用这一行
     res = loop.run_until_complete(search())
     return res
-
-def main():
-    from tools.llm.api_client import LLM_Client
-
-    question = '杭州有哪些著名景点'
-
-    llm = LLM_Client(history=False, url='http://127.0.0.1:8002/v1')
-
-    res = simple_search(question)
-    print(f'====================开始搜索，question: {question}, res: {res}====================')
-    for url, content_para_list in res:
-        print(f'====================url: {url}====================')
-        content = " ".join(content_para_list)
-        print(f'====================返回文本(总长:{len(content)}): {content_para_list}====================')
-
-        if len(content)<5000:
-            prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{question}"。'
-            llm.ask_prepare(prompt).get_answer_and_sync_print()
 
 def main_only_search(args):
     in_query = args.q
@@ -578,7 +576,7 @@ def main_test_proxy():
     # search_on_bing('4029 reddit.com')
     search_on_bing('using playwright to get content on bing.com reddit.com')
 
-if __name__ == '__main__':
+def main3():
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -590,5 +588,30 @@ if __name__ == '__main__':
     main_only_search(args)
     # main_test_proxy()
     # main_search_and_summery_yield(args.q)
-    
+
+def main():
+    from tools.llm.api_client import LLM_Client
+
+    question = '杭州有哪些著名景点'
+
+    llm = LLM_Client(history=False)
+
+    res = simple_search(question)
+    print(f'====================开始搜索，question: {question}, res: {res}====================')
+    for item in res:
+    # for url, content_para_list in res:
+        url = item.url
+        content_para_list = item.content_para_list
+        print(f'====================url: {url}====================')
+        content = " ".join(content_para_list)
+        print(f'====================返回文本(总长:{len(content)}): {content_para_list}====================')
+
+        if len(content)<5000:
+            prompt = f'这是网络搜索结果: "{content}", 请根据该搜索结果用中文回答用户的提问: "{question}"。'
+            llm.ask_prepare(prompt).get_answer_and_sync_print()
+
+if __name__ == '__main__':
+    # main3()
+    main()
+
 

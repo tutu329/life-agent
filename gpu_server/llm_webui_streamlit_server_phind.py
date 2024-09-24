@@ -4,7 +4,7 @@ from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 import base64
 import tempfile
 
-from tools.retriever.search import Bing_Searcher
+from tools.retriever.legacy_search import Bing_Searcher
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 

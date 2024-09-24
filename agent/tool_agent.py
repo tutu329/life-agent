@@ -74,7 +74,7 @@ class Tool_Agent():
             print(in_chunk, end='', flush=True)
 
     def init(self):
-        self.llm = LLM_Client(temperature=0, history=False, print_input=False, max_new_tokens=1024)
+        self.llm = LLM_Client(temperature=0, history=False, print_input=False, max_new_tokens=2048)
         self.agent_desc_and_action_history = PROMPT_REACT
 
         # 将所有工具转换为{tool_descs}和{tool_names}
@@ -301,9 +301,12 @@ class Tool_Agent():
 def main():
     # torch.cuda.manual_seed_all(20000)
     # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8002/v1')
-    LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
-    tools=[Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
-    # tools=[Code_Tool]   
+    # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
+
+    tools=[Search_Tool, QA_Url_Content_Tool]
+    # tools=[Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
+
+    # tools=[Code_Tool]
     # print(tools)
     exit = False
     cont = False
@@ -338,7 +341,18 @@ def main():
             print(f"\n[运行结果]成功。")
         else:
             print(f"\n[运行结果]失败，请进一步优化问题的描述。")
-            
+
+def main2():
+    tools=[Search_Tool]
+    query = '搜索网络告诉我莱温斯基是谁？'
+    agent = Tool_Agent(in_query=query, in_tool_classes=tools)
+    agent.init()
+    success = agent.run()
+    if success:
+        print(f"\n[运行结果]成功。")
+    else:
+        print(f"\n[运行结果]失败，请进一步优化问题的描述。")
+
 if __name__ == "__main__":
-    #hi
-    main()
+    # main()
+    main2()

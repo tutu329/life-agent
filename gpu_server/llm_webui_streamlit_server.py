@@ -20,7 +20,7 @@ from io import StringIO
 
 from tools.qa.file_qa import files_qa
 
-from tools.retriever.search import Bing_Searcher
+from tools.retriever.legacy_search import Bing_Searcher
 from utils.decorator import timer
 
 # from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
@@ -29,8 +29,8 @@ from streamlit.web.server.websocket_headers import _get_websocket_headers
 from utils.extract import get_ajs_anonymous_id_from_cookie
 import pickle
 
-from tools.retriever.urls import get_urls_content_list, get_bing_search_result
-from tools.retriever.urls import get_url_text
+from tools.retriever.search_and_urls import get_urls_content_list, get_bing_search_result
+from tools.retriever.search_and_urls import get_url_text
 
 # from tools.retriever.urls import aget_url_text
 
