@@ -50,6 +50,8 @@ class Urls_Content_Retriever():
         self.inited = False
 
         self.async_playwright = None
+
+        self.browser_with_proxy = None
         self.browser = None
         self.context = None
 
@@ -560,7 +562,7 @@ if __name__ == '__main__':
     #     print(f"{i+1:>2d}) {item}")
 
     # ===获取bing搜索结果对应url的所有content===
-    url_list = get_bing_search_result(query='如何安装ubuntu', result_num=2, use_proxy=False)
+    url_list = get_bing_search_result(query='电厂接入系统 建设必要性', result_num=1, use_proxy=False)
     content_list = get_urls_content_list(url_list, res_type_list=['video', 'image', 'text'], use_proxy=False)
     for url in (url_list):
         print(f'================================={url}==========================================')
