@@ -1,4 +1,5 @@
 import re
+from config import dred, dgreen, dblue
 
 def parse_scheme(file_path):
     scheme_list = []
@@ -22,7 +23,8 @@ def parse_scheme(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
 
-    for line in lines:
+    for line_num, line in enumerate(lines, start=1):
+        original_line = line  # Keep the original line for debugging
         line = line.rstrip()  # Remove trailing whitespace and newline characters
 
         if not line:
@@ -36,6 +38,8 @@ def parse_scheme(file_path):
                 'type': 'report_start_time',
                 'content': {'date': date}
             })
+            current_index = -1  # Reset current_index since report_start_time is not a chapter
+            # print(f"Line {line_num}: Matched report_start_time with date '{date}'")
             continue
 
         # Check for chapter headings
@@ -51,7 +55,8 @@ def parse_scheme(file_path):
                     'text': ''
                 }
             })
-            current_index += 1
+            current_index = len(scheme_list) - 1  # Set current_index to the last added chapter
+            # print(f"Line {line_num}: Matched chapter '{heading_num} {heading}' at index {current_index}")
             continue
 
         # Check for indented text associated with the last chapter
@@ -59,19 +64,22 @@ def parse_scheme(file_path):
         if text_match and current_index >= 0:
             text = text_match.group(1)
             # Append the text to the last chapter's 'text' field
-            # If there's already text, append with a space or newline
+            # If there's already text, append with a space
             existing_text = scheme_list[current_index]['content']['text']
             if existing_text:
                 scheme_list[current_index]['content']['text'] += ' ' + text
             else:
                 scheme_list[current_index]['content']['text'] = text
+            # print(f"Line {line_num}: Appended text to chapter index {current_index}: '{text}'")
             continue
 
         # If the line does not match any pattern, you can choose to handle it or skip
         # For now, we'll skip unrecognized lines
+        dred(f"【parse_scheme()】Line {line_num}: Unrecognized line format. Skipping.")
         continue
 
     return scheme_list
+
 
 # Example usage
 if __name__ == "__main__":
