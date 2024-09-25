@@ -30,6 +30,19 @@ def parse_scheme(file_path):
         if not line:
             continue  # Skip empty lines
 
+        # Check if the line is a full-line comment
+        if line.lstrip().startswith('#'):
+            dgreen(f"Line {line_num}: Full-line comment detected. Skipping.")
+            continue
+
+        # Handle inline comments: Remove everything after the first '#'
+        if '#' in line:
+            line = line.split('#', 1)[0].rstrip()
+            dgreen(f"Line {line_num}: Inline comment detected. Content before '#' retained: '{line}'")
+
+        if not line:
+            continue  # If line becomes empty after removing inline comment
+
         # Check for report start time
         report_time_match = report_time_pattern.match(line)
         if report_time_match:
