@@ -99,6 +99,7 @@ class Office_Client():
 
 def report_on_plant_grid_connection_system():
     office = Office_Client()
+
     office.word_insert_heading_at_cursor('一、概要', '标题 1')
     office.word_insert_heading_at_cursor('1、现状', '标题 2')
     office.word_insert_llm_stream_at_cursor('我叫土土')
