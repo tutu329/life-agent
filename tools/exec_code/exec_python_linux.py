@@ -1,5 +1,6 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from config import get_os
 
 import docker
 from docker.errors import DockerException, ImageNotFound

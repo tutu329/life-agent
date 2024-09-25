@@ -14,14 +14,14 @@ from singleton import singleton
 
 import win32com.client as win32
 # import win32com
-import requests
-import json
 
 from tools.llm.api_client import LLM_Client
 from client.office.parse_scheme import get_scheme_list
 
 from agent.tool_agent import Tool_Agent
-from client.office.agent_tools import Folder_Tool
+from agent.tools.folder_tool import Folder_Tool
+
+from config import dred, dgreen, dblue, dcyan
 
 @singleton
 class Office_Client():
@@ -119,15 +119,16 @@ def main():
 
 def main_agent():
     tools=[Folder_Tool]
-    query = '告诉我"y:\\demo\\依据"下有哪些文件'
+    query = '告诉我"D:\\ComfyUI\\models\\checkpoints"下有哪些文件'
+    # query = '告诉我"y:\\demo\\依据"下有哪些文件'
     agent = Tool_Agent(in_query=query, in_tool_classes=tools)
     print(f'tools registered: {agent.registered_tool_instances_dict}')
     agent.init()
     success = agent.run()
     if success:
-        print(f"\n[运行结果]成功。")
+        dblue(f"\n[运行结果]成功。")
     else:
-        print(f"\n[运行结果]失败，请进一步优化问题的描述。")
+        dred(f"\n[运行结果]失败，请进一步优化问题的描述。")
 
 if __name__ == "__main__":
     # main()

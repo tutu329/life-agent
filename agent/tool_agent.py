@@ -1,12 +1,16 @@
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
-from agent.tool_agent_prompts import PROMPT_REACT
-from agent.tool_agent_prompts import Base_Tool, Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
+from agent.base_tool import PROMPT_REACT
+from agent.base_tool import Base_Tool
 from utils.extract import extract_code, extract_dict_string
 from colorama import Fore, Back, Style
-# import torch
 
-from config import dred, dgreen, dblue
+from config import dred, dgreen, dblue, dcyan
 
+from agent.tools.code_tool import Code_Tool
+from agent.tools.energy_investment_plan_tool import Energy_Investment_Plan_Tool
+from agent.tools.folder_tool import Folder_Tool
+from agent.tools.search_tool import Search_Tool
+from agent.tools.url_content_qa_tool import Url_Content_QA_Tool
 
 class Tool_Agent():
     def __init__(self,
@@ -172,11 +176,9 @@ class Tool_Agent():
         return thoughts
 
     def thinking(self):
-        print(f'****************************************thinking()***********************************************', flush=True)
+        print(f'****************************************thinking()***********************************************')
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
-        print(Fore.RED, flush=True)
-        print(f'self.response_stop: "{self.response_stop}"', flush=True)
-        print(Style.RESET_ALL, flush=True)
+        dred(f'self.response_stop: "{self.response_stop}"')
         gen = self.llm.ask_prepare(self.agent_desc_and_action_history, stop=self.response_stop).get_answer_generator()
         # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
         # thoughts = ''
@@ -185,27 +187,26 @@ class Tool_Agent():
 
         if self.__finished_keyword in answer_this_turn:
             print(Fore.GREEN, flush=True)
-            print(f'=============================answer=============================', flush=True)
-            print(answer_this_turn, flush=True)
-            print(f'-----------------------------answer-----------------------------', flush=True)
-            print(Style.RESET_ALL, flush=True)
-            print(f'----------------------------------------thinking()-----------------------------------------------', flush=True)
+            dblue(f'=============================answer=============================')
+            dblue(answer_this_turn)
+            dblue(f'-----------------------------answer-----------------------------')
+
+            print(f'----------------------------------------thinking()-----------------------------------------------')
             return answer_this_turn
 
         self.agent_desc_and_action_history += '\n' + answer_this_turn
         # self.agent_desc_and_action_history += '\n' + answer_this_turn + ']'
         # self.status_print(f'============================prompt start============================\n')
         # self.status_print(f'{self.prompt}\n------------------------prompt end------------------------')
-        print(Fore.GREEN, flush=True)
-        print(f'=============================answer=============================', flush=True)
-        print(answer_this_turn, flush=True)
-        print(f'-----------------------------answer-----------------------------', flush=True)
-        print(Style.RESET_ALL, flush=True)
-        print(f'----------------------------------------thinking()-----------------------------------------------', flush=True)
+        dblue(f'=============================answer=============================')
+        dblue(answer_this_turn)
+        dblue(f'-----------------------------answer-----------------------------')
+
+        print(f'----------------------------------------thinking()-----------------------------------------------')
         return answer_this_turn
 
     def action(self, in_answer):
-        print(f'****************************************action()***********************************************', flush=True)
+        dgreen(f'****************************************action()***********************************************')
 
         # --------------------------- call tool ---------------------------
         action_result = ''
@@ -222,40 +223,39 @@ class Tool_Agent():
         # print(f'=============================thoughts=============================')
         # print(in_thoughts)
         # print(f'-----------------------------thoughts-----------------------------')
-        dred(f'--------------【tool_name: "{tool_name}"】--------------')
+        dblue(f'--------------【tool_name: "{tool_name}"】--------------')
 
-        if 'Code_Tool'==tool_name:
-            self.status_print('选择了[code_tool]')
-            tool = Code_Tool()
-            action_result = tool.call(in_answer)
-            if action_result=='':
-                action_result = 'code_tool未输出有效信息，可能是因为调用code_tool时，输入的代码没有用print输出结果。'
-            # self.status_print(f'action_result = "{action_result}"')
-        elif 'Search_Tool'==tool_name:
-            self.status_print('选择了[search_tool]')
-            tool = Search_Tool()
-            action_result = tool.call(in_answer)
-        elif 'Energy_Investment_Plan_Tool'==tool_name:
-            self.status_print('选择了[energy_investment_plan_tool]')
-            tool = Energy_Investment_Plan_Tool()
-            action_result = tool.call(in_answer)
-        elif 'QA_Url_Content_Tool'==tool_name:
-            self.status_print('选择了[qa_url_content_tool]')
-            tool = QA_Url_Content_Tool()
-            action_result = tool.call(in_answer)
+        # if 'Code_Tool'==tool_name:
+        #     self.status_print('选择了[code_tool]')
+        #     tool = Code_Tool()
+        #     action_result = tool.call(in_answer)
+        #     if action_result=='':
+        #         action_result = 'code_tool未输出有效信息，可能是因为调用code_tool时，输入的代码没有用print输出结果。'
+        #     # self.status_print(f'action_result = "{action_result}"')
+        # elif 'Search_Tool'==tool_name:
+        #     self.status_print('选择了[search_tool]')
+        #     tool = Search_Tool()
+        #     action_result = tool.call(in_answer)
+        # elif 'Energy_Investment_Plan_Tool'==tool_name:
+        #     self.status_print('选择了[energy_investment_plan_tool]')
+        #     tool = Energy_Investment_Plan_Tool()
+        #     action_result = tool.call(in_answer)
+        # elif 'QA_Url_Content_Tool'==tool_name:
+        #     self.status_print('选择了[qa_url_content_tool]')
+        #     tool = QA_Url_Content_Tool()
+        #     action_result = tool.call(in_answer)
+        # else:
+        if self.registered_tool_instances_dict.get(tool_name):
+            action_result = self.registered_tool_instances_dict[tool_name].call(in_answer)
         else:
-            if self.registered_tool_instances_dict.get(tool_name):
-                action_result = self.registered_tool_instances_dict[tool_name].call(in_answer)
-            # self.status_print('未选择任何工具。')
+            self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------
 
         self.status_print(f'调用工具的行动结果为: \n{action_result}')
 
-        print(Fore.BLUE, flush=True)
-        print(f'=============================action_result=============================', flush=True)
-        print(action_result, flush=True)
-        print(f'-----------------------------action_result-----------------------------', flush=True)
-        print(Style.RESET_ALL, flush=True)
+        dblue(f'=============================action_result=============================')
+        dblue(action_result)
+        dblue(f'-----------------------------action_result-----------------------------')
         return action_result
 
 #     def observation(self, in_action_result=''):
@@ -302,11 +302,9 @@ class Tool_Agent():
 
         self.agent_desc_and_action_history += f'[观察]{in_action_result}'
 
-        print(Fore.CYAN, flush=True)
-        print(f'=============================action_history=============================', flush=True)
-        print(self.agent_desc_and_action_history, flush=True)
-        print(f'-----------------------------action_history-----------------------------', flush=True)
-        print(Style.RESET_ALL, flush=True)
+        dcyan(f'=============================action_history=============================')
+        dcyan(self.agent_desc_and_action_history)
+        dcyan(f'-----------------------------action_history-----------------------------')
         # print(f'============================prompt start============================\n')
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
 
@@ -315,7 +313,7 @@ def main():
     # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8002/v1')
     # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
 
-    tools=[Search_Tool, QA_Url_Content_Tool]
+    tools=[Search_Tool, Url_Content_QA_Tool]
     # tools=[Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
 
     # tools=[Code_Tool]
@@ -350,9 +348,9 @@ def main():
         agent.init()
         success = agent.run()
         if success:
-            print(f"\n[运行结果]成功。")
+            dblue(f"\n[运行结果]成功。")
         else:
-            print(f"\n[运行结果]失败，请进一步优化问题的描述。")
+            dred(f"\n[运行结果]失败，请进一步优化问题的描述。")
 
 def main2():
     tools=[Search_Tool]
@@ -361,9 +359,9 @@ def main2():
     agent.init()
     success = agent.run()
     if success:
-        print(f"\n[运行结果]成功。")
+        dblue(f"\n[运行结果]成功。")
     else:
-        print(f"\n[运行结果]失败，请进一步优化问题的描述。")
+        dred(f"\n[运行结果]失败，请进一步优化问题的描述。")
 
 if __name__ == "__main__":
     # main()
