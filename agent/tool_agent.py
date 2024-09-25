@@ -5,6 +5,8 @@ from utils.extract import extract_code, extract_dict_string
 from colorama import Fore, Back, Style
 # import torch
 
+from config import dred, dgreen, dblue
+
 
 class Tool_Agent():
     def __init__(self,
@@ -23,6 +25,13 @@ class Tool_Agent():
         self.tool_names=[]
 
         self.tool_classes = in_tool_classes
+        # 创建一个字典，将工具名称映射到其实例
+        self.registered_tool_instances_dict = {}
+        for tool_cls in in_tool_classes:
+            tool_instance = tool_cls()
+            tool_name = tool_cls.__name__
+            self.registered_tool_instances_dict[tool_name] = tool_instance
+
         self.human = in_human    # 是否和human交互
         self.action_stop = ['[观察]']
         self.observation_stop = ['[观察]']
@@ -213,29 +222,31 @@ class Tool_Agent():
         # print(f'=============================thoughts=============================')
         # print(in_thoughts)
         # print(f'-----------------------------thoughts-----------------------------')
+        dred(f'--------------【tool_name: "{tool_name}"】--------------')
 
-        if 'code_tool'==tool_name:
+        if 'Code_Tool'==tool_name:
             self.status_print('选择了[code_tool]')
             tool = Code_Tool()
             action_result = tool.call(in_answer)
             if action_result=='':
                 action_result = 'code_tool未输出有效信息，可能是因为调用code_tool时，输入的代码没有用print输出结果。'
             # self.status_print(f'action_result = "{action_result}"')
-        elif 'search_tool'==tool_name:
+        elif 'Search_Tool'==tool_name:
             self.status_print('选择了[search_tool]')
             tool = Search_Tool()
             action_result = tool.call(in_answer)
-        elif 'energy_investment_plan_tool'==tool_name:
+        elif 'Energy_Investment_Plan_Tool'==tool_name:
             self.status_print('选择了[energy_investment_plan_tool]')
             tool = Energy_Investment_Plan_Tool()
             action_result = tool.call(in_answer)
-        elif 'qa_url_content_tool'==tool_name:
+        elif 'QA_Url_Content_Tool'==tool_name:
             self.status_print('选择了[qa_url_content_tool]')
             tool = QA_Url_Content_Tool()
             action_result = tool.call(in_answer)
         else:
-            # self.call_other_tool(tool_name=tool_name)
-            self.status_print('未选择任何工具。')
+            if self.registered_tool_instances_dict.get(tool_name):
+                action_result = self.registered_tool_instances_dict[tool_name].call(in_answer)
+            # self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------
 
         self.status_print(f'调用工具的行动结果为: \n{action_result}')

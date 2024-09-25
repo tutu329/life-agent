@@ -241,7 +241,7 @@ class Base_Tool():
         return rtn
 
 class Energy_Investment_Plan_Tool(Base_Tool):
-    name='energy_investment_plan_tool'
+    name='Energy_Investment_Plan_Tool'
     description='''
 通过"能源投资优化系统"对风光储等能源设施进行基于线性规划的最优投资规模计算的工具.
 所输入参数必须遵循如下要求, 否则转换为dict数据时会失败:
@@ -384,7 +384,7 @@ class Energy_Investment_Plan_Tool(Base_Tool):
         return action_result
 
 class Search_Tool(Base_Tool):
-    name='search_tool'
+    name='Search_Tool'
     description='通过bing搜索引擎对query进行搜索，并返回搜索结果的工具.'
     parameters=[
         {
@@ -425,7 +425,7 @@ class Search_Tool(Base_Tool):
         return action_result
 
 class QA_Url_Content_Tool(Base_Tool):
-    name='qa_url_content_tool'
+    name='QA_Url_Content_Tool'
     description='通过提供url就能获取网页内容并对其进行QA问答的工具.'
     parameters=[
         {
@@ -468,7 +468,7 @@ class QA_Url_Content_Tool(Base_Tool):
         return action_result
 
 class Code_Tool(Base_Tool):
-    name='code_tool'
+    name='Code_Tool'
     description=\
 '''通过python进行编程的工具，该工具的具体要求包括，
 1)输入：通过参数code输入python程序，程序必须从新的一行顶格开始，编写程序时要一步一步想清楚。

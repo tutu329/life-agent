@@ -121,6 +121,7 @@ def main_agent():
     tools=[Folder_Tool]
     query = '告诉我"y:\\demo\\依据"下有哪些文件'
     agent = Tool_Agent(in_query=query, in_tool_classes=tools)
+    print(f'tools registered: {agent.registered_tool_instances_dict}')
     agent.init()
     success = agent.run()
     if success:
