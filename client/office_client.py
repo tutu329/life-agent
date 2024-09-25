@@ -97,11 +97,14 @@ class Office_Client():
         except Exception as e:
             print(f'word通信报错: "{e}"')
 
-def main():
+def report_on_plant_grid_connection_system():
     office = Office_Client()
     office.word_insert_heading_at_cursor('一、概要', '标题 1')
     office.word_insert_heading_at_cursor('1、现状', '标题 2')
     office.word_insert_llm_stream_at_cursor('我叫土土')
+
+def main():
+    report_on_plant_grid_connection_system()
     input('【结束】')
 
 if __name__ == "__main__":
