@@ -390,14 +390,18 @@ class Urls_Content_Retriever():
 
                 while retry_num < max_retry:
                     try:
-                        await page.goto(url)
                         print(f'try to goto page: "{url}" with use_proxy: "{use_proxy}" with timeout:"{timeout:.1f}ms"')
+                        await page.goto(url)
+                        # await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
+                        print('完成goto()')
                         # await page.wait_for_load_state('networkidle')
                         # await page.wait_for_load_state('networkidle', timeout=timeout)
                         # await page.wait_for_selector('.b_algo h2 a')
                         await page.wait_for_selector('.b_algo h2 a', timeout=timeout)
+                        print('完成wait_for_selector()')
                         # await page.wait_for_selector('.b_algo h2 a')
                         results_on_page = await page.query_selector_all('.b_algo h2 a')
+                        print('完成query_selector_all()')
                         # results_on_page = await page.query_selector_all('.b_algo h2 a')
                         if len(results_on_page)>0:
                             success = True
@@ -408,11 +412,12 @@ class Urls_Content_Retriever():
                         page = await context.new_page()
                         dred(f'【get_bing_search_result】 retry_num: {retry_num}')
                     except Playwright_TimeoutError as e:
+                        dred(f'【get_bing_search_result】 Playwright_TimeoutError({e})')
+                        dred(f'【get_bing_search_result】 retry_num: {retry_num}')
                         retry_num += 1
                         await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
                         # await page.reload()
                         page = await context.new_page()
-                        dred(f'【get_bing_search_result】 retry_num: {retry_num}')
 
                 if success:
                     dgreen(f'【get_bing_search_result】 success with results num: {len(results_on_page)}')
