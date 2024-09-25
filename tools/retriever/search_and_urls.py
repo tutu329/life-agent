@@ -611,7 +611,7 @@ def concurrent_contents_qa(prompt, contents_list=None, contents_dict=None, max_n
 def concurrent_search_and_qa_gen(
         prompt,
         search_keywords_string,
-        summary_style='条理清晰，以分段的总结性文字为主，每段50-100字左右，不要写成提纲或目录那种过于精炼的形式',    # llm的总结行文风格
+        summary_style='条理清晰，以分段的文字为主，每段50-100字左右，不要写成提纲或目录那种过于精炼的形式',    # llm的总结行文风格
         search_result_num=5,
         show_results_in_one_page=20,
         max_new_tokens=2048,
@@ -633,14 +633,14 @@ def concurrent_search_and_qa_gen(
     i=0
     for item in summaries:
         i += 1
-        summaries_string += f'summary[{i}]: {item} \n\n'
-    print(f'---------------------------summaries_string------------------------------')
+        summaries_string += f'content[{i}]: {item} \n\n'
+    print(f'---------------------------contents_string------------------------------')
     print(summaries_string)
     print(f'-------------------------------------------------------------------------')
 
     llm = LLM_Client()
     content_style = ''
-    final_prompt = f'请严格根据后续的【各文档总结汇总材料】和【写作风格要求】，给出最终的总结归纳：\n<各文档总结汇总材料>\n{summaries_string}\n</各文档总结汇总材料>\n\n<写作风格要求>{summary_style}</写作风格要求>'
+    final_prompt = f'请严格根据后续的【各文档汇总材料】和【写作风格要求】，回答【用户问题】：\n<各文档汇总材料>\n{summaries_string}\n</各文档汇总材料>\n\n<写作风格要求>\n{summary_style}\n</写作风格要求>\n\n<用户问题>\n{prompt}\n</用户问题>'
     # print(f'请严格根据后续的【各文档总结材料】，给出最终的总结归纳：\n<各文档总结材料>\n{summaries_string[:50]}...\n</各文档总结材料>,')
     gen = llm.ask_prepare(question=final_prompt).get_answer_generator()
 
@@ -688,7 +688,7 @@ if __name__ == '__main__':
 
     # ===搜索并QA===
     gen = concurrent_search_and_qa_gen(
-        prompt='请总结万向创新聚能城概况',
+        prompt='请根据所提供材料，总结万向创新聚能城的概况',
         search_keywords_string='万向创新聚能城',
     )
     for chunk in gen:
