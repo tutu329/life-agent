@@ -107,5 +107,6 @@ def main():
     report_on_plant_grid_connection_system()
     input('【结束】')
 
+
 if __name__ == "__main__":
     main()
