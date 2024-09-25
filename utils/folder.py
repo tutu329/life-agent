@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 
 
-def list_files(directory, mode='name'):
+def get_folder_files_list(directory, mode='name'):
     p = Path(directory)
     if not p.exists():
         print(f"错误：路径 '{directory}' 不存在。")
@@ -24,6 +24,13 @@ def list_files(directory, mode='name'):
                 files.append(item.stem)
     return files
 
+def get_folder_files_info_string(directory, mode='name'):
+    files_list = get_folder_files_list(directory=directory, mode=mode)
+    info_string = ''
+    for file_info in files_list:
+        info_string += file_info + '\n'
+
+    return info_string
 
 def main():
     parser = argparse.ArgumentParser(description="列出指定文件夹下的所有文件名。")
@@ -42,7 +49,7 @@ def main():
     else:
         mode = 'absolute'  # 默认模式
 
-    files = list_files(args.directory, mode)
+    files = get_folder_files_list(args.directory, mode)
 
     if files:
         print("文件列表：")
@@ -54,13 +61,9 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    # files = list_files('../')
-    # files = list_files('../', 'basename')
-    files = list_files('../', 'absolute')
+    files_str = get_folder_files_info_string('../')
+    # files_str = get_folder_files_info_string('../', 'basename')
+    # files_str = get_folder_files_info_string('../', 'absolute')
+    print(files_str)
 
-    if files:
-        print("文件列表：")
-        for f in files:
-            print(f)
-    else:
-        print("该文件夹下没有文件。")
+

@@ -1,7 +1,7 @@
 import re
 from config import dred, dgreen, dblue
 
-def parse_scheme(file_path):
+def get_scheme_list(file_path):
     scheme_list = []
     current_index = -1  # To keep track of the last added chapter
 
@@ -93,10 +93,9 @@ def parse_scheme(file_path):
 
     return scheme_list
 
-
 # Example usage
 if __name__ == "__main__":
     file_path = 'scheme.txt'  # Replace with the path to your scheme.txt file
-    scheme_list = parse_scheme(file_path)
+    scheme_list = get_scheme_list(file_path)
     for item in scheme_list:
         print(item)

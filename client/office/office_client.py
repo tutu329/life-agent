@@ -18,7 +18,7 @@ import requests
 import json
 
 from tools.llm.api_client import LLM_Client
-from client.office.parse_scheme import parse_scheme
+from client.office.parse_scheme import get_scheme_list
 
 @singleton
 class Office_Client():
@@ -99,7 +99,7 @@ class Office_Client():
             print(f'word通信报错: "{e}"')
 
 def report_on_plant_grid_connection_system():
-    scheme_list = parse_scheme('scheme.txt')
+    scheme_list = get_scheme_list('scheme.txt')
     for item in scheme_list:
         print(item)
 
