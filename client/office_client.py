@@ -1,3 +1,15 @@
+# VBA中调用本文件的方式
+# Dim shell As Object
+# Set shell = VBA.CreateObject("WScript.Shell")
+# ' 定义命令字符串
+# Dim command As String
+# command = "cmd.exe /c y: && cd y:\life-agent && python -m client.office_client"
+#
+# ' 执行命令
+# ‘ 1为控制台可见，2为控制台在后台，0为控制台不可见
+# shell.Run command, 1, True
+
+
 from singleton import singleton
 
 import win32com.client as win32
