@@ -18,6 +18,7 @@ import requests
 import json
 
 from tools.llm.api_client import LLM_Client
+from client.office.parse_scheme import parse_scheme
 
 @singleton
 class Office_Client():
@@ -98,6 +99,10 @@ class Office_Client():
             print(f'word通信报错: "{e}"')
 
 def report_on_plant_grid_connection_system():
+    scheme_list = parse_scheme('scheme.txt')
+    for item in scheme_list:
+        print(item)
+
     office = Office_Client()
 
     office.word_insert_heading_at_cursor('一、概要', '标题 1')
