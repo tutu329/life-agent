@@ -20,6 +20,7 @@ from client.office.parse_scheme import get_scheme_list
 
 from agent.tool_agent import Tool_Agent
 from agent.tools.folder_tool import Folder_Tool
+from agent.tools.search_tool import Search_Tool
 
 from config import dred, dgreen, dblue, dcyan
 
@@ -118,8 +119,9 @@ def main():
 
 
 def main_agent():
-    tools=[Folder_Tool]
-    query = '告诉我"D:\\ComfyUI\\models\\checkpoints"下有哪些文件'
+    tools=[Folder_Tool, Search_Tool]
+    # query = '告诉我"D:\\ComfyUI\\models\\checkpoints"下有哪些文件'
+    query = '搜索网络告诉我"万向创新聚能城"的概况'
     # query = '告诉我"y:\\demo\\依据"下有哪些文件'
     agent = Tool_Agent(in_query=query, in_tool_classes=tools)
     print(f'tools registered: {agent.registered_tool_instances_dict}')
