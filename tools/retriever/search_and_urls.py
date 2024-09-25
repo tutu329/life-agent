@@ -26,6 +26,7 @@ from playwright.async_api import TimeoutError as Playwright_TimeoutError
 # 提供User-Agent的模拟数据
 from fake_useragent import UserAgent    # pip install fake-useragent
 
+from tools.llm.api_client import Concurrent_LLMs
 
 @dataclass
 class Text_and_Media():
@@ -574,6 +575,20 @@ url1 = 'https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
 url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe57fec/c.html'
 url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
 url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
+
+def concurrent_contents_qa(contents):
+    llms = Concurrent_LLMs(in_url=in_api_url)
+    num = len(contents)
+    llms.init(
+        in_max_new_tokens=in_max_new_tokens,
+        in_prompts=[in_prompt]*num,
+        in_contents=in_contents,
+        in_content_short_enough=in_content_short_enough,
+        # in_stream_buf_callbacks=None,
+    )
+    status = llms.start_and_get_status()
+    results = llms.wait_all(status)
+    summaries = results['llms_full_responses']
 
 if __name__ == '__main__':
     url1='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'

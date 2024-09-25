@@ -70,7 +70,8 @@ def status_to_redis(in_status: LLM_Client_Status):
 
 
 class LLM_Client:
-    LLM_SERVER = 'http://127.0.0.1:8001/v1/'
+    LLM_SERVER = config.LLM_Default.url
+    # LLM_SERVER = 'http://127.0.0.1:8001/v1/'
     def __init__(self,
                  history=None,
                  history_max_turns=config.Global.llm_max_chat_turns,
@@ -799,7 +800,8 @@ class Async_LLM:
     
 # 通过多个llm的client，对model进行并发访问，同步返回多个stream
 class Concurrent_LLMs:
-    def __init__(self, in_url='http://127.0.0.1:8001/v1/'):
+    def __init__(self, in_url=config.LLM_Default.url):
+    # def __init__(self, in_url='http://127.0.0.1:8001/v1/'):
         self.prompts = []
         self.role_prompts = []
         self.contents = []
