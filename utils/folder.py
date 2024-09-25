@@ -4,8 +4,16 @@ import argparse
 from pathlib import Path
 
 
+# 获取某个文件夹下所有文件的文件名信息list，directory可以是绝对路径或相对路径
 def get_folder_files_list(directory, mode='name'):
+    # 获取当前工作目录
+    current_directory = os.getcwd()
+    # 打印当前工作目录
+    print(f'【get_folder_files_list()】当前工作目录是："{current_directory}"')
+
     p = Path(directory)
+    print(f'【get_folder_files_list()】输入的目录是: "{p.absolute()}"')
+
     if not p.exists():
         print(f"错误：路径 '{directory}' 不存在。")
         sys.exit(1)
@@ -24,6 +32,7 @@ def get_folder_files_list(directory, mode='name'):
                 files.append(item.stem)
     return files
 
+# 获取某个文件夹下所有文件的文件名信息string，directory可以是绝对路径或相对路径
 def get_folder_files_info_string(directory, mode='name'):
     files_list = get_folder_files_list(directory=directory, mode=mode)
     info_string = ''
@@ -61,7 +70,8 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    files_str = get_folder_files_info_string('../')
+    files_str = get_folder_files_info_string('y:\\demo\\依据')
+    # files_str = get_folder_files_info_string('../')
     # files_str = get_folder_files_info_string('../', 'basename')
     # files_str = get_folder_files_info_string('../', 'absolute')
     print(files_str)
