@@ -3,7 +3,7 @@
 # Set shell = VBA.CreateObject("WScript.Shell")
 # ' 定义命令字符串
 # Dim command As String
-# command = "cmd.exe /c y: && cd y:\life-agent && python -m client.office_client"
+# command = "cmd.exe /c y: && cd y:\life-agent && python -m client.office.office_client"
 #
 # ' 执行命令
 # ‘ 1为控制台可见，2为控制台在后台，0为控制台不可见
