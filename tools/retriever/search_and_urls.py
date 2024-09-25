@@ -379,15 +379,19 @@ class Urls_Content_Retriever():
                 url = f"https://www.bing.com/search?q={query}&count={show_results_in_one_page}&first={start}"
 
                 timeout = show_results_in_one_page/30*Global.playwright_bing_search_time_out
-                print(f'try to goto page: "{url}" with use_proxy: "{use_proxy}" with timeout:"{timeout:.1f}ms"')
 
                 retry_num = 0
                 results_on_page = None
                 success = False
                 page = await context.new_page()
+                await page.set_extra_http_headers({
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+                })
+
                 while retry_num < max_retry:
                     try:
                         await page.goto(url)
+                        print(f'try to goto page: "{url}" with use_proxy: "{use_proxy}" with timeout:"{timeout:.1f}ms"')
                         # await page.wait_for_load_state('networkidle')
                         # await page.wait_for_load_state('networkidle', timeout=timeout)
                         # await page.wait_for_selector('.b_algo h2 a')
