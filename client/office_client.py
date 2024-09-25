@@ -49,11 +49,18 @@ class Office_Client():
         selected_text = selection.Text
         return selected_text
 
-    def word_update_text(self, new_text):
+    def word_update_selected_text(self, new_text):
         selection = self.word.Selection
         selection.Text = new_text
 
-    def word_insert_text_at_cursor(self, prompt):
+    def word_insert_heading_at_cursor(self, heading, style='标题 1'):
+        selection = self.word.Selection
+
+        selection.Style = style         # 使用Word的内置样式名称（中文版本）
+        selection.TypeText(heading)     # 如：'一、概述'
+        selection.TypeParagraph()       # 插入段落符
+
+    def word_insert_llm_stream_at_cursor(self, prompt):
         try:
             # 可选：使Word应用程序可见，便于调试
             self.word.Visible = True
@@ -61,20 +68,10 @@ class Office_Client():
             # 获取当前的选区
             selection = self.word.Selection
 
-            # 1）插入 '一、概述'，样式为一级标题
-            selection.Style = '标题 1'  # 使用Word的内置样式名称（中文版本）
-            selection.TypeText('一、概述')
-            selection.TypeParagraph()  # 插入段落符
-
-            # 2）插入 '1、总体情况'，样式为二级标题
-            selection.Style = '标题 2'
-            selection.TypeText('1、总体情况')
-            selection.TypeParagraph()
-
-            # 3）插入 '正文’ ，样式为正文
+            # 插入 '正文’ ，样式为正文
             selection.Style = '！正文'
-            # 在光标位置插入新文本
 
+            # 在光标位置插入新文本
             gen = self.llm.ask_prepare(question=prompt).get_answer_generator()
             for chunk in gen:
                 selection.TypeText(chunk)
@@ -90,7 +87,10 @@ class Office_Client():
 
 def main():
     office = Office_Client()
-    office.word_insert_text_at_cursor('我叫土土')
+    office.word_insert_heading_at_cursor('一、概要', '标题 1')
+    office.word_insert_heading_at_cursor('1、现状', '标题 2')
+    office.word_insert_llm_stream_at_cursor('我叫土土')
+    input('【结束】')
 
 if __name__ == "__main__":
     main()
