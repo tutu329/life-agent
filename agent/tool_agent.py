@@ -50,6 +50,7 @@ class Tool_Agent():
         self.output_list = inout_output_list     # 输出历史
 
         self.__finished_keyword = '最终答复'
+        self.final_answer = ''
 
     # 最终结果输出
     def output_print(self, in_string):
@@ -111,11 +112,15 @@ class Tool_Agent():
 
         self.agent_desc_and_action_history = self.agent_desc_and_action_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
 
+    def get_final_answer(self):
+        return self.final_answer
+
     def run(self, in_max_retry=5):
         for i in range(in_max_retry):
             # 1、思考
             answer_this_turn = self.thinking()
             if self.__finished_keyword in answer_this_turn:
+                self.final_answer = answer_this_turn
                 return True
 
             # if i>0:
@@ -131,6 +136,7 @@ class Tool_Agent():
             # 3、观察
             self.observation(in_action_result=action_result)
 
+        self.final_answer = '未能成功答复，请重试。'
         return False
 
     def _thoughts_stream_output(self, gen):
@@ -362,6 +368,8 @@ def main2():
         dblue(f"\n[运行结果]成功。")
     else:
         dred(f"\n[运行结果]失败，请进一步优化问题的描述。")
+    print(f'最终答复:')
+    print(agent.get_final_answer())
 
 if __name__ == "__main__":
     # main()

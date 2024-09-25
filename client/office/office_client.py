@@ -129,6 +129,8 @@ def main_agent():
         dblue(f"\n[运行结果]成功。")
     else:
         dred(f"\n[运行结果]失败，请进一步优化问题的描述。")
+    print(f'最终答复:')
+    print(agent.get_final_answer())
 
 if __name__ == "__main__":
     # main()
