@@ -27,6 +27,7 @@ from playwright.async_api import TimeoutError as Playwright_TimeoutError
 from fake_useragent import UserAgent    # pip install fake-useragent
 
 from tools.llm.api_client import Concurrent_LLMs
+from tools.llm.api_client import LLM_Client
 
 @dataclass
 class Text_and_Media():
@@ -576,19 +577,74 @@ url2 = 'http://www.news.cn/politics/leaders/20240703/3f5d23b63d2d4cc88197d409bfe
 url3 = 'http://www.news.cn/politics/leaders/20240613/a87f6dec116d48bbb118f7c4fe2c5024/c.html'
 url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
 
-def concurrent_contents_qa(contents):
-    llms = Concurrent_LLMs(in_url=in_api_url)
+
+# 对[content1, content2, ...]或{'url1':'content1', 'url2':'content2', ...}的所有contents进行并发QA
+def concurrent_contents_qa(prompt, contents_list=None, contents_dict=None, max_new_tokens=2048):
+    llms = Concurrent_LLMs()
+    contents = contents_list
+
+    if contents is not None:
+        # 输入为list
+        pass
+    elif contents_dict is not None:
+        # 输入为dict
+        contents = []
+        for k,v in contents_dict.items():
+            contents.append(v)
+
     num = len(contents)
     llms.init(
-        in_max_new_tokens=in_max_new_tokens,
-        in_prompts=[in_prompt]*num,
-        in_contents=in_contents,
-        in_content_short_enough=in_content_short_enough,
+        in_max_new_tokens=max_new_tokens,
+        in_prompts=[prompt] * num,
+        in_contents=contents,
+        # in_content_short_enough=in_content_short_enough,
         # in_stream_buf_callbacks=None,
     )
+
     status = llms.start_and_get_status()
     results = llms.wait_all(status)
     summaries = results['llms_full_responses']
+
+    return summaries
+
+# 联网搜索并根据结果QA
+def concurrent_search_and_qa_gen(
+        prompt,
+        search_keywords_string,
+        summary_style='条理清晰，以分段的总结性文字为主，每段50-100字左右，不要写成提纲或目录那种过于精炼的形式',    # llm的总结行文风格
+        search_result_num=5,
+        show_results_in_one_page=20,
+        max_new_tokens=2048,
+        use_proxy=False
+):
+    result_url_list = get_bing_search_result(query=search_keywords_string, result_num=search_result_num, show_results_in_one_page=show_results_in_one_page, use_proxy=use_proxy)
+    for i, item in enumerate(result_url_list):
+        print(f"{i+1:>2d}) {item}")
+    dict = get_urls_text(result_url_list)
+
+    summaries = concurrent_contents_qa(
+        prompt=prompt,
+        contents_dict=dict,
+        max_new_tokens=max_new_tokens,
+    )
+
+    # 汇总每一个content的summary
+    summaries_string = ''
+    i=0
+    for item in summaries:
+        i += 1
+        summaries_string += f'summary[{i}]: {item} \n\n'
+    print(f'---------------------------summaries_string------------------------------')
+    print(summaries_string)
+    print(f'-------------------------------------------------------------------------')
+
+    llm = LLM_Client()
+    content_style = ''
+    final_prompt = f'请严格根据后续的【各文档总结汇总材料】和【写作风格要求】，给出最终的总结归纳：\n<各文档总结汇总材料>\n{summaries_string}\n</各文档总结汇总材料>\n\n<写作风格要求>{summary_style}</写作风格要求>'
+    # print(f'请严格根据后续的【各文档总结材料】，给出最终的总结归纳：\n<各文档总结材料>\n{summaries_string[:50]}...\n</各文档总结材料>,')
+    gen = llm.ask_prepare(question=final_prompt).get_answer_generator()
+
+    return gen
 
 if __name__ == '__main__':
     url1='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
@@ -611,10 +667,32 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
-    # ===获取bing搜索结果===
-    result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=50, use_proxy=False)
-    for i, item in enumerate(result_url_list):
-        print(f"{i+1:>2d}) {item}")
+    # # ===获取bing搜索结果===
+    # result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=50, use_proxy=False)
+    # for i, item in enumerate(result_url_list):
+    #     print(f"{i+1:>2d}) {item}")
+
+    # ===获取多个urls对应的所有文本===
+    # result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=2, show_results_in_one_page=20, use_proxy=False)
+    # for i, item in enumerate(result_url_list):
+    #     print(f"{i+1:>2d}) {item}")
+    # dict = get_urls_text(result_url_list)
+    #
+    # summaries = concurrent_contents_qa(
+    #     prompt='请总结万向创新聚能城概况',
+    #     contents_dict=dict,
+    #     max_new_tokens=2048
+    # )
+    # for item in summaries:
+    #     print(item)
+
+    # ===搜索并QA===
+    gen = concurrent_search_and_qa_gen(
+        prompt='请总结万向创新聚能城概况',
+        search_keywords_string='万向创新聚能城',
+    )
+    for chunk in gen:
+        print(chunk, end='', flush=True)
 
     # ===获取bing搜索结果对应url的所有content===
     # url_list = get_bing_search_result(query='万向创新聚能城', result_num=1, show_results_in_one_page=20, use_proxy=False)
