@@ -13,7 +13,7 @@ from streamlit.runtime.scriptrunner import add_script_run_ctx
 import config
 from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
-from utils.string_util import str_remove_partial_stops
+from utils.string_util import str_remove_partial_substring
 
 from config import dred, dgreen
 
@@ -626,7 +626,7 @@ class LLM_Client:
 
                     if self.stop:
                         # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
-                        answer_no_partial_stop = str_remove_partial_stops(answer, self.stop)
+                        answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
 
                         # print(f'answer1: {answer}')
                         # print(f'answer2: {answer_no_partial_stop}')

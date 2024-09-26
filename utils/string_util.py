@@ -50,7 +50,7 @@ def _str_remove_partial_stop(str, stop):
 
     return str
 
-def str_remove_partial_stops(str, stops):
+def str_remove_partial_substring(str, stops):
     str1 = str
     # print(f'str: "{str}"')
     min_str = str1
@@ -68,16 +68,17 @@ def str_replace_multiple_newlines_with_one_newline(text):
 
 def main():
     # str1 = "['search_tool','code_tool','energy_investment_plan_tool','qa_url_content_tool'] 。aaaaaaa 'search_tool' stopfabc> </stop1[结束<res_stop>【结束<stop>1"
-    str1 = "['search_tool', 'code_tool', 'energy_investment_plan_tool', 'qa"
-    # str1 = "aaaaaaa stopfabc><stop1<stop1【结束[结束]"
-    str2 = "<stop>"
+    # str1 = "['search_tool', 'code_tool', 'energy_investment_plan_tool', 'qa"
+    str1 = "aaaaaaa stopfabc><stop1<stop1【结束[结束]"
+    # str2 = "<stop>"
     # str2 = "【结束】"
-    # stops = ['<stop>', '[结束]', '【结束】', '</s>', '<res_stop>']
-    stops = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', '<step>', '<结束>']
+    # str2 = "[结束]"
+    stops = ['<stop>', '[结束]', '【结束】', '</s>', '<res_stop>']
+    # stops = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', '<step>', '<结束>']
 
     print('str :', str1)  # Output: <stop
 
-    print('fout:', str_remove_partial_stops(str1, stops))
+    print('fout:', str_remove_partial_substring(str1, stops))
 
 
 if __name__ == "__main__" :
