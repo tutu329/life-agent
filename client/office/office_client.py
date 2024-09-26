@@ -92,6 +92,26 @@ class Office_Client():
     def _word_status_wrong(self):
         return not self.status_ok
 
+    def word_insert_image_at_cursor(self, image_path):
+        if image_path =='' or self._word_status_wrong():
+            return
+
+        selection = self.word.Selection
+
+        # 插入图片
+        selection.InlineShapes.AddPicture(
+            FileName=image_path,
+            LinkToFile=False,  # 设置为 True 如果你希望图片链接到文件，而不是嵌入
+            SaveWithDocument=True  # 设置为 True 以便将图片保存到文档中
+        )
+
+        # 可选：调整图片大小（例如，宽度为 300 点，高度按比例调整）
+        inline_shape = selection.InlineShapes(1)  # 获取刚插入的图片
+        inline_shape.LockAspectRatio = True
+        inline_shape.Width = 300  # 设置宽度为300点
+
+        selection.TypeParagraph()  # 插入段落符，继续后续操作
+
     def word_insert_heading_at_cursor(self, heading, style='标题 1'):
         if heading=='' or style=='' or self._word_status_wrong():
             return
