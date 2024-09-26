@@ -95,8 +95,11 @@ class Global():
         "server": "http://127.0.0.1:10809", # windows
         # "server": "http://127.0.0.1:7890",
     }
-    playwright_bing_search_time_out = 10000              # 超时设置ms
+    playwright_bing_search_time_out = 2000              # 超时设置ms
+    playwright_bing_search_max_retry = 5                # 超时retry次数，主要解决chrome打开bing.com后卡死问题
     playwright_get_url_content_time_out = 5000          # 超时设置ms
+    concurrent_contents_qa_length_limit = 5000          # 设置并发QA长文档的单个文档长度，以8卡qwen2.5-72b-int4为考虑
+
     html_main_text_tags = [
         'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         # 'p', 'span', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',

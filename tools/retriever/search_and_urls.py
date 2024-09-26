@@ -4,6 +4,8 @@ import json5 as json
 import asyncio
 import re
 from typing import List
+
+import config
 from singleton import singleton
 import platform
 
@@ -366,7 +368,7 @@ class Urls_Content_Retriever():
 
         return '\n'.join(extracted_text_list), extracted_content_list
 
-    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50, max_retry=1):
+    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50, max_retry=1):    # 这里retry没用，需要在上一层retry
         result_url_list = []
 
         # 获得context
@@ -399,7 +401,7 @@ class Urls_Content_Retriever():
                         # await page.wait_for_load_state('networkidle')
                         # await page.wait_for_load_state('networkidle', timeout=timeout)
                         # await page.wait_for_selector('.b_algo h2 a')
-                        await page.wait_for_selector('.b_algo h2 a', timeout=2000)
+                        await page.wait_for_selector('.b_algo h2 a', timeout=config.Global.playwright_bing_search_time_out)     # timeout=2000ms
                         print('完成wait_for_selector()')
                         # await page.wait_for_selector('.b_algo h2 a')
                         results_on_page = await page.query_selector_all('.b_algo h2 a')
@@ -484,7 +486,7 @@ def get_urls_text(urls, use_proxy=False)->dict:
     return results_text_dict
 
 # 同步：获取bing的搜索结果
-def get_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50, max_retry=3):
+def get_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50, max_retry=config.Global.playwright_bing_search_max_retry):
     retry = 0
     while retry<max_retry:
         ret = Urls_Content_Retriever()
@@ -591,6 +593,8 @@ def concurrent_contents_qa(prompt, contents_list=None, contents_dict=None, max_n
     llms = Concurrent_LLMs()
     contents = contents_list
 
+    dred(f'多文档并发QA中单个文档长度限制为: {config.Global.concurrent_contents_qa_length_limit}')
+
     if contents is not None:
         # 输入为list
         pass
@@ -598,7 +602,8 @@ def concurrent_contents_qa(prompt, contents_list=None, contents_dict=None, max_n
         # 输入为dict
         contents = []
         for k,v in contents_dict.items():
-            contents.append(v)
+            # 设置并发QA长文档的单个文档长度，以8卡qwen2.5-72b-int4为考虑
+            contents.append(v[:config.Global.concurrent_contents_qa_length_limit])
 
     num = len(contents)
     llms.init(
