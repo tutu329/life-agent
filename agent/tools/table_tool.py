@@ -1,8 +1,9 @@
 import win32com.client as win32
+from win32com.client import constants
 import os
 import re
 
-def extract_table_to_word(excel_path, sheet_name, word_path=None):
+def extract_table_to_word(excel_path, sheet_name, table_title='', word_path=None):
     """
     从指定的 Excel 文件和工作表中提取表格数据，并将其以文本形式复制到 Word 中，
     根据每个单元格的 NumberFormat 格式化数值，包括百分数格式。
@@ -68,12 +69,12 @@ def extract_table_to_word(excel_path, sheet_name, word_path=None):
                 else:
                     cell_str = str(cell_value)
                 row_data.append(cell_str)
-            data.append("\t".join(row_data))  # 使用制表符分隔列
+
+            # [row_data的string, row_data]
+            data.append(["\t".join(row_data), row_data])
 
         # 将数据转换为单一的文本字符串，每行以换行符分隔
-        table_text = "\n".join(data)
-        print(data[0])
-        print(len(data[0]))
+        table_text = "\n".join([item[0] for item in data])
 
     except Exception as e:
         print(f"在处理 Excel 文件时出错: {e}")
@@ -92,37 +93,60 @@ def extract_table_to_word(excel_path, sheet_name, word_path=None):
 
         # 获取表格的行数和列数
         num_rows = len(data)
-        num_cols = len(data[0]) if num_rows > 0 else 0
+        num_cols = len(data[0][1])
+        # num_cols = len(data[0]) if num_rows > 0 else 0
 
         if num_rows == 0 or num_cols == 0:
             print("警告: 提取到的表格数据为空。")
             return
 
-        # 插入表格
-        print(f'----------num_rows:{num_rows}----------')
-        print(f'----------num_cols:{num_cols}----------')
-        table = selection.Tables.Add(selection.Range, num_rows, num_cols)
-        # table = doc.Tables.Add(selection.Range, num_rows, num_cols)
-        table.Style = "Table Grid"  # 设置基本样式
+        # Step 1: 在当前位置插入分节符（下一页）
+        selection.InsertBreak(constants.wdSectionBreakNextPage)
 
+        # Step 2.1: 添加表头
+        selection.TypeText(f'{table_title}')
+        # 存储当前对齐方式
+        previous_alignment = selection.ParagraphFormat.Alignment
+        # 设置段落居中对齐
+        selection.ParagraphFormat.Alignment = win32.constants.wdAlignParagraphCenter
 
+        # Step 2.2: 添加表格
+        table = selection.Tables.Add(Range=selection.Range, NumRows=num_rows, NumColumns=num_cols)
+
+        # 设置当前节的页面方向为横向
+        selection.Sections(1).PageSetup.Orientation = constants.wdOrientLandscape
+
+        # Step 3: 在表格后插入另一个分节符（下一页）
+        # 将光标移动到表格末尾
+        selection.EndKey(Unit=6)  # 6 表示 wdStory，移动到文档末尾
+
+        # 插入分节符
+        selection.InsertBreak(constants.wdSectionBreakNextPage)
+        # 设置新节的页面方向为纵向
+        selection.Sections(1).PageSetup.Orientation = constants.wdOrientPortrait
 
         # 填充表格数据
-        for i in range(num_rows):
-            for j in range(num_cols):
-                cell = table.Cell(i + 1, j + 1)
-                cell.Range.Text = data[i][j]
+        try:
+            for i in range(num_rows):
+                for j in range(num_cols):
+                    cell = table.Cell(i + 1, j + 1)
+                    cell.Range.Text = data[i][1][j]
+        except Exception as e:
+            print(f'表格创建出错: {e}')
 
         # 设置表格边框
         set_table_borders(table)
 
         # 自动调整表格以适应内容
-        table.AutoFitBehavior(0)  # wdAutoFitContent
+        # Behavior 参数可以是以下值之一：
+        # 0 或 win32com.client.constants.wdAutoFitFixed：固定列宽，不自动调整。
+        # 1 或 win32com.client.constants.wdAutoFitContent：根据内容自动调整列宽。
+        # 2 或 win32com.client.constants.wdAutoFitWindow：自动调整表格宽度以适应窗口（页面）宽度。
+        table.AutoFitBehavior(2)  # Behavior = 2
+        selection.EndKey(Unit=6)  # 6 表示 wdStory，移动到文档末尾
 
-        print("表格已成功插入到 Word 文档中。")
-
-        # 可选：将光标移到表格之后
-        selection.Collapse(Direction=0)  # wdCollapseEnd
+        # 设置段落居中对齐
+        selection.ParagraphFormat.Alignment = previous_alignment
 
     return table_text
 
@@ -136,14 +160,26 @@ def set_table_borders(table):
     constants = win32.constants
 
     # 设置内部边框为细线
-    for border in ['InsideHorizontal', 'InsideVertical']:
-        setattr(table.Borders, border, constants.wdLineStyleSingle)
-        table.Borders(border).LineWidth = constants.wdLineWidth025pt  # 细线
+    table.Borders(constants.wdBorderHorizontal).LineStyle = constants.wdLineStyleSingle
+    table.Borders(constants.wdBorderHorizontal).LineWidth = constants.wdLineWidth025pt  # 细线
+
+    table.Borders(constants.wdBorderVertical).LineStyle = constants.wdLineStyleSingle
+    table.Borders(constants.wdBorderVertical).LineWidth = constants.wdLineWidth025pt  # 细线
 
     # 设置外边框为粗线
-    for border in ['Top', 'Bottom', 'Left', 'Right']:
-        setattr(table.Borders, border, constants.wdLineStyleSingle)
-        table.Borders(border).LineWidth = constants.wdLineWidth150pt  # 粗线
+    table.Borders(constants.wdBorderTop).LineStyle = constants.wdLineStyleSingle
+    table.Borders(constants.wdBorderTop).LineWidth = constants.wdLineWidth150pt  # 粗线
+
+    table.Borders(constants.wdBorderBottom).LineStyle = constants.wdLineStyleSingle
+    table.Borders(constants.wdBorderBottom).LineWidth = constants.wdLineWidth150pt  # 粗线
+
+    table.Borders(constants.wdBorderLeft).LineStyle = constants.wdLineStyleSingle
+    table.Borders(constants.wdBorderLeft).LineWidth = constants.wdLineWidth150pt  # 粗线
+
+    table.Borders(constants.wdBorderRight).LineStyle = constants.wdLineStyleSingle
+    table.Borders(constants.wdBorderRight).LineWidth = constants.wdLineWidth150pt  # 粗线
+
+
 
 def get_decimal_places_and_percentage(number_format):
     """
@@ -170,8 +206,9 @@ def get_decimal_places_and_percentage(number_format):
 
 # 使用示例
 if __name__ == "__main__":
-    excel_file = 'y:/demo/负荷及平衡.xlsx'        # Excel 文件路径
+    excel_file = 'd:/demo/负荷及平衡.xlsx'        # Excel 文件路径
+    # excel_file = 'y:/demo/负荷及平衡.xlsx'        # Excel 文件路径
     sheet = '负荷预测'                          # 工作表名称
     word_file = 'output.docx'                   # 输出的 Word 文件路径（可选）
 
-    print(extract_table_to_word(excel_file, sheet, word_file))
+    print(extract_table_to_word(excel_file, sheet, table_title='负荷预测表', word_path=word_file ))
