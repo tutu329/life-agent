@@ -24,7 +24,7 @@ from agent.tool_agent import Tool_Agent
 from agent.tools.folder_tool import Folder_Tool
 from agent.tools.search_tool import Search_Tool
 
-from config import dred, dgreen, dblue, dcyan
+from config import dred, dgreen, dblue, dcyan, dyellow
 
 @singleton
 class Office_Client():
@@ -113,6 +113,21 @@ class Office_Client():
         selection.TypeText(text)
         selection.TypeParagraph()
 
+    def word_insert_text_at_cursor_without_end(self, text, style='！正文'):
+        if text == '' or style == '' or self._word_status_wrong():
+            return
+
+        selection = self.word.Selection
+        selection.Style = style
+        selection.TypeText(text)
+
+    def word_insert_text_end_at_cursor(self):
+        if self._word_status_wrong():
+            return
+
+        selection = self.word.Selection
+        selection.TypeParagraph()
+
     def word_insert_llm_stream_at_cursor(self, prompt):
         if self._word_status_wrong():
             return
@@ -168,9 +183,18 @@ def _get_chapter_info(scheme_item) -> Chapter_Info:
         return Chapter_Info()
 
 # 初始化和调用agent
-def _ask_agent(prompt) -> str:
+def _ask_agent(
+        prompt,
+        output_stream_buf=dyellow,
+        output_stream_end_func=None,
+) -> str:
     tools = [Folder_Tool, Search_Tool]
-    agent = Tool_Agent(in_query=prompt, in_tool_classes=tools)
+    agent = Tool_Agent(
+        in_query=prompt,
+        in_tool_classes=tools,
+        in_output_stream_buf=output_stream_buf,     # 最终输出 -> dyellow
+        in_output_end=output_stream_end_func,
+    )
     dblue(f'tools registered: {agent.registered_tool_instances_dict}')
 
     agent.init()
@@ -206,8 +230,12 @@ def report_on_plant_grid_connection_system():
         if chapter_info.prompt!='':
             # 编写正文
             prompt = chapter_info.prompt
-            result = _ask_agent(prompt)
-            office.word_insert_text_at_cursor(text=result)
+            result = _ask_agent(
+                prompt,
+                output_stream_buf = office.word_insert_text_at_cursor_without_end,
+                output_stream_end_func = office.word_insert_text_end_at_cursor
+            )
+            # office.word_insert_text_at_cursor(text=result)
 
     # office.word_insert_heading_at_cursor('一、概要', '标题 1')
     # office.word_insert_heading_at_cursor('1、现状', '标题 2')

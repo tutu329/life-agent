@@ -52,6 +52,9 @@ def dblue(*args, **kwargs):
 def dcyan(*args, **kwargs):
     _dcolor(Fore.CYAN, *args, **kwargs)
 
+def dyellow(*args, **kwargs):
+    _dcolor(Fore.YELLOW, *args, **kwargs)
+
 # 用于控制prompt长度的参数
 @dataclass
 class Prompt_Limitation():

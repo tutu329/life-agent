@@ -4,7 +4,7 @@ from agent.base_tool import Base_Tool
 from utils.extract import extract_code, extract_dict_string
 from colorama import Fore, Back, Style
 
-from config import dred, dgreen, dblue, dcyan
+from config import dred, dgreen, dblue, dcyan, dyellow
 
 from agent.tools.code_tool import Code_Tool
 from agent.tools.energy_investment_plan_tool import Energy_Investment_Plan_Tool
@@ -18,7 +18,10 @@ class Tool_Agent():
                  in_tool_classes,
                  in_human=True,
                  inout_status_list=None,
-                 in_output_stream_buf=None,
+                 in_output_stream_buf=None, # 最终答复stream输出的func
+                 in_output_end=None,        # 最终答复输出end的func
+                 in_output_stream_to_console=False, # 最终答复是否stream输出到console
+                 in_output_stream_use_chunk=True,   # 最终答复stream输出是否采用chunk方式，还是full_string方式
                  inout_output_list=None,
                  in_status_stream_buf=None,
                  ):
@@ -43,8 +46,11 @@ class Tool_Agent():
         # self.response_stop = ['<结束>']
         # self.response_stop = ['<res_stop>']
 
-        self.ostream = in_output_stream_buf   # 最终结果输出的stream
-        self.sstream = in_status_stream_buf   # 中间状态输出的stream
+        self.ostream_func = in_output_stream_buf            # 最终结果stream输出的的func
+        self.ostream_end_func = in_output_end               # 最终结果stream输出的end的func
+        self.ostream_use_chunk = in_output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
+        self.output_stream_to_console = in_output_stream_to_console
+        self.sstream = in_status_stream_buf                 # 中间状态输出的stream
 
         self.status_list = inout_status_list     # 状态历史
         self.output_list = inout_output_list     # 输出历史
@@ -54,8 +60,8 @@ class Tool_Agent():
 
     # 最终结果输出
     def output_print(self, in_string):
-        if self.ostream is not None:
-            self.ostream(in_string)
+        if self.ostream_func is not None:
+            self.ostream_func(in_string)
 
             if self.output_list is not None:
                 self.output_list.append(in_string)
@@ -72,12 +78,15 @@ class Tool_Agent():
         else:
             print(in_string)
 
-    # 最终结果stream输出
-    def output_stream(self, in_chunk, in_full_response):
-        if self.ostream is not None:
-            self.ostream(in_full_response)
-        else:
-            print(in_chunk, end='', flush=True)
+    # 最终结果stream输出full_string
+    def output_stream_full_string(self, in_full_response):
+        if self.ostream_func is not None:
+            self.ostream_func(in_full_response)
+
+    # 最终结果stream输出chunk，注意：要确保chunk中没有'[最终答复]'或'终答复]'
+    def output_stream_chunk(self, chunk, **kwargs):
+        if self.ostream_func is not None:
+            self.ostream_func(chunk, **kwargs)
 
     # 中间状态stream输出(注意：streamlit的status不支持stream输出，只能打印)
     def status_stream(self, in_chunk, in_full_response):
@@ -147,14 +156,33 @@ class Tool_Agent():
     def _thoughts_stream_output(self, gen):
         thoughts = ''
         thoughts_copy_to_print = ''
+
         # stream输出
+        str_last_turn = ''
         for chunk in gen:
             thoughts +=chunk
             thoughts_copy_to_print +=chunk
-            if self.__finished_keyword in thoughts:
+            if f'[{self.__finished_keyword}]' in thoughts:
                 # 最终结果stream输出
-                self.output_stream(chunk, thoughts)
-                # self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
+                if self.ostream_use_chunk:
+                    # 采用chunk输出，chunk = string_this_turn - string_last_turn
+                    str_this_turn = thoughts.split(f'[{self.__finished_keyword}]')[-1]
+                    # dyellow(f'-----> "{str_this_turn}"')
+                    if self.output_stream_to_console:
+                        # 输出到console
+                        self.output_stream_chunk(
+                            str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn ,
+                            end='',
+                            flush=True
+                        )
+                    else:
+                        # 输出到如word文档中
+                        self.output_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
+                    str_last_turn = str_this_turn
+                else:
+                    # 采用full_string输出
+                    self.output_stream_full_string(thoughts)
+                    # self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
             else:
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
                 # self.status_stream(chunk, thoughts)
@@ -170,6 +198,10 @@ class Tool_Agent():
                     l = thoughts_copy_to_print.split('\n\n')
                     l.pop(0)
                     thoughts_copy_to_print = '\n\n'.join(l)    # 这里用' '.join而不用'\n'.join是为了防止streamlit中status.markdown额外输出\n
+
+        # stream输出最后的end
+        if self.ostream_end_func:
+            self.ostream_end_func()
 
         # 添加输出历史
         if self.__finished_keyword in thoughts:
@@ -376,6 +408,19 @@ def main2():
     print(f'最终答复:')
     print(agent.get_final_answer())
 
+def main3():
+    tools=[Folder_Tool]
+    query = '请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+    agent = Tool_Agent(
+        in_query=query,
+        in_tool_classes=tools,
+        in_output_stream_buf=dyellow,
+        in_output_stream_to_console=True,
+    )
+    agent.init()
+    success = agent.run()
+
 if __name__ == "__main__":
     # main()
-    main2()
+    # main2()
+    main3()
