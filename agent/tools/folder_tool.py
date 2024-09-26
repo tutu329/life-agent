@@ -31,7 +31,8 @@ class Folder_Tool(Base_Tool):
         dir = dict['tool_parameters']['dir']
 
         # 调用工具
-        files_str = get_folder_files_info_string(directory=dir, mode='basename')
+        files_str = get_folder_files_info_string(directory=dir, mode='name')
+        # files_str = get_folder_files_info_string(directory=dir, mode='basename')
 
         # 调用工具后，结果作为action_result返回
         action_result = files_str
