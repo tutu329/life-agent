@@ -115,12 +115,17 @@ class Tool_Agent():
     def get_final_answer(self):
         return self.final_answer
 
+    def _parse_final_answer(self, answer):
+        # self.__finished_keyword = '最终答复'
+        # 去掉'[最终答复]'及之前的内容
+        self.final_answer = answer.split(f'[{self.__finished_keyword}]')[-1]
+
     def run(self, in_max_retry=5):
         for i in range(in_max_retry):
             # 1、思考
             answer_this_turn = self.thinking()
             if self.__finished_keyword in answer_this_turn:
-                self.final_answer = answer_this_turn
+                self._parse_final_answer(answer_this_turn)
                 return True
 
             # if i>0:
