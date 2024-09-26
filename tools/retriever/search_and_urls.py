@@ -366,7 +366,7 @@ class Urls_Content_Retriever():
 
         return '\n'.join(extracted_text_list), extracted_content_list
 
-    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50, max_retry=3):
+    async def get_bing_search_result(self, query, result_num=10, use_proxy=False, show_results_in_one_page=50, max_retry=1):
         result_url_list = []
 
         # 获得context
@@ -399,7 +399,7 @@ class Urls_Content_Retriever():
                         # await page.wait_for_load_state('networkidle')
                         # await page.wait_for_load_state('networkidle', timeout=timeout)
                         # await page.wait_for_selector('.b_algo h2 a')
-                        await page.wait_for_selector('.b_algo h2 a', timeout=timeout)
+                        await page.wait_for_selector('.b_algo h2 a', timeout=2000)
                         print('完成wait_for_selector()')
                         # await page.wait_for_selector('.b_algo h2 a')
                         results_on_page = await page.query_selector_all('.b_algo h2 a')
@@ -409,7 +409,7 @@ class Urls_Content_Retriever():
                             success = True
                             break
                         retry_num += 1
-                        await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
+                        # await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
                         # await page.reload()
                         page = await context.new_page()
                         dred(f'【get_bing_search_result】 retry_num: {retry_num}')
@@ -417,7 +417,7 @@ class Urls_Content_Retriever():
                         dred(f'【get_bing_search_result】 Playwright_TimeoutError({e})')
                         dred(f'【get_bing_search_result】 retry_num: {retry_num}')
                         retry_num += 1
-                        await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
+                        # await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
                         # await page.reload()
                         page = await context.new_page()
 
@@ -484,18 +484,26 @@ def get_urls_text(urls, use_proxy=False)->dict:
     return results_text_dict
 
 # 同步：获取bing的搜索结果
-def get_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50):
-    ret = Urls_Content_Retriever()
-    async def _quick_get_bing_search_result():
-        await ret.init()
+def get_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50, max_retry=3):
+    retry = 0
+    while retry<max_retry:
+        ret = Urls_Content_Retriever()
+        async def _quick_get_bing_search_result():
+            await ret.init()
 
-        results = await ret.get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page)
+            results = await ret.get_bing_search_result(query,use_proxy=use_proxy, result_num=result_num, show_results_in_one_page=show_results_in_one_page)
 
-        await ret.close()
-        return results
+            await ret.close()
+            return results
 
-    results = ret.loop.run_until_complete(_quick_get_bing_search_result())
-    return results
+        results = ret.loop.run_until_complete(_quick_get_bing_search_result())
+
+        # 正常返回，则退出，否则retry
+        if results:
+            return results
+        else:
+            retry += 1
+    return []
 
 # 同步：获取多个urls的图文
 def get_urls_content_list(urls, res_type_list=['video', 'image', 'text'], use_proxy=False):
