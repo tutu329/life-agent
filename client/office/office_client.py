@@ -167,6 +167,29 @@ def _get_chapter_info(scheme_item) -> Chapter_Info:
     else:
         return Chapter_Info()
 
+# 初始化和调用agent
+def _ask_agent(prompt) -> str:
+    tools = [Folder_Tool, Search_Tool]
+    agent = Tool_Agent(in_query=prompt, in_tool_classes=tools)
+    dblue(f'tools registered: {agent.registered_tool_instances_dict}')
+
+    agent.init()
+    success = agent.run()
+
+    result = ''
+
+    if success:
+        dblue(f"\n[运行结果]大语言模型agent执行成功。")
+        result = agent.get_final_answer()
+        dblue(result)
+    else:
+        dred(f"\n[运行结果]大语言模型agent执行失败，请进一步优化指令。")
+        result = '大语言模型agent执行失败，请进一步优化指令。'
+        dred(result)
+
+    return result
+
+# 电厂接入系统报告的编制
 def report_on_plant_grid_connection_system():
     # 读取报告编制指令
     scheme_list = get_scheme_list('scheme.txt')
@@ -183,7 +206,8 @@ def report_on_plant_grid_connection_system():
         if chapter_info.prompt!='':
             # 编写正文
             prompt = chapter_info.prompt
-
+            result = _ask_agent(prompt)
+            office.word_insert_text_at_cursor(text=result)
 
     # office.word_insert_heading_at_cursor('一、概要', '标题 1')
     # office.word_insert_heading_at_cursor('1、现状', '标题 2')
