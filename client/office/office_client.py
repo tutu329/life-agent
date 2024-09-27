@@ -209,7 +209,7 @@ def _ask_agent(
         output_stream_buf=dyellow,
         output_stream_end_func=None,
 ) -> str:
-    tools = [Folder_Tool, Search_Tool]
+    tools = [Folder_Tool, Search_Tool, Table_Tool]
     agent = Tool_Agent(
         in_query=prompt,
         in_tool_classes=tools,
