@@ -23,6 +23,7 @@ from client.office.parse_scheme import get_scheme_list
 from agent.tool_agent import Tool_Agent
 from agent.tools.folder_tool import Folder_Tool
 from agent.tools.search_tool import Search_Tool
+from agent.tools.table_tool import Table_Tool
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
@@ -266,10 +267,10 @@ def main():
     input('【结束】')
 
 
-def main_agent():
-    tools=[Folder_Tool, Search_Tool]
+def agent_tool_test():
+    tools=[Folder_Tool, Search_Tool, Table_Tool]
     # query = '告诉我"D:\\ComfyUI\\models\\checkpoints"下有哪些文件'
-    query = '搜索网络告诉我"万向创新聚能城"的概况'
+    query = '请返回"d:/demo/负荷及平衡.xlsx"的"负荷预测"标签里的表格给我'
     # query = '告诉我"y:\\demo\\依据"下有哪些文件'
     agent = Tool_Agent(in_query=query, in_tool_classes=tools)
     print(f'tools registered: {agent.registered_tool_instances_dict}')
@@ -284,4 +285,4 @@ def main_agent():
 
 if __name__ == "__main__":
     main()
-    # main_agent()
+    # agent_tool_test()

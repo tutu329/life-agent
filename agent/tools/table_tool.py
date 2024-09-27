@@ -3,14 +3,21 @@ from win32com.client import constants
 import os
 import re
 
-def extract_table_to_word(excel_path, sheet_name, table_title='', word_path=None):
+from agent.base_tool import Base_Tool
+from utils.extract import extract_dict_string
+from utils.folder import get_folder_files_info_string
+import json5
+
+from config import dred, dgreen, dblue, dcyan, dyellow
+
+def extract_table_to_word(excel_path, sheet_name, table_title='') -> str:
     """
     从指定的 Excel 文件和工作表中提取表格数据，并将其以文本形式复制到 Word 中，
     根据每个单元格的 NumberFormat 格式化数值，包括百分数格式。
 
     :param excel_path: Excel 文件的路径
     :param sheet_name: 工作表的名称
-    :param word_path: 输出的 Word 文件路径（可选）
+    :param table_title: 表的标题
     """
     # 检查文件是否存在
     if not os.path.exists(excel_path):
@@ -203,6 +210,65 @@ def get_decimal_places_and_percentage(number_format):
         decimal_places = 0
 
     return decimal_places, is_percentage
+
+class Table_Tool(Base_Tool):
+    name='Table_Tool'
+    description=\
+'''从excel文件中获取表格数据。
+'''
+    parameters=[
+        {
+            'name': 'excel_path',
+            'type': 'string',
+            'description': \
+'''
+本参数为Excel文件的路径
+''',
+            'required': 'True',
+        },
+        {
+            'name': 'sheet_name',
+            'type': 'string',
+            'description': \
+'''
+本参数为Excel文件中工作表的名称
+''',
+            'required': 'True',
+        },
+        {
+            'name': 'table_title',
+            'type': 'string',
+            'description': \
+'''
+本参数为表格数据返回后绘制时用的表格标题
+''',
+            'required': 'True',
+        },
+
+    ]
+    def __init__(self):
+        pass
+
+    def call(self, in_thoughts):
+        dred('-----------------Table_Tool.call() invoked.---------------------')
+        dict_string = extract_dict_string(in_thoughts)
+        dict = json5.loads(dict_string)
+        excel_path = dict['tool_parameters']['excel_path']
+        sheet_name = dict['tool_parameters']['sheet_name']
+        table_title = dict['tool_parameters']['table_title']
+
+        # 调用工具
+        table_text = extract_table_to_word(
+            excel_path=excel_path,
+            sheet_name=sheet_name,
+            table_title=table_title
+        )
+
+        # 调用工具后，结果作为action_result返回
+        action_result = table_text
+        dred('-----------------Table_Tool.call() result:---------------------')
+        dred(action_result)
+        return action_result
 
 # 使用示例
 if __name__ == "__main__":

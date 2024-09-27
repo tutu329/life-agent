@@ -3,7 +3,7 @@ from utils.extract import extract_dict_string
 from utils.folder import get_folder_files_info_string
 import json5
 
-from config import dred, dgreen, dblue
+from config import dred, dgreen, dblue, dcyan, dyellow
 
 class Folder_Tool(Base_Tool):
     name='Folder_Tool'
