@@ -117,8 +117,8 @@ def extract_table_to_word(excel_path, sheet_name, table_title='', word_path=None
         selection.Sections(1).PageSetup.Orientation = constants.wdOrientLandscape
 
         # Step 3: 在表格后插入另一个分节符（下一页）
-        # 将光标移动到表格末尾
-        selection.EndKey(Unit=6)  # 6 表示 wdStory，移动到文档末尾
+        # 将光标移动到表格之后
+        selection.SetRange(Start=table.Range.End, End=table.Range.End)
 
         # 插入分节符
         selection.InsertBreak(constants.wdSectionBreakNextPage)
@@ -143,7 +143,9 @@ def extract_table_to_word(excel_path, sheet_name, table_title='', word_path=None
         # 1 或 win32com.client.constants.wdAutoFitContent：根据内容自动调整列宽。
         # 2 或 win32com.client.constants.wdAutoFitWindow：自动调整表格宽度以适应窗口（页面）宽度。
         table.AutoFitBehavior(2)  # Behavior = 2
-        selection.EndKey(Unit=6)  # 6 表示 wdStory，移动到文档末尾
+
+        # 使用GoTo将光标移到下一段落(表格之后)
+        selection.GoTo(What=constants.wdGoToLine, Which=constants.wdGoToNext)
 
         # 设置段落居中对齐
         selection.ParagraphFormat.Alignment = previous_alignment
@@ -178,8 +180,6 @@ def set_table_borders(table):
 
     table.Borders(constants.wdBorderRight).LineStyle = constants.wdLineStyleSingle
     table.Borders(constants.wdBorderRight).LineWidth = constants.wdLineWidth150pt  # 粗线
-
-
 
 def get_decimal_places_and_percentage(number_format):
     """
