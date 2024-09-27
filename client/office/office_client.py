@@ -235,9 +235,9 @@ def _ask_agent(
     return result
 
 # 电厂接入系统报告的编制
-def report_on_plant_grid_connection_system():
+def report_on_plant_grid_connection_system(scheme_file_path):
     # 读取报告编制指令
-    scheme_list = get_scheme_list('scheme.txt')
+    scheme_list = get_scheme_list(scheme_file_path)
 
     # 初始化office自动化工具
     office = Office_Client()
@@ -263,7 +263,7 @@ def report_on_plant_grid_connection_system():
     # office.word_insert_llm_stream_at_cursor('我叫土土')
 
 def main():
-    report_on_plant_grid_connection_system()
+    report_on_plant_grid_connection_system('d:/demo/scheme.txt')
     input('【结束】')
 
 
