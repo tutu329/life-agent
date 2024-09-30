@@ -95,8 +95,8 @@ class Urls_Content_Retriever():
 
             self.browser_with_proxy = await p.chromium.launch(
                 channel="chrome",
-                headless=False,
-                # headless=True,
+                # headless=False,
+                headless=config.Global.playwright_headless,
                 proxy=Global.playwright_proxy   # 关于win下报错：A "socket" was not created for HTTP request before 3000ms，查看internet选项的局域网设置中的代理服务器设置，port和该设置一致就行，如shadowsocket是10809而非10808
             )   # 启动chrome
             self.context_with_proxy = await self.browser_with_proxy.new_context(user_agent=UserAgent().random)
@@ -106,8 +106,8 @@ class Urls_Content_Retriever():
 
             self.browser = await p.chromium.launch(
                 channel="chrome",
-                headless=False,
-                # headless=True,
+                # headless=False,
+                headless=config.Global.playwright_headless,
             )   # 启动chrome
 
             self.context = await self.browser.new_context(user_agent=UserAgent().random)
@@ -624,7 +624,8 @@ def concurrent_contents_qa(prompt, contents_list=None, contents_dict=None, max_n
 def concurrent_search_and_qa_gen(
         prompt,
         search_keywords_string,
-        summary_style='条理清晰，以分段的文字为主，每段50-100字左右，不要写成提纲或目录那种过于精炼的形式',    # llm的总结行文风格
+        summary_style='条理清晰',
+        # summary_style='条理清晰，以分段的文字为主，每段50-100字左右，不要写成提纲或目录那种过于精炼的形式',    # llm的总结行文风格
         search_result_num=5,
         show_results_in_one_page=20,
         max_new_tokens=2048,

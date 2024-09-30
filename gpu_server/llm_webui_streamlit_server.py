@@ -9,8 +9,7 @@ import config
 from config import dred, dgreen, dblue, dcyan
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 
-# from agent.tool_agent_prompts import Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool
-# from agent.tool_agent import Tool_Agent
+from agent.tool_agent import Tool_Agent
 from tools.t2i.api_client_comfy import Comfy, Work_Flow_Type
 
 import time
@@ -33,6 +32,13 @@ from tools.retriever.search_and_urls import get_urls_content_list, get_bing_sear
 from tools.retriever.search_and_urls import get_url_text
 
 # from tools.retriever.urls import aget_url_text
+
+from agent.tools.code_tool import Code_Tool
+from agent.tools.energy_investment_plan_tool import Energy_Investment_Plan_Tool
+from agent.tools.folder_tool import Folder_Tool
+from agent.tools.search_tool import Search_Tool
+from agent.tools.url_content_qa_tool import Url_Content_QA_Tool
+
 
 # 包方式运行：python -m streamlit run gpu_server/llm_webui_streamlit_server.py --server.port 7860
 
@@ -858,7 +864,7 @@ def ask_llm(prompt, paras):
         placeholder1 = assistant.empty()
 
         # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1/')
-        tools = [Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
+        tools = [Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, Url_Content_QA_Tool]
         print(f'工具: [')
         for tool in tools:
             print(tool.name+', ')
@@ -869,6 +875,7 @@ def ask_llm(prompt, paras):
             inout_status_list=status_data['status_list'],
             in_status_stream_buf=status.markdown,
             inout_output_list=final_answer_list,
+            in_output_stream_use_chunk=False,
             in_output_stream_buf=placeholder1.markdown,
         )
         agent.init()
@@ -1500,13 +1507,20 @@ def streamlit_refresh_loop():
             num = len(async_llms)
             st.session_state.session_data['msgs'].append([async_llms[i].get_final_response() for i in range(num)])
         if completed_answer:
-            str = completed_answer['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
-            print(str)
-            st.session_state.session_data['msgs'].append({
-                'role': 'assistant',
-                'content': completed_answer['content'] ,
-                'type': completed_answer['type']
-            })
+            if type(completed_answer) == dict:
+                my_str = completed_answer['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
+                print(my_str)
+                st.session_state.session_data['msgs'].append({
+                    'role': 'assistant',
+                    'content': completed_answer['content'] ,
+                    'type': completed_answer['type']
+                })
+            elif type(completed_answer) is str:
+                st.session_state.session_data['msgs'].append({
+                    'role': 'assistant',
+                    'content': completed_answer,
+                    'type': 'text'
+                })
         if images_data:
             st.session_state.session_data['msgs'].append(images_data)
 

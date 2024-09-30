@@ -95,6 +95,7 @@ class Global():
         "server": "http://127.0.0.1:10809", # windows
         # "server": "http://127.0.0.1:7890",
     }
+    playwright_headless: bool = True
     playwright_bing_search_time_out = 2000              # 超时设置ms
     playwright_bing_search_max_retry = 5                # 超时retry次数，主要解决chrome打开bing.com后卡死问题
     playwright_get_url_content_time_out = 5000          # 超时设置ms
