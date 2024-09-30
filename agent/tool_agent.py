@@ -207,7 +207,7 @@ class Tool_Agent():
         if self.__finished_keyword in thoughts:
             # 最终结果输出历史
             if self.output_list is not None:
-                self.output_list.append(thoughts)
+                self.output_list.append(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
                 # self.output_list.append(thoughts.replace(self.__finished_keyword, ''))
         else:
             # 中间状态输出历史
