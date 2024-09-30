@@ -163,10 +163,10 @@ class Tool_Agent():
             thoughts +=chunk
             thoughts_copy_to_print +=chunk
             if f'[{self.__finished_keyword}]' in thoughts:
-                # 最终结果stream输出
+                # 最终结果stream输出(去除'[最终答复]'这些字)
                 if self.ostream_use_chunk:
                     # 采用chunk输出，chunk = string_this_turn - string_last_turn
-                    str_this_turn = thoughts.split(f'[{self.__finished_keyword}]')[-1]
+                    str_this_turn = thoughts.split(f'[{self.__finished_keyword}]')[-1]  # 去除'[最终答复]'这些字
                     # dyellow(f'-----> "{str_this_turn}"')
                     if self.output_stream_to_console:
                         # 输出到console
@@ -181,7 +181,7 @@ class Tool_Agent():
                     str_last_turn = str_this_turn
                 else:
                     # 采用full_string输出
-                    self.output_stream_full_string(thoughts)
+                    self.output_stream_full_string(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
                     # self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
             else:
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
