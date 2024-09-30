@@ -188,8 +188,17 @@ class Urls_Content_Retriever():
 
             # ============获取动态页面的html内容============
             page = await context.new_page()
-            # await page.set_extra_http_headers({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
-            await page.goto(url)
+            await page.set_extra_http_headers(config.Global.playwright_user_agent)
+            # if config.get_os()=='windows':
+            #     await page.set_extra_http_headers({
+            #         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            #     })
+            # elif config.get_os()=='linux' or config.get_os()=='ubuntu':
+            #     await page.set_extra_http_headers({
+            #         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            #     })
+
+            await page.goto(url, timeout=config.Global.playwright_get_url_content_time_out)
             # 等待页面加载完成
             await page.wait_for_load_state('networkidle')
             # 获取 <body> 下的文本
@@ -388,14 +397,22 @@ class Urls_Content_Retriever():
                 results_on_page = None
                 success = False
                 page = await context.new_page()
-                await page.set_extra_http_headers({
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-                })
+                dblue(f'user-agent: {config.Global.playwright_user_agent}')
+                await page.set_extra_http_headers(config.Global.playwright_user_agent)
+                # if config.get_os()=='windows':
+                #     await page.set_extra_http_headers({
+                #         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+                #     })
+                # elif config.get_os() == 'linux' or config.get_os() == 'ubuntu':
+                #     await page.set_extra_http_headers({
+                #         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                #     })
 
                 while retry_num < max_retry:
                     try:
-                        print(f'try to goto page: "{url}" with use_proxy: "{use_proxy}" with timeout:"{timeout:.1f}ms"')
-                        await page.goto(url)
+                        print(f'try to goto page: "{url}" with use_proxy: "{use_proxy}" with timeout:"{config.Global.playwright_bing_search_time_out:.1f}ms"')
+                        await page.goto(url, timeout=config.Global.playwright_bing_search_time_out)
+                        # await page.goto(url, timeout=config.Global.playwright_bing_search_time_out, wait_until="domcontentloaded")
                         # await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
                         print('完成goto()')
                         # await page.wait_for_load_state('networkidle')
@@ -660,6 +677,38 @@ def concurrent_search_and_qa_gen(
 
     return gen
 
+def concurrent_bing_search_tasks(query, task_num=10):
+    loop = asyncio.new_event_loop()
+    bing_tasks = []
+
+    async def _bing_search_tasks():
+        results_dict = {
+            # index: results_i
+        }
+        async def _one_bing_task(index, query, use_proxy=False, result_num=10, show_results_in_one_page=50):
+            ret = Urls_Content_Retriever()
+
+            async def _one_get_bing_search_result():
+                await ret.init()
+
+                results = await ret.get_bing_search_result(query, use_proxy=use_proxy, result_num=result_num,
+                                                           show_results_in_one_page=show_results_in_one_page)
+
+                await ret.close()
+                return results
+
+            results = await _one_get_bing_search_result()
+            dblue(f'i={index} results: {results}')
+            results_dict[index] = results
+
+        for i in range(task_num):
+            bing_tasks.append(asyncio.create_task(_one_bing_task(i, query=query)))
+        await asyncio.wait(bing_tasks, timeout=Global.playwright_get_url_content_time_out)
+        return results_dict
+
+    results_dict = loop.run_until_complete(_bing_search_tasks())
+    return results_dict
+
 if __name__ == '__main__':
     url1='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ'
     # url='https://segmentfault.com/a/1190000044298001'
@@ -700,13 +749,19 @@ if __name__ == '__main__':
     # for item in summaries:
     #     print(item)
 
+    # ===并行bing搜索===
+    results_dict = concurrent_bing_search_tasks(query='杭州')
+    print(f'results_dict: {results_dict}')
+
     # ===搜索并QA===
-    gen = concurrent_search_and_qa_gen(
-        prompt='请根据所提供材料，总结万向创新聚能城的概况',
-        search_keywords_string='万向创新聚能城',
-    )
-    for chunk in gen:
-        print(chunk, end='', flush=True)
+    # gen = concurrent_search_and_qa_gen(
+    #     prompt='请根据所提供材料，总结杭州概况',
+    #     # prompt='请根据所提供材料，总结万向创新聚能城的概况',
+    #     search_keywords_string='杭州',
+    #     # search_keywords_string='万向创新聚能城',
+    # )
+    # for chunk in gen:
+    #     print(chunk, end='', flush=True)
 
     # ===获取bing搜索结果对应url的所有content===
     # url_list = get_bing_search_result(query='万向创新聚能城', result_num=1, show_results_in_one_page=20, use_proxy=False)

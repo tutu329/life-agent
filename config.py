@@ -95,9 +95,19 @@ class Global():
         "server": "http://127.0.0.1:10809", # windows
         # "server": "http://127.0.0.1:7890",
     }
+
+    if get_os()=='windows':
+        playwright_user_agent = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+        }
+    elif get_os() == 'linux' or get_os() == 'ubuntu':
+        playwright_user_agent = {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+
     playwright_headless: bool = True
-    playwright_bing_search_time_out = 2000              # 超时设置ms
-    playwright_bing_search_max_retry = 5                # 超时retry次数，主要解决chrome打开bing.com后卡死问题
+    playwright_bing_search_time_out = 3000              # 超时设置ms
+    playwright_bing_search_max_retry = 10                # 超时retry次数，主要解决chrome打开bing.com后卡死问题
     playwright_get_url_content_time_out = 5000          # 超时设置ms
     concurrent_contents_qa_length_limit = 5000          # 设置并发QA长文档的单个文档长度，以8卡qwen2.5-72b-int4为考虑
 
