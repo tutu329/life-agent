@@ -503,7 +503,7 @@ def get_urls_text(urls, use_proxy=False)->dict:
     return results_text_dict
 
 # 同步：获取bing的搜索结果
-def get_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50, max_retry=config.Global.playwright_bing_search_max_retry):
+def legacy_get_bing_search_result(query, use_proxy=False, result_num=10, show_results_in_one_page=50, max_retry=config.Global.playwright_bing_search_max_retry):
     retry = 0
     while retry<max_retry:
         ret = Urls_Content_Retriever()
@@ -522,6 +522,13 @@ def get_bing_search_result(query, use_proxy=False, result_num=10, show_results_i
             return results
         else:
             retry += 1
+    return []
+
+def get_bing_search_result(query, task_num=10, result_num=20, show_results_in_one_page=50, use_proxy=False):
+    results_dict = _concurrent_bing_search_tasks(query, task_num=task_num, result_num=result_num, show_results_in_one_page=show_results_in_one_page, use_proxy=use_proxy)
+    for k,v in results_dict.items():
+        if v != []:
+            return v
     return []
 
 # 同步：获取多个urls的图文
@@ -677,7 +684,8 @@ def concurrent_search_and_qa_gen(
 
     return gen
 
-def concurrent_bing_search_tasks(query, task_num=10):
+# 通过启动10个浏览器并发发起search任务，优化总时长(这样可以避免单个search任务失败后的延时叠加)
+def _concurrent_bing_search_tasks(query, task_num=10, result_num=20, show_results_in_one_page=50, use_proxy=False):
     loop = asyncio.new_event_loop()
     bing_tasks = []
 
@@ -685,7 +693,7 @@ def concurrent_bing_search_tasks(query, task_num=10):
         results_dict = {
             # index: results_i
         }
-        async def _one_bing_task(index, query, use_proxy=False, result_num=10, show_results_in_one_page=50):
+        async def _one_bing_task(index):
             ret = Urls_Content_Retriever()
 
             async def _one_get_bing_search_result():
@@ -702,7 +710,7 @@ def concurrent_bing_search_tasks(query, task_num=10):
             results_dict[index] = results
 
         for i in range(task_num):
-            bing_tasks.append(asyncio.create_task(_one_bing_task(i, query=query)))
+            bing_tasks.append(asyncio.create_task(_one_bing_task(i)))
         await asyncio.wait(bing_tasks, timeout=Global.playwright_get_url_content_time_out)
         return results_dict
 
@@ -731,9 +739,9 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
     # # ===获取bing搜索结果===
-    # result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=50, use_proxy=False)
-    # for i, item in enumerate(result_url_list):
-    #     print(f"{i+1:>2d}) {item}")
+    result_url_list = get_bing_search_result(query='万向创新聚能城', task_num=10,  result_num=20, show_results_in_one_page=50, use_proxy=False)
+    for i, item in enumerate(result_url_list):
+        print(f"{i+1:>2d}) {item}")
 
     # ===获取多个urls对应的所有文本===
     # result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=2, show_results_in_one_page=20, use_proxy=False)
@@ -750,8 +758,8 @@ if __name__ == '__main__':
     #     print(item)
 
     # ===并行bing搜索===
-    results_dict = concurrent_bing_search_tasks(query='杭州')
-    print(f'results_dict: {results_dict}')
+    # results_dict = _concurrent_bing_search_tasks(query='杭州')
+    # print(f'results_dict: {results_dict}')
 
     # ===搜索并QA===
     # gen = concurrent_search_and_qa_gen(

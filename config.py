@@ -106,7 +106,7 @@ class Global():
         }
 
     playwright_headless: bool = True
-    playwright_bing_search_time_out = 3000              # 超时设置ms
+    playwright_bing_search_time_out = 2000              # 超时设置ms
     playwright_bing_search_max_retry = 10                # 超时retry次数，主要解决chrome打开bing.com后卡死问题
     playwright_get_url_content_time_out = 5000          # 超时设置ms
     concurrent_contents_qa_length_limit = 5000          # 设置并发QA长文档的单个文档长度，以8卡qwen2.5-72b-int4为考虑
