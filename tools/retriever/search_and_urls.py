@@ -198,7 +198,7 @@ class Urls_Content_Retriever():
             #         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             #     })
 
-            await page.goto(url, timeout=config.Global.playwright_get_url_content_time_out)
+            await page.goto(url, timeout=config.Global.playwright_goto_page_time_out)
             # 等待页面加载完成
             await page.wait_for_load_state('networkidle')
             # 获取 <body> 下的文本
@@ -391,7 +391,7 @@ class Urls_Content_Retriever():
                 start = page_num * show_results_in_one_page + 1
                 url = f"https://www.bing.com/search?q={query}&count={show_results_in_one_page}&first={start}"
 
-                timeout = show_results_in_one_page/30*Global.playwright_bing_search_time_out
+                timeout = show_results_in_one_page/30*Global.playwright_goto_page_time_out
 
                 retry_num = 0
                 results_on_page = None
@@ -410,15 +410,15 @@ class Urls_Content_Retriever():
 
                 while retry_num < max_retry:
                     try:
-                        print(f'try to goto page: "{url}" with use_proxy: "{use_proxy}" with timeout:"{config.Global.playwright_bing_search_time_out:.1f}ms"')
-                        await page.goto(url, timeout=config.Global.playwright_bing_search_time_out)
+                        print(f'try to goto page: "{url}" with use_proxy: "{use_proxy}" with timeout:"{config.Global.playwright_goto_page_time_out:.1f}ms"')
+                        await page.goto(url, timeout=config.Global.playwright_goto_page_time_out)
                         # await page.goto(url, timeout=config.Global.playwright_bing_search_time_out, wait_until="domcontentloaded")
                         # await page.wait_for_timeout(1000)  # 额外等待2秒后重新加载
                         print('完成goto()')
                         # await page.wait_for_load_state('networkidle')
                         # await page.wait_for_load_state('networkidle', timeout=timeout)
                         # await page.wait_for_selector('.b_algo h2 a')
-                        await page.wait_for_selector('.b_algo h2 a', timeout=config.Global.playwright_bing_search_time_out)     # timeout=2000ms
+                        await page.wait_for_selector('.b_algo h2 a', timeout=config.Global.playwright_goto_page_time_out)     # timeout=2000ms
                         print('完成wait_for_selector()')
                         # await page.wait_for_selector('.b_algo h2 a')
                         results_on_page = await page.query_selector_all('.b_algo h2 a')
@@ -479,6 +479,9 @@ def get_url_text(url, use_proxy=False):
 
 # 同步：获取多个urls的文本
 def get_urls_text(urls, use_proxy=False)->dict:
+    if urls == []:
+        return {}
+
     ret = Urls_Content_Retriever()
     async def _get_urls_text():
         results_text_dict = {
@@ -495,7 +498,7 @@ def get_urls_text(urls, use_proxy=False)->dict:
         for url in urls:
             tasks.append(asyncio.create_task(_get_url_text(url)))
 
-        await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
+        await asyncio.wait(tasks, timeout=Global.playwright_get_all_urls_content_time_out)
         await ret.close()
         return results_text_dict
 
@@ -556,7 +559,7 @@ def get_urls_content_list(urls, res_type_list=['video', 'image', 'text'], use_pr
         for url in urls:
             tasks.append(asyncio.create_task(_get_url_res(url)))
 
-        await asyncio.wait(tasks, timeout=Global.playwright_get_url_content_time_out)
+        await asyncio.wait(tasks, timeout=Global.playwright_get_all_urls_content_time_out)
         await ret.close()
         return results_dict
 
@@ -585,7 +588,7 @@ async def try_to_get_urls_of_some_search_site(url, result_num=100):
 
     page = await context.new_page()
     await page.goto(url)
-    await page.wait_for_load_state('networkidle', timeout=Global.playwright_bing_search_time_out)
+    await page.wait_for_load_state('networkidle', timeout=Global.playwright_goto_page_time_out)
     results_on_page = await page.query_selector_all('.opr-toplist1-table_544Ty div div div a')
     # results_on_page = await page.query_selector_all('.ttp-hot-board ol li a')
     print(f'results_on_page: {results_on_page}')
@@ -614,6 +617,9 @@ url4 = 'http://www.news.cn/politics/xxjxs/index.htm'
 
 # 对[content1, content2, ...]或{'url1':'content1', 'url2':'content2', ...}的所有contents进行并发QA
 def concurrent_contents_qa(prompt, contents_list=None, contents_dict=None, max_new_tokens=2048):
+    if contents_dict is None and contents_list is None:
+        return []
+
     llms = Concurrent_LLMs()
     contents = contents_list
 
@@ -645,13 +651,13 @@ def concurrent_contents_qa(prompt, contents_list=None, contents_dict=None, max_n
     return summaries
 
 # 联网搜索并根据结果QA
-def concurrent_search_and_qa_gen(
+def concurrent_search_and_summary_with_final_qa_gen(
         prompt,
         search_keywords_string,
         summary_style='条理清晰',
         # summary_style='条理清晰，以分段的文字为主，每段50-100字左右，不要写成提纲或目录那种过于精炼的形式',    # llm的总结行文风格
         search_result_num=5,
-        show_results_in_one_page=20,
+        show_results_in_one_page=50,
         max_new_tokens=2048,
         use_proxy=False
 ):
@@ -684,6 +690,40 @@ def concurrent_search_and_qa_gen(
 
     return gen
 
+# 联网搜索并根据结果QA
+def concurrent_search_and_summary_without_final_qa(
+        prompt,
+        search_keywords_string,
+        summary_style='条理清晰',
+        # summary_style='条理清晰，以分段的文字为主，每段50-100字左右，不要写成提纲或目录那种过于精炼的形式',    # llm的总结行文风格
+        search_result_num=5,
+        show_results_in_one_page=50,
+        max_new_tokens=2048,
+        use_proxy=False
+)->str:
+    result_url_list = get_bing_search_result(query=search_keywords_string, result_num=search_result_num, show_results_in_one_page=show_results_in_one_page, use_proxy=use_proxy)
+    for i, item in enumerate(result_url_list):
+        print(f"{i+1:>2d}) {item}")
+    dict = get_urls_text(result_url_list)
+
+    summaries = concurrent_contents_qa(
+        prompt=prompt,
+        contents_dict=dict,
+        max_new_tokens=max_new_tokens,
+    )
+
+    # 汇总每一个content的summary
+    summaries_string = ''
+    i=0
+    for item in summaries:
+        i += 1
+        summaries_string += f'content[{i}]: {item} \n\n'
+    print(f'---------------------------contents_string------------------------------')
+    print(summaries_string)
+    print(f'-------------------------------------------------------------------------')
+
+    return summaries_string
+
 # 通过启动10个浏览器并发发起search任务，优化总时长(这样可以避免单个search任务失败后的延时叠加)
 def _concurrent_bing_search_tasks(query, task_num=10, result_num=20, show_results_in_one_page=50, use_proxy=False):
     loop = asyncio.new_event_loop()
@@ -711,7 +751,7 @@ def _concurrent_bing_search_tasks(query, task_num=10, result_num=20, show_result
 
         for i in range(task_num):
             bing_tasks.append(asyncio.create_task(_one_bing_task(i)))
-        await asyncio.wait(bing_tasks, timeout=Global.playwright_get_url_content_time_out)
+        await asyncio.wait(bing_tasks, timeout=Global.playwright_get_all_urls_content_time_out)
         return results_dict
 
     results_dict = loop.run_until_complete(_bing_search_tasks())
@@ -739,12 +779,12 @@ if __name__ == '__main__':
     # print(f'{quick_get_url_text(url, use_proxy=False)}')
 
     # # ===获取bing搜索结果===
-    result_url_list = get_bing_search_result(query='万向创新聚能城', task_num=10,  result_num=20, show_results_in_one_page=50, use_proxy=False)
-    for i, item in enumerate(result_url_list):
-        print(f"{i+1:>2d}) {item}")
+    # result_url_list = get_bing_search_result(query='万向创新聚能城', task_num=10,  result_num=20, show_results_in_one_page=50, use_proxy=False)
+    # for i, item in enumerate(result_url_list):
+    #     print(f"{i+1:>2d}) {item}")
 
     # ===获取多个urls对应的所有文本===
-    # result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=2, show_results_in_one_page=20, use_proxy=False)
+    # result_url_list = get_bing_search_result(query='万向创新聚能城', result_num=20, show_results_in_one_page=50, use_proxy=False)
     # for i, item in enumerate(result_url_list):
     #     print(f"{i+1:>2d}) {item}")
     # dict = get_urls_text(result_url_list)
@@ -770,6 +810,13 @@ if __name__ == '__main__':
     # )
     # for chunk in gen:
     #     print(chunk, end='', flush=True)
+
+    # ===搜索、总结但不QA===
+    summaries_string = concurrent_search_and_summary_without_final_qa(
+        prompt='请根据所提供材料，总结万向创新聚能城的概况',
+        search_keywords_string='万向创新聚能城',
+    )
+    print(f'summaries_string: "{summaries_string}"')
 
     # ===获取bing搜索结果对应url的所有content===
     # url_list = get_bing_search_result(query='万向创新聚能城', result_num=1, show_results_in_one_page=20, use_proxy=False)

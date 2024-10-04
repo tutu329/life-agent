@@ -4,12 +4,12 @@ from utils.folder import get_folder_files_info_string
 import json5
 
 from config import dred, dgreen, dblue
-from tools.retriever.search_and_urls import concurrent_search_and_qa_gen
+from tools.retriever.search_and_urls import concurrent_search_and_summary_with_final_qa_gen, concurrent_search_and_summary_without_final_qa
 from tools.retriever.legacy_search import Bing_Searcher
 
 class Search_Tool(Base_Tool):
     name='Search_Tool'
-    description='通过搜索引擎对query进行搜索，并返回搜索结果的工具.'
+    description='通过搜索引擎对query进行搜索，并根据prompt将搜索结果总结为摘要后返回的工具.'
     parameters=[
         {
             'name': 'query',
@@ -49,14 +49,25 @@ class Search_Tool(Base_Tool):
         # searcher = Bing_Searcher.create_searcher_and_loop(in_search_num=3)
         # gen = searcher.search_and_ask_yield(query, in_max_new_tokens=1024)
 
-        gen = concurrent_search_and_qa_gen(
+        # gen = concurrent_search_and_summary_with_final_qa_gen(
+        #     prompt=prompt,
+        #     # prompt='请根据所提供材料，总结万向创新聚能城的概况',
+        #     search_keywords_string=query,
+        #     search_result_num=5,
+        #     # search_keywords_string='万向创新聚能城',
+        # )
+        #
+        # action_result = ''
+        # for chunk in gen:
+        #     action_result += chunk
+
+
+
+        summaries_string = concurrent_search_and_summary_without_final_qa(
             prompt=prompt,
-            # prompt='请根据所提供材料，总结万向创新聚能城的概况',
             search_keywords_string=query,
-            # search_keywords_string='万向创新聚能城',
+            search_result_num=5,
         )
 
-        action_result = ''
-        for chunk in gen:
-            action_result += chunk
+        action_result = summaries_string
         return action_result
