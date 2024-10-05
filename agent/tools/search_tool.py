@@ -49,25 +49,24 @@ class Search_Tool(Base_Tool):
         # searcher = Bing_Searcher.create_searcher_and_loop(in_search_num=3)
         # gen = searcher.search_and_ask_yield(query, in_max_new_tokens=1024)
 
-        # gen = concurrent_search_and_summary_with_final_qa_gen(
-        #     prompt=prompt,
-        #     # prompt='请根据所提供材料，总结万向创新聚能城的概况',
-        #     search_keywords_string=query,
-        #     search_result_num=5,
-        #     # search_keywords_string='万向创新聚能城',
-        # )
-        #
-        # action_result = ''
-        # for chunk in gen:
-        #     action_result += chunk
-
-
-
-        summaries_string = concurrent_search_and_summary_without_final_qa(
+        gen = concurrent_search_and_summary_with_final_qa_gen(
             prompt=prompt,
+            # prompt='请根据所提供材料，总结万向创新聚能城的概况',
             search_keywords_string=query,
             search_result_num=5,
+            # search_keywords_string='万向创新聚能城',
         )
 
-        action_result = summaries_string
+        action_result = ''
+        for chunk in gen:
+            action_result += chunk
+
+        # summaries_string = concurrent_search_and_summary_without_final_qa(
+        #     prompt=prompt,
+        #     search_keywords_string=query,
+        #     search_result_num=5,
+        # )
+        #
+        # action_result = summaries_string
+
         return action_result
