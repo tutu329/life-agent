@@ -151,7 +151,7 @@ def main():
 
     parser.add_argument('--prompt', type=str, default='写一首长诗', help='Prompt to send to the LLM')
     parser.add_argument('--max_tokens', type=int, default=4096, help='Maximum number of tokens to generate')
-    parser.add_argument('--num_concurrent', type=int, default=100, help='Number of concurrent accesses')
+    parser.add_argument('--num_concurrent', type=int, default=20, help='Number of concurrent accesses')
 
     parser.add_argument('--api_base', type=str, default='https://powerai.cc:8001/v1', help='Base URL for the OpenAI API')
     parser.add_argument('--api_key', type=str, default='empty', help='API key for OpenAI API')
