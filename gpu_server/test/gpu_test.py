@@ -1,19 +1,29 @@
 import time
-import openai
+from openai import OpenAI
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import argparse
+import uuid
 
-def single_thread_test(prompt, max_tokens=100):
+g_result_dict = {
+    # 'id_str': 'some_response',
+}
+
+def single_thread_test(oai, prompt, max_tokens=100):
     start_time = time.perf_counter()
+    full_string = ''
+
+    id = str(uuid.uuid4())
 
     try:
+        model_id = oai.models.list().data[0].id
         # Create the completion with streaming
-        response = openai.chat.completions.create(
-            model="qwen72",
+        response = oai.chat.completions.create(
+            model=model_id,
             messages = [{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
-            stream=True
+            stream=True,
+            stream_options={"include_usage": True},
         )
 
         first_token_time = None
@@ -22,18 +32,24 @@ def single_thread_test(prompt, max_tokens=100):
 
         # Iterate over the streaming response
         for chunk in response:
-            if 'choices' in chunk:
-                choices = chunk['choices']
-                if choices and 'delta' in choices[0]:
-                    delta = choices[0]['delta']
-                    if 'content' in delta:
-                        print(delta, end='', flush=True)
-                        # Token received
-                        tokens_received += 1
-                        if tokens_received == 1:
-                            # First token received
-                            first_token_time = time.perf_counter()
-                            token_start_time = first_token_time
+            if hasattr(chunk, 'usage') and chunk.usage is not None:
+                if tokens_received==0:
+                    first_token_time = time.perf_counter()
+                    token_start_time = first_token_time
+
+                # self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
+                # self.usage['total_tokens'] = chunk.usage.total_tokens
+                tokens_received = chunk.usage.completion_tokens
+                # print(chunk.usage)
+                # print(f'【prompt: {chunk.usage.prompt_tokens}】')
+                # print(f'【completion: {chunk.usage.completion_tokens}】')
+                # print(f'【total_tokens: {chunk.usage.total_tokens}】')
+
+            if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
+                delta = chunk.choices[0].delta.content
+                full_string += delta
+                # print(delta, end='', flush=True)
+
         end_time = time.perf_counter()
 
         if first_token_time is None:
@@ -45,12 +61,16 @@ def single_thread_test(prompt, max_tokens=100):
             output_duration = end_time - token_start_time
             avg_output_speed = tokens_received / output_duration if output_duration > 0 else None
 
+        full_string = ' '.join(full_string.split('\n'))
+        g_result_dict[id] = full_string
+        # print(f'LLM回复({len(full_string):5d}): {full_string[:50]}...')
+
         return first_token_latency, avg_output_speed, tokens_received
     except Exception as e:
         print(f"Error in single_thread_test: {e}")
         return None, None, 0
 
-def concurrent_test(prompt, num_concurrent=10, max_tokens=100):
+def concurrent_test(oai, prompt, num_concurrent=10, max_tokens=100):
     latencies = []
     speeds = []
     tokens_list = []
@@ -58,7 +78,7 @@ def concurrent_test(prompt, num_concurrent=10, max_tokens=100):
     start_time = time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=num_concurrent) as executor:
-        futures = [executor.submit(single_thread_test, prompt, max_tokens) for _ in range(num_concurrent)]
+        futures = [executor.submit(single_thread_test, oai, prompt, max_tokens) for _ in range(num_concurrent)]
 
         for future in as_completed(futures):
             latency, speed, tokens_received = future.result()
@@ -116,23 +136,19 @@ def main():
 
     args = parser.parse_args()
 
-    if args.api_base:
-        openai.api_base = args.api_base
-    if args.api_key:
-        openai.api_key = args.api_key
-    else:
-        openai.api_key = 'EMPTY'  # Use a default or empty API key for local deployment
+    oai = OpenAI(
+        api_key=args.api_key,
+        base_url=args.api_base,
+    )
 
-    print("Starting single-threaded test...")
-    latency, speed, tokens_received = single_thread_test(args.prompt, args.max_tokens)
-    print(f"Single-threaded test results:")
+    print("---------启动单线程测试---------")
+    latency, speed, tokens_received = single_thread_test(oai, args.prompt, args.max_tokens)
     print(f"First token latency: {latency:.4f} seconds")
     print(f"Average output speed: {speed:.2f} tokens/second")
     print(f"Total tokens received: {tokens_received}")
 
-    print("\nStarting concurrent test...")
-    results = concurrent_test(args.prompt, args.num_concurrent, args.max_tokens)
-    print(f"Concurrent test results:")
+    print("\n---------启动多线程测试---------")
+    results = concurrent_test(oai, args.prompt, args.num_concurrent, args.max_tokens)
     print(f"Total throughput: {results['total_throughput']:.2f} tokens/second")
     print(f"First token latency (max): {results['first_token_latency']['max']:.4f} seconds")
     print(f"First token latency (min): {results['first_token_latency']['min']:.4f} seconds")
@@ -141,5 +157,22 @@ def main():
     print(f"Average output speed (min): {results['average_output_speed']['min']:.2f} tokens/second")
     print(f"Average output speed (avg): {results['average_output_speed']['avg']:.2f} tokens/second")
 
+    print("\n---------测试回复结果汇编---------")
+    i = 0
+    for k,v in g_result_dict.items():
+        i += 1
+        print(f'LLM回复[{i:4d}]({len(v):5d}): {v[:50]}...')
+
+def main2():
+    oai = OpenAI(
+        api_key='empty',
+        base_url='https://powerai.cc:8001/v1',
+    )
+    first_token_latency, avg_output_speed, tokens_received = single_thread_test(oai, '你是谁', max_tokens=1024)
+    print(f'首token延时: {first_token_latency:.1f} second')
+    print(f'平均速度: {avg_output_speed:.1f} t/s')
+    print(f'输出tokens: {tokens_received} tokens')
+
 if __name__ == '__main__':
+    # main2()
     main()
