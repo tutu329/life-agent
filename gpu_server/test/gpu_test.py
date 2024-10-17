@@ -151,6 +151,8 @@ def gpu_test(
     num_concurrent=100,
     url='https://powerai.cc:8001/v1',
     max_tokens=4096,
+    show_result=False,
+    test_single_thread=True,
 ):
 
     oai = OpenAI(
@@ -158,14 +160,15 @@ def gpu_test(
         base_url=url,
     )
 
-    print("---------启动单线程测试---------")
-    latency, speed, tokens_received, output_duration = _single_thread_test(oai, prompt, max_tokens)
-    print(f"首字延时: \t{latency:.4f} \tseconds")
-    print(f"回复速度: \t{speed:.2f} \ttokens/second")
-    print(f"回复数量: \t{tokens_received} \ttokens")
-    print(f"回复时间: \t{output_duration:.1f} \tseconds")
+    if test_single_thread:
+        print("\n---------启动单线程测试---------")
+        latency, speed, tokens_received, output_duration = _single_thread_test(oai, prompt, max_tokens)
+        print(f"首字延时: \t{latency:.4f} \tseconds")
+        print(f"回复速度: \t{speed:.2f} \ttokens/second")
+        print(f"回复数量: \t{tokens_received} \ttokens")
+        print(f"回复时间: \t{output_duration:.1f} \tseconds")
 
-    print("\n---------启动多线程测试---------")
+    print(f"---------启动多线程测试({num_concurrent}线程)---------")
     results = _concurrent_test(oai, prompt, num_concurrent, max_tokens)
     print(f"总吞吐量: \t{results['total_throughput']:.2f} \ttokens/second")
     print(f"总回复量: \t{results['total_tokens']:.2f} \ttokens")
@@ -182,19 +185,26 @@ def gpu_test(
     print(f"回复速度(min): \t{results['average_output_speed']['min']:.2f} \ttokens/second")
     print(f"回复速度(avg): \t{results['average_output_speed']['avg']:.2f} \ttokens/second")
 
-    print("\n---------测试回复结果汇编---------")
-    i = 0
-    for k,v in g_result_dict.items():
-        i += 1
-        print(f'LLM回复[{i:4d}]({len(v):5d}): {v[:50]}...')
+    if show_result:
+        print("\n---------测试回复结果汇编---------")
+        i = 0
+        for k,v in g_result_dict.items():
+            i += 1
+            print(f'LLM回复[{i:4d}]({len(v):5d}): {v[:50]}...')
 
 def main():
-    gpu_test(
-        prompt='写一首长诗',
-        num_concurrent=100,
-        url='https://powerai.cc:8001/v1',
-        max_tokens=4096,
-    )
+    url = 'https://powerai.cc:8001/v1'
+    prompt = '写一首长诗'
+    test_nums = [10, 20, 30, 40, 50, 100]
+    for num in test_nums:
+        gpu_test(
+            prompt=prompt,
+            num_concurrent=num,
+            url=url,
+            max_tokens=4096,
+            show_result=False,
+            test_single_thread=(num==test_nums[0]),
+        )
 
 if __name__ == '__main__':
     main()
