@@ -11,7 +11,7 @@ g_result_dict = {
     # 'id_str': 'some_response',
 }
 
-def single_thread_test(oai, prompt, max_tokens=100):
+def _single_thread_test(oai, prompt, max_tokens=100):
     start_time = time.perf_counter()
     full_string = ''
 
@@ -72,7 +72,7 @@ def single_thread_test(oai, prompt, max_tokens=100):
         print(f"Error in single_thread_test: {e}")
         return None, None, 0
 
-def concurrent_test(oai, prompt, num_concurrent=10, max_tokens=4096):
+def _concurrent_test(oai, prompt, num_concurrent=10, max_tokens=4096):
     latencies = []
     speeds = []
     tokens_list = []
@@ -81,7 +81,7 @@ def concurrent_test(oai, prompt, num_concurrent=10, max_tokens=4096):
     start_time = time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=num_concurrent) as executor:
-        futures = [executor.submit(single_thread_test, oai, prompt, max_tokens) for _ in range(num_concurrent)]
+        futures = [executor.submit(_single_thread_test, oai, prompt, max_tokens) for _ in range(num_concurrent)]
 
         for future in as_completed(futures):
             latency, speed, tokens_received, output_duration = future.result()
@@ -146,46 +146,41 @@ def concurrent_test(oai, prompt, num_concurrent=10, max_tokens=4096):
         }
     }
 
-def main():
-    parser = argparse.ArgumentParser(description="GPU性能测试.")
-
-    parser.add_argument('--prompt', type=str, default='写一首长诗', help='Prompt to send to the LLM')
-    parser.add_argument('--max_tokens', type=int, default=4096, help='Maximum number of tokens to generate')
-    parser.add_argument('--num_concurrent', type=int, default=20, help='Number of concurrent accesses')
-
-    parser.add_argument('--api_base', type=str, default='https://powerai.cc:8001/v1', help='Base URL for the OpenAI API')
-    parser.add_argument('--api_key', type=str, default='empty', help='API key for OpenAI API')
-
-    args = parser.parse_args()
+def gpu_test(
+    prompt='写一首长诗',
+    num_concurrent=100,
+    url='https://powerai.cc:8001/v1',
+    max_tokens=4096,
+):
 
     oai = OpenAI(
-        api_key=args.api_key,
-        base_url=args.api_base,
+        api_key='empty',
+        base_url=url,
     )
 
     print("---------启动单线程测试---------")
-    latency, speed, tokens_received, output_duration = single_thread_test(oai, args.prompt, args.max_tokens)
-    print(f"首字延时: {latency:.4f} seconds")
-    print(f"回复速度: {speed:.2f} tokens/second")
-    print(f"回复数量: {tokens_received} tokens")
-    print(f"回复时间: {output_duration:.1f} seconds")
+    latency, speed, tokens_received, output_duration = _single_thread_test(oai, prompt, max_tokens)
+    print(f"首字延时: \t{latency:.4f} \tseconds")
+    print(f"回复速度: \t{speed:.2f} \ttokens/second")
+    print(f"回复数量: \t{tokens_received} \ttokens")
+    print(f"回复时间: \t{output_duration:.1f} \tseconds")
 
     print("\n---------启动多线程测试---------")
-    results = concurrent_test(oai, args.prompt, args.num_concurrent, args.max_tokens)
-    print(f"总吞吐量: \t\t{results['total_throughput']:.2f} tokens/second")
-    print(f"总回复量: \t\t{results['total_tokens']:.2f} tokens")
-    print(f"回复总时: \t\t{results['total_time']:.2f} tokens")
+    results = _concurrent_test(oai, prompt, num_concurrent, max_tokens)
+    print(f"总吞吐量: \t{results['total_throughput']:.2f} \ttokens/second")
+    print(f"总回复量: \t{results['total_tokens']:.2f} \ttokens")
+    print(f"回复总时: \t{results['total_time']:.2f} \tseconds")
 
-    print(f"子项时间(max): \t{results['task_time']['max']:.2f} seconds")
-    print(f"子项时间(min): \t{results['task_time']['min']:.2f} seconds")
-    print(f"子项时间(avg): \t{results['task_time']['avg']:.2f} seconds")
+    print(f"子项时间(max): \t{results['task_time']['max']:.2f} \tseconds")
+    print(f"子项时间(min): \t{results['task_time']['min']:.2f} \tseconds")
+    print(f"子项时间(avg): \t{results['task_time']['avg']:.2f} \tseconds")
 
-    print(f"首字延时(max): \t{results['first_token_latency']['max']:.4f} seconds")
-    print(f"首字延时(min): \t{results['first_token_latency']['min']:.4f} seconds")
-    print(f"首字延时(avg): \t{results['first_token_latency']['avg']:.4f} seconds")
-    print(f"回复速度(max): \t{results['average_output_speed']['max']:.2f} tokens/second")
-    print(f"回复速度(min): \t{results['average_output_speed']['min']:.2f} tokens/second")
-    print(f"回复速度(avg): \t{results['average_output_speed']['avg']:.2f} tokens/second")
+    print(f"首字延时(max): \t{results['first_token_latency']['max']:.4f} \tseconds")
+    print(f"首字延时(min): \t{results['first_token_latency']['min']:.4f} \tseconds")
+    print(f"首字延时(avg): \t{results['first_token_latency']['avg']:.4f} \tseconds")
+    print(f"回复速度(max): \t{results['average_output_speed']['max']:.2f} \ttokens/second")
+    print(f"回复速度(min): \t{results['average_output_speed']['min']:.2f} \ttokens/second")
+    print(f"回复速度(avg): \t{results['average_output_speed']['avg']:.2f} \ttokens/second")
 
     print("\n---------测试回复结果汇编---------")
     i = 0
@@ -193,16 +188,13 @@ def main():
         i += 1
         print(f'LLM回复[{i:4d}]({len(v):5d}): {v[:50]}...')
 
-def main_simple():
-    oai = OpenAI(
-        api_key='empty',
-        base_url='https://powerai.cc:8001/v1',
+def main():
+    gpu_test(
+        prompt='写一首长诗',
+        num_concurrent=100,
+        url='https://powerai.cc:8001/v1',
+        max_tokens=4096,
     )
-    first_token_latency, avg_output_speed, tokens_received = single_thread_test(oai, '你是谁', max_tokens=1024)
-    print(f'首token延时: {first_token_latency:.1f} second')
-    print(f'平均速度: {avg_output_speed:.1f} t/s')
-    print(f'输出tokens: {tokens_received} tokens')
 
 if __name__ == '__main__':
-    # main_simple()
     main()
