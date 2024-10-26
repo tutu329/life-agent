@@ -4,9 +4,11 @@ import openai
 # 设置api-key和LLM的地址
 oai = OpenAI(
     # http_client=openai.DefaultHttpxClient(verify=False),  # 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
-    api_key='empty',
+    # api_key='empty',
+    api_key='csk-238pkvx4wx95pxedt54wnn2kwk66329jk3typ4dx4dxr3k3n',
     # base_url='https://172.27.67.106:8001/v1',
-    base_url='https://powerai.cc:8001/v1',
+    base_url="https://api.cerebras.ai/v1",
+    # base_url='https://powerai.cc:8001/v1',
     # base_url=config.Global.llm_url,
     # base_url='https://localhost:8001/v1',
     # base_url='http://127.0.0.1:8001/v1',
