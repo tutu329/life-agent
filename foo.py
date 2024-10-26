@@ -43,6 +43,7 @@ def main():
         for chunk in message_stream(gen):
             print(chunk, end='', flush=True)
 
+
     except Exception as e:
         print(f'访问LLM服务器报错：{e}')
 
