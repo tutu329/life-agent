@@ -64,7 +64,6 @@ def parquet_to_jsonl(parquet_file_name):
                         # dred(f'{line}')
                         pass
 
-
     dgreen(f"Parquet 文件已成功转换为 JSONL 格式并保存到 {jsonl_file_name}")
 
 def parquets_to_jsonls_in_folder(folder_absolute_path):
