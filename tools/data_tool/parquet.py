@@ -138,11 +138,11 @@ def main():
     # parquet_to_jsonl('y:/train-00000-of-00192.parquet')
     # print_parquet_head('y:/train-00000-of-00192.parquet')
 
-    parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels/test')
+    # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels/test')
     # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels')
 
     # check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels/test', 'jsonl')
-    # check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels', 'jsonl')
+    check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels', 'jsonl')
 
 if __name__ == '__main__':
     main()
