@@ -61,7 +61,8 @@ def parquet_to_jsonl(parquet_file_name):
                 else:
                     j += 1
                     if j<100:
-                        dred(f'{line}')
+                        # dred(f'{line}')
+                        pass
 
 
     dgreen(f"Parquet 文件已成功转换为 JSONL 格式并保存到 {jsonl_file_name}")
