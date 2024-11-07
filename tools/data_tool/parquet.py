@@ -47,7 +47,7 @@ def parquet_to_jsonl(parquet_file_name):
             line = record['text']
             if line:
                 # 'text'内容不为''、没有乱码时，写入jsonl
-                if not _check_line_has_garbled_text(line):
+                if not _check_string_has_garbled_text(line):
                     k += 1
                     if k<10:
                         dblue(line)
@@ -81,18 +81,36 @@ def parquets_to_jsonls_in_folder(folder_absolute_path):
     except Exception as e:
         dred(f'parquets_to_jsonls_in_folder()报错: "{e}"')
 
-def _check_line_has_garbled_text(line):
-    if (('\u0000' in line and '�' in line) \
-            or ('\x00' in line and '�' in line)) \
-            or ('\x00' == line) \
-            or ('\u0000' == line):
+# 生成jsonl后的复查
+# 检查string中是否有'\\x00'、'�'等字符
+def _check_string_literally_has_garbled_text(line):
+    if (('\\u0000' in line and '�' in line) \
+            or ('\\x00' in line and '�' in line)) \
+            or ('\\x00' == line) \
+            or ('\\u0000' == line):
         return True
     else:
         return False
 
-# 检查文本文件是否有乱码：如 \x00\x000\x000\x1c 钄�)Yf[闉婚緯\x02^铏樺墘.U'锟�:gvz閬�/f\x0e`HN杞涘
-# 判断依据：'�'超过100个
-def _contains_garbled_text(filename):
+# 生成jsonl时的筛选检查
+# 检查string中是否有'\x00'、'�'等字符
+def _check_string_has_garbled_text(line):
+    if ('\u0000' in line and '�' in line) \
+            or ('\\u0000' in line and '�' in line) \
+            or ('\x00' in line and '�' in line) \
+            or ('\\x00' in line and '�' in line) \
+            or ('\x00' == line) \
+            or ('\\x00' == line) \
+            or ('\u0000' == line) \
+            or ('\\u0000' == line):
+
+        return True
+    else:
+        return False
+
+# 检查文本文件是否有乱码(literally)：如 \\x00、�
+# 判断依据：重复超过100个
+def _literally_contains_garbled_text(filename):
     with open(filename, 'r') as file:  # 以二进制模式读取文件
         has_garbled_text = False
         garbled_text_num = 0
@@ -112,7 +130,7 @@ def _contains_garbled_text(filename):
                 head_lines.append(line)
                 pass
 
-            if _check_line_has_garbled_text(line):
+            if _check_string_literally_has_garbled_text(line):
                 garbled_text_num += 1
                 if garbled_text_num > check_max_garbled_text_num:
                     has_garbled_text = True
@@ -131,7 +149,7 @@ def check_text_files_in_folder(folder_absolute_path, file_ext):
         fname, ext = os.path.splitext(abs_file_name)
         if ext == '.'+file_ext:
             dgreen(f'检查文件: "{abs_file_name}"')
-            if _contains_garbled_text(abs_file_name):   # 文件中包含乱码字符
+            if _literally_contains_garbled_text(abs_file_name):   # 文件中包含乱码字符
                 dred(f'文件"{abs_file_name}"包含乱码')
 
 def main():
@@ -139,10 +157,10 @@ def main():
     # print_parquet_head('y:/train-00000-of-00192.parquet')
 
     # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels/test')
-    # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels')
+    parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels')
 
     # check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels/test', 'jsonl')
-    check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels', 'jsonl')
+    # check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels', 'jsonl')
 
 if __name__ == '__main__':
     main()
