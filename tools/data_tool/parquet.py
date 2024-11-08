@@ -8,6 +8,7 @@ import re
 from utils.folder import get_folder_files_list
 from config import dred, dgreen, dblue, dyellow, dcyan
 
+# 显示一个parquet文件的head内容
 def print_parquet_head(filename):
     # 读取 parquet 文件
     parquet_file = filename  # 替换为你的 parquet 文件路径
@@ -17,6 +18,7 @@ def print_parquet_head(filename):
     df = table.to_pandas()
     print(df.head())  # 可以更改参数来显示更多行
 
+# 将一个parquet文件转为jsonl文件
 def parquet_to_jsonl(parquet_file_name):
     # 读取 parquet 文件
     dgreen(f'开始读取parquet文件"{parquet_file_name}"...')
@@ -32,40 +34,51 @@ def parquet_to_jsonl(parquet_file_name):
     # 将数据转换为 JSONL 格式并保存
     jsonl_file_name = jsonl_file_without_extension + '.jsonl'  # 输出的 JSONL 文件路径
     dgreen(f'开始将parquet文件转换为"{jsonl_file_name}"...')
-    i=0
-    j=0
-    k=0
+    index_record=0
+    index_garbled_record=0
+    index_normal_record=0
     print('前20个数据为:')
     with open(jsonl_file_name, 'w', encoding='utf-8') as f:
-        for record in df.to_dict(orient='records'):
-            i = i + 1
-            if i<=20:
+        # 写入'[\n'
+        f.write('[\n')
+        all_records_dict = df.to_dict(orient='records')
+        for record in all_records_dict:
+            index_record = index_record + 1
+            if index_record<=20:
                 print(f'record: "{record}"')
-            elif i==21:
+            elif index_record==21:
                 print('继续剩余数据的转换...')
 
             line = record['text']
             if line:
                 # 'text'内容不为''、没有乱码时，写入jsonl
                 if not _check_string_has_garbled_text(line):
-                    k += 1
-                    if k<10:
+                    index_normal_record += 1
+                    if index_normal_record<10:
                         dblue(line)
                     # 去除\xa0、\u3000等字符
                     # 如去除{'text': '\xa0\xa0\xa0\xa0“是啊，那是金色的?火焰。”'}中的特殊字符\xa0\xa0\xa0\xa0
                     record = {k: (v.replace('\xa0', '') if isinstance(v, str) else v) for k, v in record.items()}
                     record = {k: (v.replace('\u3000', '') if isinstance(v, str) else v) for k, v in record.items()}
 
-                    # 写入文件
-                    f.write(json.dumps(record, ensure_ascii=False) + '\n')  # 确保中文不被转义
+                    # 写入record
+                    f.write(json.dumps(record, ensure_ascii=False))  # 确保中文不被转义
+
+                    # 除了最后一个record，都写入','
+                    if index_record < len(all_records_dict):
+                        f.write(',\n')
+                    else:
+                        f.write('\n')
                 else:
-                    j += 1
-                    if j<100:
+                    index_garbled_record += 1
+                    if index_garbled_record<100:
                         # dred(f'{line}')
                         pass
-
+        # 写入']'
+        f.write(']')
     dgreen(f"Parquet 文件已成功转换为 JSONL 格式并保存到 {jsonl_file_name}")
 
+# 将文件夹中的所有parquet文件转为jsonl文件
 def parquets_to_jsonls_in_folder(folder_absolute_path):
     try:
         file_name_list = get_folder_files_list(folder_absolute_path, mode='absolute')
@@ -157,7 +170,8 @@ def main():
     # print_parquet_head('y:/train-00000-of-00192.parquet')
 
     # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels/test')
-    parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels')
+    parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels/one')
+    # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels')
 
     # check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels/test', 'jsonl')
     # check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels', 'jsonl')
