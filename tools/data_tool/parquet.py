@@ -170,8 +170,8 @@ def main():
     # print_parquet_head('y:/train-00000-of-00192.parquet')
 
     # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels/test')
-    parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels/one')
-    # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels')
+    # parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels/one')
+    parquets_to_jsonls_in_folder('/home/tutu/data/Chinese-H-Novels')
 
     # check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels/test', 'jsonl')
     # check_text_files_in_folder('/home/tutu/data/Chinese-H-Novels', 'jsonl')
