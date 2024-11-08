@@ -121,17 +121,18 @@ def parquet_to_jsonl(parquet_file_name):
                     record = {k: (v.replace('\xa0', '') if isinstance(v, str) else v) for k, v in record.items()}
                     record = {k: (v.replace('\u3000', '') if isinstance(v, str) else v) for k, v in record.items()}
 
-                    # 写入record
-                    records_list.append(record)
-                    # f.write(json.dumps(record, ensure_ascii=False))  # 确保中文不被转义
+                    if record['text']:
+                        # 写入record
+                        records_list.append(record)
+                        # f.write(json.dumps(record, ensure_ascii=False))  # 确保中文不被转义
                 else:
                     index_garbled_record += 1
                     if index_garbled_record<100:
                         # dred(f'{line}')
                         pass
         # 写入records_list
-        f.write(json.dumps(records_list, ensure_ascii=False))
-        # f.write(json.dumps(records_list, ensure_ascii=False, indent=2))
+        # f.write(json.dumps(records_list, ensure_ascii=False))
+        f.write(json.dumps(records_list, ensure_ascii=False, indent=2)) # 这样才会有换行
 
     dgreen(f"Parquet 文件已成功转换为 JSONL 格式并保存到 {jsonl_file_name}")
 
