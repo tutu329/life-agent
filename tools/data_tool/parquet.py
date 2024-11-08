@@ -19,7 +19,7 @@ def print_parquet_head(filename):
     print(df.head())  # 可以更改参数来显示更多行
 
 # 将一个parquet文件转为jsonl文件
-def parquet_to_jsonl(parquet_file_name):
+def bak_parquet_to_jsonl(parquet_file_name):
     # 读取 parquet 文件
     dgreen(f'开始读取parquet文件"{parquet_file_name}"...')
     parquet_file = parquet_file_name  # 替换为你的 parquet 文件路径
@@ -35,6 +35,7 @@ def parquet_to_jsonl(parquet_file_name):
     jsonl_file_name = jsonl_file_without_extension + '.jsonl'  # 输出的 JSONL 文件路径
     dgreen(f'开始将parquet文件转换为"{jsonl_file_name}"...')
     index_record=0
+    index_writed_record = 0
     index_garbled_record=0
     index_normal_record=0
     print('前20个数据为:')
@@ -66,9 +67,9 @@ def parquet_to_jsonl(parquet_file_name):
 
                     # 除了最后一个record，都写入','
                     if index_record < len(all_records_dict):
-                        f.write(',\n')
+                        f.write(f',【{index_record}:{len(all_records_dict)}】\n')
                     else:
-                        f.write('\n')
+                        f.write(f'【{index_record}:{len(all_records_dict)}】\n')
                 else:
                     index_garbled_record += 1
                     if index_garbled_record<100:
@@ -76,6 +77,62 @@ def parquet_to_jsonl(parquet_file_name):
                         pass
         # 写入']'
         f.write(']')
+    dgreen(f"Parquet 文件已成功转换为 JSONL 格式并保存到 {jsonl_file_name}")
+
+def parquet_to_jsonl(parquet_file_name):
+    # 读取 parquet 文件
+    dgreen(f'开始读取parquet文件"{parquet_file_name}"...')
+    parquet_file = parquet_file_name  # 替换为你的 parquet 文件路径
+    table = pq.read_table(parquet_file)
+
+    # 显示前几行数据
+    df = table.to_pandas()
+
+
+    jsonl_file_without_extension = os.path.splitext(parquet_file_name)[0]
+
+    # 将数据转换为 JSONL 格式并保存
+    jsonl_file_name = jsonl_file_without_extension + '.jsonl'  # 输出的 JSONL 文件路径
+    dgreen(f'开始将parquet文件转换为"{jsonl_file_name}"...')
+    index_record=0
+    index_writed_record = 0
+    index_garbled_record=0
+    index_normal_record=0
+    records_list = []
+    print('前20个数据为:')
+    with open(jsonl_file_name, 'w', encoding='utf-8') as f:
+        all_records_dict = df.to_dict(orient='records')
+        for record in all_records_dict:
+            index_record = index_record + 1
+            if index_record<=20:
+                print(f'record: "{record}"')
+            elif index_record==21:
+                print('继续剩余数据的转换...')
+
+            line = record['text']
+            if line:
+                # 'text'内容不为''、没有乱码时，写入jsonl
+                if not _check_string_has_garbled_text(line):
+                    index_normal_record += 1
+                    if index_normal_record<10:
+                        dblue(line)
+                    # 去除\xa0、\u3000等字符
+                    # 如去除{'text': '\xa0\xa0\xa0\xa0“是啊，那是金色的?火焰。”'}中的特殊字符\xa0\xa0\xa0\xa0
+                    record = {k: (v.replace('\xa0', '') if isinstance(v, str) else v) for k, v in record.items()}
+                    record = {k: (v.replace('\u3000', '') if isinstance(v, str) else v) for k, v in record.items()}
+
+                    # 写入record
+                    records_list.append(record)
+                    # f.write(json.dumps(record, ensure_ascii=False))  # 确保中文不被转义
+                else:
+                    index_garbled_record += 1
+                    if index_garbled_record<100:
+                        # dred(f'{line}')
+                        pass
+        # 写入records_list
+        f.write(json.dumps(records_list, ensure_ascii=False))
+        # f.write(json.dumps(records_list, ensure_ascii=False, indent=2))
+
     dgreen(f"Parquet 文件已成功转换为 JSONL 格式并保存到 {jsonl_file_name}")
 
 # 将文件夹中的所有parquet文件转为jsonl文件
