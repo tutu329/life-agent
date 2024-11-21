@@ -15,7 +15,7 @@ from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurren
 from utils.task import Flicker_Task
 from utils.string_util import str_remove_partial_substring
 
-from config import dred, dgreen
+from config import dred, dgreen, dblue, dcyan, dyellow
 
 from openai import OpenAI
 import openai
@@ -93,7 +93,7 @@ class LLM_Client:
         url = config.LLM_Default.url if url is None else url
         max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
 
-        dgreen(f'【LLM_Client】url="{url}"')
+        dblue(f'【LLM_Client】url="{url}"')
 
         self.url = url
         self.openai = None
@@ -187,7 +187,7 @@ class LLM_Client:
             if self.model_id is None or self.model_id=='':
                 try:
                     self.model_id = self.openai.models.list().data[0].id
-                    dgreen(f'读取模型id成功: {self.model_id}')
+                    dblue(f'【LLM_Client】model_id="{self.model_id}"\n')
                 except Exception as e:
                     dred(f'【LLM_Client异常】refresh_endpoint(): "{e}"')
                     dred(f'【LLM_Client异常】refresh_endpoint(): 可能是IP或Port设置错误，当前url为: {self.url}')
@@ -447,7 +447,7 @@ class LLM_Client:
         try:
             if self.model_id is None or self.model_id=='':
                 self.model_id = self.openai.models.list().data[0].id
-                dgreen(f'读取模型id成功: "{self.model_id}"')
+                dblue(f'【LLM_Client】model_id="{self.model_id}"\n')
         except Exception as e:
             print(f'【LLM_Client异常】ask_prepare(): "{e}"')
             print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
@@ -509,8 +509,9 @@ class LLM_Client:
         # ==========================================================
 
         if self.print_input:
-            print('\n<User>\n', msgs[-1]['content'])
-            print('</User>')
+            dgreen('<User>', end='', flush=True)
+            print(msgs[-1]['content'], end='', flush=True)
+            dgreen('</User>')
 
         if stop is None:
             # stop = ['<|im_end|>', '<|im_start|>']
@@ -576,10 +577,11 @@ class LLM_Client:
     def get_answer_and_sync_print(self):
         result = ''
 
-        dred('<assistant>')
+        dblue('<assistant>', end='', flush=True)
         for chunk in self.get_answer_generator():
             result += chunk
-            dred(chunk, end='', flush=True)
+            print(chunk, end='', flush=True)
+        dblue('</assistant>')
 
         # dgreen(' \n\n', flush=True)
         return result
@@ -991,6 +993,8 @@ def main1():
 
 def main2():
     llm = LLM_Client(
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        url='https://api.deepseek.com/v1',
         # history=True,
         # history_max_turns=50,
         # history_clear_method='pop',
@@ -1006,14 +1010,32 @@ def main2():
     # print('models: ', openai.models.list().data)
     # llm.set_system_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
     # llm.set_role_prompt('不管我说什么，都直接把我说的话翻译为中文回复给我.')
-    gen  = llm.ask_prepare('你是谁？我的名字是土土', temperature=0.5, max_new_tokens=200).get_answer_generator()
-    for chunk in gen:
-        print(chunk, end='', flush=True)
 
-    llm.ask_prepare('你还记得我的名字吗', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
+    # gen  = llm.ask_prepare('你是谁？我的名字是土土', temperature=0.5, max_new_tokens=200).get_answer_generator()
+    # for chunk in gen:
+    #     print(chunk, end='', flush=True)
+
+    llm.ask_prepare('你是谁？我叫土土', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_prepare('我刚才告诉你我的名字是什么？', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
+    # llm.ask_prepare('你还记得我的名字吗', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
     # llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
     # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
+
+def _ask_task(prompt):
+    llm = LLM_Client(
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        url='https://api.deepseek.com/v1',
+    )
+    llm.ask_prepare(prompt, temperature=0.7, max_new_tokens=200).get_answer_and_sync_print()
+
+async def asks(prompt, n):
+    tasks = [_ask_task(prompt) for i in range(n)]
+    await asyncio.gather(*tasks)
+
+def async_main():
+    asyncio.run(asks('你是谁？', 3))
 
 if __name__ == "__main__" :
     # main1()
     main2()
+    # async_main()
