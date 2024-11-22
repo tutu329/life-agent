@@ -1053,8 +1053,16 @@ def console_asks_main(stdscr):
     console.init(stdscr=stdscr, user_callback=_user_callback)
     console.start()
 
+def hot_temp_main():
+    llm = LLM_Client(
+        api_key='empty',
+        url='http://localhost:8022/v1',
+    )
+    llm.ask_prepare('1+1=', temperature=0.5, max_new_tokens=1).get_answer_and_sync_print()
+    llm.ask_prepare('继续', temperature=0.5, max_new_tokens=100).get_answer_and_sync_print()
+
 if __name__ == "__main__" :
     # main1()
     # main2()
-    curses.wrapper(console_asks_main)
-    # asyncio.run(async_main())
+    # curses.wrapper(console_asks_main)
+    hot_temp_main()
