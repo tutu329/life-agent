@@ -1028,7 +1028,7 @@ def main2():
     # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 
 # 控制台并发stream的测试
-def console_asks_main(stdscr):
+def _console_asks(stdscr, prompt):
     def _user_callback(win_data):
         thread_id = win_data.thread_id
         output = win_data.output_buf
@@ -1043,7 +1043,7 @@ def console_asks_main(stdscr):
 
         temperature = thread_id * 0.1
         # gen = llm.ask_prepare('写一首长诗', temperature=temperature, max_new_tokens=1000).get_answer_generator()
-        gen = llm.ask_prepare('你是谁，介绍一下', temperature=temperature, max_new_tokens=200).get_answer_generator()
+        gen = llm.ask_prepare(question=prompt, temperature=temperature, max_new_tokens=200).get_answer_generator()
         # gen = llm.ask_prepare('选取一首李白的诗，将诗的名字返回给我', temperature=temperature, max_new_tokens=200).get_answer_generator()
 
         res = ''
@@ -1061,6 +1061,9 @@ def console_asks_main(stdscr):
     console.init(stdscr=stdscr, user_callback=_user_callback)
     console.start()
 
+def console_asks(prompt):
+    curses.wrapper(_console_asks, prompt=prompt)
+
 def hot_temp_main():
     llm = LLM_Client(
         api_key='empty',
@@ -1072,5 +1075,6 @@ def hot_temp_main():
 if __name__ == "__main__" :
     # main1()
     # main2()
-    curses.wrapper(console_asks_main)
+    # curses.wrapper(console_asks_main)
+    console_asks('你是谁')
     # hot_temp_main()
