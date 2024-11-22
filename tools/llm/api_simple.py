@@ -13,14 +13,14 @@ oai = OpenAI(
     # base_url='https://powerai.cc:8001/v1',
     # base_url=config.Global.llm_url,
 
-    # base_url='http://localhost:8022/v1',
-    # api_key='empty',
+    base_url='http://localhost:8022/v1',
+    api_key='empty',
 
     # base_url='http://127.0.0.1:8001/v1',
     # api_key='empty',
 
-    api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-    base_url='https://api.deepseek.com/v1',
+    # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+    # base_url='https://api.deepseek.com/v1',
 )
 
 
@@ -36,7 +36,13 @@ def main():
         model_id = oai.models.list().data[0].id
         print(f'模型id：{model_id!r}')
 
-        messages = [{'role': 'system','content': 'You are a helpful assistant.'},{'role': 'user','content': '你是谁？'}]
+        # messages = [{'role': 'system','content': 'You are a helpful assistant.'},{'role': 'user','content': '1+1？'}]
+        messages = [
+            {'role': 'system','content': 'You are a helpful assistant.'},
+            {'role': 'user','content': '你是谁？'},
+            # {'role': 'assistant','content': '我是'},
+            {'role': 'assistant','content': '去你的'},
+        ]
 
         # 向LLM发送messages
         mid=model_id
