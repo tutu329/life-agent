@@ -26,6 +26,8 @@ from typing import List, Optional, Dict
 from redis_client import Redis_Client
 
 from tools.audio_stt.audio_stt import AudioSTT
+from tools.console.windows import Console_Windows
+import curses
 
 # DEBUG = True
 DEBUG = False
@@ -1025,106 +1027,34 @@ def main2():
     # llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
     # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 
-from rich.console import Console
-from rich.live import Live
-from rich.table import Table
+# 控制台并发stream的测试
+def console_asks_main(stdscr):
+    def _user_callback(win_data):
+        llm = LLM_Client(
+            # api_key='empty',
+            # url='http://powerai.cc:8022/v1',
+            api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+            url='https://api.deepseek.com/v1',
+        )
+        gen = llm.ask_prepare('选取一首李白的诗，将诗的名字返回给我', temperature=0.01, max_new_tokens=200).get_answer_generator()
 
-class Console_Table():
-    def __init__(self):
-        self.response_list = []    # [{'id':'xxx', 'response':'yyy']
-        self.rich_table = None
+        res = ''
+        caption = f'temp={0.03}'
+        for chunk in gen:
+            res += chunk
+            win_data.output_buf(content=res, caption=caption)
 
-        self.prompt = None
-        self.n = None
+        # while True:
+        #     content = f'这是window[{win_obj.thread_id}], 时间: {time.strftime("%H:%M:%S")}'
+        #     win_obj.output_buf(content)
+        #     time.sleep(0.1)
 
-        self.generators = None
-
-    def init(self, prompt, n, url, api_key):
-        self.prompt = prompt
-        self.n = n
-        self.url = url
-        self.api_key = api_key
-
-        self.generators = []
-        for i in range(n):
-            # 初始化LLM
-            llm = LLM_Client(
-                api_key=api_key,
-                url=url
-            )
-            gen = llm.ask_prepare(
-                question=prompt,
-                max_new_tokens=512,
-            ).get_answer_generator()
-            self.generators.append(gen)
-
-            # 初始化response_list
-            self.response_list.append('')
-
-    async def _single_generate(self, i):
-        print(f'_single_generate: {i}')
-        for chunk in self.generators[i]:
-            self.response_list[i] += chunk
-
-        # self.update_table()
-
-    async def start(self):
-        console = Console()
-
-        tasks = [asyncio.create_task(self._single_generate(i)) for i in range(self.n)]
-        # 直接启动tasks，不gather
-        # tasks = [self._single_generate(i) for i in range(self.n)]
-        # for i, task in enumerate(tasks):
-        #     asyncio.create_task(task)
-        #     print(f'task[{i}]已启动.')
-
-        # for i in range(self.n):
-        #     # threading调用时，self._single_generate()必须不是async函数，否则根本不调用
-        #     t = threading.Thread(target=self._single_generate, args=(i,))
-        #     t.start()
-
-        # 刷新table
-        # with Live(self.rich_table, console=console, refresh_per_second=5) as live:
-        #     for _ in range(5):
-        #         print(f'time:{_}')
-        #         time.sleep(0.4)
-        #         live.update(self.update_table())
-        k=0
-        with Live(self.rich_table, console=console, refresh_per_second=5) as live:
-            while True:
-            # while not all(task.done() for task in tasks):
-                k += 1
-                # print(f'"{k}":{self.response_list}')
-                live.update(self.update_table())
-                await asyncio.sleep(0.2)
-            # await asyncio.gather(*tasks)
-
-    def update_table(self):
-        # 生成2个column
-        # print('刷新table中...')
-        self.rich_table = Table()
-        self.rich_table.add_column("Task ID", justify="right")
-        self.rich_table.add_column("Response", justify="left")
-
-        # 添加row
-        for i in range(len(self.response_list)):
-            # print(f'刷新table的data[{i}]中: {self.response_list[i]}')
-            self.rich_table.add_row(f"Task {i + 1}", self.response_list[i])
-
-        return self.rich_table
-
-async def async_main():
-    # asyncio.run(asks_in_command_line('你是谁？', 3))
-    console = Console_Table()
-    console.init(
-        prompt='你是谁？',
-        n=3,
-        url='https://api.deepseek.com/v1',
-        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-    )
-    await console.start()
+    console = Console_Windows()
+    console.init(stdscr=stdscr, user_callback=_user_callback)
+    console.start()
 
 if __name__ == "__main__" :
     # main1()
-    main2()
+    # main2()
+    curses.wrapper(console_asks_main)
     # asyncio.run(async_main())

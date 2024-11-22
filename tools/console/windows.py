@@ -26,13 +26,13 @@ class Console_Windows:
     def init(
             self,
             stdscr,         # curses.wrapper(main)传入main(stdscr)的stdscr
-            win_callback,   # 回调函数win_callback(thread_id, window)
+            user_callback,   # 回调函数win_callback(thread_id, window)
             win_height=10,
             win_width=100,
             win_number=10,
     ):
         self.stdscr = stdscr
-        self.user_callback = win_callback
+        self.user_callback = user_callback
 
         self.win_height = win_height
         self.win_width = win_width
@@ -111,7 +111,7 @@ class Console_Windows:
 def main(stdscr):
     from tools.llm.api_client import LLM_Client
 
-    def win_callback(win_data):
+    def user_callback(win_data):
         llm = LLM_Client(
             # api_key='empty',
             # url='http://powerai.cc:8022/v1',
@@ -132,7 +132,7 @@ def main(stdscr):
         #     time.sleep(0.1)
 
     console = Console_Windows()
-    console.init(stdscr=stdscr, win_callback=win_callback)
+    console.init(stdscr=stdscr, user_callback=user_callback)
     console.start()
 
 if __name__ == "__main__":
