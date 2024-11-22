@@ -1030,19 +1030,27 @@ def main2():
 # 控制台并发stream的测试
 def console_asks_main(stdscr):
     def _user_callback(win_data):
+        thread_id = win_data.thread_id
+        output = win_data.output_buf
+        win_obj = win_data.win_obj
+
         llm = LLM_Client(
             # api_key='empty',
             # url='http://powerai.cc:8022/v1',
             api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
             url='https://api.deepseek.com/v1',
         )
-        gen = llm.ask_prepare('选取一首李白的诗，将诗的名字返回给我', temperature=0.01, max_new_tokens=200).get_answer_generator()
+
+        temperature = thread_id * 0.1
+        # gen = llm.ask_prepare('写一首长诗', temperature=temperature, max_new_tokens=1000).get_answer_generator()
+        gen = llm.ask_prepare('你是谁，介绍一下', temperature=temperature, max_new_tokens=200).get_answer_generator()
+        # gen = llm.ask_prepare('选取一首李白的诗，将诗的名字返回给我', temperature=temperature, max_new_tokens=200).get_answer_generator()
 
         res = ''
-        caption = f'temp={0.03}'
+        caption = f' temperature={temperature:.1f}'
         for chunk in gen:
             res += chunk
-            win_data.output_buf(content=res, caption=caption)
+            output(content=res, caption=caption)
 
         # while True:
         #     content = f'这是window[{win_obj.thread_id}], 时间: {time.strftime("%H:%M:%S")}'
@@ -1064,5 +1072,5 @@ def hot_temp_main():
 if __name__ == "__main__" :
     # main1()
     # main2()
-    # curses.wrapper(console_asks_main)
-    hot_temp_main()
+    curses.wrapper(console_asks_main)
+    # hot_temp_main()

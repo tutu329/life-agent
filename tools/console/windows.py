@@ -2,6 +2,7 @@ import threading
 import curses
 import time
 from dataclasses import dataclass, field
+from utils.string_util import calculate_length
 
 @dataclass
 class Win_Data:
@@ -84,8 +85,47 @@ class Console_Windows:
         window.box()
 
         def _win_output_buf(content, caption=''):
-            window.addstr(0, 2, f"窗口 {thread_id + 1}: {caption}")          # 输出window标题
-            window.addstr(1, 2, content)                                    # 输出user回调输出的content
+            window.addstr(0, 2, f"窗口 {thread_id + 1}: {caption}")      # 输出window标题
+
+            # # 检测文本总长是否超限
+            # start = len(content)-(self.win_height*self.win_width/2-self.win_height*2/2)
+            # start = start if start>0 else 0
+            #
+            # # 检测行数是否超限
+            # lines_num = len(content.split('\n'))
+            # line_start = lines_num-(self.win_height-2)
+            # line_start = line_start if line_start>0 else 0
+            # content = '\n'.join(content.split('\n')[line_start:])
+
+            try:
+                # 按\n分为多个line
+                output_lines = []
+                content_list = content.split('\n')
+
+                # 每一个line进行处理
+                for line in content_list:
+                    long_line = line
+
+                    # 一行长文->多行文字
+                    while(calculate_length(long_line)>self.win_width-50):
+                        output_lines.append(long_line[:self.win_width-50])
+                        long_line = long_line[self.win_width-50:]
+                    output_lines.append(long_line)
+
+                # 此时output_lines为自动换行的文字
+                # 将行数超限的内容去掉
+                lines_num = len(output_lines)
+                line_start = lines_num - (self.win_height - 2)
+                line_start = line_start if line_start > 0 else 0
+                output_lines = output_lines[line_start:]
+
+                # 按行print
+                for i, line in enumerate(output_lines):
+                    window.addstr(i+1, 2, line)                        # 按最大量输出，超过后滚动输出
+
+            except Exception as e:
+                pass
+
             window.refresh()
 
         # 创建一个win_data

@@ -1,5 +1,17 @@
 import re
 
+
+# 测量string长度 （中文字长度为2，英文字母长度为1，如"Hello世界"长度为9）
+def calculate_length(s):
+    length = 0
+    for char in s:
+        # 判断是否为中文字符
+        if '\u4e00' <= char <= '\u9fff':  # Unicode 范围判断中文
+            length += 2
+        else:  # 非中文字符，按长度 1 处理
+            length += 1
+    return length
+
 # str1和str2的交集，且该交集起始和str2起始一致
 def _str_has_partial_substr(str, substr):
     same_str = ''
