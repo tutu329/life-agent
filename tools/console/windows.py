@@ -2,7 +2,7 @@ import threading
 import curses
 import time
 from dataclasses import dataclass, field
-from utils.string_util import calculate_length
+from utils.string_util import get_console_width_of_string, get_length_of_string_head_with_console_width, string_pad_to_end_with_console_width
 
 @dataclass
 class Win_Data:
@@ -107,10 +107,18 @@ class Console_Windows:
                     long_line = line
 
                     # 一行长文->多行文字
-                    while(calculate_length(long_line)>self.win_width-50):
-                        output_lines.append(long_line[:self.win_width-50])
-                        long_line = long_line[self.win_width-50:]
-                    output_lines.append(long_line)
+                    while(get_console_width_of_string(long_line)>self.win_width-10):
+                        cut_length = get_length_of_string_head_with_console_width(long_line, self.win_width-10)
+                        # 添加限宽的部分(self.win_width-4)
+                        padded_line = long_line[:cut_length]
+                        padded_line = string_pad_to_end_with_console_width(padded_line, self.win_width-10)
+                        output_lines.append(padded_line)
+                        # 剩余部分为新的long_line
+                        long_line = long_line[cut_length:]
+                    # 添加剩余的部分
+                    padded_line = long_line
+                    padded_line = string_pad_to_end_with_console_width(padded_line, self.win_width - 10)
+                    output_lines.append(padded_line)
 
                 # 此时output_lines为自动换行的文字
                 # 将行数超限的内容去掉

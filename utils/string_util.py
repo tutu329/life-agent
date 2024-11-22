@@ -1,15 +1,48 @@
 import re
 
+# 将string后面用pad填充到end
+def string_pad_to_end_with_console_width(s, in_width, pad=' '):
+    width = 0
+    new_string_list = []
+    for char in s:
+        # 判断是否为中文字符
+        if '\u4e00' <= char <= '\u9fff':  # Unicode 范围判断中文
+            width += 2
+        else:  # 非中文字符，按长度 1 处理
+            width += 1
+
+        new_string_list.append(char)
+
+    for w in range(in_width-width):
+        new_string_list.append(pad)
+    return ''.join(new_string_list)
 
 # 测量string长度 （中文字长度为2，英文字母长度为1，如"Hello世界"长度为9）
-def calculate_length(s):
+def get_console_width_of_string(s):
+    width = 0
+    for char in s:
+        # 判断是否为中文字符
+        if '\u4e00' <= char <= '\u9fff':  # Unicode 范围判断中文
+            width += 2
+        else:  # 非中文字符，按长度 1 处理
+            width += 1
+    return width
+
+# 获取string前in_console_width宽度的字符串的length长度 （如"Hello世界大同123"前部width为9("Hello世界")的length为7）
+def get_length_of_string_head_with_console_width(s, in_console_width):
+    console_width = 0
     length = 0
     for char in s:
         # 判断是否为中文字符
         if '\u4e00' <= char <= '\u9fff':  # Unicode 范围判断中文
-            length += 2
+            console_width += 2
         else:  # 非中文字符，按长度 1 处理
-            length += 1
+            console_width += 1
+
+        length += 1
+        if console_width >= in_console_width:
+            return length
+
     return length
 
 # str1和str2的交集，且该交集起始和str2起始一致
