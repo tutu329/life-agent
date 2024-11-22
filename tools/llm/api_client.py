@@ -993,8 +993,12 @@ def main1():
 
 def main2():
     llm = LLM_Client(
-        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        url='https://api.deepseek.com/v1',
+        api_key='empty',
+        url='http://localhost:8022/v1',
+
+        # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        # url='https://api.deepseek.com/v1',
+
         # history=True,
         # history_max_turns=50,
         # history_clear_method='pop',
@@ -1122,5 +1126,5 @@ async def async_main():
 
 if __name__ == "__main__" :
     # main1()
-    # main2()
-    asyncio.run(async_main())
+    main2()
+    # asyncio.run(async_main())
