@@ -1035,10 +1035,10 @@ def _console_asks(stdscr, prompt, temperature):
         win_obj = win_data.win_obj
 
         llm = LLM_Client(
-            # api_key='empty',
-            # url='http://powerai.cc:8022/v1',
-            api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-            url='https://api.deepseek.com/v1',
+            api_key='empty',
+            url='https://powerai.cc:8001/v1',
+            # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+            # url='https://api.deepseek.com/v1',
         )
 
         # gen = llm.ask_prepare('写一首长诗', temperature=temperature, max_new_tokens=1000).get_answer_generator()
@@ -1075,5 +1075,5 @@ if __name__ == "__main__" :
     # main1()
     # main2()
     # curses.wrapper(console_asks_main)
-    console_asks(prompt='你是谁', temperature=0.7)
+    console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
     # hot_temp_main()
