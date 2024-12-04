@@ -7,6 +7,7 @@
 # cd skywork-o1-prm-inference
 # pip install -e .
 
+import math
 from openai import OpenAI
 from transformers import AutoTokenizer
 from model_utils.io_utils import prepare_input, derive_step_rewards_vllm
@@ -25,6 +26,8 @@ class LLM_PRM_Client:
         self.llm = None
         self.url = None
         self.api_key = None
+
+        self.step_rewards_list = None
 
     def init(self, prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B', url='https://powerai.cc:8002/v1', api_key='empty'):
         try:
@@ -62,7 +65,18 @@ class LLM_PRM_Client:
             dred(f'LLM_PRM_Client.get_step_rewards()报错: "{e}"')
             return None
 
+        self.step_rewards_list = step_rewards[0]
         return step_rewards[0]
+
+    def get_min_reward(self):
+        return min(self.step_rewards_list)
+
+    def get_last_reward(self):
+        return self.step_rewards_list[-1]
+
+    def get_prod_reward(self):
+        return math.prod(self.step_rewards_list)
+
 
 def main():
     data = Step_Data(

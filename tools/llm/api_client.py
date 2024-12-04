@@ -996,7 +996,7 @@ def main1():
 def main2():
     llm = LLM_Client(
         api_key='empty',
-        url='http://localhost:8022/v1',
+        url='https://powerai.cc:8001/v1',
 
         # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         # url='https://api.deepseek.com/v1',
@@ -1021,8 +1021,8 @@ def main2():
     # for chunk in gen:
     #     print(chunk, end='', flush=True)
 
-    llm.ask_prepare('你是谁？我叫土土', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
-    llm.ask_prepare('我刚才告诉你我的名字是什么？', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_with_prm('你是谁？我叫土土', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
+    llm.ask_with_prm('我刚才告诉你我的名字是什么？', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
     # llm.ask_prepare('你还记得我的名字吗', temperature=0.5, max_new_tokens=200).get_answer_and_sync_print()
     # llm.ask_prepare('write a word', in_temperature=0.6, in_max_new_tokens=300).get_answer_and_sync_print()
     # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
@@ -1073,6 +1073,72 @@ def _console_asks(stdscr, prompt, temperature, max_new_tokens):
     console.init(stdscr=stdscr, user_callback=_user_callback)
     console.start()
 
+# 通过PRM筛选并发采样结果
+def ask_with_prm(question, llm_key='empty', prm_key='empty', llm_url='https://powerai.cc:8001/v1', prm_url='https://powerai.cc:8002/v1',
+                 max_new_tokens=1024, temperature=0.7, n=10, prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
+    from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
+    prm = LLM_PRM_Client()
+    prm.init(prm_model_path=prm_model_path, url=prm_url, api_key=prm_key)
+
+    res_dict = {}
+
+    dgreen(f'ask_with_prm()已启动，n_sample={n}')
+    def _task(id):
+        llm = LLM_Client(api_key=llm_key, url=llm_url)
+        gen = llm.ask_prepare(question=question, temperature=temperature, max_new_tokens=max_new_tokens).get_answer_generator()
+        res = ''
+        for chunk in gen:
+            res += chunk
+
+        # 获取step_rewards
+        step_data = Step_Data(problem=question, response=res)
+        step_rewards = prm.get_step_rewards(step_data)
+
+        # 存储当前id下的response
+        res_dict[id] = {
+            'response':res,
+            'step_rewards':step_rewards,
+            'min_reward': prm.get_min_reward(),
+            'last_reward': prm.get_last_reward(),
+            'prod_reward': prm.get_prod_reward(),
+        }
+
+    # 启动callback任务
+    threads = []
+    for i in range(n):  # 有10个线程
+        t = threading.Thread(target=_task, args=(i,))
+        threads.append(t)
+        t.start()
+
+    # 等待所有任务完成
+    for t in threads:
+        t.join()
+
+    # 显示每一个id下的response和step_rewards
+    dgreen(f'ask_with_prm()完成，n_sample={n}')
+    for i in range(n):
+        s = ' '.join(res_dict[i]['response'][-50:].split('\n'))
+        rewards_list = [f'{r:.2f}' for r in res_dict[i]['step_rewards']]
+        # s += f'【{",".join(rewards_list)}】'
+        s += f'【min: {res_dict[i]["min_reward"]:.2f}】'
+        s += f'【prod: {res_dict[i]["prod_reward"]:.2f}】'
+        s += f'【last: {res_dict[i]["last_reward"]:.2f}】'
+        print(f'[{i}]: "...{s}"')
+
+    # 返回last_reward最大的response
+    final_result = ''
+    max_reward = 0
+    final_id = -1
+    for i in range(n):
+        if res_dict[i]["last_reward"] > max_reward:
+            max_reward = res_dict[i]["last_reward"]
+            final_id = i
+
+    final_result = res_dict[final_id]['response']
+    final_result_tail = {' '.join(final_result.split('\n'))}
+    dgreen(f'final answer: "{final_result_tail}"')
+    return final_result
+
 def console_asks(prompt, temperature, max_new_tokens=8192):
     curses.wrapper(_console_asks, prompt=prompt, temperature=temperature, max_new_tokens=max_new_tokens)
 
@@ -1088,9 +1154,14 @@ def hot_temp_main():
 if __name__ == "__main__" :
     # main1()
     # main2()
-    # curses.wrapper(console_asks_main)
-    prompt='''51.2亿kWh是多少kWh？'''
-    # prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？每一步都写清楚，例如，第一步：有15瓶可乐和0个空瓶，喝完后15个空瓶换成7瓶可乐，并剩余1个空瓶；第二步：有7瓶可乐和第一步剩余的1个空瓶，喝完后共8个空瓶换成4瓶可乐，并剩余0个空瓶；...'''
-    console_asks(prompt=prompt, temperature=1.0)
-    # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
-    # hot_temp_main()
+
+    # # prompt='''51.2亿kWh是多少kWh？'''
+    # prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'''
+    # console_asks(prompt=prompt, temperature=0.7)
+    # # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
+    # # hot_temp_main()
+
+    prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'''
+    final_answer = ask_with_prm(question=prompt, temperature=0.7)
+    print(f'final_answer:')
+    print(final_answer)
