@@ -1089,7 +1089,8 @@ if __name__ == "__main__" :
     # main1()
     # main2()
     # curses.wrapper(console_asks_main)
-    prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？每一步都写清楚，例如，第一步：有15瓶可乐和0个空瓶，喝完后15个空瓶换成7瓶可乐，并剩余1个空瓶；第二步：有7瓶可乐和第一步剩余的1个空瓶，喝完后共8个空瓶换成4瓶可乐，并剩余0个空瓶；...'''
-    console_asks(prompt=prompt, temperature=0.7)
+    prompt='''51.2亿kWh是多少kWh？'''
+    # prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？每一步都写清楚，例如，第一步：有15瓶可乐和0个空瓶，喝完后15个空瓶换成7瓶可乐，并剩余1个空瓶；第二步：有7瓶可乐和第一步剩余的1个空瓶，喝完后共8个空瓶换成4瓶可乐，并剩余0个空瓶；...'''
+    console_asks(prompt=prompt, temperature=1.0)
     # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
     # hot_temp_main()
