@@ -1028,7 +1028,7 @@ def main2():
     # llm.ask_prepare('write 3 words', in_temperature=0.9, in_stop=['<s>', '|<end>|'], in_max_new_tokens=400).get_answer_and_sync_print()
 
 # 控制台并发stream的测试
-def _console_asks(stdscr, prompt, temperature):
+def _console_asks(stdscr, prompt, temperature, max_new_tokens):
     def _user_callback(win_data):
         thread_id = win_data.thread_id
         output = win_data.output_buf
@@ -1042,7 +1042,7 @@ def _console_asks(stdscr, prompt, temperature):
         )
 
         # gen = llm.ask_prepare('写一首长诗', temperature=temperature, max_new_tokens=1000).get_answer_generator()
-        gen = llm.ask_prepare(question=prompt, temperature=temperature, max_new_tokens=200).get_answer_generator()
+        gen = llm.ask_prepare(question=prompt, temperature=temperature, max_new_tokens=max_new_tokens).get_answer_generator()
         # gen = llm.ask_prepare('选取一首李白的诗，将诗的名字返回给我', temperature=temperature, max_new_tokens=200).get_answer_generator()
 
         res = ''
@@ -1060,13 +1060,14 @@ def _console_asks(stdscr, prompt, temperature):
     console.init(stdscr=stdscr, user_callback=_user_callback)
     console.start()
 
-def console_asks(prompt, temperature):
-    curses.wrapper(_console_asks, prompt=prompt, temperature=temperature)
+def console_asks(prompt, temperature, max_new_tokens=8192):
+    curses.wrapper(_console_asks, prompt=prompt, temperature=temperature, max_new_tokens=max_new_tokens)
 
 def hot_temp_main():
     llm = LLM_Client(
         api_key='empty',
         url='http://localhost:8022/v1',
+        max_new_tokens=8192,
     )
     llm.ask_prepare('1+1=', temperature=0.5, max_new_tokens=1).get_answer_and_sync_print()
     llm.ask_prepare('继续', temperature=0.5, max_new_tokens=100).get_answer_and_sync_print()
@@ -1075,7 +1076,7 @@ if __name__ == "__main__" :
     # main1()
     # main2()
     # curses.wrapper(console_asks_main)
-    prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问31元一共可以喝几瓶可乐？'''
-    console_asks(prompt=prompt, temperature=1.0)
+    prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？每一步都写清楚，例如，第一步：有15瓶可乐和0个空瓶，喝完后15个空瓶换成7瓶可乐，并剩余1个空瓶；第二步：有7瓶可乐和第一步剩余的1个空瓶，喝完后共8个空瓶换成4瓶可乐，并剩余0个空瓶；...'''
+    console_asks(prompt=prompt, temperature=0.2)
     # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
     # hot_temp_main()
