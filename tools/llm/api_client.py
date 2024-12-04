@@ -1029,6 +1029,10 @@ def main2():
 
 # 控制台并发stream的测试
 def _console_asks(stdscr, prompt, temperature, max_new_tokens):
+    from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
+    prm = LLM_PRM_Client()
+    prm.init()
+
     def _user_callback(win_data):
         thread_id = win_data.thread_id
         output = win_data.output_buf
@@ -1050,6 +1054,15 @@ def _console_asks(stdscr, prompt, temperature, max_new_tokens):
         for chunk in gen:
             res += chunk
             output(content=res, caption=caption)
+
+        # 获取step_rewards
+        step_data = Step_Data(problem=prompt, response=res)
+        step_rewards = prm.get_step_rewards(step_data)
+
+        # 输出step_rewards信息
+        rewards_list = [f'{r:.2f}' for r in step_rewards]
+        res += f'[{",".join(rewards_list)}]'
+        output(content=res, caption=caption)
 
         # while True:
         #     content = f'这是window[{win_obj.thread_id}], 时间: {time.strftime("%H:%M:%S")}'
@@ -1077,6 +1090,6 @@ if __name__ == "__main__" :
     # main2()
     # curses.wrapper(console_asks_main)
     prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？每一步都写清楚，例如，第一步：有15瓶可乐和0个空瓶，喝完后15个空瓶换成7瓶可乐，并剩余1个空瓶；第二步：有7瓶可乐和第一步剩余的1个空瓶，喝完后共8个空瓶换成4瓶可乐，并剩余0个空瓶；...'''
-    console_asks(prompt=prompt, temperature=0.2)
+    console_asks(prompt=prompt, temperature=0.7)
     # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
     # hot_temp_main()
