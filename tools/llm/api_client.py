@@ -1121,14 +1121,19 @@ def ask_with_prm(question, llm_key='empty', prm_key='empty', llm_url='https://po
         rewards_list = [f'{r:.2f}' for r in res_dict[i]['step_rewards']]
         # s += f'【{",".join(rewards_list)}】'
         s += f'【min: {res_dict[i]["min_reward"]:.2f}】'
-        s += f'【prod: {res_dict[i]["prod_reward"]:.2f}】'
+        s += f'【prod: {res_dict[i]["prod_reward"]:.9f}】'
         s += f'【last: {res_dict[i]["last_reward"]:.2f}】'
         print(f'[{i}]: "...{s}"')
 
+    # # 返回prod_reward最大的response
     # 返回last_reward最大的response
     final_result = ''
     max_reward = 0
     final_id = -1
+    # for i in range(n):
+    #     if res_dict[i]["prod_reward"] > max_reward:
+    #         max_reward = res_dict[i]["prod_reward"]
+    #         final_id = i
     for i in range(n):
         if res_dict[i]["last_reward"] > max_reward:
             max_reward = res_dict[i]["last_reward"]
@@ -1161,7 +1166,7 @@ if __name__ == "__main__" :
     # # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
     # # hot_temp_main()
 
-    prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'''
-    final_answer = ask_with_prm(question=prompt, temperature=0.7)
+    prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问25元一共可以喝几瓶可乐？'''
+    final_answer = ask_with_prm(question=prompt, temperature=1.0, n=16)
     print(f'final_answer:')
     print(final_answer)
