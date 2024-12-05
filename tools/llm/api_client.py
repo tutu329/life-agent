@@ -1116,6 +1116,8 @@ def ask_with_prm(question, llm_key='empty', prm_key='empty', llm_url='https://po
 
     # 显示每一个id下的response和step_rewards
     dgreen(f'ask_with_prm()完成，n_sample={n}')
+
+    from utils.string_util import string_right_align
     for i in range(n):
         s = ' '.join(res_dict[i]['response'][-50:].split('\n'))
         rewards_list = [f'{r:.2f}' for r in res_dict[i]['step_rewards']]
@@ -1123,7 +1125,7 @@ def ask_with_prm(question, llm_key='empty', prm_key='empty', llm_url='https://po
         s += f'【min: {res_dict[i]["min_reward"]:.2f}】'
         s += f'【prod: {res_dict[i]["prod_reward"]:.9f}】'
         s += f'【last: {res_dict[i]["last_reward"]:.2f}】'
-        print(f'[{i}]: "...{s}"')
+        print(f'[{i}]: "...{string_right_align(s, 160)}"')
 
     # # 返回prod_reward最大的response
     # 返回last_reward最大的response
@@ -1166,7 +1168,21 @@ if __name__ == "__main__" :
     # # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
     # # hot_temp_main()
 
+    from config import get_os
     prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问25元一共可以喝几瓶可乐？'''
-    final_answer = ask_with_prm(question=prompt, temperature=1.0, n=16)
+    if get_os()=='windows':
+        final_answer = ask_with_prm(
+            llm_url='http://localhost:8001/v1',
+            prm_model_path='d:/models/Skywork-o1-Open-PRM-Qwen-2.5-7B',
+            question=prompt,
+            temperature=1.0,
+            n=16
+        )
+    else:
+        final_answer = ask_with_prm(
+            question=prompt,
+            temperature=1.0,
+            n=16
+        )
     print(f'final_answer:')
     print(final_answer)

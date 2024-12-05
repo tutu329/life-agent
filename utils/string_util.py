@@ -1,5 +1,11 @@
 import re
 
+from wcwidth import wcswidth
+
+def string_right_align(text, width):
+    padding = width - wcswidth(text)
+    return f"{' ' * padding}{text}" if padding > 0 else text
+
 # 将string后面用pad填充到end
 def string_pad_to_end_with_console_width(s, in_width, pad=' '):
     width = 0
