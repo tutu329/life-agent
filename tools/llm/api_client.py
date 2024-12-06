@@ -1165,10 +1165,10 @@ def hot_temp_main():
     llm.ask_prepare('1+1=', temperature=0.5, max_new_tokens=1).get_answer_and_sync_print()
     llm.ask_prepare('继续', temperature=0.5, max_new_tokens=100).get_answer_and_sync_print()
 
-def o1_BoN_all():
+def o1_BoN_all(question, temperature=1.0, n=64):
 
     # # prompt='''51.2亿kWh是多少kWh？'''
-    prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'''
+    # prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'''
     # console_asks(prompt=prompt, temperature=0.7)
     # # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
     # # hot_temp_main()
@@ -1328,21 +1328,22 @@ print({
         final_answer = ask_with_prm(
             llm_url='http://localhost:8001/v1',
             prm_model_path='d:/models/Skywork-o1-Open-PRM-Qwen-2.5-7B',
-            question=prompt,
-            temperature=1.0,
-            n=64
+            question=question,
+            temperature=temperature,
+            n=n
         )
     else:
         final_answer = ask_with_prm(
-            question=prompt,
-            temperature=1.0,
-            n=64
+            question=question,
+            temperature=temperature,
+            n=n
         )
     print(f'final_answer:')
     print(final_answer)
+    return final_answer
 
-def main_search(question, messages, llm_key='empty', prm_key='empty', llm_url='https://powerai.cc:8001/v1', prm_url='https://powerai.cc:8002/v1',
-                 max_new_tokens=1024, temperature=0.7, n=10, prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
+def o1_steps_search(question, messages, llm_key='empty', prm_key='empty', llm_url='https://powerai.cc:8001/v1', prm_url='https://powerai.cc:8002/v1',
+                    max_new_tokens=1024, temperature=0.7, n=10, prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
     from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
 
     # 给prm的response是['assistant step response...', ...].append(res)，然后'\n'.join()
@@ -1456,25 +1457,23 @@ def main_search(question, messages, llm_key='empty', prm_key='empty', llm_url='h
 
     return final_result
 
-def o1_BoN_steps():
-    temperature = 0.7
-    n = 16
-    tries = 10
-    question = '一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'
+def o1_BoN_steps(question, temperature=0.7, n=16, max_tries=10):
     messages = [
         {'role': 'system', 'content': 'You are a helpful assistant.'},
         {'role': 'user', 'content': question},
 
     ]
-    res = main_search(question=question, messages=messages, temperature=temperature, n=n)
+    res = o1_steps_search(question=question, messages=messages, temperature=temperature, n=n)
 
-    for i in range(tries):
+    for i in range(max_tries):
         messages.append({'role': 'assistant', 'content': res})
-        res = main_search(question=question, messages=messages, temperature=temperature, n=n)
+        res = o1_steps_search(question=question, messages=messages, temperature=temperature, n=n)
 
     print(f'final_result: {res}')
+    return res
 
 if __name__ == "__main__" :
-    # 直接采样64个完整结果的BoN筛选的正确率，比每个step采样20次的BoN筛选的正确率高
-    o1_BoN_all()
-    o1_BoN_steps()
+    # 直接采样64个完整结果的BoN筛选的正确率，比每个step采样20次、最多尝试10个steps的BoN筛选的正确率高，且step方式采用不清楚多少steps刚好完成。
+    question = '一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'
+    o1_BoN_all(question=question, temperature=1.0, n=64)
+    # o1_BoN_steps(question=question, temperature=0.7, n=20, max_tries=10)
