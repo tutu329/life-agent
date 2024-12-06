@@ -1345,6 +1345,15 @@ def main_search(question, messages, llm_key='empty', prm_key='empty', llm_url='h
                  max_new_tokens=1024, temperature=0.7, n=10, prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
     from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
 
+    # 给prm的response是['assistant step response...', ...].append(res)，然后'\n'.join()
+    his_responses_list = []
+    for dict in messages:
+        if 'role' in dict and dict['role']=='assistant':
+            his_responses_list.append(dict['content'])
+
+    dgreen(f'history responses:')
+    dgreen('\n'.join(his_responses_list))
+
     def message_stream(gen):
         for chunk in gen:
             if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
@@ -1389,8 +1398,13 @@ def main_search(question, messages, llm_key='empty', prm_key='empty', llm_url='h
         for chunk in message_stream(gen):
             res += chunk
 
+        # 给prm的response是['assistant step response...', ...].append(res)，然后'\n'.join()
+        his_res = '\n'.join(his_responses_list) + '\n' + res
+        # dgreen(f'history responses:')
+        # dgreen(f'{res}')
+
         # 获取step_rewards
-        step_data = Step_Data(problem=question, response=res)
+        step_data = Step_Data(problem=question, response=his_res)
         step_rewards = prm.get_step_rewards(step_data)
 
         res_dict[id] = {
@@ -1444,7 +1458,7 @@ def main_search(question, messages, llm_key='empty', prm_key='empty', llm_url='h
 
 def main_ss():
     temperature = 0.7
-    n = 5
+    n = 16
     tries = 10
     question = '一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'
     messages = [
