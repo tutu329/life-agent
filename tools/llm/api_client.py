@@ -1,3 +1,10 @@
+# 安装curses
+# windows: pip install windows-curses
+# linux: pip install curses
+
+# 安装wcwidth
+# pip install wcwidth
+
 from copy import deepcopy
 import base64, wave
 from pprint import pprint
@@ -1158,9 +1165,7 @@ def hot_temp_main():
     llm.ask_prepare('1+1=', temperature=0.5, max_new_tokens=1).get_answer_and_sync_print()
     llm.ask_prepare('继续', temperature=0.5, max_new_tokens=100).get_answer_and_sync_print()
 
-if __name__ == "__main__" :
-    # main1()
-    # main2()
+def main_o1():
 
     # # prompt='''51.2亿kWh是多少kWh？'''
     # prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'''
@@ -1335,3 +1340,126 @@ print({
         )
     print(f'final_answer:')
     print(final_answer)
+
+def main_search(question, messages, llm_key='empty', prm_key='empty', llm_url='https://powerai.cc:8001/v1', prm_url='https://powerai.cc:8002/v1',
+                 max_new_tokens=1024, temperature=0.7, n=10, prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
+    from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
+
+    def message_stream(gen):
+        for chunk in gen:
+            if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content
+
+    res_dict = {}
+
+    oai = OpenAI(
+        api_key=llm_key,
+        base_url=llm_url,
+    )
+    model_id = oai.models.list().data[0].id
+    messages1 = [
+        {'role': 'system', 'content': 'You are a helpful assistant.'},
+        {'role': 'user', 'content': '''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问22元一共可以喝几瓶可乐？'''},
+        {'role': 'assistant', 'content': '为了解决这个问题，我们可以分步骤来计算。'},
+        {'role': 'assistant', 'content': '首先，直接用22元购买可乐，不考虑回收空瓶换购的情况。'},
+        {'role': 'assistant', 'content': '1. **直接购买的可乐数量**：22元直接可以买22瓶可乐。'},
+        {'role': 'assistant', 'content': '2. **喝完第一轮的可乐后，收集空瓶换购**：喝完22瓶可乐，会得到22个空瓶，用其中的20个空瓶可以换购10瓶新的可乐（因为每2个空瓶可以换1瓶新的可乐）。'},
+        {'role': 'assistant', 'content': '3. **喝完换购来的可乐后，收集空瓶再次换购**：喝完这10瓶可乐，又会得到10个空瓶，用其中的8个空瓶可以换4瓶新的可乐。'},
+        {'role': 'assistant', 'content': '4. **重复上述过程**：喝完这4瓶可乐，得到4个空瓶，用其中的4个空瓶再换2瓶新的可乐。接着，喝完这2瓶可乐，得到2个空瓶，用这2个空瓶换1瓶新的可乐。最后，喝完这瓶可乐，再没有足够的空瓶去换新的可乐了。'},
+        {'role': 'assistant', 'content': '将所有喝到的可乐数量加起来：22（初始购买）+ 10（第一次换购）+ 4（第二次换购）+ 2（第三次换购）+ 1（第四次换购）= 39瓶。'},
+        {'role': 'assistant', 'content': '因此，22元一共可以喝到39瓶可乐。'},
+        {'role': 'assistant', 'content': '等一下，'},
+    ]
+
+    def _task(id):
+        prm = LLM_PRM_Client()
+        prm.init(prm_model_path=prm_model_path, url=prm_url, api_key=prm_key)
+
+        stop = ['\n']
+        gen = oai.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            temperature=temperature,
+            stream=True,
+            max_tokens=max_new_tokens,
+            stop=stop,
+        )
+
+        res = ''
+        for chunk in message_stream(gen):
+            res += chunk
+
+        # 获取step_rewards
+        step_data = Step_Data(problem=question, response=res)
+        step_rewards = prm.get_step_rewards(step_data)
+
+        res_dict[id] = {
+            'response':res,
+            'step_rewards':step_rewards,
+            'min_reward': prm.get_min_reward(),
+            'last_reward': prm.get_last_reward(),
+            'prod_reward': prm.get_prod_reward(),
+        }
+
+    # 启动callback任务
+    threads = []
+    for i in range(n):  # 有10个线程
+        t = threading.Thread(target=_task, args=(i,))
+        threads.append(t)
+        t.start()
+
+    # 等待所有任务完成
+    for t in threads:
+        t.join()
+
+    from utils.string_util import string_right_align
+    for i in range(n):
+        s = ' '.join(res_dict[i]['response'][-50:].split('\n'))
+        rewards_list = [f'{r:.2f}' for r in res_dict[i]['step_rewards']]
+        # s += f'【{",".join(rewards_list)}】'
+        s += f'【min: {res_dict[i]["min_reward"]:.2f}】'
+        s += f'【prod: {res_dict[i]["prod_reward"]:.9f}】'
+        s += f'【last: {res_dict[i]["last_reward"]:.2f}】'
+        print(f'[{i}]: "...{string_right_align(s, 180)}"')
+
+    # # 返回prod_reward最大的response
+    # 返回last_reward最大的response
+    final_result = ''
+    max_reward = 0
+    final_id = -1
+    # for i in range(n):
+    #     if res_dict[i]["prod_reward"] > max_reward:
+    #         max_reward = res_dict[i]["prod_reward"]
+    #         final_id = i
+    for i in range(n):
+        if res_dict[i]["last_reward"] > max_reward:
+            max_reward = res_dict[i]["last_reward"]
+            final_id = i
+
+    final_result = res_dict[final_id]['response']
+    dred(f'final answer: ')
+    dred(f'"{final_result}"')
+
+    return final_result
+
+def main_ss():
+    temperature = 0.7
+    n = 10
+    tries = 10
+    question = '一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'
+    messages = [
+        {'role': 'system', 'content': 'You are a helpful assistant.'},
+        {'role': 'user', 'content': question},
+
+    ]
+    res = main_search(question=question, messages=messages, temperature=temperature, n=n)
+
+    for i in range(tries):
+        messages.append({'role': 'assistant', 'content': res})
+        res = main_search(question=question, messages=messages, temperature=temperature, n=n)
+
+    print(f'final_result: {res}')
+
+if __name__ == "__main__" :
+    # main_o1()
+    main_ss()
