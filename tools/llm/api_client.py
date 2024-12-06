@@ -1444,7 +1444,7 @@ def main_search(question, messages, llm_key='empty', prm_key='empty', llm_url='h
 
 def main_ss():
     temperature = 0.7
-    n = 10
+    n = 5
     tries = 10
     question = '一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'
     messages = [
