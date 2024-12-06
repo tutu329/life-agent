@@ -1165,16 +1165,16 @@ def hot_temp_main():
     llm.ask_prepare('1+1=', temperature=0.5, max_new_tokens=1).get_answer_and_sync_print()
     llm.ask_prepare('继续', temperature=0.5, max_new_tokens=100).get_answer_and_sync_print()
 
-def main_o1():
+def o1_BoN_all():
 
     # # prompt='''51.2亿kWh是多少kWh？'''
-    # prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'''
+    prompt='''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问15元一共可以喝几瓶可乐？'''
     # console_asks(prompt=prompt, temperature=0.7)
     # # console_asks(prompt='51.2亿kWh是多少kWh？', temperature=1.0)
     # # hot_temp_main()
 
     from config import get_os
-    prompt='''###你必须回答接下来的问题，而且系统已经为你准备了以下工具，你可以直接访问这些工具:
+    prompt1='''###你必须回答接下来的问题，而且系统已经为你准备了以下工具，你可以直接访问这些工具:
 工具名称: search_tool
 工具描述: 通过bing搜索引擎对query进行搜索，并返回搜索结果的工具.
 工具参数: [
@@ -1456,7 +1456,7 @@ def main_search(question, messages, llm_key='empty', prm_key='empty', llm_url='h
 
     return final_result
 
-def main_ss():
+def o1_BoN_steps():
     temperature = 0.7
     n = 16
     tries = 10
@@ -1475,5 +1475,6 @@ def main_ss():
     print(f'final_result: {res}')
 
 if __name__ == "__main__" :
-    # main_o1()
-    main_ss()
+    # 直接采样64个完整结果的BoN筛选的正确率，比每个step采样20次的BoN筛选的正确率高
+    o1_BoN_all()
+    o1_BoN_steps()
