@@ -1481,3 +1481,4 @@ if __name__ == "__main__" :
     question = g_prompt
     o1_BoN_all(question=question, temperature=0.7, n=32)
     # o1_BoN_steps(question=question, temperature=0.7, n=20, max_tries=10)
+
