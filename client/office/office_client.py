@@ -37,13 +37,18 @@ class Office_Client():
         self._init()
 
     def _init(self):
-        self.llm = LLM_Client()
-        # 启动Word应用程序
-        self.word = win32.gencache.EnsureDispatch('Word.Application')
-        # 启动Excel应用程序
-        self.excel = win32.gencache.EnsureDispatch('Excel.Application')
+        try:
+            self.llm = LLM_Client()
+            # 启动Word应用程序
+            self.word = win32.gencache.EnsureDispatch('Word.Application')
+            # 启动Excel应用程序
+            self.excel = win32.gencache.EnsureDispatch('Excel.Application')
 
-        self._get_word_selection()
+            self._get_word_selection()
+        except AttributeError as e:
+            dred(f'Office_Client报错, "{e}"。可能需要尝试删除%TEMP%\gen_py文件夹以解决该问题。')
+            dred(f'当前程序已推出。')
+            exit()
 
     def _excel_get_selected_table(self):
         wb = self.excel.ActiveWorkbook
