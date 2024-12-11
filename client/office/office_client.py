@@ -190,9 +190,11 @@ class Chapter_Info:
     heading_style: str = ''     # 如'标题 3'
     heading: str = ''           # 如'建设必要性'
     prompt: str = ''            # 如'网络搜索“xxx”，并编写xxx情况...'
+    type: str = ''              # 如'chapter'或'alone_text'
 
 def _get_chapter_info(scheme_item) -> Chapter_Info:
     if scheme_item.get('type') and scheme_item.get('type') == 'chapter':
+        # 返回章节标题和content内容
         content = scheme_item['content']
         heading_num = content['heading_num']
 
@@ -204,10 +206,20 @@ def _get_chapter_info(scheme_item) -> Chapter_Info:
             heading_num=heading_num,
             heading_style=heading_style,
             heading=f'{heading_num} {content["heading"]}',
-            prompt=content['text']
+            prompt=content['text'],
+            type='chapter'
+        )
+        return chapter_info
+    elif scheme_item.get('type') and scheme_item.get('type') == 'along_text':
+        # 返回along_text的content内容
+        content = scheme_item['content']
+        chapter_info = Chapter_Info(
+            prompt=content['text'],
+            type = 'alone_text'
         )
         return chapter_info
     else:
+        # 返回空内容
         return Chapter_Info()
 
 # 初始化和调用agent
@@ -252,25 +264,36 @@ def report_on_plant_grid_connection_system(scheme_file_path):
     # 编制报告
     for item in scheme_list:
         chapter_info = _get_chapter_info(item)
-        dblue(f'chapter_info: "{chapter_info}"')
-        # 编写标题
-        office.word_insert_heading_at_cursor(heading=chapter_info.heading, style=chapter_info.heading_style)
-        if chapter_info.prompt!='':
-            # 编写正文
-            prompt = chapter_info.prompt
-            result = _ask_agent(
-                prompt,
-                output_stream_buf = office.word_insert_text_at_cursor_without_end,
-                output_stream_end_func = office.word_insert_text_end_at_cursor
-            )
-            # office.word_insert_text_at_cursor(text=result)
+        if chapter_info.type=='chapter':
+            dblue(f'chapter_info: "{chapter_info}"')
+            # 编写标题
+            office.word_insert_heading_at_cursor(heading=chapter_info.heading, style=chapter_info.heading_style)
+            if chapter_info.prompt!='':
+                # 编写正文
+                prompt = chapter_info.prompt
+                result = _ask_agent(
+                    prompt,
+                    output_stream_buf = office.word_insert_text_at_cursor_without_end,
+                    output_stream_end_func = office.word_insert_text_end_at_cursor
+                )
+                # office.word_insert_text_at_cursor(text=result)
+        elif chapter_info.type=='alone_text':
+            if chapter_info.prompt!='':
+                # 编写正文
+                prompt = chapter_info.prompt
+                result = _ask_agent(
+                    prompt,
+                    output_stream_buf = office.word_insert_text_at_cursor_without_end,
+                    output_stream_end_func = office.word_insert_text_end_at_cursor
+                )
 
     # office.word_insert_heading_at_cursor('一、概要', '标题 1')
     # office.word_insert_heading_at_cursor('1、现状', '标题 2')
     # office.word_insert_llm_stream_at_cursor('我叫土土')
 
 def main():
-    report_on_plant_grid_connection_system('d:/demo/scheme.txt')
+    report_on_plant_grid_connection_system('D:/server/life-agent/client/office/xiaoshan_prj/scheme.txt')
+    # report_on_plant_grid_connection_system('d:/demo/scheme.txt')
     input('【结束】')
 
 

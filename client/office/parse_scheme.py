@@ -7,6 +7,8 @@ def get_scheme_list(file_path):
 
     # Regular expressions to match different line types
     # report_time_pattern = re.compile(r'^编制时间[:：]\s*(\d{2,4}年\d{1,2}月)')
+
+    # 匹配“报告编制时间”
     report_time_pattern = re.compile(
         r'^编制时间[:：]\s*'  # Matches the start "编制时间："
         r'('
@@ -17,8 +19,12 @@ def get_scheme_list(file_path):
         r'\d{2,4}\.\d{1,2}\.\d{1,2}'    # e.g., 2024.9.3
         r')$'
     )
+    # 匹配“章节标题”
     chapter_pattern = re.compile(r'^(\d+(\.\d+)*)\s+(.+)$')  # Matches headings like '1 概述' or '1.1 设计依据'
-    text_pattern = re.compile(r'^\s+(.+)$')  # Matches indented text lines
+    # 匹配“章节标题”后缩进的文本内容
+    indent_text_pattern = re.compile(r'^\s+(.+)$')  # Matches indented text lines。其中^表示匹配字符串的开头，\s表示任意空白字符包括空格、制表符（tab）、换行符等
+    # 匹配非“章节标题”后文本（如开篇文本）
+    alone_text_pattern = re.compile(r'^(.+)$')
 
     with open(file_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
@@ -43,7 +49,10 @@ def get_scheme_list(file_path):
         if not line:
             continue  # If line becomes empty after removing inline comment
 
-        # Check for report start time
+        # 检查非缩进的独立文本
+        # alone_text_match = alone_text_pattern.match(line)
+
+        # 检查“报告编制时间”
         report_time_match = report_time_pattern.match(line)
         if report_time_match:
             date = report_time_match.group(1)
@@ -55,7 +64,7 @@ def get_scheme_list(file_path):
             # print(f"Line {line_num}: Matched report_start_time with date '{date}'")
             continue
 
-        # Check for chapter headings
+        # 检查“章节标题”
         chapter_match = chapter_pattern.match(line)
         if chapter_match:
             heading_num = chapter_match.group(1)
@@ -72,8 +81,8 @@ def get_scheme_list(file_path):
             # print(f"Line {line_num}: Matched chapter '{heading_num} {heading}' at index {current_index}")
             continue
 
-        # Check for indented text associated with the last chapter
-        text_match = text_pattern.match(line)
+        # 检查上一个“章节标题”后的缩进文本
+        text_match = indent_text_pattern.match(line)
         if text_match and current_index >= 0:
             text = text_match.group(1)
             # Append the text to the last chapter's 'text' field
@@ -86,16 +95,28 @@ def get_scheme_list(file_path):
             # print(f"Line {line_num}: Appended text to chapter index {current_index}: '{text}'")
             continue
 
-        # If the line does not match any pattern, you can choose to handle it or skip
-        # For now, we'll skip unrecognized lines
-        dred(f"【parse_scheme()】Line {line_num}: Unrecognized line format. Skipping.")
+        # 如果检查结果都不符合，做如下处理，或不处理
+        if scheme_list[current_index]['type']=='along_text':
+            # 如果上一行也是'along_text'，则追加内容
+            scheme_list[current_index]['content']['text'] += '\n' + line
+        else:
+            scheme_list.append({
+                'type': 'along_text',
+                'content': {
+                    'text': line,
+                }
+            })
+            current_index = len(scheme_list) - 1
+
+        # dred(f"【parse_scheme()】Line {line_num}: Unrecognized line format. Skipping.")
         continue
 
     return scheme_list
 
 # Example usage
 if __name__ == "__main__":
-    file_path = 'demo/scheme.txt'  # Replace with the path to your scheme.txt file
+    file_path = 'D:/server/life-agent/client/office/xiaoshan_prj/scheme.txt'  # Replace with the path to your scheme.txt file
+    # file_path = 'demo/scheme.txt'  # Replace with the path to your scheme.txt file
     scheme_list = get_scheme_list(file_path)
     for item in scheme_list:
         print(item)
