@@ -95,7 +95,7 @@ def get_scheme_list(file_path):
 
 # Example usage
 if __name__ == "__main__":
-    file_path = 'scheme.txt'  # Replace with the path to your scheme.txt file
+    file_path = 'demo/scheme.txt'  # Replace with the path to your scheme.txt file
     scheme_list = get_scheme_list(file_path)
     for item in scheme_list:
         print(item)

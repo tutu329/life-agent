@@ -9,6 +9,8 @@
 # ‘ 1为控制台可见，2为控制台在后台，0为控制台不可见
 # shell.Run command, 1, True
 
+# 目前报告自动编制.docm中的运行宏的快捷键定义为"Ctrl+9"
+
 
 from singleton import singleton
 
