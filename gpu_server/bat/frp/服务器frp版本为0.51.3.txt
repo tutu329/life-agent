@@ -1,12 +1,14 @@
 linux下：
-    设置vpn代理，尝试：
-        http_proxy=http://powerai.cc:7890
-        https_proxy=http://powerai.cc:7890
     下载frp：
-        wget https://github.com/fatedier/frp/releases/download/v0.51.3/frp_0.51.3_linux_amd64.tar.gz
+        安装aria2c：
+            sudo mkdir -p /etc/systemd/system/snapd.service.d
+            sudo vi /etc/systemd/system/snapd.service.d/snap_tuning.conf，放入下述内容
+[Service]
+Environment="SNAPD_STORE=mirrors.tuna.tsinghua.edu.cn"
+            sudo systemctl daemon-reload
+            sudo systemctl restart snapd
+            snap install aria2c
+        多线程下载：
+            aria2c -x 16 -s 16 https://github.com/fatedier/frp/releases/download/v0.51.3/frp_0.51.3_linux_amd64.tar.gz
     解压：
         tar -xzvf frp_0.51.3_linux_amd64.tar.gz
-
-    取消vpn代理：
-        unset http_proxy
-        unset https_proxy
