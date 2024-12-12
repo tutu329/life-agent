@@ -17,3 +17,5 @@ Environment="SNAPD_STORE=mirrors.tuna.tsinghua.edu.cn"
 bind_port = 7880
     运行：
         nohup ./frps -c frps.ini &
+    切记：
+        服务器要开7880端口和frpc.ini中所有端口
