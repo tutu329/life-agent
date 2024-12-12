@@ -10,7 +10,7 @@ import json5
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
-def extract_table_to_word(excel_path, sheet_name, table_title='') -> str:
+def extract_table_to_word(excel_path, sheet_name, table_title='', is_vertical=True, draw_table='true') -> str:
     """
     从指定的 Excel 文件和工作表中提取表格数据，并将其以文本形式复制到 Word 中，
     根据每个单元格的 NumberFormat 格式化数值，包括百分数格式。
@@ -94,6 +94,9 @@ def extract_table_to_word(excel_path, sheet_name, table_title='') -> str:
         workbook.Close(SaveChanges=False)
         excel.Quit()
 
+        if draw_table=='false':
+            return table_text
+
         # 获取当前光标位置
         word = win32.gencache.EnsureDispatch('Word.Application')
         selection = word.Selection
@@ -107,8 +110,9 @@ def extract_table_to_word(excel_path, sheet_name, table_title='') -> str:
             print("警告: 提取到的表格数据为空。")
             return
 
-        # Step 1: 在当前位置插入分节符（下一页）
-        selection.InsertBreak(constants.wdSectionBreakNextPage)
+        if not is_vertical:
+            # Step 1: 在当前位置插入分节符（下一页）
+            selection.InsertBreak(constants.wdSectionBreakNextPage)
 
         # Step 2.1: 添加表头
         selection.TypeText(f'{table_title}')
@@ -120,17 +124,19 @@ def extract_table_to_word(excel_path, sheet_name, table_title='') -> str:
         # Step 2.2: 添加表格
         table = selection.Tables.Add(Range=selection.Range, NumRows=num_rows, NumColumns=num_cols)
 
-        # 设置当前节的页面方向为横向
-        selection.Sections(1).PageSetup.Orientation = constants.wdOrientLandscape
+        if not is_vertical:
+            # 设置当前节的页面方向为横向
+            selection.Sections(1).PageSetup.Orientation = constants.wdOrientLandscape
 
         # Step 3: 在表格后插入另一个分节符（下一页）
         # 将光标移动到表格之后
         selection.SetRange(Start=table.Range.End, End=table.Range.End)
 
-        # 插入分节符
-        selection.InsertBreak(constants.wdSectionBreakNextPage)
-        # 设置新节的页面方向为纵向
-        selection.Sections(1).PageSetup.Orientation = constants.wdOrientPortrait
+        if not is_vertical:
+            # 插入分节符
+            selection.InsertBreak(constants.wdSectionBreakNextPage)
+            # 设置新节的页面方向为纵向
+            selection.Sections(1).PageSetup.Orientation = constants.wdOrientPortrait
 
         # 填充表格数据
         try:
@@ -144,6 +150,9 @@ def extract_table_to_word(excel_path, sheet_name, table_title='') -> str:
         # 设置表格边框
         set_table_borders(table)
 
+        # 设置整个表格的字体大小为 10.5 (五号字体)
+        table.Range.Font.Size = 10.5
+
         # 自动调整表格以适应内容
         # Behavior 参数可以是以下值之一：
         # 0 或 win32com.client.constants.wdAutoFitFixed：固定列宽，不自动调整。
@@ -151,8 +160,9 @@ def extract_table_to_word(excel_path, sheet_name, table_title='') -> str:
         # 2 或 win32com.client.constants.wdAutoFitWindow：自动调整表格宽度以适应窗口（页面）宽度。
         table.AutoFitBehavior(2)  # Behavior = 2
 
-        # 使用GoTo将光标移到下一段落(表格之后)
-        selection.GoTo(What=constants.wdGoToLine, Which=constants.wdGoToNext)
+        if not is_vertical:
+            # 使用GoTo将光标移到下一段落(表格之后)
+            selection.GoTo(What=constants.wdGoToLine, Which=constants.wdGoToNext)
 
         # 设置段落居中对齐
         selection.ParagraphFormat.Alignment = previous_alignment
@@ -244,7 +254,24 @@ class Table_Tool(Base_Tool):
 ''',
             'required': 'True',
         },
-
+        {
+            'name': 'is_vertical',
+            'type': 'bool',
+            'description': \
+'''
+本参数为表格数据返回后是否垂直绘制，填写"true"或"false"
+''',
+            'required': 'True',
+        },
+        {
+            'name': 'draw_table',
+            'type': 'bool',
+            'description': \
+                '''
+                本参数为表格数据返回后是否绘制表格，填写"true"或"false"
+                ''',
+            'required': 'True',
+        },
     ]
     def __init__(self):
         pass
@@ -256,12 +283,17 @@ class Table_Tool(Base_Tool):
         excel_path = dict['tool_parameters']['excel_path']
         sheet_name = dict['tool_parameters']['sheet_name']
         table_title = dict['tool_parameters']['table_title']
+        is_vertical = dict['tool_parameters']['is_vertical']
+        draw_table = dict['tool_parameters']['draw_table']
+        dyellow(f'draw_table: {draw_table}')
 
         # 调用工具
         table_text = extract_table_to_word(
             excel_path=excel_path,
             sheet_name=sheet_name,
-            table_title=table_title
+            table_title=table_title,
+            is_vertical=is_vertical,
+            draw_table=draw_table,
         )
 
         # 调用工具后，结果作为action_result返回

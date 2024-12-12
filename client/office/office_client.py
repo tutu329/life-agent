@@ -40,7 +40,7 @@ class Office_Client():
 
     def _init(self):
         try:
-            self.llm = LLM_Client()
+            self.llm = LLM_Client(temperature=0.0)
             # 启动Word应用程序
             self.word = win32.gencache.EnsureDispatch('Word.Application')
             # 启动Excel应用程序
