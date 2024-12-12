@@ -12,3 +12,8 @@ Environment="SNAPD_STORE=mirrors.tuna.tsinghua.edu.cn"
             aria2c -x 16 -s 16 https://github.com/fatedier/frp/releases/download/v0.51.3/frp_0.51.3_linux_amd64.tar.gz
     解压：
         tar -xzvf frp_0.51.3_linux_amd64.tar.gz
+    配置frps.ini
+[common]
+bind_port = 7880
+    运行：
+        nohup ./frps -c frps.ini &
