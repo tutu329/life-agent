@@ -1,0 +1,8 @@
+linux下：
+    设置vpn，尝试：
+        http_proxy=http://powerai.cc:7890
+        https_proxy=http://powerai.cc:7890
+    下载frp：
+        wget https://github.com/fatedier/frp/releases/download/v0.51.3/frp_0.51.3_linux_amd64.tar.gz
+    解压：
+        tar -xzvf frp_0.51.3_linux_amd64.tar.gz
