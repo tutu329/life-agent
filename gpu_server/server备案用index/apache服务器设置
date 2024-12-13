@@ -1,0 +1,15 @@
+sudo apt update
+sudo apt install apache2
+systemctl status apache2
+
+vi /var/www/html/index.html
+    内容用index.html里的
+
+sudo chown www-data:www-data /var/www/html/index.html
+sudo chmod 644 /var/www/html/index.html
+
+此时即可访问powerai.cc网页
+
+如有问题：
+sudo ufw allow 'Apache'
+sudo ufw status
