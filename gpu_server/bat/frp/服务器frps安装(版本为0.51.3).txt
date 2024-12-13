@@ -1,30 +1,24 @@
 linux下：
-    下载frp：
+    1）下载frp（先尝试 wget https://github.com/fatedier/frp/releases/download/v0.51.3/frp_0.51.3_linux_amd64.tar.gz）：
         安装aria2c：
             sudo mkdir -p /etc/systemd/system/snapd.service.d
             sudo vi /etc/systemd/system/snapd.service.d/snap_tuning.conf，放入下述内容
 [Service]
 Environment="SNAPD_STORE=mirrors.tuna.tsinghua.edu.cn"
+
             sudo systemctl daemon-reload
             sudo systemctl restart snapd
-            snap install aria2c
+            sudo snap install aria2c
         多线程下载：
             aria2c -x 16 -s 16 https://github.com/fatedier/frp/releases/download/v0.51.3/frp_0.51.3_linux_amd64.tar.gz
-    解压：
-        tar -xzvf frp_0.51.3_linux_amd64.tar.gz
-    配置frps.ini
+    2）解压到frp文件夹下：
+        mkdir -p frp && tar -xzvf frp_0.51.3_linux_amd64.tar.1.gz -C frp --strip-components=1
+    3）配置frps.ini
 [common]
 bind_port = 7880
-    运行：
-        nohup ./frps -c frps.ini &
-    切记：
-        服务器要开7880端口和frpc.ini中所有端口
-        然后client重启frpc：
-            sudo systemctl start frpc.service（要确认域名确实切换到新的ip后，可以在client上通过ping powerai.cc来判断ip是否切换了，然后再启动frpc服务）
 
-    ubuntu服务器配置frps自启动：
+    4）ubuntu服务器配置frps自启动：
         sudo vi /etc/systemd/system/frps.service
-
 [Unit]
 Description=frps Service
 After=network.target
@@ -32,11 +26,11 @@ Wants=network.target
 
 [Service]
 Type=simple
-User=root
+User=ecs-user
 Restart=always
 RestartSec=5s
-ExecStart=/root/frp/frps -c /root/frp/frps.ini
-ExecReload=/root/frp/frps -c /root/frp/frps.ini
+ExecStart=/home/ecs-user/frp/frps -c /home/ecs-user/frp/frps.ini
+ExecReload=/home/ecs-user/frp/frps -c /home/ecs-user/frp/frps.ini
 
 [Install]
 WantedBy=multi-user.target
@@ -45,4 +39,11 @@ WantedBy=multi-user.target
         sudo systemctl start frps.service
         sudo systemctl status frps.service
         sudo systemctl enable frps.service
+
+    5）client侧切记：
+        服务器要开7880端口和frpc.ini中所有端口
+        然后client重启frpc：
+            sudo systemctl start frpc.service（要确认域名确实切换到新的ip后，可以在client上通过ping powerai.cc来判断ip是否切换了，然后再启动frpc服务）
+
+
 
