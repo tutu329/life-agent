@@ -21,3 +21,29 @@ bind_port = 7880
         服务器要开7880端口和frpc.ini中所有端口
         然后client重启frpc：
             sudo systemctl start frpc.service（要确认域名确实切换到新的ip后）
+
+
+    ubuntu ecs 配置frps自启动：
+        sudo vi /etc/systemd/system/frps.service
+
+[Unit]
+Description=frps Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Restart=always
+RestartSec=5s
+ExecStart=/root/frp/frps -c /root/frp/frps.ini
+ExecReload=/root/frp/frps -c /root/frp/frps.ini
+
+[Install]
+WantedBy=multi-user.target
+
+        sudo systemctl daemon-reload
+        sudo systemctl start frps.service
+        sudo systemctl status frps.service
+        sudo systemctl enable frps.service
+
