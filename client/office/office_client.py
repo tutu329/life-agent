@@ -8,7 +8,7 @@
 # ' 执行命令
 # ‘ 1为控制台可见，2为控制台在后台，0为控制台不可见
 # shell.Run command, 1, True
-
+import config
 # 目前报告自动编制.docm中的运行宏的快捷键定义为"Ctrl+9"
 
 
@@ -31,8 +31,11 @@ from config import dred, dgreen, dblue, dcyan, dyellow
 
 @singleton
 class Office_Client():
-    def __init__(self):
+    def __init__(self, base_url=config.LLM_Default.url, temperature=0.7, api_key='empty'):
         self.llm = None
+        self.url = base_url
+        self.api_key = api_key
+        self.temperature = temperature
         self.word = None
         self.status_ok = False
 
@@ -40,7 +43,11 @@ class Office_Client():
 
     def _init(self):
         try:
-            self.llm = LLM_Client(temperature=0.0)
+            self.llm = LLM_Client(
+                url=self.url,
+                api_key=self.api_key,
+                temperature=self.temperature,
+            )
             # 启动Word应用程序
             self.word = win32.gencache.EnsureDispatch('Word.Application')
             # 启动Excel应用程序
@@ -227,6 +234,9 @@ def _ask_agent(
         prompt,
         output_stream_buf=dyellow,
         output_stream_end_func=None,
+        base_url=config.LLM_Default.url,
+        temperature=0.7,
+        api_key='empty'
 ) -> str:
     tools = [Folder_Tool, Search_Tool, Table_Tool]
     agent = Tool_Agent(
@@ -234,6 +244,9 @@ def _ask_agent(
         in_tool_classes=tools,
         in_output_stream_buf=output_stream_buf,     # 最终输出 -> dyellow
         in_output_end=output_stream_end_func,
+        in_base_url=base_url,
+        in_api_key=api_key,
+        in_temperature=temperature
     )
     dblue(f'tools registered: {agent.registered_tool_instances_dict}')
 
@@ -259,7 +272,12 @@ def report_on_plant_grid_connection_system(scheme_file_path):
     scheme_list = get_scheme_list(scheme_file_path)
 
     # 初始化office自动化工具
-    office = Office_Client()
+    office = Office_Client(
+        # base_url='http://a.b.c/v1',
+        base_url='https://api.deepseek.com',
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        temperature=0.7,
+    )
 
     # 编制报告
     for item in scheme_list:
@@ -274,7 +292,10 @@ def report_on_plant_grid_connection_system(scheme_file_path):
                 result = _ask_agent(
                     prompt,
                     output_stream_buf = office.word_insert_text_at_cursor_without_end,
-                    output_stream_end_func = office.word_insert_text_end_at_cursor
+                    output_stream_end_func = office.word_insert_text_end_at_cursor,
+                    base_url=office.url,
+                    api_key=office.api_key,
+                    temperature=office.temperature
                 )
                 # office.word_insert_text_at_cursor(text=result)
         elif chapter_info.type=='alone_text':
@@ -284,7 +305,10 @@ def report_on_plant_grid_connection_system(scheme_file_path):
                 result = _ask_agent(
                     prompt,
                     output_stream_buf = office.word_insert_text_at_cursor_without_end,
-                    output_stream_end_func = office.word_insert_text_end_at_cursor
+                    output_stream_end_func = office.word_insert_text_end_at_cursor,
+                    base_url=office.url,
+                    api_key=office.api_key,
+                    temperature=office.temperature
                 )
 
     # office.word_insert_heading_at_cursor('一、概要', '标题 1')

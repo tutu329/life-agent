@@ -4,6 +4,7 @@ from agent.base_tool import Base_Tool
 from utils.extract import extract_code, extract_dict_string
 from colorama import Fore, Back, Style
 
+import config
 from config import dred, dgreen, dblue, dcyan, dyellow
 
 from agent.tools.code_tool import Code_Tool
@@ -24,8 +25,14 @@ class Tool_Agent():
                  in_output_stream_use_chunk=True,   # 最终答复stream输出是否采用chunk方式，还是full_string方式
                  inout_output_list=None,
                  in_status_stream_buf=None,
+                 in_base_url=config.LLM_Default.url,
+                 in_api_key='empty',
+                 in_temperature=0.7,
                  ):
         self.llm = None
+        self.temperature = in_temperature
+        self.url = in_base_url
+        self.api_key = in_api_key
         self.agent_desc_and_action_history = ''
         self.query=in_query
         self.tool_descs=''
@@ -97,7 +104,14 @@ class Tool_Agent():
             print(in_chunk, end='', flush=True)
 
     def init(self):
-        self.llm = LLM_Client(temperature=0, history=False, print_input=False, max_new_tokens=2048)
+        self.llm = LLM_Client(
+            url=self.url,
+            api_key=self.api_key,
+            temperature=self.temperature,
+            history=False,
+            print_input=False,
+            max_new_tokens=config.LLM_Default.max_new_tokens
+        )
         self.agent_desc_and_action_history = PROMPT_REACT
 
         # 将所有工具转换为{tool_descs}和{tool_names}
