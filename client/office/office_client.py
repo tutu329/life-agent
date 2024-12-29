@@ -273,11 +273,10 @@ def report_on_plant_grid_connection_system(scheme_file_path):
 
     # 初始化office自动化工具
     office = Office_Client(
-        # base_url='http://a.b.c/v1',
         base_url='https://api.deepseek.com',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        # temperature=0,
         temperature=0.7,
+        # temperature=0,
     )
 
     # 编制报告

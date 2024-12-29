@@ -27,7 +27,7 @@
 	11月，全社会用电量同比有所增长。我区全社会用电量18.71亿千瓦时，同比增长3.9%。其中，第二产业用电量12.33亿千瓦时，同比增长2.7%；第三产业用电量4.23亿千瓦时，同比增长5.4%。
 	</模板文字>
 1.1.1.1 当月用电量表格
-	从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"月用电量及同比情况"里获取数据，只通过工具绘制表格，你只输出一个空格即可，不要有其他任何输出。
+	从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"月用电量及同比情况"里获取数据，只通过工具绘制表格，表格绘制后，你只输出一个空格即可，不要有其他任何输出。
 
 1.1.2 当年用电量
 	请用【表格数据】对【模板文字】中的数据进行更新，并返回更新后的【模板文字】，不要添加任何解释和分析：
@@ -39,7 +39,7 @@
 	</模板文字>
 
 1.1.2.1 当年用电量表格
-	从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"累积用电量及同比增长"里获取数据，只通过工具绘制表格，你只输出一个空格即可，不要有其他任何输出。
+	从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"累积用电量及同比增长"里获取数据，只通过工具绘制表格，表格绘制后，你只输出一个空格即可，不要有其他任何输出。
 
 
 1.2 工业用电量
@@ -61,14 +61,14 @@
 	</模板文字>
 
 1.2.1 工业月用电量表格
-	从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"月工业用电量增长"里获取数据，只通过工具绘制表格，你只输出一个空格即可，不要有其他任何输出。
+	从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"月工业用电量增长"里获取数据，只通过工具绘制表格，表格绘制后，你只输出一个空格即可，不要有其他任何输出。
 
 1.2.2 工业累积用电量表格
-	从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"累积工业用电量及同比增长"里获取数据，只通过工具绘制表格，你只输出一个空格即可，不要有其他任何输出。
+	从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"累积工业用电量及同比增长"里获取数据，只通过工具绘制表格，表格绘制后，你只输出一个空格即可，不要有其他任何输出。
 
 2 重点企业用电情况
 2.1 按企业增加值维度分析
-	请用【表格数据】对【模板文字】中的数据进行更新，并返回更新后的【模板文字】，不要添加任何解释和分析，绝对不要用markdown格式返回信息：
+	请用【表格数据】对【模板文字】中的数据进行更新，并返回更新后的【模板文字】，不要添加任何解释和分析：
 	<表格数据>
 	表格数据从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"各镇街平台规上工业企业月用电情况"里获取，表格【不要绘制】。
 	</表格数据>
@@ -88,10 +88,10 @@
 
 2.3 附表
 2.3.1 各镇街平台规上工业企业月用电情况表格
-从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"各镇街平台规上工业企业月用电情况"里获取数据，只通过工具绘制表格，你只输出一个空格即可，不要有其他任何输出。
+从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"各镇街平台规上工业企业月用电情况"里获取数据，只通过工具绘制表格，表格绘制后，你只输出一个空格即可，不要有其他任何输出。
 
 2.3.2 35千伏以上企业月用电情况表格
-从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"35千伏以上企业月用电情况"里获取数据，只通过工具绘制表格，你只输出一个空格即可，不要有其他任何输出。
+从"D:/server/life-agent/client/office/xiaoshan_prj/data.xlsx"的工作表"35千伏以上企业月用电情况"里获取数据，只通过工具绘制表格，表格绘制后，你只输出一个空格即可，不要有其他任何输出。
 
 
 
