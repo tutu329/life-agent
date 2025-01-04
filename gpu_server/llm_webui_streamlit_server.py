@@ -969,8 +969,12 @@ def ask_llm(prompt, paras):
             result = files_info_dict['file_content'][0]
             dred(f'===========file_content===========\n"{result}"')
             fname = files_info_dict['file_name'][0]
-            all_prompt = f'请严格根据文件({fname})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
-            mem_llm.set_role_prompt(all_prompt)
+
+            print(f'type: {files_info_dict["file_type"][0]}')
+            if not 'image' in files_info_dict["file_type"][0]:
+                # 如果不是图片，即文本，将内容导入prompt
+                all_prompt = f'请严格根据文件({fname})返回的内容回答问题, 文件返回的具体内容为: "{result}"'
+                mem_llm.set_role_prompt(all_prompt)
 
             # ans = mem_llm.ask_prepare(
             #     in_question='文件目录返回给我',
@@ -1136,6 +1140,7 @@ def refresh_file_column(in_widget, in_files, file_uploader_changed=False):
             import base64
             file_column_raw_data = {
                 "file_name": [f.name for f in in_files],  # string
+                "file_type":[f.type for f in in_files],
                 "file_selected": [True for f in in_files],  # bool
                 "file_content": ["data:{mime_type};base64,{base64_string}".format(mime_type=f.type, base64_string=base64.b64encode(f.read()).decode("utf-8")) for f in in_files],    # string of file content
             }
