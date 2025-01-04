@@ -312,7 +312,7 @@ class LLM_Client:
     #     else:
     #         return [msg_this_turn]
 
-    def __history_messages_with_system_and_new_question(self, in_question):
+    def __history_messages_with_system_and_new_question(self, question, image_url=None):
         # ===加入system提示===
         msgs = [{
             "role": "system",
@@ -320,7 +320,27 @@ class LLM_Client:
             # "content": "You are a helpful assistant."
         }]
 
-        msg_this_turn = {"role": "user", "content": in_question}
+        if image_url is None:
+            # 没用图片
+            msg_this_turn = {
+                "role": "user",
+                "content": question
+            }
+        else:
+            # 有图片
+            msg_this_turn = {
+                "role": "user",
+                "content": [
+                    {'type':'text', 'text':question},
+                    {
+                        'type':'image_url',
+                        'image_url': {
+                            'url':image_url
+                        }
+                    },
+                ]
+            }
+
         msgs += deepcopy(self.history_list)
         msgs.append(msg_this_turn)
         return msgs
@@ -402,6 +422,7 @@ class LLM_Client:
     def ask_prepare(
             self,
             question,
+            image_url=None,
             temperature=None,
             max_new_tokens=None,
             # in_top_p=None,
@@ -414,7 +435,7 @@ class LLM_Client:
             role_prompt=None,
             audio_string=None,
     ):
-        self.temperature = config.LLM_Default.temperature if temperature is None else temperature
+        # self.temperature = config.LLM_Default.temperature if temperature is None else temperature
         self.max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
         clear_history = int(config.LLM_Default.clear_history if clear_history is None else clear_history)
         self.stream = int(config.LLM_Default.stream if stream is None else stream)
@@ -476,12 +497,12 @@ class LLM_Client:
 
         if type(question)==str:
             # 输入仅为question字符串
-            msgs = self.__history_messages_with_system_and_new_question(question)
+            msgs = self.__history_messages_with_system_and_new_question(question=question, image_url=image_url)
         elif type(question)==list:
             # 输入为history list([{"role": "user", "content":'xxx'}, ...])
             msgs = question
         else:
-            raise Exception('ask_prepare(): in_question must be str or list')
+            raise Exception('LLM_Client.ask_prepare(): question格式错误，必须是str或[{"role": "user", "content":"xxx"}, ...]这样的list')
 
         # ==========================================================
         # print('发送到LLM的完整提示: ', msgs)
@@ -518,9 +539,16 @@ class LLM_Client:
         # ==========================================================
 
         if self.print_input:
-            dgreen('<User>', end='', flush=True)
-            print(msgs[-1]['content'], end='', flush=True)
-            dgreen('</User>')
+            if image_url is None:
+                # question为文本
+                dgreen('<User>', end='', flush=True)
+                print(msgs[-1]['content'], end='', flush=True)
+                dgreen(f'</User>(temperature={run_temperature})')
+            else:
+                # question为文本和图片
+                dgreen('<User>', end='', flush=True)
+                print(msgs[-1]['content'][0]['text'], end='', flush=True)
+                dgreen(f'</User>(temperature={run_temperature}, image:"{image_url}")')
 
         if stop is None:
             # stop = ['<|im_end|>', '<|im_start|>']
@@ -586,7 +614,7 @@ class LLM_Client:
     def get_answer_and_sync_print(self):
         result = ''
 
-        dblue('<assistant>', end='', flush=True)
+        dblue(f'<assistant>', end='', flush=True)
         for chunk in self.get_answer_generator():
             result += chunk
             print(chunk, end='', flush=True)
@@ -984,21 +1012,22 @@ def main():
         query = input('User: ')
         llm.ask_prepare(query, max_new_tokens=500).get_answer_and_sync_print()
 
-def main1():
-    print('main_call()')
+def simple_main():
     llm = LLM_Client(
-        history=True,
-        history_max_turns=50,
-        history_clear_method='pop',
-        model_id='miqu-1-70b-sf-GPTQ',
-        temperature=0.7,
-        api_key='b1ad5dac212f563be4765b646543ca1b',
-        # api_key='sk-6zcUSkVMPIR2WIhjC73a27B4D7584e8cBf1f1991Cf512626',
-        url='http://116.62.63.204:8001/v1/'
+        temperature=0.9,
+        url='http://powerai.cc:8001/v1/'
     )
     # print('models: ', openai.models.list().data)
-    llm.ask_prepare('你是谁？', max_new_tokens=500).get_answer_and_sync_print()
-    # llm.ask_prepare(question, in_max_new_tokens=500).get_answer_and_sync_print()
+    llm.ask_prepare(
+        question='你是谁？',
+        image_url='https://raw.githubusercontent.com/open-mmlab/mmdeploy/main/tests/data/tiger.jpeg',
+        max_new_tokens=500,
+    ).get_answer_and_sync_print()
+
+    llm.ask_prepare('刚才那张图里是什么？', max_new_tokens=500).get_answer_and_sync_print()
+
+    # llm.ask_prepare('你是谁？我的名字叫土土', max_new_tokens=500).get_answer_and_sync_print()
+    # llm.ask_prepare('我告诉你我叫什么？', max_new_tokens=500).get_answer_and_sync_print()
 
 def main2():
     llm = LLM_Client(
@@ -1358,8 +1387,10 @@ c）如有厂站母线的短路电流超标，编写输出如下（绝对不能�
 '''
 
 if __name__ == "__main__" :
+    simple_main()
+
     # 直接采样64个完整结果的BoN筛选的正确率，比每个step采样20次、最多尝试10个steps的BoN筛选的正确率高，且step方式采用不清楚多少steps刚好完成。
     # question = '一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问22元一共可以喝几瓶可乐？'
-    question = g_prompt
-    o1_BoN_all(question=question, temperature=0.7, n=32)
+    # question = g_prompt
+    # o1_BoN_all(question=question, temperature=0.7, n=32)
     # o1_BoN_steps(question=question, temperature=0.7, n=20, max_tries=10)
