@@ -1113,7 +1113,7 @@ def st_display_pdf(pdf_file):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 # 将file_uploader或pickle文件的files转为data_editor显示
-def refresh_file_column(in_widget, in_files, file_uploader_changed=False):
+def refresh_file_column(in_widget, in_files, image=True, file_uploader_changed=False):
     df_files_info = None
     dblue(f'----------------------in_files----------------------------\n')
     dblue(in_files)
@@ -1126,11 +1126,22 @@ def refresh_file_column(in_widget, in_files, file_uploader_changed=False):
         if len(in_files) > 0:
             # dred('============== >0 ====================')
             # 由于file_uploader操作造成的更新
-            file_column_raw_data = {
-                "file_name": [f.name for f in in_files],                                            # string
-                "file_selected": [True for f in in_files],                                          # bool
-                "file_content":[StringIO(f.getvalue().decode("utf-8")).read() for f in in_files],   # string of file content
-            }
+
+            if image:
+                # 图片
+                import base64
+                file_column_raw_data = {
+                    "file_name": [f.name for f in in_files],  # string
+                    "file_selected": [True for f in in_files],  # bool
+                    "file_content": [base64.b64encode(f.read()).decode("utf-8") for f in in_files],    # string of file content
+                }
+            else:
+                # 文本文件
+                file_column_raw_data = {
+                    "file_name": [f.name for f in in_files],                                            # string
+                    "file_selected": [True for f in in_files],                                          # bool
+                    "file_content":[StringIO(f.getvalue().decode("utf-8")).read() for f in in_files],   # string of file content
+                }
             df_files_info = pd.DataFrame(file_column_raw_data)
 
             for f in in_files:
@@ -1308,7 +1319,7 @@ def streamlit_refresh_loop():
     s_paras['files'] = exp2.file_uploader(
         "选择待上传的文件",
         accept_multiple_files=True,
-        type=['sh', 'md', 'txt'],
+        type=['sh', 'md', 'txt', 'jpg', 'jpeg', 'png', 'bmp'],
         # on_change=refresh_file_column,
         # kwargs={
         #     'in_widget':exp2,

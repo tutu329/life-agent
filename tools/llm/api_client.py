@@ -312,7 +312,11 @@ class LLM_Client:
     #     else:
     #         return [msg_this_turn]
 
-    def __history_messages_with_system_and_new_question(self, question, image_url=None):
+    def __history_messages_with_system_and_new_question(
+            self,
+            question,
+            image_url=None,     # image url或者base64 encoded string，不能是本地文件路径
+    ):
         # ===加入system提示===
         msgs = [{
             "role": "system",
@@ -321,7 +325,7 @@ class LLM_Client:
         }]
 
         if image_url is None:
-            # 没用图片
+            # 没有图片
             msg_this_turn = {
                 "role": "user",
                 "content": question
@@ -548,7 +552,7 @@ class LLM_Client:
                 # question为文本和图片
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'][0]['text'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, image:"{image_url}")')
+                dgreen(f'</User>(temperature={run_temperature}, with image.)')
 
         if stop is None:
             # stop = ['<|im_end|>', '<|im_start|>']
@@ -1018,11 +1022,18 @@ def simple_main():
         url='http://powerai.cc:8001/v1/'
     )
     # print('models: ', openai.models.list().data)
-    llm.ask_prepare(
-        question='你是谁？',
-        image_url='https://raw.githubusercontent.com/open-mmlab/mmdeploy/main/tests/data/tiger.jpeg',
-        max_new_tokens=500,
-    ).get_answer_and_sync_print()
+    import base64
+
+    with open('C:\\Users\\tutu\\Downloads\\mouse.jpeg', "rb") as image_file:
+        base64_string = base64.b64encode(image_file.read()).decode('utf-8')
+        base64_data_url = f"data:image/jpeg;base64,{base64_string}" # 必须转为该形式的string，才能让api读取
+
+        llm.ask_prepare(
+            question='图里是什么？',
+            image_url=base64_data_url,
+            # image_url='https://raw.githubusercontent.com/open-mmlab/mmdeploy/main/tests/data/tiger.jpeg',
+            max_new_tokens=500,
+        ).get_answer_and_sync_print()
 
     llm.ask_prepare('刚才那张图里是什么？', max_new_tokens=500).get_answer_and_sync_print()
 
