@@ -1019,8 +1019,14 @@ def ask_llm(prompt, paras):
         # llm输出、统计输出时间
         start_time1 = time.time()
 
+        image_url = None
+        if 'file_column_raw_data' in paras:
+            image_url = paras['file_column_raw_data']["file_content"][0]
+
+        print(f'image_url: "{image_url}"')
         gen = mem_llm.ask_prepare(
             question=prompt,
+            image_url=image_url,
             temperature=st.session_state.session_data['paras']['local_llm_temperature'],
             max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
             system_prompt=system_prompt,
@@ -1113,7 +1119,7 @@ def st_display_pdf(pdf_file):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 # 将file_uploader或pickle文件的files转为data_editor显示
-def refresh_file_column(in_widget, in_files, image=True, file_uploader_changed=False):
+def refresh_file_column(in_widget, in_files, file_uploader_changed=False):
     df_files_info = None
     dblue(f'----------------------in_files----------------------------\n')
     dblue(in_files)
@@ -1127,21 +1133,18 @@ def refresh_file_column(in_widget, in_files, image=True, file_uploader_changed=F
             # dred('============== >0 ====================')
             # 由于file_uploader操作造成的更新
 
-            if image:
-                # 图片
-                import base64
-                file_column_raw_data = {
-                    "file_name": [f.name for f in in_files],  # string
-                    "file_selected": [True for f in in_files],  # bool
-                    "file_content": [base64.b64encode(f.read()).decode("utf-8") for f in in_files],    # string of file content
-                }
-            else:
-                # 文本文件
-                file_column_raw_data = {
-                    "file_name": [f.name for f in in_files],                                            # string
-                    "file_selected": [True for f in in_files],                                          # bool
-                    "file_content":[StringIO(f.getvalue().decode("utf-8")).read() for f in in_files],   # string of file content
-                }
+            import base64
+            file_column_raw_data = {
+                "file_name": [f.name for f in in_files],  # string
+                "file_selected": [True for f in in_files],  # bool
+                "file_content": ["data:{mime_type};base64,{base64_string}".format(mime_type=f.type, base64_string=base64.b64encode(f.read()).decode("utf-8")) for f in in_files],    # string of file content
+            }
+            # # 文本文件
+            # file_column_raw_data = {
+            #     "file_name": [f.name for f in in_files],                                            # string
+            #     "file_selected": [True for f in in_files],                                          # bool
+            #     "file_content":[StringIO(f.getvalue().decode("utf-8")).read() for f in in_files],   # string of file content
+            # }
             df_files_info = pd.DataFrame(file_column_raw_data)
 
             for f in in_files:

@@ -1023,10 +1023,18 @@ def simple_main():
     )
     # print('models: ', openai.models.list().data)
     import base64
+    import mimetypes
 
-    with open('C:\\Users\\tutu\\Downloads\\mouse.jpeg', "rb") as image_file:
+    # url = 'C:\\Users\\tutu\\Downloads\\我的证书.png'
+    # url = 'C:\\Users\\tutu\\Downloads\\tiger.jpg'
+    url = 'C:\\Users\\tutu\\Downloads\\mouse.jpeg'
+    with open(url, "rb") as image_file:
+        mime_type, _ = mimetypes.guess_type(url)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+
         base64_string = base64.b64encode(image_file.read()).decode('utf-8')
-        base64_data_url = f"data:image/jpeg;base64,{base64_string}" # 必须转为该形式的string，才能让api读取
+        base64_data_url = f"data:{mime_type};base64,{base64_string}" # 必须转为该形式的string，才能让api读取
 
         llm.ask_prepare(
             question='图里是什么？',
