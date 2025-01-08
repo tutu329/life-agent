@@ -1024,7 +1024,7 @@ def ask_llm(prompt, paras):
         start_time1 = time.time()
 
         image_url = None
-        if 'file_column_raw_data' in paras:
+        if 'file_column_raw_data' in paras and 'file_content' in paras['file_column_raw_data']:
             image_url = paras['file_column_raw_data']["file_content"][0]
 
         print(f'image_url: "{image_url}"')
