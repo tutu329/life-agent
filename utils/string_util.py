@@ -124,19 +124,19 @@ def str_remove_partial_substring(str, substrings):
 # str_get_content_in_partial_pairs('string12<think>1112</think>3456', ('<think>', '</think>')) -> '1112'
 def _str_get_content_in_partial_pairs(str, pairs):
     # 'string12<think>1112</think>3456'
-    str_left_and_content = _str_remove_partial_substring(str, pairs[1])  # 'string12<think>1112'
+    str_left_and_content = _str_remove_partial_substring(str, pairs[1])     # 'string12<think>1112'
     # print(f'1) str_left_and_content: \n"{str_left_and_content}"')
 
     if pairs[0] in str:
         str_left = str.split(pairs[0])[0]
     else:
-        str_left = _str_remove_partial_substring(str, pairs[0])  # 'string12'
+        str_left = _str_remove_partial_substring(str, pairs[0])             # 'string12'
     # print(f'2) str_left: \n"{str_left}"')
 
-    pair1_and_content = str_left_and_content.replace(str_left, '')  # '<think>1112'
+    pair1_and_content = str_left_and_content.replace(str_left, '')    # '<think>1112'
     # print(f'3) pair1_and_content: \n"{pair1_and_content}"')
 
-    rtn_str = pair1_and_content.replace(pairs[0], '')
+    rtn_str = pair1_and_content.replace(pairs[0], '')                 # '1122'
     # print(f'4) rtn_str: \n"{rtn_str}"')
 
     return rtn_str

@@ -20,7 +20,7 @@ from streamlit.runtime.scriptrunner import add_script_run_ctx
 import config
 from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
-from utils.string_util import str_remove_partial_substring, str_remove_content_in_partial_pairs
+from utils.string_util import str_remove_partial_substring, str_remove_content_in_partial_pairs, _str_get_content_in_partial_pairs
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
@@ -437,7 +437,7 @@ class LLM_Client:
             retry=False,
             undo=False,
             stop=None,
-            remove_content_in_think_pairs=True,        # remove ('<think>', '</think>') 之间的内容
+            remove_content_in_think_pairs=False,        # remove ('<think>', '</think>') 之间的内容
             system_prompt=None,
             role_prompt=None,
             audio_string=None,
@@ -550,12 +550,12 @@ class LLM_Client:
                 # question为文本
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature})')
+                dgreen(f'</User>(temperature={run_temperature}, 过滤thinking={self.remove_content_in_think_pairs})')
             else:
                 # question为文本和图片
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'][0]['text'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, with image.)')
+                dgreen(f'</User>(temperature={run_temperature}, 过滤thinking={self.remove_content_in_think_pairs}, with image.)')
 
         if stop is None:
             # stop = ['<|im_end|>', '<|im_start|>']
@@ -621,13 +621,30 @@ class LLM_Client:
         return self
 
     def get_answer_and_sync_print(self):
+        full = ''
+        think = ''
         result = ''
 
         dblue(f'<assistant>', end='', flush=True)
         for chunk in self.get_answer_generator():
-            result += chunk
-            print(chunk, end='', flush=True)
+            if self.remove_content_in_think_pairs:
+                # 需要过滤think内容
+                full += chunk[0]
+                think += chunk[1]
+                result += chunk[2]
+                # print(f'think: "{think}"')
+                print(chunk[2], end='', flush=True)
+            else:
+                # 不需要过滤think内容
+                result += chunk
+                print(chunk, end='', flush=True)
         dblue('</assistant>')
+
+        if self.remove_content_in_think_pairs:
+            # 需要过滤think内容
+            dyellow('<think>')
+            print(f'{think}')
+            dyellow('</think>')
 
         # dgreen(' \n\n', flush=True)
         return result
@@ -637,6 +654,15 @@ class LLM_Client:
         answer = ''
         answer_no_partial_stop = ''
         perhaps_stop_string = ''    # 非常重要，用于存放疑似stop的缓冲
+
+
+        answer_no_partial_think_pair = ''
+        perhaps_think_pair_string = ''     # 非常重要，用于存放疑似think的缓冲
+        thinking_content = ''
+        last_thinking_content = ''
+
+        result_content = ''
+        last_result_content = ''
 
         try:
             # dprint(f'self.gen: {self.gen}')
@@ -672,6 +698,11 @@ class LLM_Client:
                     my_chunk = chunk.choices[0].delta.content
                     answer += my_chunk
 
+                    chunk_output = ''
+                    think_chunk_output = ''
+                    result_chunk_output = ''
+
+                    # ----------------------------------1、判断是否有['[观察]']这样的stop----------------------------------------
                     if self.stop:
                         # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
                         answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
@@ -679,23 +710,73 @@ class LLM_Client:
                         # print(f'answer1: {answer}')
                         # print(f'answer2: {answer_no_partial_stop}')
                         if answer_no_partial_stop == answer:
+                            # ----------------------------------不是stop标识----------------------------------
                             my_chunk = perhaps_stop_string + my_chunk   # 1、将证实不是stop的字符补在前面
                             perhaps_stop_string = ''                    # 2、清空疑似stop的缓冲
                             # 没partial_stop
                             # print(my_chunk, end='', flush=True)
-                            yield my_chunk
+
+                            # yield my_chunk
+                            chunk_output = my_chunk
                         else:
+                            # ----------------------------------是stop标识----------------------------------
                             perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
                             # 有partial_stop
                             # print(f'*{my_chunk}*', end='', flush=True)
-                            yield ''
+
+                            # yield ''
+                            chunk_output = ''
                     else:
-                        # 没有stop时
-                        yield my_chunk
+                        # ----------------------------------没有stop----------------------------------
+                        # yield my_chunk
+                        chunk_output = my_chunk
+
+                    # ----------------------------------2、判断是否有('<think>', '</think>')这样的think pair需要过滤----------------------------------------
+                    if self.remove_content_in_think_pairs:
+                        # ----------------------------------需要过滤('<think>', '</think>')之间内容----------------------------------
+                        answer_no_partial_think_pair = str_remove_content_in_partial_pairs(answer, config.LLM_Default.think_pairs)
+                        if answer_no_partial_think_pair == answer:
+                            # ----------------------------------没有('<think>', '</think>')----------------------------------
+                            pass
+                        else:
+                            # ----------------------------------有('<think>', '</think>')----------------------------------
+                            if config.LLM_Default.think_pairs[1] not in answer:
+                                # 如果 '</think>' not in answer，也就是还没有输出结论
+                                thinking_content = _str_get_content_in_partial_pairs(answer, config.LLM_Default.think_pairs)
+                                think_chunk_output = thinking_content.replace(last_thinking_content, '', 1)    # 只去掉最左边的last_thinking_content
+                                last_thinking_content = thinking_content
+                            else:
+                                # 如果 '</think>' in answer，也就是开始输出结论
+                                think_chunk_output = ''
+
+                                # 处理result
+                                result_content = str_remove_content_in_partial_pairs(answer, config.LLM_Default.think_pairs)
+                                result_chunk_output = result_content.replace(last_result_content, '', 1)  # 只去掉最左边的last_thinking_content
+                                last_result_content = result_content
+                                # print(f'\n-----------result_chunk_output------------\n"{result_chunk_output}"')
+                                # print(f'--------------------------------------------')
+
+                            # print(f'\n-------------think_chunk_output-------------\n"{think_chunk_output}"')
+                            # print(f'--------------------------------------------')
+                    else:
+                        # ----------------------------------不需要过滤('<think>', '</think>')之间内容----------------------------------
+                        pass
+
+                    if self.remove_content_in_think_pairs:
+                        # 过滤think内容
+                        yield chunk_output, think_chunk_output, result_chunk_output
+                    else:
+                        # 不过滤think内容
+                        yield chunk_output
 
         except Exception as e:
             dred(f'LLM_Client("{self.url}")连接异常: {e}')
-            yield ''
+            if self.remove_content_in_think_pairs:
+                # 过滤think内容
+                yield '', '', ''
+            else:
+                # 不过滤think内容
+                yield ''
 
         if self.stop:
             self.answer_last_turn = answer_no_partial_stop
@@ -1424,8 +1505,9 @@ def think_main():
         url='https://powerai.cc:8001/v1'
     )
 
-    llm.ask_prepare('中国首都是？', temperature=0, max_new_tokens=500).get_answer_and_sync_print()
-    print(f'--------answer_last_turn--------\n"{llm.answer_last_turn}"')
+    llm.ask_prepare('中国首都是？', temperature=0, max_new_tokens=500, remove_content_in_think_pairs=True).get_answer_and_sync_print()
+    print(f'\n--------answer_last_turn--------\n{llm.answer_last_turn}')
+    print(f'--------------------------------')
 
 if __name__ == "__main__" :
     # simple_main() # 带pic
