@@ -101,6 +101,8 @@ def _str_remove_partial_substring(str, substr):
 
     return str
 
+# str_remove_partial_substring('string12[观', ['[观察]']) -> 'string12'
+# str_remove_partial_substring('string12[观察]34', ['[观察]']) -> 'string12'
 def str_remove_partial_substring(str, substrings):
     str1 = str
     # print(f'str: "{str}"')
@@ -113,6 +115,38 @@ def str_remove_partial_substring(str, substrings):
             min_str = str1
         # print(f'str: "{str}", stop: "{stop}"')
     return min_str
+
+
+# str_get_content_in_partial_pairs('string12<think>1112</thin', ('<think>', '</think>'))       -> '1112'
+# str_get_content_in_partial_pairs('string12<think>1112</think>3456', ('<think>', '</think>')) -> '1112'
+def _str_get_content_in_partial_pairs(str, pairs):
+    # 'string12<think>1112</think>3456'
+    str_left_and_content = _str_remove_partial_substring(str, pairs[1])  # 'string12<think>1112'
+    # print(f'str_left_and_content: "{str_left_and_content}"')
+    if pairs[0] in str:
+        str_left = str.split(pairs[0])[0]
+    else:
+        str_left = _str_remove_partial_substring(str, pairs[0])  # 'string12'
+    # print(f'str_left: "{str_left}"')
+
+    pair1_and_content = str_left_and_content.replace(str_left, '')  # '<think>1112'
+    # print(f'pair1_and_content: "{pair1_and_content}"')
+
+    rtn_str = pair1_and_content.replace(pairs[0], '')
+    # print(f'rtn_str: "{rtn_str}"')
+
+    return rtn_str
+
+
+# str_get_content_in_partial_pairs('string12<think>1112</thin', ('<think>', '</think>'))       -> 'string12'
+# str_get_content_in_partial_pairs('string12<think>1112</think>3456', ('<think>', '</think>')) -> 'string123456'
+def str_remove_content_in_partial_pairs(str, pairs):
+    content = _str_get_content_in_partial_pairs(str, pairs)
+    rtn_str = str.replace(content, '')
+    rtn_str = rtn_str.replace(pairs[1], '')
+    rtn_str = rtn_str.replace(pairs[0], '')
+    rtn_str = _str_remove_partial_substring(rtn_str, pairs[1])
+    return rtn_str
 
 def str_replace_multiple_newlines_with_one_newline(text):
     return re.sub(r'\n{2,}', '\n', text)

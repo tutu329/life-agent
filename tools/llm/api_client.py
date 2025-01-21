@@ -20,7 +20,7 @@ from streamlit.runtime.scriptrunner import add_script_run_ctx
 import config
 from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
-from utils.string_util import str_remove_partial_substring
+from utils.string_util import str_remove_partial_substring, str_remove_content_in_partial_pairs
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
@@ -138,6 +138,8 @@ class LLM_Client:
         self.external_last_history = []     # 用于存放外部格式独特的history
         self.print_input = print_input
         self.print_output = print_output
+
+        self.remove_content_in_think_pairs = True      # 是否remove ('<think>', '</think>') 之间的内容
 
         self.status = LLM_Client_Status(
             uuid=self.uuid,
@@ -435,6 +437,7 @@ class LLM_Client:
             retry=False,
             undo=False,
             stop=None,
+            remove_content_in_think_pairs=True,        # remove ('<think>', '</think>') 之间的内容
             system_prompt=None,
             role_prompt=None,
             audio_string=None,
@@ -567,6 +570,8 @@ class LLM_Client:
 
         self.stop = stop
 
+        self.remove_content_in_think_pairs = remove_content_in_think_pairs
+
         dprint(f'{"-" * 80}')
         # dprint(f'self.openai: {self.openai}')
         dprint(f'self.model_id: "{self.model_id}"')
@@ -696,6 +701,12 @@ class LLM_Client:
             self.answer_last_turn = answer_no_partial_stop
         else:
             self.answer_last_turn = answer
+
+        if self.remove_content_in_think_pairs:
+            pass
+            # self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, config.LLM_Default.think_pairs)
+        else:
+            pass
 
         # self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
@@ -1405,8 +1416,18 @@ c）如有厂站母线的短路电流超标，编写输出如下（绝对不能�
 {‘table‘:这里放输入资料的完整内容, ‘report’:’报告对短路电流进行了计算，短路电流计算表明，xxx 500kV xx站220kV短路电流（xx kA）超限，xxx 220kV xx站220kV母线短路电流（xx kA）超限，xxx 110kV xx站110kV母线短路电流（xx kA）超限，…。其余厂站短路电流均得到了合理的控制。’}
 '''
 
+def think_main():
+    llm = LLM_Client(
+        temperature=0.7,
+        url='https://powerai.cc:8001/v1'
+    )
+
+    llm.ask_prepare('中国首都是？', max_new_tokens=500).get_answer_and_sync_print()
+    print(f'--------answer_last_turn--------\n"{llm.answer_last_turn}"')
+
 if __name__ == "__main__" :
-    simple_main()
+    # simple_main() # 带pic
+    think_main()
 
     # 直接采样64个完整结果的BoN筛选的正确率，比每个step采样20次、最多尝试10个steps的BoN筛选的正确率高，且step方式采用不清楚多少steps刚好完成。
     # question = '一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问22元一共可以喝几瓶可乐？'
