@@ -703,9 +703,10 @@ class LLM_Client:
             self.answer_last_turn = answer
 
         if self.remove_content_in_think_pairs:
-            print(f'\nlast1 is: \n"{self.answer_last_turn}"')
+            # print(f'\n-----------------last1-----------------\n"{self.answer_last_turn}"')
             self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, config.LLM_Default.think_pairs)
-            print(f'last2 is: \n"{self.answer_last_turn}"')
+            # print(f'-----------------last2-----------------\n"{self.answer_last_turn}"')
+            # print(f'---------------------------------------')
         else:
             pass
 

@@ -2,6 +2,9 @@ import re
 
 from wcwidth import wcswidth
 
+import config
+
+
 def string_right_align(text, width):
     padding = width - wcswidth(text)
     return f"{' ' * padding}{text}" if padding > 0 else text
@@ -122,18 +125,19 @@ def str_remove_partial_substring(str, substrings):
 def _str_get_content_in_partial_pairs(str, pairs):
     # 'string12<think>1112</think>3456'
     str_left_and_content = _str_remove_partial_substring(str, pairs[1])  # 'string12<think>1112'
-    # print(f'str_left_and_content: "{str_left_and_content}"')
+    # print(f'1) str_left_and_content: \n"{str_left_and_content}"')
+
     if pairs[0] in str:
         str_left = str.split(pairs[0])[0]
     else:
         str_left = _str_remove_partial_substring(str, pairs[0])  # 'string12'
-    # print(f'str_left: "{str_left}"')
+    # print(f'2) str_left: \n"{str_left}"')
 
     pair1_and_content = str_left_and_content.replace(str_left, '')  # '<think>1112'
-    # print(f'pair1_and_content: "{pair1_and_content}"')
+    # print(f'3) pair1_and_content: \n"{pair1_and_content}"')
 
     rtn_str = pair1_and_content.replace(pairs[0], '')
-    # print(f'rtn_str: "{rtn_str}"')
+    # print(f'4) rtn_str: \n"{rtn_str}"')
 
     return rtn_str
 
@@ -141,17 +145,29 @@ def _str_get_content_in_partial_pairs(str, pairs):
 # str_get_content_in_partial_pairs('string12<think>1112</thin', ('<think>', '</think>'))       -> 'string12'
 # str_get_content_in_partial_pairs('string12<think>1112</think>3456', ('<think>', '</think>')) -> 'string123456'
 def str_remove_content_in_partial_pairs(str, pairs):
+    # print(f'-----0) str-----\n"{str}"')
+
     content = _str_get_content_in_partial_pairs(str, pairs)
+    # print(f'-----1) content-----\n"{content}"')
+
     rtn_str = str.replace(content, '')
+    # print(f'-----2) rtn_str-----\n"{rtn_str}"')
+
     rtn_str = rtn_str.replace(pairs[1], '')
+    # print(f'-----3) rtn_str-----\n"{rtn_str}"')
+
     rtn_str = rtn_str.replace(pairs[0], '')
+    # print(f'-----4) rtn_str-----\n"{rtn_str}"')
+
     rtn_str = _str_remove_partial_substring(rtn_str, pairs[1])
+    # print(f'-----5) rtn_str-----\n"{rtn_str}"')
+    # print(f'--------------------')
     return rtn_str
 
 def str_replace_multiple_newlines_with_one_newline(text):
     return re.sub(r'\n{2,}', '\n', text)
 
-def main():
+def _main():
     # str1 = "['search_tool','code_tool','energy_investment_plan_tool','qa_url_content_tool'] 。aaaaaaa 'search_tool' stopfabc> </stop1[结束<res_stop>【结束<stop>1"
     # str1 = "['search_tool', 'code_tool', 'energy_investment_plan_tool', 'qa"
     str1 = "aaaaaaa stopfabc><stop1<stop1【结束[结束]"
@@ -165,6 +181,17 @@ def main():
 
     print('fout:', str_remove_partial_substring(str1, stops))
 
+def _main_str_remove_content_in_partial_pairs():
+    s = '''<think>
+Okay, so I need to figure out what the capital of China is. Hmm, I remember from school that China's capital is Beijing. But wait, let me think again to make sure I'm not mixing it up with another country. Sometimes I get confused between different countries' capitals. For example, I know that the capital of Canada is Ottawa, and the capital of the United States is Washington, D.C. So, for China, it's definitely Beijing. I think it's been the capital for a long time, maybe even centuries. I recall that Beijing was also known as Peking in the past. Yeah, that sounds right. So, I'm pretty confident that the answer is Beijing.
+</think>
+
+The capital of China is Beijing.
+'''
+    print(f'--------------s--------------\n"{s}"')
+    c = str_remove_content_in_partial_pairs(s, config.LLM_Default.think_pairs)
+    print(f'--------------c--------------\n"{c}"')
 
 if __name__ == "__main__" :
-    main()
+    # _main()
+    _main_str_remove_content_in_partial_pairs()

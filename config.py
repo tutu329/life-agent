@@ -215,7 +215,7 @@ class LLM_Default:
     api_key:str         = 'empty'
     url:str             = Domain.llm_url
 
-    think_pairs: tuple  = ('<think>', '</think')
+    think_pairs: tuple  = ('<think>', '</think>')
 
 def main():
     os = get_os()
