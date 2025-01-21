@@ -703,8 +703,9 @@ class LLM_Client:
             self.answer_last_turn = answer
 
         if self.remove_content_in_think_pairs:
-            pass
-            # self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, config.LLM_Default.think_pairs)
+            print(f'\nlast1 is: \n"{self.answer_last_turn}"')
+            self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, config.LLM_Default.think_pairs)
+            print(f'last2 is: \n"{self.answer_last_turn}"')
         else:
             pass
 
@@ -1422,7 +1423,7 @@ def think_main():
         url='https://powerai.cc:8001/v1'
     )
 
-    llm.ask_prepare('中国首都是？', max_new_tokens=500).get_answer_and_sync_print()
+    llm.ask_prepare('中国首都是？', temperature=0, max_new_tokens=500).get_answer_and_sync_print()
     print(f'--------answer_last_turn--------\n"{llm.answer_last_turn}"')
 
 if __name__ == "__main__" :
