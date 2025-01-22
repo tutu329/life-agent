@@ -993,6 +993,15 @@ def ask_llm(prompt, paras):
             # ).get_answer_and_sync_print()
             # st.markdown(ans)
 
+        # 新建think的输出框
+        think_placeholder = None
+        think_status = None
+
+        if use_think_model:
+            think_status = st.status(label=":green[思考]", expanded=True)
+            think_placeholder = think_status.empty()
+
+        # 新建result的输出框
         place_holder = st.chat_message('assistant').empty()
         full_res = {}
         if using_latex:
@@ -1049,6 +1058,17 @@ def ask_llm(prompt, paras):
 
         wait_first_token = True
         dred(f'-----------use_think_model: ({use_think_model})----------')
+
+        think_content = ''
+        think_status_data = {
+            'type':'status',
+            'title':'思考',
+            'status_list':[],
+        }
+
+        think_chunk = ''
+        result_chunk = ''
+
         for res in gen:
             if use_think_model:
                 # think模型
@@ -1056,7 +1076,17 @@ def ask_llm(prompt, paras):
                     start_time2 = time.time()
                     wait_first_token = False
 
-                full_res['content'] += res[2]
+                result_chunk = res[2]
+                full_res['content'] += result_chunk
+
+                think_chunk = res[1]
+                think_content += think_chunk
+                think_placeholder.markdown(think_content)
+
+                if (not think_chunk) and result_chunk:
+                    # 开始result的输出
+                    think_status.update(label=f":green[思考完毕]", state='complete', expanded=False)
+
             else:
                 # 普通模型
                 if res and wait_first_token:
@@ -1071,6 +1101,11 @@ def ask_llm(prompt, paras):
                 # show_string_container_latex(place_holder, full_res['content'])
             else:
                 place_holder.markdown(full_res['content'])
+
+        if use_think_model:
+            think_status_data['status_list'].append(think_content)
+            think_status_data['title'] = '思考完毕'
+            # think_status.update(label=f":green[思考完毕]", state='complete', expanded=True)
 
         if wait_first_token:
             # 可能输出为空，则这里要开始计时
@@ -1111,7 +1146,11 @@ def ask_llm(prompt, paras):
         # str = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
         print(f'===================================')
         print(full_res['content'])
-        return None, None, full_res, None
+
+        if use_think_model:
+            return think_status_data, None, full_res, None
+        else:
+            return None, None, full_res, None
 
 def on_clear_history():
     # st.session_state.messages = []
