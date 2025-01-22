@@ -424,8 +424,8 @@ def main2():
 
 def main3():
     tools=[Folder_Tool, Search_Tool]
-    query = '第一步：搜索"万向创新聚能城"，返回万向创新聚能城所在城市；第二步搜索所在城市，返回该城市概况'
-    # query = '请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+    # query = '第一步：搜索"万向创新聚能城"，返回万向创新聚能城所在城市；第二步搜索所在城市，返回该城市概况'
+    query = '请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
     agent = Tool_Agent(
         in_query=query,
         in_tool_classes=tools,

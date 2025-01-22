@@ -1,4 +1,4 @@
-import copy
+import copy, pprint
 import re
 
 import streamlit as st
@@ -230,7 +230,10 @@ def get_session_id():
         # dgreen(f'session_info: "{session_info}"')
         # dgreen(f'request: "{session_info.request}"')
         # dgreen(f'ip: "{ip}"')
+
         cookie_str = _get_websocket_headers()['Cookie']
+        # cookie_str = st.context.headers()['Cookie']
+
         ajs_anonymous_id = get_ajs_anonymous_id_from_cookie(cookie_str)
         # dred(f'ajs_anonymous_id: "{ajs_anonymous_id}"')
 
@@ -264,7 +267,11 @@ def load_pickle_on_refresh():
         # st.session_state.messages = st.session_state.session_data['msgs']
 
     except Exception as e:
-        # dred(f'文件读取会话文件出错: "{e}"')
+        # dred(f'读取default会话文件出错: "{e}"')
+        dred('未找到会话文件，使用默认会话配置.')
+        dred(f'------------会话配置------------')
+        pprint.pprint(default_session_data)
+        dred(f'------------------------------')
         st.session_state.session_data = default_session_data
         st.session_state.session_data['sid'] = sid
 
@@ -297,6 +304,7 @@ default_session_data = {
         'is_agent': False,
         'latex': False,
         'connecting_internet': False,
+        'use_think_model': False,
         'draw': False,
 
 
@@ -788,6 +796,7 @@ def ask_llm(prompt, paras):
     role_prompt = paras['role_prompt']
     url_prompt = paras['url_prompt']
     connecting_internet = paras['connecting_internet']
+    use_think_model = paras['use_think_model']
     draw = paras['draw']
     is_agent = paras['is_agent']
     using_latex = paras['latex']
@@ -1034,16 +1043,28 @@ def ask_llm(prompt, paras):
             temperature=st.session_state.session_data['paras']['local_llm_temperature'],
             max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
             system_prompt=system_prompt,
+            remove_content_in_think_pairs=use_think_model,
         ).get_answer_generator()
 
 
         wait_first_token = True
+        dred(f'-----------use_think_model: ({use_think_model})----------')
         for res in gen:
-            if res and wait_first_token:
-                start_time2 = time.time()
-                wait_first_token = False
+            if use_think_model:
+                # think模型
+                if res[0] and wait_first_token:
+                    start_time2 = time.time()
+                    wait_first_token = False
 
-            full_res['content'] += res
+                full_res['content'] += res[2]
+            else:
+                # 普通模型
+                if res and wait_first_token:
+                    start_time2 = time.time()
+                    wait_first_token = False
+
+                full_res['content'] += res
+
             full_res['content'] = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
             if using_latex:
                 place_holder.latex(full_res['content'])
@@ -1221,6 +1242,10 @@ def on_connecting_internet_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['connecting_internet'] = not s_paras['connecting_internet']
 
+def on_use_think_model_change():
+    s_paras = st.session_state.session_data['paras']
+    s_paras['use_think_model'] = not s_paras['use_think_model']
+
 def on_draw_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['draw'] = not s_paras['draw']
@@ -1306,7 +1331,9 @@ def streamlit_refresh_loop():
     s_paras['url_prompt'] = exp1.text_input(label="URL:", label_visibility='collapsed', placeholder="请在这里输入您需要LLM解读的URL", value=s_paras['url_prompt'])
     s_paras['multi_line_prompt'] = exp1.text_area(label="多行指令:", label_visibility='collapsed', placeholder="请在这里输入您的多行指令", value=s_paras['multi_line_prompt'], disabled=st.session_state.processing)
 
-    print(s_paras)
+    dred('---------refresh时的paras----------')
+    pprint.pprint(s_paras)
+    dred('----------------------------------')
 
     col0, col1, col11, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1, 1])
     col0.checkbox('Agent', value=s_paras['is_agent'], disabled=st.session_state.processing, on_change=on_is_agent_change)
@@ -1320,6 +1347,9 @@ def streamlit_refresh_loop():
     exp1.slider('temperature:', 0.0, 1.0, s_paras['local_llm_temperature'], step=0.1, format='%.1f', disabled=st.session_state.processing, on_change=on_temperature_change, key='local_llm_temperature')
     exp1.slider('max_new_tokens:', 256, 32768, s_paras['local_llm_max_new_token'], step=4096, disabled=st.session_state.processing, on_change=on_max_new_token_change, key='local_llm_max_new_token')
     exp1.slider('联网并发数量:', 2, 10, s_paras['concurrent_num'], disabled=st.session_state.processing, on_change=on_concurrent_num_change, key='concurrent_num')
+
+    c10, c11, c12, c13, c14, c15, c16 = exp1.columns([1, 1, 1, 1, 1, 1, 1])
+    c10.checkbox('深度', value=s_paras['use_think_model'], disabled=st.session_state.processing, on_change=on_use_think_model_change)
 
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)

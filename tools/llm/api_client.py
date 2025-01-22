@@ -653,6 +653,9 @@ class LLM_Client:
         return result
 
     # 方式2：返回generator，在合适的时候输出结果
+    # chunk[0] 原始full chunk
+    # chunk[1] think chunk
+    # chunk[2] result chunk
     def get_answer_generator(self):
         answer = ''
         answer_no_partial_stop = ''
