@@ -139,7 +139,7 @@ class LLM_Client:
         self.print_input = print_input
         self.print_output = print_output
 
-        self.remove_content_in_think_pairs = True      # 是否remove ('<think>', '</think>') 之间的内容
+        self.remove_content_in_think_pairs = False      # 是否remove ('<think>', '</think>') 之间的内容
 
         self.status = LLM_Client_Status(
             uuid=self.uuid,
@@ -438,6 +438,7 @@ class LLM_Client:
             undo=False,
             stop=None,
             remove_content_in_think_pairs=False,        # remove ('<think>', '</think>') 之间的内容
+            think_pair=config.LLM_Default.think_pairs,
             system_prompt=None,
             role_prompt=None,
             audio_string=None,
@@ -544,18 +545,20 @@ class LLM_Client:
         # dprint(f'【LLM_Client】 ask_prepare(): max_new_tokens={max_new_tokens}')
 
         # ==========================================================
+        self.remove_content_in_think_pairs = remove_content_in_think_pairs
+        self.think_pair = think_pair
 
         if self.print_input:
             if image_url is None:
                 # question为文本
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, 过滤thinking={self.remove_content_in_think_pairs})')
+                dgreen(f'</User>(temperature={run_temperature}, 过滤thinking={self.remove_content_in_think_pairs}, 关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"))')
             else:
                 # question为文本和图片
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'][0]['text'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, 过滤thinking={self.remove_content_in_think_pairs}, with image.)')
+                dgreen(f'</User>(temperature={run_temperature}, 过滤thinking={self.remove_content_in_think_pairs}, 关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"), with image.)')
 
         if stop is None:
             # stop = ['<|im_end|>', '<|im_start|>']
@@ -570,7 +573,7 @@ class LLM_Client:
 
         self.stop = stop
 
-        self.remove_content_in_think_pairs = remove_content_in_think_pairs
+
 
         dprint(f'{"-" * 80}')
         # dprint(f'self.openai: {self.openai}')
@@ -734,15 +737,15 @@ class LLM_Client:
                     # ----------------------------------2、判断是否有('<think>', '</think>')这样的think pair需要过滤----------------------------------------
                     if self.remove_content_in_think_pairs:
                         # ----------------------------------需要过滤('<think>', '</think>')之间内容----------------------------------
-                        answer_no_partial_think_pair = str_remove_content_in_partial_pairs(answer, config.LLM_Default.think_pairs)
+                        answer_no_partial_think_pair = str_remove_content_in_partial_pairs(answer, self.think_pair)
                         if answer_no_partial_think_pair == answer:
                             # ----------------------------------没有('<think>', '</think>')----------------------------------
                             pass
                         else:
                             # ----------------------------------有('<think>', '</think>')----------------------------------
-                            if config.LLM_Default.think_pairs[1] not in answer:
+                            if self.think_pair[1] not in answer:
                                 # 如果 '</think>' not in answer，也就是还没有输出结论
-                                thinking_content = _str_get_content_in_partial_pairs(answer, config.LLM_Default.think_pairs)
+                                thinking_content = _str_get_content_in_partial_pairs(answer, self.think_pair)
                                 think_chunk_output = thinking_content.replace(last_thinking_content, '', 1)    # 只去掉最左边的last_thinking_content
                                 last_thinking_content = thinking_content
                             else:
@@ -750,7 +753,7 @@ class LLM_Client:
                                 think_chunk_output = ''
 
                                 # 处理result
-                                result_content = str_remove_content_in_partial_pairs(answer, config.LLM_Default.think_pairs)
+                                result_content = str_remove_content_in_partial_pairs(answer, self.think_pair)
                                 result_chunk_output = result_content.replace(last_result_content, '', 1)  # 只去掉最左边的last_thinking_content
                                 last_result_content = result_content
                                 # print(f'\n-----------result_chunk_output------------\n"{result_chunk_output}"')
@@ -785,7 +788,7 @@ class LLM_Client:
 
         if self.remove_content_in_think_pairs:
             # print(f'\n-----------------last1-----------------\n"{self.answer_last_turn}"')
-            self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, config.LLM_Default.think_pairs)
+            self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
             # print(f'-----------------last2-----------------\n"{self.answer_last_turn}"')
             # print(f'---------------------------------------')
         else:
@@ -1110,7 +1113,7 @@ def main():
         query = input('User: ')
         llm.ask_prepare(query, max_new_tokens=500).get_answer_and_sync_print()
 
-def simple_main():
+def pic_main():
     llm = LLM_Client(
         temperature=0.9,
         url='http://powerai.cc:8001/v1/'
@@ -1505,12 +1508,27 @@ def think_main():
         url='https://powerai.cc:8001/v1'
     )
 
-    llm.ask_prepare('中国首都是？', temperature=0, max_new_tokens=500, remove_content_in_think_pairs=True).get_answer_and_sync_print()
+    llm.ask_prepare('1+1=？',
+                    temperature=0,
+                    max_new_tokens=500,
+                    remove_content_in_think_pairs=True,
+                    think_pair=('<think>', '</think>'),
+                    ).get_answer_and_sync_print()
     print(f'\n--------answer_last_turn--------\n{llm.answer_last_turn}')
     print(f'--------------------------------')
 
+def base_main():
+    llm = LLM_Client(
+        temperature=0.7,
+        # url='https://powerai.cc:8001/v1'
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        url='https://api.deepseek.com/v1',
+    )
+    llm.ask_prepare('中国首都是？').get_answer_and_sync_print()
+
 if __name__ == "__main__" :
-    # simple_main() # 带pic
+    # base_main()
+    # pic_main() # 带pic
     think_main()
 
     # 直接采样64个完整结果的BoN筛选的正确率，比每个step采样20次、最多尝试10个steps的BoN筛选的正确率高，且step方式采用不清楚多少steps刚好完成。
