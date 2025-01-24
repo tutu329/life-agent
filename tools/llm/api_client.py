@@ -708,36 +708,7 @@ class LLM_Client:
                     think_chunk_output = ''
                     result_chunk_output = ''
 
-                    # ----------------------------------1、判断是否有['[观察]']这样的stop----------------------------------------
-                    if self.stop:
-                        # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
-                        answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
-
-                        # print(f'answer1: {answer}')
-                        # print(f'answer2: {answer_no_partial_stop}')
-                        if answer_no_partial_stop == answer:
-                            # ----------------------------------不是stop标识----------------------------------
-                            my_chunk = perhaps_stop_string + my_chunk   # 1、将证实不是stop的字符补在前面
-                            perhaps_stop_string = ''                    # 2、清空疑似stop的缓冲
-                            # 没partial_stop
-                            # print(my_chunk, end='', flush=True)
-
-                            # yield my_chunk
-                            chunk_output = my_chunk
-                        else:
-                            # ----------------------------------是stop标识----------------------------------
-                            perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
-                            # 有partial_stop
-                            # print(f'*{my_chunk}*', end='', flush=True)
-
-                            # yield ''
-                            chunk_output = ''
-                    else:
-                        # ----------------------------------没有stop----------------------------------
-                        # yield my_chunk
-                        chunk_output = my_chunk
-
-                    # ----------------------------------2、判断是否有('<think>', '</think>')这样的think pair需要过滤----------------------------------------
+                    # ----------------------------------1、判断是否有('<think>', '</think>')这样的think pair需要过滤----------------------------------------
                     if self.remove_content_in_think_pairs:
                         # ----------------------------------需要过滤('<think>', '</think>')之间内容----------------------------------
                         answer_no_partial_think_pair = str_remove_content_in_partial_pairs(answer, self.think_pair)
@@ -777,12 +748,64 @@ class LLM_Client:
                         # ----------------------------------不需要过滤('<think>', '</think>')之间内容----------------------------------
                         pass
 
+                    # ----------------------------------2、判断是否有['[观察]']这样的stop----------------------------------------
+                    answer_for_stop = ''
+                    chunk_for_stop = ''
+                    result_chunk_after_stop = ''
+                    if self.remove_content_in_think_pairs:
+                        answer_for_stop = result_chunk_output
+                        chunk_for_stop = result_chunk_output
+                    else:
+                        answer_for_stop = answer
+                        chunk_for_stop = my_chunk
+
+                    if self.stop:
+                        # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
+                        answer_no_partial_stop = str_remove_partial_substring(answer_for_stop, self.stop)
+                        # answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
+
+                        # print(f'answer1: {answer}')
+                        # print(f'answer2: {answer_no_partial_stop}')
+                        if answer_no_partial_stop == answer_for_stop:
+                        # if answer_no_partial_stop == answer:
+                            # ----------------------------------不是stop标识----------------------------------
+                            my_chunk = perhaps_stop_string + my_chunk   # 1、将证实不是stop的字符补在前面
+                            perhaps_stop_string = ''                    # 2、清空疑似stop的缓冲
+                            # 没partial_stop
+                            # print(my_chunk, end='', flush=True)
+
+                            # yield my_chunk
+
+                            result_chunk_after_stop = chunk_for_stop
+                            # chunk_output = my_chunk
+                        else:
+                            # ----------------------------------是stop标识----------------------------------
+                            dred(f'===================================================')
+                            dred(f'-------------遇到stop标识: {self.stop}---------------')
+                            dred(f'===================================================')
+                            perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
+                            # 有partial_stop
+                            # print(f'*{my_chunk}*', end='', flush=True)
+
+                            # yield ''
+
+                            result_chunk_after_stop = ''
+                            # chunk_output = ''
+                    else:
+                        # ----------------------------------没有stop----------------------------------
+                        # yield my_chunk
+
+                        result_chunk_after_stop = chunk_for_stop
+                        # chunk_output = my_chunk
+
                     if self.remove_content_in_think_pairs:
                         # 过滤think内容
-                        yield chunk_output, think_chunk_output, result_chunk_output
+                        yield my_chunk, think_chunk_output, result_chunk_after_stop
+                        # yield chunk_output, think_chunk_output, result_chunk_output
                     else:
                         # 不过滤think内容
-                        yield chunk_output
+                        yield result_chunk_after_stop
+                        # yield chunk_output
 
         except Exception as e:
             dred(f'LLM_Client("{self.url}")连接异常: {e}')

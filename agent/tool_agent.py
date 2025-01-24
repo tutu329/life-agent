@@ -174,6 +174,11 @@ class Tool_Agent():
         # stream输出
         str_last_turn = ''
         for chunk in gen:
+            if self.llm.remove_content_in_think_pairs:
+                chunk =chunk[2]
+            else:
+                chunk =chunk
+
             thoughts +=chunk
             thoughts_copy_to_print +=chunk
             if f'[{self.__finished_keyword}]' in thoughts:
@@ -236,7 +241,11 @@ class Tool_Agent():
         print(f'****************************************thinking()***********************************************')
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
         dred(f'self.response_stop: "{self.response_stop}"')
-        gen = self.llm.ask_prepare(self.agent_desc_and_action_history, stop=self.response_stop).get_answer_generator()
+        gen = self.llm.ask_prepare(
+            self.agent_desc_and_action_history,
+            stop=self.response_stop,
+            remove_content_in_think_pairs=True,
+        ).get_answer_generator()
         # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
         # thoughts = ''
 
@@ -431,8 +440,8 @@ def main3():
         in_tool_classes=tools,
         in_output_stream_buf=dyellow,
         in_output_stream_to_console=True,
-        in_base_url='https://api.deepseek.com/v1',
-        in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        # in_base_url='https://api.deepseek.com/v1',
+        # in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
     )
     agent.init()
     success = agent.run()
