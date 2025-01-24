@@ -13,6 +13,8 @@ from agent.tools.folder_tool import Folder_Tool
 from agent.tools.search_tool import Search_Tool
 from agent.tools.url_content_qa_tool import Url_Content_QA_Tool
 
+g_debug_think_times = 0
+
 class Tool_Agent():
     def __init__(self,
                  in_query,
@@ -240,6 +242,7 @@ class Tool_Agent():
         return thoughts
 
     def thinking(self):
+        global g_debug_think_times
         print(f'****************************************thinking()***********************************************')
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
         dred(f'self.response_stop: "{self.response_stop}"')
@@ -253,11 +256,17 @@ class Tool_Agent():
 
         answer_this_turn = self._thoughts_stream_output(gen)
 
+        if g_debug_think_times == 0:
+            with open("answer_this_turn.txt", "w", encoding="utf-8") as file:
+                file.write(answer_this_turn)
+            g_debug_think_times += 1
+
         if self.__finished_keyword in answer_this_turn:
             print(Fore.GREEN, flush=True)
             dblue(f'=============================answer=============================')
             dblue(answer_this_turn)
             dblue(f'-----------------------------answer-----------------------------')
+
 
             print(f'----------------------------------------thinking()-----------------------------------------------')
             return answer_this_turn
@@ -373,6 +382,8 @@ class Tool_Agent():
         dcyan(f'=============================action_history=============================')
         dcyan(self.agent_desc_and_action_history)
         dcyan(f'-----------------------------action_history-----------------------------')
+        with open("agent_desc_and_action_history.txt", "w", encoding="utf-8") as file:
+            file.write(self.agent_desc_and_action_history)
         # print(f'============================prompt start============================\n')
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
 
@@ -442,9 +453,9 @@ def main3():
         in_tool_classes=tools,
         in_output_stream_buf=dyellow,
         in_output_stream_to_console=True,
-        remove_content_in_think_pairs=True,
-        # in_base_url='https://api.deepseek.com/v1',
-        # in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        # remove_content_in_think_pairs=True,
+        in_base_url='https://api.deepseek.com/v1',
+        in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
     )
     agent.init()
     success = agent.run()
