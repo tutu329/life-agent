@@ -183,11 +183,47 @@ def _main():
 
 def _main_str_remove_content_in_partial_pairs():
     s = '''<think>
-Okay, so I need to figure out what the capital of China is. Hmm, I remember from school that China's capital is Beijing. But wait, let me think again to make sure I'm not mixing it up with another country. Sometimes I get confused between different countries' capitals. For example, I know that the capital of Canada is Ottawa, and the capital of the United States is Washington, D.C. So, for China, it's definitely Beijing. I think it's been the capital for a long time, maybe even centuries. I recall that Beijing was also known as Peking in the past. Yeah, that sounds right. So, I'm pretty confident that the answer is Beijing.
+好吧，我现在得帮用户解决这个源网荷储项目的优化问题。首先，我得理清楚用户的需求。用户提到这是一个源网荷储项目，年上网电量不超过总发电量的20%，年下网电量不超过总用电量的10%。项目信息包括光伏、风电、储能的单位造价，最大负荷，年用电量，利率，仿真年数等。用户需要找出光伏、风电的最优建设容量以及储能的W和Wh建设容量，并生成报告。
+
+首先，我需要明确用户的问题。用户希望使用提供的工具来计算最优投资规模。工具中有一个energy_investment_plan_tool，正好适用于这种情况。这个工具基于线性规划来优化风光储的投资规模。
+
+接下来，我要整理用户提供的数据，确保所有参数都正确无误地输入到工具中。参数包括基准收益率、仿真年数、最大负荷、年用电量、储能的单位造价、光伏和风电的单位造价，以及是否对光伏和风电进行优化等。
+
+我注意到用户提到年上网电量不超过总发电量的20%，这对应于参数up_flow_max_proportion，应该设置为0.2。同样，年下网电量不超过项目总用电量的10%，对应down_flow_max_proportion，设置为0.1。
+
+然后，我要检查光伏和风电是否需要优化。用户的问题中没有提到已建的光伏和风电规模，因此我假设它们都是0，并且需要优化，所以pv_optimize和wind_optimize都设为true。
+
+现在，我需要将这些参数整理成工具所需的格式。确保所有参数类型正确，特别是布尔值必须用lowercase的true或false。同时，数值单位要正确，比如最大负荷是800MW，转换为kW就是800000kW，年用电量51.2亿kWh等于5120000000kWh。
+
+最后，调用energy_investment_plan_tool，输入所有参数，工具会返回最优的投资规模。如果工具返回的结果符合预期，那么问题就解决了。如果结果不符合，可能需要检查参数是否正确或者是否有其他限制条件未被考虑。
 </think>
 
-The capital of China is Beijing.
-'''
+[思考]
+为了回答这个问题，我需要使用能源投资优化系统来计算光伏、风电和储能的最优投资规模。根据用户提供的数据，我需要将这些参数输入到工具中，并让工具进行计算。
+
+[工具]
+{
+    'tool_invoke': 'yes',
+    'tool_name': 'energy_investment_plan_tool',
+    'tool_parameters': {
+        'rate': 0.08,
+        'simu_years': 10,
+        'load_max': 800000,  // 转换为kW
+        'load_electricity': 5120000000,  // 转换为kWh
+        'storage_w_cost': 0.12,
+        'storage_wh_cost': 0.83,
+        'pv_cost': 3.5,
+        'pv_nom0': 0,
+        'pv_optimize': true,
+        'wind_cost': 3.5,
+        'wind_nom0': 0,
+        'wind_optimize': true,
+        'up_flow_max_proportion': 0.2,
+        'down_flow_max_proportion': 0.1
+    }
+}
+
+<'''
     print(f'--------------s--------------\n"{s}"')
     c = str_remove_content_in_partial_pairs(s, config.LLM_Default.think_pairs)
     print(f'--------------c--------------\n"{c}"')

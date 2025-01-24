@@ -755,8 +755,17 @@ class LLM_Client:
                                 # 如果 '</think>' in answer，也就是开始输出结论
                                 think_chunk_output = ''
 
+
                                 # 处理result
                                 result_content = str_remove_content_in_partial_pairs(answer, self.think_pair)
+
+                                print(f'\n-----------answer------------\n"{answer}"')
+                                print(f'--------------------------------------------')
+                                print(f'\n-----------result_content------------\n"{result_content}"')
+                                print(f'--------------------------------------------')
+                                # print(f'\n-----------last_result_content------------\n"{last_result_content}"')
+                                # print(f'--------------------------------------------')
+
                                 result_chunk_output = result_content.replace(last_result_content, '', 1)  # 只去掉最左边的last_thinking_content
                                 last_result_content = result_content
                                 # print(f'\n-----------result_chunk_output------------\n"{result_chunk_output}"')

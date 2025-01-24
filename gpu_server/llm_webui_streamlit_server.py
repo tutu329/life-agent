@@ -1069,7 +1069,11 @@ def ask_llm(prompt, paras):
         think_chunk = ''
         result_chunk = ''
 
+        all_content = ''
+        result_content = ''
         for res in gen:
+            all_content += res[0]   # 完整的、带<think>的输出，用于调试
+            result_content += res[2]   # 完整的、带<think>的输出，用于调试
             if use_think_model:
                 # think模型
                 if res[0] and wait_first_token:
@@ -1144,7 +1148,11 @@ def ask_llm(prompt, paras):
         # dred(f'full_res: {full_res['content']}')
 
         # str = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
-        print(f'===================================')
+        print(f'================all_content===================')
+        print(all_content)
+        print(f'================result_content===================')
+        print(result_content)
+        print(f'================full_res[\'content\']===================')
         print(full_res['content'])
 
         if use_think_model:
@@ -1596,14 +1604,16 @@ def streamlit_refresh_loop():
             st.session_state.session_data['msgs'].append([async_llms[i].get_final_response() for i in range(num)])
         if completed_answer:
             if type(completed_answer) == dict:
+                print(f'----------completed_answer1---------\n{completed_answer["content"]}')
                 my_str = completed_answer['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
-                print(my_str)
+                print(f'----------completed_answer11---------\n{my_str}')
                 st.session_state.session_data['msgs'].append({
                     'role': 'assistant',
                     'content': completed_answer['content'] ,
                     'type': completed_answer['type']
                 })
             elif type(completed_answer) is str:
+                print(f'----------completed_answer12---------\n{completed_answer}')
                 st.session_state.session_data['msgs'].append({
                     'role': 'assistant',
                     'content': completed_answer,
