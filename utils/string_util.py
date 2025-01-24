@@ -3,6 +3,7 @@ import re
 from wcwidth import wcswidth
 
 import config
+from config import dred, dblue, dyellow, dcyan, dgreen
 
 
 def string_right_align(text, width):
@@ -56,6 +57,8 @@ def get_length_of_string_head_with_console_width(s, in_console_width):
 
 # str1和str2的交集，且该交集起始和str2起始一致
 def _str_has_partial_substr(str, substr):
+    dred(f'str: "{str}"')
+    dred(f'substr: "{substr}"')
     same_str = ''
     chunk = ''
     # 找到str1和str2交集
@@ -69,30 +72,44 @@ def _str_has_partial_substr(str, substr):
         else:
             break
 
-
     # 判断partial substr和str1的交集是否为str1尾部，或者完整substr是否in str1
-    # print(f'same:"{same_str}"')
+    dgreen(f'same:"{same_str}"')
     if str.endswith(same_str):
+        # '<think>45</thin'
+        dblue(f'0) rtn="{same_str}"')
         return same_str
     elif substr in str:
-        str = str.split(substr)
+        # '<think>45</think>67'
+
+        # ----------这个1很重要，只split第一个(确保<think></think>正确)----------
+        # ----------!!!<stop>应用还需要测试---------
+        str = str.split(substr, 1)
+        # ------------------------------------------
+
         if len(str)>0:
+
             # 取第一个stop后面所有
             str.pop(0)
-            return substr+ ''.join(str)
+            rtn = substr+ ''.join(str)
+
+            dblue(f'1) rtn="{rtn}"')
+            return rtn
         else:
             # 原来就没有stop
             str = str[0]
+            dblue(f'2) rtn="{str}"')
             return str
     else:
+        dblue(f'3) rtn=""')
         return ''
 
 
 
 # "aaaaaaa<stop"和"<stop>"的交集是否为<开始
-def _str_remove_partial_substring(str, substr):
+def _str_remove_partial_substring_or_right(str, substr):
     partial_substr = _str_has_partial_substr(str, substr)
-    # print(f'partial_stop: "{partial_stop}"')
+    print(f'-----partial_substr-----\n"{partial_substr}"')
+    print(f'------------------------')
     if not partial_substr:
         return str
     str = str.split(partial_substr)
@@ -111,7 +128,7 @@ def str_remove_partial_substring(str, substrings):
     # print(f'str: "{str}"')
     min_str = str1
     for substr in substrings:
-        str1 = _str_remove_partial_substring(str, substr)
+        str1 = _str_remove_partial_substring_or_right(str, substr)
         # print(f'str: "{str}", stop: "{stop}"')
         # print(f'mmm: "{min_str}", stop: "{stop}"')
         if len(min_str) > len(str1):
@@ -124,20 +141,25 @@ def str_remove_partial_substring(str, substrings):
 # str_get_content_in_partial_pairs('string12<think>1112</think>3456', ('<think>', '</think>')) -> '1112'
 def _str_get_content_in_partial_pairs(str, pairs):
     # 'string12<think>1112</think>3456'
-    str_left_and_content = _str_remove_partial_substring(str, pairs[1])
-    # last_str_left_and_content = ''
-    # i=0
-    # while (last_str_left_and_content !=str_left_and_content):
-    #     i += 1
-    #     print(f'step {i}')
-    #     last_str_left_and_content = str_left_and_content
-    #     str_left_and_content = _str_remove_partial_substring(str_left_and_content, pairs[1])    # 这一行很关键，用于解决"string12<think>1112</think>3456<"这种临界情况
+    print(f'str: "{str}"')
+    str_left_and_content = _str_remove_partial_substring_or_right(str, pairs[1])
+    print(f'str_left_and_content: "{str_left_and_content}"')
+    last_str_left_and_content = ''
+
+    # ---这一段很关键，用于解决"string12<think>1112</think>3456<</<<<"这种后续有partial的情况---
+    i=0
+    while (last_str_left_and_content != str_left_and_content):
+        i += 1
+        print(f'step {i} str_left_and_content: "{str_left_and_content}"')
+        last_str_left_and_content = str_left_and_content
+        str_left_and_content = _str_remove_partial_substring_or_right(str_left_and_content, pairs[1])
     print(f'1) str_left_and_content: \n"{str_left_and_content}"')
+    # -----------------------------------------------------------------------------------
 
     if pairs[0] in str:
         str_left = str.split(pairs[0])[0]
     else:
-        str_left = _str_remove_partial_substring(str, pairs[0])             # 'string12'
+        str_left = _str_remove_partial_substring_or_right(str, pairs[0])             # 'string12'
     print(f'2) str_left: \n"{str_left}"')
 
     pair1_and_content = str_left_and_content.replace(str_left, '')    # '<think>1112'
@@ -152,23 +174,23 @@ def _str_get_content_in_partial_pairs(str, pairs):
 # str_get_content_in_partial_pairs('string12<think>1112</thin', ('<think>', '</think>'))       -> 'string12'
 # str_get_content_in_partial_pairs('string12<think>1112</think>3456', ('<think>', '</think>')) -> 'string123456'
 def str_remove_content_in_partial_pairs(str, pairs):
-    # print(f'-----0) str-----\n"{str}"')
+    print(f'-----0) str-----\n"{str}"')
 
     content = _str_get_content_in_partial_pairs(str, pairs)
-    # print(f'-----1) content-----\n"{content}"')
+    print(f'-----1) content-----\n"{content}"')
 
     rtn_str = str.replace(content, '')
-    # print(f'-----2) rtn_str-----\n"{rtn_str}"')
+    print(f'-----2) rtn_str-----\n"{rtn_str}"')
 
-    rtn_str = rtn_str.replace(pairs[1], '')
-    # print(f'-----3) rtn_str-----\n"{rtn_str}"')
+    rtn_str = rtn_str.replace(pairs[1], '', 1)
+    print(f'-----3) rtn_str-----\n"{rtn_str}"')
 
-    rtn_str = rtn_str.replace(pairs[0], '')
-    # print(f'-----4) rtn_str-----\n"{rtn_str}"')
+    rtn_str = rtn_str.replace(pairs[0], '', 1)
+    print(f'-----4) rtn_str-----\n"{rtn_str}"')
 
-    rtn_str = _str_remove_partial_substring(rtn_str, pairs[1])
+    # rtn_str = _str_remove_partial_substring(rtn_str, pairs[1])
     # print(f'-----5) rtn_str-----\n"{rtn_str}"')
-    # print(f'--------------------')
+    print(f'--------------------')
     return rtn_str
 
 def str_replace_multiple_newlines_with_one_newline(text):
@@ -189,7 +211,10 @@ def _main():
     print('fout:', str_remove_partial_substring(str1, stops))
 
 def _main_str_remove_content_in_partial_pairs():
-    s = '''<think>45</think>123</'''   # 应该输出"123<"
+    # s = '''<think>45</think>67'''   # 应该输出"123<"
+    s = '''<think>xy</think>123<think>45</think>67'''   # 应该输出"123<"
+    # s = '''<think>45</think123</<think>8</think>9'''   # 应该输出"123<"
+    # s = '''<think>45</think>123</<<<<'''   # 应该输出"123<"
     print(f'--------------s--------------\n"{s}"')
     c = str_remove_content_in_partial_pairs(s, config.LLM_Default.think_pairs)
     print(f'--------------c--------------\n"{c}"')
