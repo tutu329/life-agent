@@ -28,12 +28,14 @@ class Tool_Agent():
                  in_base_url=config.LLM_Default.url,
                  in_api_key='empty',
                  in_temperature=0.7,
+                 remove_content_in_think_pairs=False,
                  ):
         self.llm = None
         self.temperature = in_temperature
         self.url = in_base_url
         self.api_key = in_api_key
         self.agent_desc_and_action_history = ''
+        self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
         self.query=in_query
         self.tool_descs=''
         self.tool_names=[]
@@ -244,7 +246,7 @@ class Tool_Agent():
         gen = self.llm.ask_prepare(
             self.agent_desc_and_action_history,
             stop=self.response_stop,
-            remove_content_in_think_pairs=True,
+            remove_content_in_think_pairs=self.remove_content_in_think_pairs,
         ).get_answer_generator()
         # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
         # thoughts = ''
@@ -440,8 +442,9 @@ def main3():
         in_tool_classes=tools,
         in_output_stream_buf=dyellow,
         in_output_stream_to_console=True,
-        # in_base_url='https://api.deepseek.com/v1',
-        # in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        # remove_content_in_think_pairs=True,
+        in_base_url='https://api.deepseek.com/v1',
+        in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
     )
     agent.init()
     success = agent.run()

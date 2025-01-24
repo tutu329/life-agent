@@ -123,7 +123,7 @@ def _str_remove_partial_substring_or_right(str, substr):
 
 # str_remove_partial_substring('string12[观', ['[观察]']) -> 'string12'
 # str_remove_partial_substring('string12[观察]34', ['[观察]']) -> 'string12'
-def str_remove_partial_substring(str, substrings):
+def str_remove_partial_substring_or_right(str, substrings):
     str1 = str
     # print(f'str: "{str}"')
     min_str = str1
@@ -208,7 +208,7 @@ def _main():
 
     print('str :', str1)  # Output: <stop
 
-    print('fout:', str_remove_partial_substring(str1, stops))
+    print('fout:', str_remove_partial_substring_or_right(str1, stops))
 
 def _main_str_remove_content_in_partial_pairs():
     # s = '''<think>45</think>67'''   # 应该输出"123<"

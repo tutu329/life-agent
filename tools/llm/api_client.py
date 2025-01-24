@@ -20,7 +20,7 @@ from streamlit.runtime.scriptrunner import add_script_run_ctx
 import config
 from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
 from utils.task import Flicker_Task
-from utils.string_util import str_remove_partial_substring, str_remove_content_in_partial_pairs, _str_get_content_in_partial_pairs
+from utils.string_util import str_remove_partial_substring_or_right, str_remove_content_in_partial_pairs, _str_get_content_in_partial_pairs
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
@@ -761,7 +761,7 @@ class LLM_Client:
 
                     if self.stop:
                         # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
-                        answer_no_partial_stop = str_remove_partial_substring(answer_for_stop, self.stop)
+                        answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, self.stop)
                         # answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
 
                         # print(f'answer1: {answer}')
@@ -780,10 +780,14 @@ class LLM_Client:
                             # chunk_output = my_chunk
                         else:
                             # ----------------------------------是stop标识----------------------------------
-                            dred(f'===================================================')
-                            dred(f'-------------遇到stop标识: {self.stop}---------------')
-                            dred(f'===================================================')
-                            perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
+                            # dred(f'===================================================')
+                            # dred(f'-------------遇到stop标识: {self.stop}---------------')
+                            # dred(f'-------------answer_no_partial_stop: "{answer_no_partial_stop[-20:]}"---------------')
+                            # dred(f'-------------answer_for_stop: "{answer_for_stop[-20:]}"---------------')
+                            # dred(f'===================================================')
+                            perhaps_stop_string += chunk_for_stop #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
+                            # perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
+
                             # 有partial_stop
                             # print(f'*{my_chunk}*', end='', flush=True)
 
