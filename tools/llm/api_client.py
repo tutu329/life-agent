@@ -759,10 +759,10 @@ class LLM_Client:
                                 # 处理result
                                 result_content = str_remove_content_in_partial_pairs(answer, self.think_pair)
 
-                                print(f'\n-----------answer------------\n"{answer}"')
-                                print(f'--------------------------------------------')
-                                print(f'\n-----------result_content------------\n"{result_content}"')
-                                print(f'--------------------------------------------')
+                                # print(f'\n-----------answer------------\n"{answer}"')
+                                # print(f'--------------------------------------------')
+                                # print(f'\n-----------result_content------------\n"{result_content}"')
+                                # print(f'--------------------------------------------')
                                 # print(f'\n-----------last_result_content------------\n"{last_result_content}"')
                                 # print(f'--------------------------------------------')
 
@@ -1523,6 +1523,7 @@ def think_main():
     llm.ask_prepare('1+1=？',
                     temperature=0,
                     max_new_tokens=500,
+                    # remove_content_in_think_pairs=False,
                     remove_content_in_think_pairs=True,
                     think_pair=('<think>', '</think>'),
                     ).get_answer_and_sync_print()

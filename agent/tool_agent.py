@@ -431,6 +431,8 @@ def main3():
         in_tool_classes=tools,
         in_output_stream_buf=dyellow,
         in_output_stream_to_console=True,
+        in_base_url='https://api.deepseek.com/v1',
+        in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
     )
     agent.init()
     success = agent.run()
