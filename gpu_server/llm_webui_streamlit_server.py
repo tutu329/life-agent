@@ -1072,10 +1072,12 @@ def ask_llm(prompt, paras):
         all_content = ''
         result_content = ''
         for res in gen:
-            all_content += res[0]   # 完整的、带<think>的输出，用于调试
-            result_content += res[2]   # 完整的、带<think>的输出，用于调试
+
             if use_think_model:
                 # think模型
+                all_content += res[0]  # 完整的、带<think>的输出，用于调试
+                result_content += res[2]  # 完整的、带<think>的输出，用于调试
+
                 if res[0] and wait_first_token:
                     start_time2 = time.time()
                     wait_first_token = False
