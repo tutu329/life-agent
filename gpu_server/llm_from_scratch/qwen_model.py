@@ -356,6 +356,7 @@ class Qwen_Model:
         # QKV = softmax(mask(Q * K_T)) * V
         qkv_attention = torch.matmul(qk_per_token_after_masking_after_softmax, v_per_token)
 
+        # 遍历layer0的所有head
         qkv_attention_store = []
         GQA_num = 1
         for head in range(self.n_heads):
@@ -368,8 +369,7 @@ class Qwen_Model:
 
             q_per_token_split_into_pairs = q_per_token.float().view(q_per_token.shape[0], -1, 2)
             q_per_token_as_complex_numbers = torch.view_as_complex(q_per_token_split_into_pairs)
-            q_per_token_split_into_pairs_rotated = torch.view_as_real(
-                q_per_token_as_complex_numbers * freqs_cis[:len(tokens)])
+            q_per_token_split_into_pairs_rotated = torch.view_as_real(q_per_token_as_complex_numbers * freqs_cis[:len(tokens)])
             q_per_token_rotated = q_per_token_split_into_pairs_rotated.view(q_per_token.shape)
 
             k_per_token_split_into_pairs = k_per_token.float().view(k_per_token.shape[0], -1, 2)
@@ -382,50 +382,52 @@ class Qwen_Model:
             mask = torch.full((len(tokens), len(tokens)), float("-inf"), device=self.device)
             mask = torch.triu(mask, diagonal=1)
             qk_per_token_after_masking = qk_per_token + mask
-            qk_per_token_after_masking_after_softmax = torch.nn.functional.softmax(qk_per_token_after_masking,
-                                                                                   dim=1).to(torch.bfloat16)
+            qk_per_token_after_masking_after_softmax = torch.nn.functional.softmax(qk_per_token_after_masking, dim=1).to(torch.bfloat16)
             qkv_attention = torch.matmul(qk_per_token_after_masking_after_softmax, v_per_token)
             qkv_attention_store.append(qkv_attention)
 
         stacked_qkv_attention = torch.cat(qkv_attention_store, dim=-1)
+        self.print_tensor('stacked_qkv_attention: ', stacked_qkv_attention)
         w_layer0 = self.model["model.layers.0.self_attn.o_proj.weight"]
+        self.print_tensor('w_layer0: ', w_layer0)
+
+        # 进行残差连接(即y=F(x)+x，用于缓解梯度消失问题、简化优化目标、提升性能)
         embedding_delta = torch.matmul(stacked_qkv_attention, w_layer0.T)
         embedding_after_edit = token_embeddings_unnormalized + embedding_delta
-        embedding_after_edit_normalized = self.rms_norm(embedding_after_edit,
-                                                   self.model["model.layers.0.post_attention_layernorm.weight"])
+        embedding_after_edit_normalized = self.rms_norm(embedding_after_edit, self.model["model.layers.0.post_attention_layernorm.weight"])
 
+        # 进行SwiGLU(Sigmoid Linear Unit)操作( SiLU(x)=x⋅σ(x), σ(x)=1/(1+e^-x) )
+        # layer_0的输出 = 残差 + SiLU(input * w1_T) * (input * w3_T) * w2_T
         w1 = self.model["model.layers.0.mlp.gate_proj.weight"]
         w2 = self.model["model.layers.0.mlp.down_proj.weight"]
         w3 = self.model["model.layers.0.mlp.up_proj.weight"]
-        output_after_feedforward = torch.matmul(
-            torch.functional.F.silu(torch.matmul(embedding_after_edit_normalized, w1.T)) * torch.matmul(
-                embedding_after_edit_normalized, w3.T), w2.T)
+        output_after_feedforward = torch.matmul( torch.functional.F.silu(torch.matmul(embedding_after_edit_normalized, w1.T)) * torch.matmul(embedding_after_edit_normalized, w3.T), w2.T)
+        # layer_0的输出
         layer_0_embedding = embedding_after_edit + output_after_feedforward
+        self.print_tensor('layer_0_embedding: ', layer_0_embedding)
 
         k_cache, v_cache = [], []
 
         final_embedding = token_embeddings_unnormalized
         GQA_num = 1
         for layer in range(self.n_layers):
+            print(f'第{layer}层'.center(40, '-'))
             k_cache.append([])
             v_cache.append([])
             qkv_attention_store = []
             layer_embedding_norm = self.rms_norm(final_embedding, self.model[f"model.layers.{layer}.input_layernorm.weight"])
             q_layer = self.model[f"model.layers.{layer}.self_attn.q_proj.weight"]
-            q_layer = q_layer.view(self.n_heads, 2, q_layer.shape[0] // self.n_heads // 2, self.dim).permute(0, 2, 1,
-                                                                                                             3).reshape(
-                self.n_heads, q_layer.shape[0] // self.n_heads, self.dim)
+            q_layer = q_layer.view(self.n_heads, 2, q_layer.shape[0] // self.n_heads // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_heads, q_layer.shape[0] // self.n_heads, self.dim)
             q_layer_bias = self.model[f"model.layers.{layer}.self_attn.q_proj.bias"].reshape(self.n_heads, -1)
             k_layer = self.model[f"model.layers.{layer}.self_attn.k_proj.weight"]
-            k_layer = k_layer.view(self.n_kv_heads, 2, k_layer.shape[0] // self.n_kv_heads // 2, self.dim).permute(0, 2,
-                                                                                                                   1,
-                                                                                                                   3).reshape(
-                self.n_kv_heads, k_layer.shape[0] // self.n_kv_heads, self.dim)
+            k_layer = k_layer.view(self.n_kv_heads, 2, k_layer.shape[0] // self.n_kv_heads // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_kv_heads, k_layer.shape[0] // self.n_kv_heads, self.dim)
             k_layer_bias = self.model[f"model.layers.{layer}.self_attn.k_proj.bias"].reshape(self.n_heads, -1)
             v_layer = self.model[f"model.layers.{layer}.self_attn.v_proj.weight"]
             v_layer = v_layer.view(self.n_kv_heads, v_layer.shape[0] // self.n_kv_heads, self.dim)
             v_layer_bias = self.model[f"model.layers.{layer}.self_attn.v_proj.bias"].reshape(self.n_heads, -1)
+            print('head ', end='', flush=True)
             for head in range(self.n_heads):
+                print(f'{head} ', end='', flush=True)
                 q_layer_head = q_layer[head]
                 k_layer_head = k_layer[head // GQA_num]
                 v_layer_head = v_layer[head // GQA_num]
@@ -453,32 +455,31 @@ class Qwen_Model:
                     k_cache[-1].append(k_per_token_rotated)
 
                 qk_per_token = torch.matmul(q_per_token_rotated, k_per_token_rotated.T) / (128) ** 0.5
-                mask = torch.full((len(token_embeddings_unnormalized), len(token_embeddings_unnormalized)),
-                                  float("-inf"), device=self.device)
+                mask = torch.full((len(token_embeddings_unnormalized), len(token_embeddings_unnormalized)), float("-inf"), device=self.device)
                 mask = torch.triu(mask, diagonal=1)
                 qk_per_token_after_masking = qk_per_token + mask
-                qk_per_token_after_masking_after_softmax = torch.nn.functional.softmax(qk_per_token_after_masking,
-                                                                                       dim=1).to(torch.bfloat16)
+                qk_per_token_after_masking_after_softmax = torch.nn.functional.softmax(qk_per_token_after_masking, dim=1).to(torch.bfloat16)
                 qkv_attention = torch.matmul(qk_per_token_after_masking_after_softmax, v_per_token)
                 qkv_attention_store.append(qkv_attention)
+            print()
 
             stacked_qkv_attention = torch.cat(qkv_attention_store, dim=-1)
             w_layer = self.model[f"model.layers.{layer}.self_attn.o_proj.weight"]
             embedding_delta = torch.matmul(stacked_qkv_attention, w_layer.T)
             embedding_after_edit = final_embedding + embedding_delta
-            embedding_after_edit_normalized = self.rms_norm(embedding_after_edit, self.model[
-                f"model.layers.{layer}.post_attention_layernorm.weight"])
+            embedding_after_edit_normalized = self.rms_norm(embedding_after_edit, self.model[f"model.layers.{layer}.post_attention_layernorm.weight"])
             w1 = self.model[f"model.layers.{layer}.mlp.gate_proj.weight"]
             w2 = self.model[f"model.layers.{layer}.mlp.down_proj.weight"]
             w3 = self.model[f"model.layers.{layer}.mlp.up_proj.weight"]
-            output_after_feedforward = torch.matmul(
-                torch.functional.F.silu(torch.matmul(embedding_after_edit_normalized, w1.T)) * torch.matmul(
-                    embedding_after_edit_normalized, w3.T), w2.T)
+            output_after_feedforward = torch.matmul(torch.functional.F.silu(torch.matmul(embedding_after_edit_normalized, w1.T)) * torch.matmul(embedding_after_edit_normalized, w3.T), w2.T)
             final_embedding = embedding_after_edit + output_after_feedforward
 
         final_embedding = self.rms_norm(final_embedding, self.model["model.norm.weight"])
+        self.print_tensor('final_embedding: ', final_embedding)
         logits = torch.matmul(final_embedding[-1], self.model["lm_head.weight"].T)
+        self.print_tensor('logits: ', logits)
         next_token = torch.argmax(logits, dim=-1)
+        print(f'next_token = argmax(logits) --> {next_token}')
 
         print('======输入的prompt======')
         for i in range(len(prompt_split_as_tokens)):
