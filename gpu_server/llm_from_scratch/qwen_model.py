@@ -10,103 +10,6 @@ from safetensors import safe_open
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
-
-def print_tensor(title, tensor):
-    """
-    按照如下规则构造表格：
-      1. 表头第一列为 "Row\Col"，后面依次显示前几列的列号，
-         如果 tensor 列数超过 col_limit，则倒数第二个单元格显示 "..."，
-         最后一个单元格显示总列数。
-      2. 对于数据行：每行第一列显示行号，
-         后面依次显示前几列的数据（格式化为小数 3 位），
-         如果 tensor 列数超过 col_limit，则该行倒数第二个单元格显示 "..."，
-         倒数最后一个单元格留空。
-      3. 如果 tensor 行数超过 row_limit，则在数据行下方插入一行全 "..."（省略行）。
-      4. 最后一行为汇总行：第一列显示总行数，
-         如果 tensor 列数超过 col_limit，则倒数第二个单元格显示 "..."，
-         最后一个单元格显示总列数，其余单元格留空。
-    """
-    print(f'【{title}】'.center(80, '='))
-    if tensor.ndim == 1:
-        total_rows = tensor.shape[0]
-        total_cols = 1
-    else:
-        total_rows, total_cols = tensor.shape
-
-    if total_rows > total_cols:
-        row_limit = 5
-        col_limit = 4
-    elif total_rows < total_cols:
-        row_limit = 4
-        col_limit = 5
-    else:
-        row_limit = 4
-        col_limit = 4
-
-    # 判断是否需要截断（即 tensor 的行或列数超过上限）
-    truncated_rows = total_rows > row_limit
-    truncated_cols = total_cols > col_limit
-
-    # 若截断，则实际显示的数据行/列数为：上限减去 2（最后一行/列用于汇总，倒数第二行/列用于显示 "..."）
-    disp_rows = (row_limit - 2) if truncated_rows else total_rows
-    disp_cols = (col_limit - 2) if truncated_cols else total_cols
-
-    # 构造表头：第一列为 "Row\Col"
-    # header = [title]
-    header = ['']
-    # 显示前 disp_cols 列的列号
-    for j in range(disp_cols):
-        header.append(str(j + 1))
-    if total_cols > 1:
-        if truncated_cols:
-            # 倒数第二列显示省略号，最后一列显示总列数
-            header.append("...")
-            header.append(str(total_cols))
-        else:
-            # 不截断时，最后一列仍显示总列数（作为附加信息）
-            header.append(str(total_cols))
-
-    table = []
-    # 构造数据行：显示前 disp_rows 行数据
-    for i in range(disp_rows):
-        row = [str(i + 1)]  # 第一列显示行号
-        # 显示前 disp_cols 个数据（格式化为浮点数，保留 3 位小数）
-        for j in range(disp_cols):
-            if total_cols == 1:
-                value = f"{tensor[i]:6.3f}"
-            else:
-                value = f"{tensor[i, j]:6.3f}"
-            row.append(f'"{value}"')
-        if total_cols > 1:
-            if truncated_cols:
-                row.append("...")  # 倒数第二列显示省略号
-                row.append("")  # 最后一列留空
-            else:
-                row.append("")
-        table.append(row)
-
-    # 如果行数需要截断，则在数据行后增加一行全 "..."（省略行）
-    if truncated_rows:
-        ellipsis_row = ["..."] * len(header)
-        table.append(ellipsis_row)
-
-    # 最后一行为汇总行：
-    # 第一列显示总行数，其余单元格为空，
-    # 如果列数截断，则倒数第二个单元格显示 "..."，最后一个单元格显示总列数
-    summary_row = [str(total_rows)]
-    if total_cols > 1:
-        if truncated_cols:
-            summary_row.extend([""] * disp_cols)
-            summary_row.append("...")
-            summary_row.append("")
-        else:
-            summary_row.extend([""] * disp_cols)
-            summary_row.append(str(total_cols))
-    table.append(summary_row)
-
-    print(tabulate(table, headers=header, tablefmt="grid"))
-
-
 def get_device_and_print_gpu_info():
     # 打印gpu信息
     table_data = []
@@ -202,13 +105,117 @@ class Qwen_Model:
         self.tokenizer = None
         self.config = None
 
-    def init(self, model_path, show_model_paras=False):
+        self.show_tensor=None
+
+    def init(self, model_path, show_model_paras=False, show_tensor=True):
         self.device = get_device_and_print_gpu_info()
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = load_model(self.device, model_path, show_model_paras=show_model_paras)
         self.config = load_config(model_path=model_path, file_name='config.json')
 
         self._init_config(self.config)
+
+        self.show_tensor = show_tensor
+
+    def print_tensor(self, title, tensor):
+        if not self.show_tensor:
+            return
+        """
+        按照如下规则构造表格：
+          1. 表头第一列为 "Row\Col"，后面依次显示前几列的列号，
+             如果 tensor 列数超过 col_limit，则倒数第二个单元格显示 "..."，
+             最后一个单元格显示总列数。
+          2. 对于数据行：每行第一列显示行号，
+             后面依次显示前几列的数据（格式化为小数 3 位），
+             如果 tensor 列数超过 col_limit，则该行倒数第二个单元格显示 "..."，
+             倒数最后一个单元格留空。
+          3. 如果 tensor 行数超过 row_limit，则在数据行下方插入一行全 "..."（省略行）。
+          4. 最后一行为汇总行：第一列显示总行数，
+             如果 tensor 列数超过 col_limit，则倒数第二个单元格显示 "..."，
+             最后一个单元格显示总列数，其余单元格留空。
+        """
+        print(f'【{title}】'.center(80, '='))
+        if tensor.ndim == 1:
+            total_rows = tensor.shape[0]
+            total_cols = 1
+        elif tensor.ndim >= 3:
+            print(tensor.shape)
+            return
+        else:
+            total_rows, total_cols = tensor.shape
+
+        if total_rows > total_cols:
+            row_limit = 5
+            col_limit = 4
+        elif total_rows < total_cols:
+            row_limit = 4
+            col_limit = 5
+        else:
+            row_limit = 4
+            col_limit = 4
+
+        # 判断是否需要截断（即 tensor 的行或列数超过上限）
+        truncated_rows = total_rows > row_limit
+        truncated_cols = total_cols > col_limit
+
+        # 若截断，则实际显示的数据行/列数为：上限减去 2（最后一行/列用于汇总，倒数第二行/列用于显示 "..."）
+        disp_rows = (row_limit - 2) if truncated_rows else total_rows
+        disp_cols = (col_limit - 2) if truncated_cols else total_cols
+
+        # 构造表头：第一列为 "Row\Col"
+        # header = [title]
+        header = ['']
+        # 显示前 disp_cols 列的列号
+        for j in range(disp_cols):
+            header.append(str(j + 1))
+        if total_cols > 1:
+            if truncated_cols:
+                # 倒数第二列显示省略号，最后一列显示总列数
+                header.append("...")
+                header.append(str(total_cols))
+            else:
+                # 不截断时，最后一列仍显示总列数（作为附加信息）
+                header.append(str(total_cols))
+
+        table = []
+        # 构造数据行：显示前 disp_rows 行数据
+        for i in range(disp_rows):
+            row = [str(i + 1)]  # 第一列显示行号
+            # 显示前 disp_cols 个数据（格式化为浮点数，保留 3 位小数）
+            for j in range(disp_cols):
+                if total_cols == 1:
+                    value = f"{tensor[i]:6.3f}"
+                else:
+                    value = f"{tensor[i, j]:6.3f}"
+                row.append(f'"{value}"')
+            if total_cols > 1:
+                if truncated_cols:
+                    row.append("...")  # 倒数第二列显示省略号
+                    row.append("")  # 最后一列留空
+                else:
+                    row.append("")
+            table.append(row)
+
+        # 如果行数需要截断，则在数据行后增加一行全 "..."（省略行）
+        if truncated_rows:
+            ellipsis_row = ["..."] * len(header)
+            table.append(ellipsis_row)
+
+        # 最后一行为汇总行：
+        # 第一列显示总行数，其余单元格为空，
+        # 如果列数截断，则倒数第二个单元格显示 "..."，最后一个单元格显示总列数
+        summary_row = [str(total_rows)]
+        if total_cols > 1:
+            if truncated_cols:
+                summary_row.extend([""] * disp_cols)
+                summary_row.append("...")
+                summary_row.append("")
+            else:
+                summary_row.extend([""] * disp_cols)
+                summary_row.append(str(total_cols))
+        table.append(summary_row)
+
+        print(tabulate(table, headers=header, tablefmt="grid"))
 
     def get_token_ids(self, tokens):
         token_ids = self.tokenizer.encode(tokens)
@@ -228,7 +235,7 @@ class Qwen_Model:
     def rms_norm(self, tensor, norm_weights):
         return (tensor * torch.rsqrt(tensor.pow(2).mean(-1, keepdim=True) + self.norm_eps)) * norm_weights
 
-    def infer(self, prompt, show_tensor=True):
+    def infer(self, prompt):
         # prompt->tokens
         tokens = self.tokenizer.encode(prompt)
         tokens = torch.tensor(tokens, device=self.device)
@@ -243,57 +250,71 @@ class Qwen_Model:
         print(f'读取embedding_layer...'.center(80, '='))
         embedding_layer = torch.nn.Embedding(self.vocab_size, self.dim, device=self.device)
         embedding_layer.weight.data.copy_(self.model["model.embed_tokens.weight"])
-        if show_tensor:
-            print_tensor('embedding_layer.weight', embedding_layer.weight)
+        self.print_tensor('embedding_layer.weight', embedding_layer.weight)
 
         # 获取prompt的token_embeddings_unnormalized
         print(f'获取prompt的token_embeddings_unnormalized...'.center(80, '='))
         token_embeddings_unnormalized = embedding_layer(tokens).to(torch.bfloat16)
         # print(f'token_embeddings_unnormalized:"{token_embeddings_unnormalized}"')
-        if show_tensor:
-            print_tensor('token_embeddings_unnormalized', token_embeddings_unnormalized)
+        self.print_tensor('token_embeddings_unnormalized', token_embeddings_unnormalized)
 
         # 获取prompt的token_embeddings
         token_embeddings = self.rms_norm(token_embeddings_unnormalized, self.model["model.layers.0.input_layernorm.weight"])
-        if show_tensor:
-            print_tensor('token_embeddings', token_embeddings)
+        self.print_tensor('token_embeddings', token_embeddings)
 
-            # print_tensor('layers.0.q.weight', self.model["model.layers.0.self_attn.q_proj.weight"])
-            # print_tensor('layers.0.q.bias', self.model["model.layers.0.self_attn.q_proj.bias"])
-            # print_tensor('layers.0.k.weight', self.model["model.layers.0.self_attn.k_proj.weight"])
-            # print_tensor('layers.0.k.bias', self.model["model.layers.0.self_attn.k_proj.bias"])
-            # print_tensor('layers.0.v.weight', self.model["model.layers.0.self_attn.v_proj.weight"])
-            # print_tensor('layers.0.v.bias', self.model["model.layers.0.self_attn.v_proj.bias"])
-            # print_tensor('layers.0.o.weight', self.model["model.layers.0.self_attn.o_proj.weight"])
+        # self.print_tensor('layers.0.q.weight', self.model["model.layers.0.self_attn.q_proj.weight"])
+        # self.print_tensor('layers.0.q.bias', self.model["model.layers.0.self_attn.q_proj.bias"])
+        # self.print_tensor('layers.0.k.weight', self.model["model.layers.0.self_attn.k_proj.weight"])
+        # self.print_tensor('layers.0.k.bias', self.model["model.layers.0.self_attn.k_proj.bias"])
+        # self.print_tensor('layers.0.v.weight', self.model["model.layers.0.self_attn.v_proj.weight"])
+        # self.print_tensor('layers.0.v.bias', self.model["model.layers.0.self_attn.v_proj.bias"])
+        # self.print_tensor('layers.0.o.weight', self.model["model.layers.0.self_attn.o_proj.weight"])
 
         # 获取Q
         q_layer0 = self.model["model.layers.0.self_attn.q_proj.weight"]
+        self.print_tensor('q_layer0', q_layer0)
+
         head_dim = q_layer0.shape[0] // self.n_heads
         q_layer0 = q_layer0.view(self.n_heads, 2, head_dim // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_heads, head_dim, self.dim)
+        self.print_tensor('q_layer0.reshape(): ', q_layer0)
         q_layer0_bias = self.model["model.layers.0.self_attn.q_proj.bias"].reshape(self.n_heads, -1)
+        self.print_tensor('q_layer0_bias: ', q_layer0_bias)
 
-        # x * Q_T + b
+        # Q = x * w_Q_T + b_q
         q_layer0_head0 = q_layer0[0]
         q_layer0_bias_head0 = q_layer0_bias[0]
         q_per_token = torch.matmul(token_embeddings, q_layer0_head0.T) + q_layer0_bias_head0
+        self.print_tensor('q_per_token: ', q_per_token)
 
-        # RoPE
+        # RoPE(增加每一个token的顺序信息)
         q_per_token_split_into_pairs = q_per_token.float().view(q_per_token.shape[0], -1, 2)
+        self.print_tensor('q_per_token_split_into_pairs: ', q_per_token_split_into_pairs)
+
         zero_to_one_split_into_64_parts = torch.tensor(range(64), device=self.device) / 64
+        print('zero_to_one_split_into_64_parts'.center(80, '='))
+        print(zero_to_one_split_into_64_parts)
+
         freqs = 1.0 / (self.rope_theta ** zero_to_one_split_into_64_parts)
+        print('rope_theta'.center(80, '='))
+        print(self.rope_theta)
+        print('freqs=1/(rope_theta^zero_to_one_split_into_64_parts)'.center(80, '='))
+        print(freqs)
+
         freqs_for_each_token = torch.outer(torch.arange(len(tokens), device=self.device), freqs)
         freqs_cis = torch.polar(torch.ones_like(freqs_for_each_token), freqs_for_each_token)
 
         q_per_token_as_complex_numbers = torch.view_as_complex(q_per_token_split_into_pairs)
+        self.print_tensor('q_per_token_as_complex_numbers: ', q_per_token_as_complex_numbers)
         q_per_token_as_complex_numbers_rotated = q_per_token_as_complex_numbers * freqs_cis
+        self.print_tensor('q_per_token_as_complex_numbers_rotated: ', q_per_token_as_complex_numbers_rotated)
         q_per_token_split_into_pairs_rotated = torch.view_as_real(q_per_token_as_complex_numbers_rotated)
         q_per_token_rotated = q_per_token_split_into_pairs_rotated.view(q_per_token.shape)
+        self.print_tensor('q_per_token_rotated: ', q_per_token_rotated)
 
+        # K的操作基本和Q一样
+        # K = x * w_K_T + b_k
         k_layer0 = self.model["model.layers.0.self_attn.k_proj.weight"]
-        k_layer0 = k_layer0.view(self.n_kv_heads, 2, k_layer0.shape[0] // self.n_kv_heads // 2, self.dim).permute(0, 2,
-                                                                                                                  1,
-                                                                                                                  3).reshape(
-            self.n_kv_heads, k_layer0.shape[0] // self.n_kv_heads, self.dim)
+        k_layer0 = k_layer0.view(self.n_kv_heads, 2, k_layer0.shape[0] // self.n_kv_heads // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_kv_heads, k_layer0.shape[0] // self.n_kv_heads, self.dim)
         k_layer0_bias = self.model["model.layers.0.self_attn.k_proj.bias"].reshape(self.n_heads, -1)
         k_layer0_head0 = k_layer0[0]
         k_layer0_bias_head0 = k_layer0_bias[0]
@@ -302,8 +323,11 @@ class Qwen_Model:
         k_per_token_as_complex_numbers = torch.view_as_complex(k_per_token_split_into_pairs)
         k_per_token_split_into_pairs_rotated = torch.view_as_real(k_per_token_as_complex_numbers * freqs_cis)
         k_per_token_rotated = k_per_token_split_into_pairs_rotated.view(k_per_token.shape)
+        self.print_tensor('k_per_token_rotated: ', k_per_token_rotated)
 
+        # Q * K_T
         qk_per_token = torch.matmul(q_per_token_rotated, k_per_token_rotated.T) / (head_dim) ** 0.5
+        self.print_tensor('qk_per_token: ', qk_per_token)
 
         def display_qk_heatmap(qk_per_token):
             _, ax = plt.subplots()
@@ -553,9 +577,9 @@ class Qwen_Model:
 def main():
     model = Qwen_Model()
     # model.init(model_path=r"D:\models\Qwen2.5-14B-Instruct-GPTQ-Int4", show_model_paras=True)
-    model.init(model_path="/home/tutu/models/Qwen1.5-4B-Chat", show_model_paras=True)
+    model.init(model_path="/home/tutu/models/Qwen1.5-4B-Chat", show_model_paras=False, show_tensor=True)
 
-    model.infer(prompt='朱元璋定睛一看，发现', show_tensor=True)
+    model.infer(prompt='朱元璋定睛一看，发现')
     model.get_token_ids('q')
     model.get_token_ids('r')
     model.get_token_ids('s')
