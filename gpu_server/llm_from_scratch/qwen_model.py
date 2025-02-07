@@ -338,18 +338,22 @@ class Qwen_Model:
             ax.set_yticklabels(prompt_split_as_tokens)
             ax.figure.colorbar(im, ax=ax)
 
+        # 做上三角mask
         mask = torch.full((len(tokens), len(tokens)), float("-inf"), device=self.device)
         mask = torch.triu(mask, diagonal=1)
         qk_per_token_after_masking = qk_per_token + mask
-        qk_per_token_after_masking_after_softmax = torch.nn.functional.softmax(qk_per_token_after_masking, dim=1).to(
-            torch.bfloat16)
+        qk_per_token_after_masking_after_softmax = torch.nn.functional.softmax(qk_per_token_after_masking, dim=1).to(torch.bfloat16)
+        self.print_tensor('qk_per_token_after_masking_after_softmax: ', qk_per_token_after_masking_after_softmax)
 
+        # V = x * w_V_T + b_V
         v_layer0 = self.model["model.layers.0.self_attn.v_proj.weight"]
         v_layer0 = v_layer0.view(self.n_kv_heads, v_layer0.shape[0] // self.n_kv_heads, self.dim)
         v_layer0_bias = self.model["model.layers.0.self_attn.v_proj.bias"].reshape(self.n_heads, -1)
         v_layer0_head0 = v_layer0[0]
         v_layer0_bias_head0 = v_layer0_bias[0]
         v_per_token = torch.matmul(token_embeddings, v_layer0_head0.T) + v_layer0_bias_head0
+
+        # QKV = softmax(mask(Q * K_T)) * V
         qkv_attention = torch.matmul(qk_per_token_after_masking_after_softmax, v_per_token)
 
         qkv_attention_store = []
