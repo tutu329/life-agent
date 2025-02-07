@@ -378,7 +378,7 @@ class Qwen_Model:
                 k_per_token_as_complex_numbers * freqs_cis[:len(tokens)])
             k_per_token_rotated = k_per_token_split_into_pairs_rotated.view(k_per_token.shape)
 
-            qk_per_token = torch.matmul(q_per_token_rotated, k_per_token_rotated.T) / (128) ** 0.5
+            qk_per_token = torch.matmul(q_per_token_rotated, k_per_token_rotated.T) / (head_dim) ** 0.5
             mask = torch.full((len(tokens), len(tokens)), float("-inf"), device=self.device)
             mask = torch.triu(mask, diagonal=1)
             qk_per_token_after_masking = qk_per_token + mask
@@ -479,7 +479,8 @@ class Qwen_Model:
         logits = torch.matmul(final_embedding[-1], self.model["lm_head.weight"].T)
         self.print_tensor('logits: ', logits)
         next_token = torch.argmax(logits, dim=-1)
-        print(f'next_token = argmax(logits) --> {next_token}')
+        print('next_token = argmax(logits)'.center(80, '='))
+        print(f'{next_token}')
 
         print('======输入的prompt======')
         for i in range(len(prompt_split_as_tokens)):
@@ -505,10 +506,7 @@ class Qwen_Model:
                 layer_embedding_norm = self.rms_norm(final_embedding,
                                                 self.model[f"model.layers.{layer}.input_layernorm.weight"])
                 q_layer = self.model[f"model.layers.{layer}.self_attn.q_proj.weight"]
-                q_layer = q_layer.view(self.n_heads, 2, q_layer.shape[0] // self.n_heads // 2, self.dim).permute(0, 2,
-                                                                                                                 1,
-                                                                                                                 3).reshape(
-                    self.n_heads, q_layer.shape[0] // self.n_heads, self.dim)
+                q_layer = q_layer.view(self.n_heads, 2, q_layer.shape[0] // self.n_heads // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_heads, q_layer.shape[0] // self.n_heads, self.dim)
                 q_layer_bias = self.model[f"model.layers.{layer}.self_attn.q_proj.bias"].reshape(self.n_heads, -1)
                 k_layer = self.model[f"model.layers.{layer}.self_attn.k_proj.weight"]
                 k_layer = k_layer.view(self.n_kv_heads, 2, k_layer.shape[0] // self.n_kv_heads // 2, self.dim).permute(
@@ -537,23 +535,19 @@ class Qwen_Model:
 
                     if head % GQA_num == 0:
                         v_per_token = torch.matmul(layer_embedding_norm, v_layer_head.T) + v_layer_bias_head
-                        v_cache[layer][head // GQA_num] = torch.cat([v_cache[layer][head // GQA_num], v_per_token],
-                                                                    dim=0)
+                        v_cache[layer][head // GQA_num] = torch.cat([v_cache[layer][head // GQA_num], v_per_token], dim=0)
                         k_per_token = torch.matmul(layer_embedding_norm, k_layer_head.T) + k_layer_bias_head
                         k_per_token_split_into_pairs = k_per_token.float().view(k_per_token.shape[0], -1, 2)
                         k_per_token_as_complex_numbers = torch.view_as_complex(k_per_token_split_into_pairs)
                         k_per_token_split_into_pairs_rotated = torch.view_as_real(
                             k_per_token_as_complex_numbers * freqs_cis_next_token)
                         k_per_token_rotated = k_per_token_split_into_pairs_rotated.view(k_per_token.shape)
-                        k_cache[layer][head // GQA_num] = torch.cat(
-                            [k_cache[layer][head // GQA_num], k_per_token_rotated], dim=0)
+                        k_cache[layer][head // GQA_num] = torch.cat([k_cache[layer][head // GQA_num], k_per_token_rotated], dim=0)
 
-                    qk_per_token = torch.matmul(q_per_token_rotated, k_cache[layer][head // GQA_num].T) / (128) ** 0.5
+                    qk_per_token = torch.matmul(q_per_token_rotated, k_cache[layer][head // GQA_num].T) / (head_dim) ** 0.5
                     qk_per_token_after_masking = qk_per_token
-                    qk_per_token_after_masking_after_softmax = torch.nn.functional.softmax(qk_per_token_after_masking,
-                                                                                           dim=1).to(torch.bfloat16)
-                    qkv_attention = torch.matmul(qk_per_token_after_masking_after_softmax,
-                                                 v_cache[layer][head // GQA_num])
+                    qk_per_token_after_masking_after_softmax = torch.nn.functional.softmax(qk_per_token_after_masking, dim=1).to(torch.bfloat16)
+                    qkv_attention = torch.matmul(qk_per_token_after_masking_after_softmax, v_cache[layer][head // GQA_num])
                     qkv_attention_store.append(qkv_attention)
 
                 stacked_qkv_attention = torch.cat(qkv_attention_store, dim=-1)
@@ -565,9 +559,7 @@ class Qwen_Model:
                 w1 = self.model[f"model.layers.{layer}.mlp.gate_proj.weight"]
                 w2 = self.model[f"model.layers.{layer}.mlp.down_proj.weight"]
                 w3 = self.model[f"model.layers.{layer}.mlp.up_proj.weight"]
-                output_after_feedforward = torch.matmul(
-                    torch.functional.F.silu(torch.matmul(embedding_after_edit_normalized, w1.T)) * torch.matmul(
-                        embedding_after_edit_normalized, w3.T), w2.T)
+                output_after_feedforward = torch.matmul(torch.functional.F.silu(torch.matmul(embedding_after_edit_normalized, w1.T)) * torch.matmul(embedding_after_edit_normalized, w3.T), w2.T)
                 final_embedding = embedding_after_edit + output_after_feedforward
 
             final_embedding = self.rms_norm(final_embedding, self.model["model.norm.weight"])
@@ -581,8 +573,8 @@ class Qwen_Model:
 
 def main():
     model = Qwen_Model()
-    # model.init(model_path=r"D:\models\Qwen2.5-14B-Instruct-GPTQ-Int4", show_model_paras=True)
-    model.init(model_path="/home/tutu/models/Qwen1.5-4B-Chat", show_model_paras=False, show_tensor=True)
+    # model.init(model_path=r"D:\models\Qwen1.5-4B", show_model_paras=True)
+    model.init(model_path="/home/tutu/models/Qwen1.5-4B-Chat", show_model_paras=True, show_tensor=True)
 
     model.infer(prompt='朱元璋定睛一看，发现')
     model.get_token_ids('q')
