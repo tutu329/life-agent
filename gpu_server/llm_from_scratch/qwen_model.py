@@ -10,6 +10,8 @@ from safetensors import safe_open
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
+from config import get_os
+
 def get_device_and_print_gpu_info():
     # 打印gpu信息
     table_data = []
@@ -290,11 +292,18 @@ class Qwen_Model:
         q_per_token_split_into_pairs = q_per_token.float().view(q_per_token.shape[0], -1, 2)
         self.print_tensor('q_per_token_split_into_pairs: ', q_per_token_split_into_pairs)
 
-        zero_to_one_split_into_64_parts = torch.tensor(range(64), device=self.device) / 64
-        print('zero_to_one_split_into_64_parts'.center(80, '='))
-        print(zero_to_one_split_into_64_parts)
+        xxx = q_per_token_split_into_pairs.size(1)
+        print(f'++++++++++++++++++++++{xxx}++++++++++++++++++++++')
+        zero_to_one_split_into_xxx_parts = torch.tensor(range(xxx), device=self.device) / xxx
+        print('zero_to_one_split_into_xxx_parts'.center(80, '='))
+        print(zero_to_one_split_into_xxx_parts)
+        freqs = 1.0 / (self.rope_theta ** zero_to_one_split_into_xxx_parts)
 
-        freqs = 1.0 / (self.rope_theta ** zero_to_one_split_into_64_parts)
+        # zero_to_one_split_into_64_parts = torch.tensor(range(64), device=self.device) / 64
+        # print('zero_to_one_split_into_64_parts'.center(80, '='))
+        # print(zero_to_one_split_into_64_parts)
+        # freqs = 1.0 / (self.rope_theta ** zero_to_one_split_into_64_parts)
+
         print('rope_theta'.center(80, '='))
         print(self.rope_theta)
         print('freqs=1/(rope_theta^zero_to_one_split_into_64_parts)'.center(80, '='))
@@ -315,7 +324,12 @@ class Qwen_Model:
         # K = x * w_K_T + b_k
         k_layer0 = self.model["model.layers.0.self_attn.k_proj.weight"]
         k_layer0 = k_layer0.view(self.n_kv_heads, 2, k_layer0.shape[0] // self.n_kv_heads // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_kv_heads, k_layer0.shape[0] // self.n_kv_heads, self.dim)
+
+        print(f'self.n_heads: {self.n_heads}')
+        self.print_tensor('model.layers.0.self_attn.k_proj.bias', self.model["model.layers.0.self_attn.k_proj.bias"])
+
         k_layer0_bias = self.model["model.layers.0.self_attn.k_proj.bias"].reshape(self.n_heads, -1)
+
         k_layer0_head0 = k_layer0[0]
         k_layer0_bias_head0 = k_layer0_bias[0]
         k_per_token = torch.matmul(token_embeddings, k_layer0_head0.T) + k_layer0_bias_head0
@@ -454,7 +468,7 @@ class Qwen_Model:
                 if head % GQA_num == 0:
                     k_cache[-1].append(k_per_token_rotated)
 
-                qk_per_token = torch.matmul(q_per_token_rotated, k_per_token_rotated.T) / (128) ** 0.5
+                qk_per_token = torch.matmul(q_per_token_rotated, k_per_token_rotated.T) / (head_dim) ** 0.5
                 mask = torch.full((len(token_embeddings_unnormalized), len(token_embeddings_unnormalized)), float("-inf"), device=self.device)
                 mask = torch.triu(mask, diagonal=1)
                 qk_per_token_after_masking = qk_per_token + mask
@@ -503,8 +517,7 @@ class Qwen_Model:
             final_embedding = next_token_embeddings_unnormalized
             for layer in range(self.n_layers):
                 qkv_attention_store = []
-                layer_embedding_norm = self.rms_norm(final_embedding,
-                                                self.model[f"model.layers.{layer}.input_layernorm.weight"])
+                layer_embedding_norm = self.rms_norm(final_embedding, self.model[f"model.layers.{layer}.input_layernorm.weight"])
                 q_layer = self.model[f"model.layers.{layer}.self_attn.q_proj.weight"]
                 q_layer = q_layer.view(self.n_heads, 2, q_layer.shape[0] // self.n_heads // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_heads, q_layer.shape[0] // self.n_heads, self.dim)
                 q_layer_bias = self.model[f"model.layers.{layer}.self_attn.q_proj.bias"].reshape(self.n_heads, -1)
@@ -572,9 +585,13 @@ class Qwen_Model:
 
 
 def main():
+
     model = Qwen_Model()
-    # model.init(model_path=r"D:\models\Qwen1.5-4B", show_model_paras=True)
-    model.init(model_path="/home/tutu/models/Qwen1.5-4B-Chat", show_model_paras=True, show_tensor=True)
+    if get_os()=='windows':
+        # model.init(model_path=r"D:\models\Qwen2.5-0.5B", show_model_paras=True)
+        model.init(model_path=r"D:\models\Qwen1.5-4B", show_model_paras=True)
+    else:
+        model.init(model_path="/home/tutu/models/Qwen1.5-4B-Chat", show_model_paras=True, show_tensor=True)
 
     model.infer(prompt='朱元璋定睛一看，发现')
     model.get_token_ids('q')
