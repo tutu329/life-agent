@@ -225,6 +225,9 @@ class Qwen_Model:
         self.norm_eps = config["rms_norm_eps"]
         self.rope_theta = torch.tensor(config["rope_theta"], device=self.device)
 
+    def rms_norm(self, tensor, norm_weights):
+        return (tensor * torch.rsqrt(tensor.pow(2).mean(-1, keepdim=True) + self.norm_eps)) * norm_weights
+
     def infer(self, prompt, show_tensor=True):
         # prompt->tokens
         tokens = self.tokenizer.encode(prompt)
@@ -250,33 +253,31 @@ class Qwen_Model:
         if show_tensor:
             print_tensor('token_embeddings_unnormalized', token_embeddings_unnormalized)
 
-        def rms_norm(tensor, norm_weights):
-            return (tensor * torch.rsqrt(tensor.pow(2).mean(-1, keepdim=True) + self.norm_eps)) * norm_weights
-
         # 获取prompt的token_embeddings
-        token_embeddings = rms_norm(token_embeddings_unnormalized, self.model["model.layers.0.input_layernorm.weight"])
+        token_embeddings = self.rms_norm(token_embeddings_unnormalized, self.model["model.layers.0.input_layernorm.weight"])
         if show_tensor:
             print_tensor('token_embeddings', token_embeddings)
 
-            print_tensor('layers.0.q.weight', self.model["model.layers.0.self_attn.q_proj.weight"])
-            print_tensor('layers.0.q.bias', self.model["model.layers.0.self_attn.q_proj.bias"])
-            print_tensor('layers.0.k.weight', self.model["model.layers.0.self_attn.k_proj.weight"])
-            print_tensor('layers.0.k.bias', self.model["model.layers.0.self_attn.k_proj.bias"])
-            print_tensor('layers.0.v.weight', self.model["model.layers.0.self_attn.v_proj.weight"])
-            print_tensor('layers.0.v.bias', self.model["model.layers.0.self_attn.v_proj.bias"])
-            print_tensor('layers.0.o.weight', self.model["model.layers.0.self_attn.o_proj.weight"])
+            # print_tensor('layers.0.q.weight', self.model["model.layers.0.self_attn.q_proj.weight"])
+            # print_tensor('layers.0.q.bias', self.model["model.layers.0.self_attn.q_proj.bias"])
+            # print_tensor('layers.0.k.weight', self.model["model.layers.0.self_attn.k_proj.weight"])
+            # print_tensor('layers.0.k.bias', self.model["model.layers.0.self_attn.k_proj.bias"])
+            # print_tensor('layers.0.v.weight', self.model["model.layers.0.self_attn.v_proj.weight"])
+            # print_tensor('layers.0.v.bias', self.model["model.layers.0.self_attn.v_proj.bias"])
+            # print_tensor('layers.0.o.weight', self.model["model.layers.0.self_attn.o_proj.weight"])
 
+        # 获取Q
         q_layer0 = self.model["model.layers.0.self_attn.q_proj.weight"]
         head_dim = q_layer0.shape[0] // self.n_heads
-        q_layer0 = q_layer0.view(self.n_heads, 2, head_dim // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_heads,
-                                                                                                       head_dim,
-                                                                                                       self.dim)
+        q_layer0 = q_layer0.view(self.n_heads, 2, head_dim // 2, self.dim).permute(0, 2, 1, 3).reshape(self.n_heads, head_dim, self.dim)
         q_layer0_bias = self.model["model.layers.0.self_attn.q_proj.bias"].reshape(self.n_heads, -1)
 
+        # x * Q_T + b
         q_layer0_head0 = q_layer0[0]
         q_layer0_bias_head0 = q_layer0_bias[0]
         q_per_token = torch.matmul(token_embeddings, q_layer0_head0.T) + q_layer0_bias_head0
 
+        # RoPE
         q_per_token_split_into_pairs = q_per_token.float().view(q_per_token.shape[0], -1, 2)
         zero_to_one_split_into_64_parts = torch.tensor(range(64), device=self.device) / 64
         freqs = 1.0 / (self.rope_theta ** zero_to_one_split_into_64_parts)
@@ -362,7 +363,7 @@ class Qwen_Model:
         w_layer0 = self.model["model.layers.0.self_attn.o_proj.weight"]
         embedding_delta = torch.matmul(stacked_qkv_attention, w_layer0.T)
         embedding_after_edit = token_embeddings_unnormalized + embedding_delta
-        embedding_after_edit_normalized = rms_norm(embedding_after_edit,
+        embedding_after_edit_normalized = self.rms_norm(embedding_after_edit,
                                                    self.model["model.layers.0.post_attention_layernorm.weight"])
 
         w1 = self.model["model.layers.0.mlp.gate_proj.weight"]
@@ -381,7 +382,7 @@ class Qwen_Model:
             k_cache.append([])
             v_cache.append([])
             qkv_attention_store = []
-            layer_embedding_norm = rms_norm(final_embedding, self.model[f"model.layers.{layer}.input_layernorm.weight"])
+            layer_embedding_norm = self.rms_norm(final_embedding, self.model[f"model.layers.{layer}.input_layernorm.weight"])
             q_layer = self.model[f"model.layers.{layer}.self_attn.q_proj.weight"]
             q_layer = q_layer.view(self.n_heads, 2, q_layer.shape[0] // self.n_heads // 2, self.dim).permute(0, 2, 1,
                                                                                                              3).reshape(
@@ -437,7 +438,7 @@ class Qwen_Model:
             w_layer = self.model[f"model.layers.{layer}.self_attn.o_proj.weight"]
             embedding_delta = torch.matmul(stacked_qkv_attention, w_layer.T)
             embedding_after_edit = final_embedding + embedding_delta
-            embedding_after_edit_normalized = rms_norm(embedding_after_edit, self.model[
+            embedding_after_edit_normalized = self.rms_norm(embedding_after_edit, self.model[
                 f"model.layers.{layer}.post_attention_layernorm.weight"])
             w1 = self.model[f"model.layers.{layer}.mlp.gate_proj.weight"]
             w2 = self.model[f"model.layers.{layer}.mlp.down_proj.weight"]
@@ -447,7 +448,7 @@ class Qwen_Model:
                     embedding_after_edit_normalized, w3.T), w2.T)
             final_embedding = embedding_after_edit + output_after_feedforward
 
-        final_embedding = rms_norm(final_embedding, self.model["model.norm.weight"])
+        final_embedding = self.rms_norm(final_embedding, self.model["model.norm.weight"])
         logits = torch.matmul(final_embedding[-1], self.model["lm_head.weight"].T)
         next_token = torch.argmax(logits, dim=-1)
 
@@ -472,7 +473,7 @@ class Qwen_Model:
             final_embedding = next_token_embeddings_unnormalized
             for layer in range(self.n_layers):
                 qkv_attention_store = []
-                layer_embedding_norm = rms_norm(final_embedding,
+                layer_embedding_norm = self.rms_norm(final_embedding,
                                                 self.model[f"model.layers.{layer}.input_layernorm.weight"])
                 q_layer = self.model[f"model.layers.{layer}.self_attn.q_proj.weight"]
                 q_layer = q_layer.view(self.n_heads, 2, q_layer.shape[0] // self.n_heads // 2, self.dim).permute(0, 2,
@@ -530,7 +531,7 @@ class Qwen_Model:
                 w_layer = self.model[f"model.layers.{layer}.self_attn.o_proj.weight"]
                 embedding_delta = torch.matmul(stacked_qkv_attention, w_layer.T)
                 embedding_after_edit = final_embedding + embedding_delta
-                embedding_after_edit_normalized = rms_norm(embedding_after_edit, self.model[
+                embedding_after_edit_normalized = self.rms_norm(embedding_after_edit, self.model[
                     f"model.layers.{layer}.post_attention_layernorm.weight"])
                 w1 = self.model[f"model.layers.{layer}.mlp.gate_proj.weight"]
                 w2 = self.model[f"model.layers.{layer}.mlp.down_proj.weight"]
@@ -540,7 +541,7 @@ class Qwen_Model:
                         embedding_after_edit_normalized, w3.T), w2.T)
                 final_embedding = embedding_after_edit + output_after_feedforward
 
-            final_embedding = rms_norm(final_embedding, self.model["model.norm.weight"])
+            final_embedding = self.rms_norm(final_embedding, self.model["model.norm.weight"])
             logits = torch.matmul(final_embedding, self.model["lm_head.weight"].T)
             next_token = torch.argmax(logits, dim=-1)
             token_text = f'({next_token.item()})'
