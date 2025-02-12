@@ -302,7 +302,7 @@ default_session_data = {
         'url_prompt': '',
         'multi_line_prompt': '',
         'is_agent': False,
-        'latex': False,
+        # 'latex': False,
         'connecting_internet': False,
         'use_think_model': False,
         'draw': False,
@@ -799,7 +799,7 @@ def ask_llm(prompt, paras):
     use_think_model = paras['use_think_model']
     draw = paras['draw']
     is_agent = paras['is_agent']
-    using_latex = paras['latex']
+    # using_latex = paras['latex']
     system_prompt = paras['system_prompt']
     files = paras['files']
 # def llm_response_concurrently(prompt, role_prompt, connecting_internet, connecting_internet_detail, is_agent):
@@ -1004,10 +1004,10 @@ def ask_llm(prompt, paras):
         # 新建result的输出框
         place_holder = st.chat_message('assistant').empty()
         full_res = {}
-        if using_latex:
-            full_res['type'] = 'latex'
-        else:
-            full_res['type'] = 'text'
+        # if using_latex:
+        #     full_res['type'] = 'latex'
+        # else:
+        full_res['type'] = 'text'
 
         full_res['content'] = ''
 
@@ -1102,11 +1102,13 @@ def ask_llm(prompt, paras):
                 full_res['content'] += res
 
             full_res['content'] = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
-            if using_latex:
-                place_holder.latex(full_res['content'])
-                # show_string_container_latex(place_holder, full_res['content'])
-            else:
-                place_holder.markdown(full_res['content'])
+
+            # if using_latex:
+            #     place_holder.latex(full_res['content'])
+            #     # show_string_container_latex(place_holder, full_res['content'])
+            # else:
+            #     place_holder.markdown(full_res['content'])
+            place_holder.markdown(full_res['content'])
 
         if use_think_model:
             think_status_data['status_list'].append(think_content)
@@ -1139,58 +1141,16 @@ def ask_llm(prompt, paras):
         except Exception as e:
             dred(f'统计时间为0.')
 
-        if using_latex:
-            def contains_latex_simple(text: str) -> bool:
-                # 简单关键字列表
-                possible_latex_keywords = [
-                    r'$$',  # $$...$$ 块级公式
-                    r'\begin{',  # \begin{xxx}... \end{xxx}
-                    r'\frac',  # 常见命令
-                    r'\sqrt',
-                    r'\alpha',
-                    r'\sum',
-                    r'\int'
-                    # 根据需要可添加更多关键字
-                ]
-                # 只要命中任意一个，就视为含 LaTeX
-                for kw in possible_latex_keywords:
-                    if kw in text:
-                        return True
-                return False
-
-            # str = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
-            # print(f'---------------------------------')
-            # print(str)
-            # latex = full_res['content'].encode('unicode_escape').decode()
-
-            # 分行，判断是否为latex，不太可行
-            # string_list = full_res['content'].split('\n')
-            # for item in string_list:
-            #     if contains_latex_simple(item):
-            #         place_holder.latex(item)
-            #     else:
-            #         place_holder.markdown(item)
-            #     place_holder.markdown('\n\n')
-            #     place_holder.latex(r'\\')
-
-            # 将\n转为r'\\'可用
-            # 去掉最后一行(输出统计的markdown字符串)
-            # 存在问题：latex()和markdown()似乎无法混合
-            strings = full_res['content'].split('\n')
-            last_string = strings[-1]
-            strings.pop(-1)
-            full_res['content'] = r'\\'.join(strings)
-            place_holder.latex(full_res['content'])
-            place_holder.markdown(last_string)
-
-            # full_res['content'] = full_res['content'].replace('\n', r'\\')
-            # place_holder.latex(full_res['content'])
-
-            # place_holder.latex(full_res['content'])
-
-            # show_string_container_latex(place_holder, full_res['content'])
-        else:
-            place_holder.markdown(full_res['content'])
+        # if using_latex:
+        #     # =======根据测试，用write()或markdown()进行文字和公式混合编排最好，不要用latex()=======
+        #     # 最好让llm输出字母或公式时用 $xxx$ 把字母或公式裹起来
+        #     place_holder.write(full_res['content'])
+        #     # ============================================================================
+        #
+        #     # show_string_container_latex(place_holder, full_res['content'])
+        # else:
+        #     place_holder.markdown(full_res['content'])
+        place_holder.markdown(full_res['content'])
         # dred(f'full_res: {full_res['content']}')
 
         # str = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
@@ -1347,9 +1307,9 @@ def on_is_agent_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['is_agent'] = not s_paras['is_agent']
 
-def on_latex_change():
-    s_paras = st.session_state.session_data['paras']
-    s_paras['latex'] = not s_paras['latex']
+# def on_latex_change():
+#     s_paras = st.session_state.session_data['paras']
+#     s_paras['latex'] = not s_paras['latex']
 
 # def on_input_translate_change():
 #     s_paras = st.session_state.session_data['paras']
@@ -1428,10 +1388,10 @@ def streamlit_refresh_loop():
     pprint.pprint(s_paras)
     dred('----------------------------------')
 
-    col0, col1, col11, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1, 1])
+    col0, col1, col2, col3, col4, col5 = exp1.columns([1, 1, 1, 1, 1, 1])
     col0.checkbox('Agent', value=s_paras['is_agent'], disabled=st.session_state.processing, on_change=on_is_agent_change)
     col1.checkbox('联网', value=s_paras['connecting_internet'], disabled=st.session_state.processing, on_change=on_connecting_internet_change)
-    col11.checkbox('公式', value=s_paras['latex'], disabled=st.session_state.processing, on_change=on_latex_change)
+    # col11.checkbox('公式', value=s_paras['latex'], disabled=st.session_state.processing, on_change=on_latex_change)
     col2.checkbox('绘画', value=s_paras['draw'], disabled=st.session_state.processing, on_change=on_draw_change)
     # connecting_internet_detail = col2.checkbox('明细', value=False, disabled=st.session_state.processing)
     col3.button("清空", on_click=on_clear_history, disabled=st.session_state.processing, key='clear_button')
@@ -1589,7 +1549,8 @@ def streamlit_refresh_loop():
                     st.image(img['data'], caption=img['caption'], use_column_width=True)
             elif message.get('type') and message['type'] == 'latex':
                 with st.chat_message(message['role']):
-                    st.latex(message['content'])
+                    st.write(message['content'])
+                    # st.latex(message['content'])
                     # show_string_container_latex(st, message['content'])
 
             elif message.get('type') and message['type'] == 'text':
