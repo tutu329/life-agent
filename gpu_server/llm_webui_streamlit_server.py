@@ -1140,10 +1140,54 @@ def ask_llm(prompt, paras):
             dred(f'统计时间为0.')
 
         if using_latex:
-            str = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
+            def contains_latex_simple(text: str) -> bool:
+                # 简单关键字列表
+                possible_latex_keywords = [
+                    r'$$',  # $$...$$ 块级公式
+                    r'\begin{',  # \begin{xxx}... \end{xxx}
+                    r'\frac',  # 常见命令
+                    r'\sqrt',
+                    r'\alpha',
+                    r'\sum',
+                    r'\int'
+                    # 根据需要可添加更多关键字
+                ]
+                # 只要命中任意一个，就视为含 LaTeX
+                for kw in possible_latex_keywords:
+                    if kw in text:
+                        return True
+                return False
+
+            # str = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
             # print(f'---------------------------------')
             # print(str)
+            # latex = full_res['content'].encode('unicode_escape').decode()
+
+            # 分行，判断是否为latex，不太可行
+            # string_list = full_res['content'].split('\n')
+            # for item in string_list:
+            #     if contains_latex_simple(item):
+            #         place_holder.latex(item)
+            #     else:
+            #         place_holder.markdown(item)
+            #     place_holder.markdown('\n\n')
+            #     place_holder.latex(r'\\')
+
+            # 将\n转为r'\\'可用
+            # 去掉最后一行(输出统计的markdown字符串)
+            # 存在问题：latex()和markdown()似乎无法混合
+            strings = full_res['content'].split('\n')
+            last_string = strings[-1]
+            strings.pop(-1)
+            full_res['content'] = r'\\'.join(strings)
             place_holder.latex(full_res['content'])
+            place_holder.markdown(last_string)
+
+            # full_res['content'] = full_res['content'].replace('\n', r'\\')
+            # place_holder.latex(full_res['content'])
+
+            # place_holder.latex(full_res['content'])
+
             # show_string_container_latex(place_holder, full_res['content'])
         else:
             place_holder.markdown(full_res['content'])
