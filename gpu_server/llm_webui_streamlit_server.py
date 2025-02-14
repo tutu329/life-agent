@@ -304,7 +304,7 @@ default_session_data = {
         'is_agent': False,
         # 'latex': False,
         'connecting_internet': False,
-        'use_think_model': False,
+        # 'use_think_model': False,
         'draw': False,
 
 
@@ -796,7 +796,7 @@ def ask_llm(prompt, paras):
     role_prompt = paras['role_prompt']
     url_prompt = paras['url_prompt']
     connecting_internet = paras['connecting_internet']
-    use_think_model = paras['use_think_model']
+    # use_think_model = paras['use_think_model']
     draw = paras['draw']
     is_agent = paras['is_agent']
     # using_latex = paras['latex']
@@ -997,12 +997,14 @@ def ask_llm(prompt, paras):
         think_placeholder = None
         think_status = None
 
-        if use_think_model:
-            think_status = st.status(label=":green[思考]", expanded=True)
-            think_placeholder = think_status.empty()
+        # if use_think_model:
+        #     think_status = st.status(label=":green[思考]", expanded=True)
+        #     think_placeholder = think_status.empty()
 
         # 新建result的输出框
-        place_holder = st.chat_message('assistant').empty()
+        place_holder = None
+        # place_holder = st.chat_message('assistant').empty()
+
         full_res = {}
         # if using_latex:
         #     full_res['type'] = 'latex'
@@ -1052,12 +1054,13 @@ def ask_llm(prompt, paras):
             temperature=st.session_state.session_data['paras']['local_llm_temperature'],
             max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
             system_prompt=system_prompt,
-            remove_content_in_think_pairs=use_think_model,
+            # remove_content_in_think_pairs=use_think_model,
+            # remove_content_in_think_pairs=True,
         ).get_answer_generator()
 
 
         wait_first_token = True
-        dred(f'-----------use_think_model: ({use_think_model})----------')
+        # dred(f'-----------use_think_model: ({use_think_model})----------')
 
         think_content = ''
         think_status_data = {
@@ -1071,49 +1074,87 @@ def ask_llm(prompt, paras):
 
         all_content = ''
         result_content = ''
+
+        think_started = False
+        result_started = False
         for res in gen:
 
-            if use_think_model:
-                # think模型
-                all_content += res[0]  # 完整的、带<think>的输出，用于调试
-                result_content += res[2]  # 完整的、带<think>的输出，用于调试
+            # think模型
+            all_content += res[0]  # 完整的、带<think>的输出，用于调试
+            result_content += res[2]  # 完整的、带<think>的输出，用于调试
 
-                if res[0] and wait_first_token:
-                    start_time2 = time.time()
-                    wait_first_token = False
+            if res[0] and wait_first_token:
+                start_time2 = time.time()
+                wait_first_token = False
 
-                result_chunk = res[2]
-                full_res['content'] += result_chunk
+            result_chunk = res[2]
+            full_res['content'] += result_chunk
 
-                think_chunk = res[1]
+            think_chunk = res[1]
+            if think_chunk:
                 think_content += think_chunk
-                think_placeholder.markdown(think_content)
+                if not think_started:
+                    think_started = True
+                    think_status = st.status(label=":green[思考]", expanded=True)
+                    think_placeholder = think_status.empty()
+                else:
+                    think_placeholder.markdown(think_content)
 
-                if (not think_chunk) and result_chunk:
-                    # 开始result的输出
+            if (not think_chunk) and result_chunk:
+                # 开始result的输出
+                if think_status:
                     think_status.update(label=f":green[思考完毕]", state='complete', expanded=False)
 
-            else:
-                # 普通模型
-                if res and wait_first_token:
-                    start_time2 = time.time()
-                    wait_first_token = False
+                if not result_started:
+                    result_started=True
+                    place_holder = st.chat_message('assistant').empty()
 
-                full_res['content'] += res
+                place_holder.markdown(full_res['content'])
+            # if use_think_model:
+            #     # think模型
+            #     all_content += res[0]  # 完整的、带<think>的输出，用于调试
+            #     result_content += res[2]  # 完整的、带<think>的输出，用于调试
+            #
+            #     if res[0] and wait_first_token:
+            #         start_time2 = time.time()
+            #         wait_first_token = False
+            #
+            #     result_chunk = res[2]
+            #     full_res['content'] += result_chunk
+            #
+            #     think_chunk = res[1]
+            #     think_content += think_chunk
+            #     think_placeholder.markdown(think_content)
+            #
+            #     if (not think_chunk) and result_chunk:
+            #         # 开始result的输出
+            #         think_status.update(label=f":green[思考完毕]", state='complete', expanded=False)
 
-            full_res['content'] = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
+            # else:
+            #     # 普通模型
+            #     if res and wait_first_token:
+            #         start_time2 = time.time()
+            #         wait_first_token = False
+            #
+            #     full_res['content'] += res
+
+
+
+            # full_res['content'] = full_res['content'].replace(r"\(", '').replace(r"\)", '').replace(r"\[", '').replace(r"\]", '')
 
             # if using_latex:
             #     place_holder.latex(full_res['content'])
             #     # show_string_container_latex(place_holder, full_res['content'])
             # else:
             #     place_holder.markdown(full_res['content'])
-            place_holder.markdown(full_res['content'])
 
-        if use_think_model:
+        if think_status:
             think_status_data['status_list'].append(think_content)
             think_status_data['title'] = '思考完毕'
-            # think_status.update(label=f":green[思考完毕]", state='complete', expanded=True)
+        # if use_think_model:
+        #     think_status_data['status_list'].append(think_content)
+        #     think_status_data['title'] = '思考完毕'
+        #     # think_status.update(label=f":green[思考完毕]", state='complete', expanded=True)
 
         if wait_first_token:
             # 可能输出为空，则这里要开始计时
@@ -1150,6 +1191,11 @@ def ask_llm(prompt, paras):
         #     # show_string_container_latex(place_holder, full_res['content'])
         # else:
         #     place_holder.markdown(full_res['content'])
+
+        if not result_started:
+            result_started = True
+            place_holder = st.chat_message('assistant').empty()
+
         place_holder.markdown(full_res['content'])
         # dred(f'full_res: {full_res['content']}')
 
@@ -1161,10 +1207,14 @@ def ask_llm(prompt, paras):
         print(f'================full_res[\'content\']===================')
         print(full_res['content'])
 
-        if use_think_model:
+        if think_status:
             return think_status_data, None, full_res, None
         else:
             return None, None, full_res, None
+        # if use_think_model:
+        #     return think_status_data, None, full_res, None
+        # else:
+        #     return None, None, full_res, None
 
 def on_clear_history():
     # st.session_state.messages = []
@@ -1295,9 +1345,9 @@ def on_connecting_internet_change():
     s_paras = st.session_state.session_data['paras']
     s_paras['connecting_internet'] = not s_paras['connecting_internet']
 
-def on_use_think_model_change():
-    s_paras = st.session_state.session_data['paras']
-    s_paras['use_think_model'] = not s_paras['use_think_model']
+# def on_use_think_model_change():
+#     s_paras = st.session_state.session_data['paras']
+#     s_paras['use_think_model'] = not s_paras['use_think_model']
 
 def on_draw_change():
     s_paras = st.session_state.session_data['paras']
@@ -1401,8 +1451,8 @@ def streamlit_refresh_loop():
     exp1.slider('max_new_tokens:', 256, 32768, s_paras['local_llm_max_new_token'], step=4096, disabled=st.session_state.processing, on_change=on_max_new_token_change, key='local_llm_max_new_token')
     exp1.slider('联网并发数量:', 2, 10, s_paras['concurrent_num'], disabled=st.session_state.processing, on_change=on_concurrent_num_change, key='concurrent_num')
 
-    c10, c11, c12, c13, c14, c15, c16 = exp1.columns([1, 1, 1, 1, 1, 1, 1])
-    c10.checkbox('深度', value=s_paras['use_think_model'], disabled=st.session_state.processing, on_change=on_use_think_model_change)
+    # c10, c11, c12, c13, c14, c15, c16 = exp1.columns([1, 1, 1, 1, 1, 1, 1])
+    # c10.checkbox('深度', value=s_paras['use_think_model'], disabled=st.session_state.processing, on_change=on_use_think_model_change)
 
     # =============================expander：文档管理==============================
     exp2 =  sidebar.expander("文档管理", expanded=True)
