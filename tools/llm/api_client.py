@@ -106,7 +106,7 @@ class LLM_Client:
 
         self.url = url
         self.openai = None
-        self.model_id = None
+        self.model_id = model_id
         self.api_key = api_key
 
         self.uuid = str(uuid4())
@@ -1597,6 +1597,7 @@ def base_main():
 
         api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
         url='https://ark.cn-beijing.volces.com/api/v3/',
+        # model_id='deepseek-r1-250120',
         model_id='deepseek-v3-241226',
     )
     llm.ask_prepare('中国首都是？').get_answer_and_sync_print()
