@@ -1591,15 +1591,20 @@ def base_main():
     llm = LLM_Client(
         temperature=0.7,
         # url='https://powerai.cc:8001/v1'
-        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        url='https://api.deepseek.com/v1',
+
+        # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
+        # url='https://api.deepseek.com/v1',
+
+        api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
+        url='https://ark.cn-beijing.volces.com/api/v3/',
+        model_id='deepseek-v3-241226',
     )
     llm.ask_prepare('中国首都是？').get_answer_and_sync_print()
 
 if __name__ == "__main__" :
-    # base_main()
+    base_main()
     # pic_main() # 带pic
-    think_main()
+    # think_main()
 
     # 直接采样64个完整结果的BoN筛选的正确率，比每个step采样20次、最多尝试10个steps的BoN筛选的正确率高，且step方式采用不清楚多少steps刚好完成。
     # question = '一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问22元一共可以喝几瓶可乐？'
