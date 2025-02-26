@@ -13,6 +13,7 @@ g_result_dict = {
 
 def _single_thread_test(oai, prompt, max_tokens=100):
     start_time = time.perf_counter()
+    # print(f'start_time: "{start_time}"')
     full_string = ''
 
     id = str(uuid.uuid4())
@@ -29,16 +30,13 @@ def _single_thread_test(oai, prompt, max_tokens=100):
         )
 
         first_token_time = None
+        started = False
         tokens_received = 0
         token_start_time = None
 
         # Iterate over the streaming response
         for chunk in response:
             if hasattr(chunk, 'usage') and chunk.usage is not None:
-                if tokens_received==0:
-                    first_token_time = time.perf_counter()
-                    token_start_time = first_token_time
-
                 # self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
                 # self.usage['total_tokens'] = chunk.usage.total_tokens
                 tokens_received = chunk.usage.completion_tokens
@@ -51,8 +49,15 @@ def _single_thread_test(oai, prompt, max_tokens=100):
                 delta = chunk.choices[0].delta.content
                 full_string += delta
                 # print(delta, end='', flush=True)
+                if not started:
+                    started = True
+                    first_token_time = time.perf_counter()
+                    token_start_time = first_token_time
+                    # print(f'token_start_time: "{token_start_time}"')
 
+        # print(f'【usage: "{chunk.usage}"】')
         end_time = time.perf_counter()
+        # print(f'end_time: "{end_time}"')
 
         if first_token_time is None:
             # No tokens received
@@ -60,7 +65,9 @@ def _single_thread_test(oai, prompt, max_tokens=100):
             avg_output_speed = None
         else:
             first_token_latency = first_token_time - start_time
+            # print(f'first_token_latency: "{first_token_latency}"')
             output_duration = end_time - token_start_time
+            # print(f'output_duration: "{output_duration}"')
             avg_output_speed = tokens_received / output_duration if output_duration > 0 else None
 
         full_string = ' '.join(full_string.split('\n'))
@@ -196,6 +203,7 @@ def main():
     url = 'https://powerai.cc:8001/v1'
     prompt = '写一首长诗'
     test_nums = [10, 20, 30, 40, 50, 100]
+    # test_nums = [10]
     for num in test_nums:
         gpu_test(
             prompt=prompt,
