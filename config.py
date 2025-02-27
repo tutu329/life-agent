@@ -147,7 +147,8 @@ class Port():
     fastgpt: int        = 7863
     dify: int           = 7866
     sovit: int          = 7867
-    xinference_ui: int  = 7870
+    openwebui: int      = 7870
+    ragflow: int        = 7871
 
     # api转发层
     one_api:int = 8002  # flowise等顶层应用可以直接调用:8002/v1的llm_api和m3e_api
