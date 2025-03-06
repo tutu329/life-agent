@@ -628,30 +628,28 @@ class LLM_Client:
         think = ''
         result = ''
 
-        # x=0
-        for chunk in self.get_answer_generator():
-        #     x=x+1
-            print(chunk, flush=True)
-
-        # dyellow('<think>')
-        # think_started = False
-        # result_started = False
         # for chunk in self.get_answer_generator():
-        #     # 需要过滤think内容
-        #     full += chunk[0]
-        #     think += chunk[1]
-        #     result += chunk[2]
-        #     # print(f'think: "{think}"')
-        #     if chunk[1]:
-        #         print(chunk[1], end='', flush=True)
-        #         think_started = True
-        #     if chunk[2]:
-        #         if not result_started:
-        #             dyellow('</think>')
-        #             dblue('<assistant>')
-        #         print(chunk[2], end='', flush=True)
-        #         result_started = True
-        # dblue('</assistant>')
+        #     print(chunk, flush=True)
+
+        dyellow('<think>')
+        think_started = False
+        result_started = False
+        for chunk in self.get_answer_generator():
+            # 需要过滤think内容
+            full += chunk[0]
+            think += chunk[1]
+            result += chunk[2]
+            # print(f'think: "{think}"')
+            if chunk[1]:
+                print(chunk[1], end='', flush=True)
+                think_started = True
+            if chunk[2]:
+                if not result_started:
+                    dyellow('</think>')
+                    dblue('<assistant>', end='', flush=True)
+                print(chunk[2], end='', flush=True)
+                result_started = True
+        dblue('</assistant>')
 
         return result
 
