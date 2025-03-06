@@ -645,7 +645,8 @@ class LLM_Client:
                 think_started = True
             if chunk[2]:
                 if not result_started:
-                    dyellow('</think>')
+                    if think_started:
+                        dyellow('</think>')
                     dblue('<assistant>', end='', flush=True)
                 print(chunk[2], end='', flush=True)
                 result_started = True
