@@ -628,49 +628,38 @@ class LLM_Client:
         think = ''
         result = ''
 
-        dblue(f'<assistant>', end='', flush=True)
+        # x=0
         for chunk in self.get_answer_generator():
-            # 需要过滤think内容
-            full += chunk[0]
-            think += chunk[1]
-            result += chunk[2]
-            # print(f'think: "{think}"')
-            print(chunk[2], end='', flush=True)
-        dblue('</assistant>')
+        #     x=x+1
+            print(chunk, flush=True)
 
-        dyellow('<think>')
-        print(f'{think}')
-        dyellow('</think>')
-
+        # dyellow('<think>')
+        # think_started = False
+        # result_started = False
         # for chunk in self.get_answer_generator():
-        #     if self.remove_content_in_think_pairs:
-        #         # 需要过滤think内容
-        #         full += chunk[0]
-        #         think += chunk[1]
-        #         result += chunk[2]
-        #         # print(f'think: "{think}"')
-        #         print(chunk[2], end='', flush=True)
-        #     else:
-        #         # 不需要过滤think内容
-        #         result += chunk
-        #         print(chunk, end='', flush=True)
-        # dblue('</assistant>')
-        #
-        # if self.remove_content_in_think_pairs:
         #     # 需要过滤think内容
-        #     dyellow('<think>')
-        #     print(f'{think}')
-        #     dyellow('</think>')
+        #     full += chunk[0]
+        #     think += chunk[1]
+        #     result += chunk[2]
+        #     # print(f'think: "{think}"')
+        #     if chunk[1]:
+        #         print(chunk[1], end='', flush=True)
+        #         think_started = True
+        #     if chunk[2]:
+        #         if not result_started:
+        #             dyellow('</think>')
+        #             dblue('<assistant>')
+        #         print(chunk[2], end='', flush=True)
+        #         result_started = True
+        # dblue('</assistant>')
 
-
-        # dgreen(' \n\n', flush=True)
         return result
 
     # 方式2：返回generator，在合适的时候输出结果
     # chunk[0] 原始full chunk
     # chunk[1] think chunk
     # chunk[2] result chunk
-    def get_answer_generator(self):
+    def legacy_get_answer_generator(self):
         answer = ''
         answer_no_partial_stop = ''
         perhaps_stop_string = ''    # 非常重要，用于存放疑似stop的缓冲
@@ -821,6 +810,174 @@ class LLM_Client:
                         result_chunk_after_stop = chunk_for_stop
                         # chunk_output = my_chunk
 
+                    yield my_chunk, think_chunk_output, result_chunk_after_stop
+                    # if self.remove_content_in_think_pairs:
+                    #     # 过滤think内容
+                    #     yield my_chunk, think_chunk_output, result_chunk_after_stop
+                    #     # yield chunk_output, think_chunk_output, result_chunk_output
+                    # else:
+                    #     # 不过滤think内容
+                    #     yield result_chunk_after_stop
+                    #     # yield chunk_output
+
+        except Exception as e:
+            dred(f'LLM_Client("{self.url}")连接异常: {e}')
+            yield '', '', ''
+            # if self.remove_content_in_think_pairs:
+            #     # 过滤think内容
+            #     yield '', '', ''
+            # else:
+            #     # 不过滤think内容
+            #     yield ''
+
+        if self.stop:
+            self.answer_last_turn = answer_no_partial_stop
+        else:
+            self.answer_last_turn = answer
+
+        self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
+        # if self.remove_content_in_think_pairs:
+        #     # print(f'\n-----------------last1-----------------\n"{self.answer_last_turn}"')
+        #     self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
+        #     # print(f'-----------------last2-----------------\n"{self.answer_last_turn}"')
+        #     # print(f'---------------------------------------')
+        # else:
+        #     pass
+
+        # self.answer_last_turn = answer
+        self.__history_add_last_turn_msg()
+        # self.print_history_and_system()
+
+        self.status.last_response = answer
+        self.status.history_list = self.history_list
+        # dred(f'--------------self.last_response: {answer}')
+        # dred(f'--------------self.history_list: {self.history_list}')
+        # dred(f'--------------status: {self.status}')
+        status_to_redis(self.status)
+    def get_answer_generator(self):
+        answer = ''
+        answer_no_partial_stop = ''
+        perhaps_stop_string = ''    # 非常重要，用于存放疑似stop的缓冲
+
+
+        answer_no_partial_think_pair = ''
+        perhaps_think_pair_string = ''     # 非常重要，用于存放疑似think的缓冲
+        thinking_content = ''
+        last_thinking_content = ''
+
+        result_content = ''
+        last_result_content = ''
+
+        try:
+            # dprint(f'self.gen: {self.gen}')
+            for chunk in self.gen:
+                # dprint(f'chunk: {chunk}')
+                if self.response_canceled:
+                    break
+
+                chunk_output = ''
+                think_chunk_output = ''
+                result_chunk_output = ''
+
+                # print(f'chunk.choices[0].delta: {chunk.choices[0].delta}')
+                # print(f'chunk: {chunk}')
+                if hasattr(chunk, 'usage') and chunk.usage is not None:
+                    self.usage = {}
+                    self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
+                    self.usage['total_tokens'] = chunk.usage.total_tokens
+                    self.usage['completion_tokens'] = chunk.usage.completion_tokens
+
+                # if chunk.choices:
+                #     print(chunk.choices[0].delta)
+
+                if chunk.choices and hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[0].delta.reasoning_content is not None:
+                    think_chunk_output = chunk.choices[0].delta.reasoning_content
+                    # print(f'think_chunk_output: "{think_chunk_output}"')
+
+                    my_chunk = think_chunk_output
+                    result_chunk_after_stop = ''
+                    yield my_chunk, think_chunk_output, result_chunk_after_stop
+
+                if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
+                    # if hasattr(chunk, 'usage') and chunk.usage is not None:
+                    #     print(f'chunk.usage: {chunk.usage}')
+                    #     # 输入和输出的token数量统计
+                    #     # dred(f'usage = {chunk.usage}')
+                    #     # dred(f'type(usage) = {type(chunk.usage)}')
+                    #     if type(chunk.usage) is openai.types.completion_usage.CompletionUsage:
+                    #         # deepseek API采用openai.types.completion_usage.CompletionUsage: CompletionUsage(completion_tokens=50, prompt_tokens=18, total_tokens=68)
+                    #         self.usage = {}
+                    #         self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
+                    #         self.usage['total_tokens'] = chunk.usage.total_tokens
+                    #         self.usage['completion_tokens'] = chunk.usage.completion_tokens
+                    #     else:
+                    #         # vllm API采用: {'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
+                    #         self.usage = chunk.usage
+
+                    my_chunk = chunk.choices[0].delta.content
+                    answer += my_chunk
+
+                    result_chunk_output = my_chunk
+
+                    # ----------------------------------2、判断是否有['[观察]']这样的stop----------------------------------------
+                    answer_for_stop = ''
+                    chunk_for_stop = ''
+                    result_chunk_after_stop = ''
+
+                    answer_for_stop = result_chunk_output
+                    chunk_for_stop = result_chunk_output
+                    # if self.remove_content_in_think_pairs:
+                    #     answer_for_stop = result_chunk_output
+                    #     chunk_for_stop = result_chunk_output
+                    # else:
+                    #     answer_for_stop = answer
+                    #     chunk_for_stop = my_chunk
+
+                    if self.stop:
+                        # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
+                        answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, self.stop)
+                        # answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
+
+                        # print(f'answer1: {answer}')
+                        # print(f'answer2: {answer_no_partial_stop}')
+                        if answer_no_partial_stop == answer_for_stop:
+                        # if answer_no_partial_stop == answer:
+                            # ----------------------------------不是stop标识----------------------------------
+                            my_chunk = perhaps_stop_string + my_chunk   # 1、将证实不是stop的字符补在前面
+                            perhaps_stop_string = ''                    # 2、清空疑似stop的缓冲
+                            # 没partial_stop
+                            # print(my_chunk, end='', flush=True)
+
+                            # yield my_chunk
+
+                            result_chunk_after_stop = chunk_for_stop
+                            # chunk_output = my_chunk
+                        else:
+                            # ----------------------------------是stop标识----------------------------------
+                            # dred(f'===================================================')
+                            # dred(f'-------------遇到stop标识: {self.stop}---------------')
+                            # dred(f'-------------answer_no_partial_stop: "{answer_no_partial_stop[-20:]}"---------------')
+                            # dred(f'-------------answer_for_stop: "{answer_for_stop[-20:]}"---------------')
+                            # dred(f'===================================================')
+                            perhaps_stop_string += chunk_for_stop #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
+                            # perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
+
+                            # 有partial_stop
+                            # print(f'*{my_chunk}*', end='', flush=True)
+
+                            # yield ''
+
+                            result_chunk_after_stop = ''
+                            # chunk_output = ''
+                    else:
+                        # ----------------------------------没有stop----------------------------------
+                        # yield my_chunk
+
+                        result_chunk_after_stop = chunk_for_stop
+                        # chunk_output = my_chunk
+
+                    # print(f'result_chunk_after_stop: "{result_chunk_after_stop}"')
+                    # print(f'my_chunk: "{my_chunk}"')
                     yield my_chunk, think_chunk_output, result_chunk_after_stop
                     # if self.remove_content_in_think_pairs:
                     #     # 过滤think内容
@@ -1590,17 +1747,17 @@ def think_main():
 def base_main():
     llm = LLM_Client(
         temperature=0.7,
-        # url='https://powerai.cc:8001/v1'
+        url='https://powerai.cc:8001/v1'
 
         # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
         # url='https://api.deepseek.com/v1',
 
-        api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
-        url='https://ark.cn-beijing.volces.com/api/v3/',
+        # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
+        # url='https://ark.cn-beijing.volces.com/api/v3/',
         # model_id='deepseek-r1-250120',
-        model_id='deepseek-v3-241226',
+        # model_id='deepseek-v3-241226',
     )
-    llm.ask_prepare('中国首都是？').get_answer_and_sync_print()
+    llm.ask_prepare('你是谁？').get_answer_and_sync_print()
 
 if __name__ == "__main__" :
     base_main()
