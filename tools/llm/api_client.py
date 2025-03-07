@@ -609,6 +609,9 @@ class LLM_Client:
                 # Specifying stop words in streaming output format is not yet supported and is under development.
 
                 stream_options={"include_usage": True}, # 最新版本openai的要求
+                # top_p=0.95,   # 防止过度重复
+                # top_k=40,     # 复杂数学或代码
+                # top_k=20,     # 其他类型问题
             )
             dprint(f'===self.openai.chat.completions.create() invoked.===')
             dprint(f'{"-" * 80}')
