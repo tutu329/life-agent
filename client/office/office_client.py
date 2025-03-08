@@ -50,14 +50,19 @@ class Office_Client():
             )
             # 启动Word应用程序
             self.word = win32.gencache.EnsureDispatch('Word.Application')
+            dyellow(f'已获取word对象.')
             # 启动Excel应用程序
             self.excel = win32.gencache.EnsureDispatch('Excel.Application')
+            dyellow(f'已获取excel对象.')
 
             self._get_word_selection()
         except AttributeError as e:
             dred(f'Office_Client报错, "{e}"。可能需要尝试删除%TEMP%\gen_py文件夹以解决该问题。')
             dred(f'当前程序已推出。')
             exit()
+        except TypeError as e:
+            dred(f'可能是word文件或excel文件未打开，报错: "{e}"')
+
 
     def _excel_get_selected_table(self):
         wb = self.excel.ActiveWorkbook
@@ -267,17 +272,18 @@ def _ask_agent(
     return result
 
 # 电厂接入系统报告的编制
-def report_on_plant_grid_connection_system(scheme_file_path):
+def report_on_plant_grid_connection_system(scheme_file_path, base_url=config.LLM_Default.url, api_key=config.LLM_Default.api_key, temperature=config.LLM_Default.temperature):
     # 读取报告编制指令
     scheme_list = get_scheme_list(scheme_file_path)
+    dyellow(f'报告提纲读取完毕.')
 
     # 初始化office自动化工具
     office = Office_Client(
-        base_url='https://api.deepseek.com',
-        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        temperature=0.7,
-        # temperature=0,
+        base_url=base_url,
+        api_key=api_key,
+        temperature=temperature,
     )
+    # dyellow(f'已获取office对象.')
 
     # 编制报告
     for item in scheme_list:
@@ -316,7 +322,13 @@ def report_on_plant_grid_connection_system(scheme_file_path):
     # office.word_insert_llm_stream_at_cursor('我叫土土')
 
 def main():
-    report_on_plant_grid_connection_system('D:/server/life-agent/client/office/xiaoshan_prj/scheme.txt')
+    report_on_plant_grid_connection_system(
+        'D:/server/life-agent/client/office/xiaoshan_prj/scheme.txt',
+        base_url=config.LLM_Default.url,
+        api_key=config.LLM_Default.api_key,
+        temperature=config.LLM_Default.temperature,
+        # temperature=0,
+    )
     # report_on_plant_grid_connection_system('d:/demo/scheme.txt')
     input('【结束】')
 

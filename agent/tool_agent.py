@@ -30,14 +30,14 @@ class Tool_Agent():
                  in_base_url=config.LLM_Default.url,
                  in_api_key='empty',
                  in_temperature=0.7,
-                 remove_content_in_think_pairs=False,
+                 # remove_content_in_think_pairs=False,
                  ):
         self.llm = None
         self.temperature = in_temperature
         self.url = in_base_url
         self.api_key = in_api_key
         self.agent_desc_and_action_history = ''
-        self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
+        # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
         self.query=in_query
         self.tool_descs=''
         self.tool_names=[]
@@ -178,10 +178,11 @@ class Tool_Agent():
         # stream输出
         str_last_turn = ''
         for chunk in gen:
-            if self.llm.remove_content_in_think_pairs:
-                chunk =chunk[2]
-            else:
-                chunk =chunk
+            # if self.llm.remove_content_in_think_pairs:
+            #     chunk =chunk[2]
+            # else:
+            #     chunk =chunk
+            chunk = chunk[2]
 
             thoughts +=chunk
             thoughts_copy_to_print +=chunk
@@ -249,7 +250,7 @@ class Tool_Agent():
         gen = self.llm.ask_prepare(
             self.agent_desc_and_action_history,
             stop=self.response_stop,
-            remove_content_in_think_pairs=self.remove_content_in_think_pairs,
+            # remove_content_in_think_pairs=self.remove_content_in_think_pairs,
         ).get_answer_generator()
         # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
         # thoughts = ''
@@ -447,15 +448,18 @@ def main2():
 def main3():
     tools=[Folder_Tool, Search_Tool]
     # query = '第一步：搜索"万向创新聚能城"，返回万向创新聚能城所在城市；第二步搜索所在城市，返回该城市概况'
-    query = '请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+    query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+    # query = '请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
     agent = Tool_Agent(
         in_query=query,
         in_tool_classes=tools,
         in_output_stream_buf=dyellow,
         in_output_stream_to_console=True,
         # remove_content_in_think_pairs=True,
-        in_base_url='https://api.deepseek.com/v1',
-        in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        in_base_url='https://powerai.cc:8001/v1',
+        in_api_key='empty',
+        # in_base_url='https://api.deepseek.com/v1',
+        # in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
     )
     agent.init()
     success = agent.run()
