@@ -1819,8 +1819,8 @@ def think_and_result_test():
         print(c, end='', flush=True)
 
 if __name__ == "__main__" :
-    base_main()
-    # think_and_result_test()
+    # base_main()
+    think_and_result_test()
 
     # pic_main() # 带pic
     # think_main()
