@@ -259,8 +259,8 @@ class Tool_Agent():
         dred(f'self.response_stop: "{self.response_stop}"')
         gen = self.llm.ask_prepare(
             self.agent_desc_and_action_history,
-            stop=self.response_stop,
-            # remove_content_in_think_pairs=self.remove_content_in_think_pairs,
+            # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
+            manual_stop = self.response_stop,
         ).get_answer_generator()
         # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
         # thoughts = ''
@@ -466,8 +466,8 @@ def main3():
     query=''
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        # query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
-        query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        # query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
     else:
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
     agent = Tool_Agent(

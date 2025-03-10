@@ -429,6 +429,7 @@ class LLM_Client:
             retry=False,
             undo=False,
             stop=None,
+            manual_stop=None,   # 用于vllm处理stop有bug
             # remove_content_in_think_pairs=False,        # remove ('<think>', '</think>') 之间的内容
             # think_pair=config.LLM_Default.think_pairs,
             system_prompt=None,
@@ -566,6 +567,7 @@ class LLM_Client:
             stop = stop
 
         self.stop = stop
+        self.manual_stop = manual_stop
 
 
 
@@ -897,6 +899,10 @@ class LLM_Client:
         result_content = ''
         last_result_content = ''
 
+        answer_for_stop = ''
+        chunk_for_stop = ''
+        result_chunk_after_stop = ''
+
         try:
             # dprint(f'self.gen: {self.gen}')
             for chunk in self.gen:
@@ -919,6 +925,7 @@ class LLM_Client:
                 # if chunk.choices:
                 #     print(chunk.choices[0].delta)
 
+                # ================================================reasoning_content===================================================
                 if chunk.choices and hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[0].delta.reasoning_content:
                     think_chunk_output = chunk.choices[0].delta.reasoning_content
                     # print(f'think_chunk_output: "{think_chunk_output}"')
@@ -929,6 +936,7 @@ class LLM_Client:
                     # 如果是think_chunk，直接返回，因为和stop无关
                     yield my_chunk, think_chunk_output, result_chunk_after_stop
 
+                # =====================================================content========================================================
                 if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content:
                     # if hasattr(chunk, 'usage') and chunk.usage is not None:
                     #     print(f'chunk.usage: {chunk.usage}')
@@ -948,15 +956,13 @@ class LLM_Client:
                     my_chunk = chunk.choices[0].delta.content
                     answer += my_chunk
 
-                    result_chunk_output = my_chunk
+                    # result_chunk_output = my_chunk
 
                     # ----------------------------------2、判断是否有['[观察]']这样的stop----------------------------------------
-                    answer_for_stop = ''
-                    chunk_for_stop = ''
-                    result_chunk_after_stop = ''
 
-                    answer_for_stop = result_chunk_output
-                    chunk_for_stop = result_chunk_output
+
+                    answer_for_stop += my_chunk
+                    chunk_for_stop = my_chunk
                     # if self.remove_content_in_think_pairs:
                     #     answer_for_stop = result_chunk_output
                     #     chunk_for_stop = result_chunk_output
@@ -965,9 +971,12 @@ class LLM_Client:
                     #     chunk_for_stop = my_chunk
                     # dred(f'my_chunk: "{my_chunk}"')
 
-                    if self.stop:
+                    if self.manual_stop:
+                    # if self.stop:
                         # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
-                        answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, self.stop)
+                        # answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, ['[观察]'])
+                        answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, self.manual_stop)
+
                         # answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
 
                         # print(f'answer_for_stop: "{answer_for_stop}"', flush=True)
@@ -1007,6 +1016,8 @@ class LLM_Client:
 
                             result_chunk_after_stop = ''
                             # chunk_output = ''
+
+                            # yield my_chunk, think_chunk_output, result_chunk_after_stop
                     else:
                         # ----------------------------------没有stop----------------------------------
                         # yield my_chunk
