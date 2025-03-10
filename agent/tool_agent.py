@@ -1,3 +1,13 @@
+# pip install pyinstaller
+# -----------用pyinstaller生成可执行代码-----------
+# 在/home/tutu/server/life-agent下：
+# 正常运行代码是：
+# python -m agent.tool_agent
+# 转换代码是：
+# pyinstaller agent/tool_agent.py --paths=. --distpath ~/
+# 其中“--paths=.”表示将/home/tutu/server/life-agent加入到PyInstaller分析路径中，以便找到tools模块
+# 可执行代码将输出至~/tool_agent/下，包括可执行代码和关联so等文件
+
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 from agent.base_tool import PROMPT_REACT
 from agent.base_tool import Base_Tool
