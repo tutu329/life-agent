@@ -1812,11 +1812,13 @@ def think_and_result_test():
     think_gen = llm.get_think_generator()
     for c in think_gen:
         print(c, end='', flush=True)
+    print()
 
     print('==============')
     result_gen = llm.get_result_generator()
     for c in result_gen:
         print(c, end='', flush=True)
+    print()
 
 if __name__ == "__main__" :
     # base_main()
