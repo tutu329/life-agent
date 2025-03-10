@@ -626,6 +626,26 @@ class LLM_Client:
         self.question_last_turn = question
         return self
 
+    def get_think_generator(self):
+        think_started = False
+        for chunk in self.get_answer_generator():
+            full_chunk = chunk[0]
+            think_chunk = chunk[1]
+            result_chunk = chunk[2]
+            if think_chunk:
+                think_started = True
+                yield think_chunk
+            if (not think_chunk) and think_started:
+                # 此时think内容结束，退出，便于后面获取result内容
+                return None
+
+    def get_result_generator(self):
+        for chunk in self.get_answer_generator():
+            full_chunk = chunk[0]
+            think_chunk = chunk[1]
+            result_chunk = chunk[2]
+            yield result_chunk
+
     def get_answer_and_sync_print(self):
         full = ''
         think = ''
@@ -1761,8 +1781,22 @@ def base_main():
     )
     llm.ask_prepare('你是谁？').get_answer_and_sync_print()
 
+def think_and_result_test():
+    llm=LLM_Client()
+    llm.ask_prepare('你是谁？')
+    think_gen = llm.get_think_generator()
+    for c in think_gen:
+        print(c, end='', flush=True)
+
+    print('==============')
+    result_gen = llm.get_result_generator()
+    for c in result_gen:
+        print(c, end='', flush=True)
+
 if __name__ == "__main__" :
-    base_main()
+    # base_main()
+    think_and_result_test()
+
     # pic_main() # 带pic
     # think_main()
 
