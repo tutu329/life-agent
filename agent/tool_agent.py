@@ -190,6 +190,7 @@ class Tool_Agent():
             #     chunk =chunk[2]
             # else:
             #     chunk =chunk
+            # dred(chunk)
             chunk = chunk[2]
             # dyellow(chunk, end='', flush=True)
 

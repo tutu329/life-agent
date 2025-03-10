@@ -428,7 +428,7 @@ class LLM_Client:
             undo=False,
             stop=None,
             # remove_content_in_think_pairs=False,        # remove ('<think>', '</think>') 之间的内容
-            think_pair=config.LLM_Default.think_pairs,
+            # think_pair=config.LLM_Default.think_pairs,
             system_prompt=None,
             role_prompt=None,
             audio_string=None,
@@ -536,19 +536,21 @@ class LLM_Client:
 
         # ==========================================================
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs
-        self.think_pair = think_pair
+        # self.think_pair = think_pair
 
         if self.print_input:
             if image_url is None:
                 # question为文本
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"))')
+                dgreen(f'</User>(temperature={run_temperature})')
+                # dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"))')
             else:
                 # question为文本和图片
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'][0]['text'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"), with image.)')
+                dgreen(f'</User>(temperature={run_temperature} with image.)')
+                # dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"), with image.)')
 
         if stop is None:
             # stop = ['<|im_end|>', '<|im_start|>']
@@ -902,7 +904,7 @@ class LLM_Client:
                 # if chunk.choices:
                 #     print(chunk.choices[0].delta)
 
-                if chunk.choices and hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[0].delta.reasoning_content is not None:
+                if chunk.choices and hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[0].delta.reasoning_content:
                     think_chunk_output = chunk.choices[0].delta.reasoning_content
                     # print(f'think_chunk_output: "{think_chunk_output}"')
 
@@ -910,7 +912,7 @@ class LLM_Client:
                     result_chunk_after_stop = ''
                     yield my_chunk, think_chunk_output, result_chunk_after_stop
 
-                if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
+                if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content:
                     # if hasattr(chunk, 'usage') and chunk.usage is not None:
                     #     print(f'chunk.usage: {chunk.usage}')
                     #     # 输入和输出的token数量统计
@@ -950,8 +952,8 @@ class LLM_Client:
                         answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, self.stop)
                         # answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
 
-                        # print(f'answer1: {answer}')
-                        # print(f'answer2: {answer_no_partial_stop}')
+                        # print(f'answer_for_stop: "{answer_for_stop}"', flush=True)
+                        # print(f'answer_no_partial_stop: "{answer_no_partial_stop}"', flush=True)
                         if answer_no_partial_stop == answer_for_stop:
                         # if answer_no_partial_stop == answer:
                             # ----------------------------------不是stop标识----------------------------------
@@ -962,7 +964,10 @@ class LLM_Client:
 
                             # yield my_chunk
 
-                            result_chunk_after_stop = chunk_for_stop
+                            # ===============！！！待测试！！！========================
+                            result_chunk_after_stop = my_chunk
+                            # result_chunk_after_stop = chunk_for_stop
+                            # ===============！！！待测试！！！========================
                             # chunk_output = my_chunk
                         else:
                             # ----------------------------------是stop标识----------------------------------
@@ -972,6 +977,9 @@ class LLM_Client:
                             # dred(f'-------------answer_for_stop: "{answer_for_stop[-20:]}"---------------')
                             # dred(f'===================================================')
                             perhaps_stop_string += chunk_for_stop #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
+                            # print(f'chunk_for_stop: "{chunk_for_stop}"', flush=True)
+                            # print(f'perhaps_stop_string: "{perhaps_stop_string}"', flush=True)
+
                             # perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
 
                             # 有partial_stop
@@ -1015,7 +1023,8 @@ class LLM_Client:
         else:
             self.answer_last_turn = answer
 
-        self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
+        # self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
+
         # if self.remove_content_in_think_pairs:
         #     # print(f'\n-----------------last1-----------------\n"{self.answer_last_turn}"')
         #     self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
@@ -1754,7 +1763,7 @@ def think_main():
     gen = llm.ask_prepare(
         '你是谁？',
         # remove_content_in_think_pairs=True,
-        think_pair=('<think>', '</think>')
+        # think_pair=('<think>', '</think>')
     ).get_answer_generator()
 
     for chunk in gen:
