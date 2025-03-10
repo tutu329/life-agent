@@ -1,6 +1,4 @@
-# 安装curses
-# windows: pip install windows-curses
-# linux: pip install curses
+from openai import OpenAI
 
 # 安装wcwidth
 # pip install wcwidth
@@ -15,7 +13,6 @@ from uuid import uuid4
 
 import asyncio
 import threading
-from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 import config
 from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
@@ -24,17 +21,9 @@ from utils.string_util import str_remove_partial_substring_or_right, str_remove_
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
-from openai import OpenAI
-import openai
-# import openai.types.completion_usage.CompletionUsage
-
 from dataclasses import dataclass, field, asdict
 from typing import List, Optional, Dict
-from redis_client import Redis_Client
-
-from tools.audio_stt.audio_stt import AudioSTT
-from tools.console.windows import Console_Windows
-import curses
+# from redis_client import Redis_Client
 
 # DEBUG = True
 DEBUG = False
@@ -408,6 +397,7 @@ class LLM_Client:
     def audio_file_to_text(self, save_file_name):
         # if len(audio_string) > 0:
         #     wav_data = base64.b64decode(audio_string)
+        from tools.audio_stt.audio_stt import AudioSTT
         text = AudioSTT().stt(save_file_name)
         return text
 
@@ -1153,6 +1143,7 @@ class Async_LLM:
         # 由于streamlit对thread支持不好，这里必须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext
         self.task = threading.Thread(target=self.run)
         if self.run_in_streamlit:
+            from streamlit.runtime.scriptrunner import add_script_run_ctx
             add_script_run_ctx(self.task)
         
         self.task.start()
@@ -1461,6 +1452,7 @@ def _console_asks(stdscr, prompt, temperature, max_new_tokens):
         #     win_obj.output_buf(content)
         #     time.sleep(0.1)
 
+    from tools.console.windows import Console_Windows
     console = Console_Windows()
     console.init(stdscr=stdscr, user_callback=_user_callback)
     console.start()
@@ -1539,6 +1531,10 @@ def ask_with_prm(question, llm_key='empty', prm_key='empty', llm_url='https://po
     return final_result
 
 def console_asks(prompt, temperature, max_new_tokens=8192):
+    # 安装curses
+    # windows: pip install windows-curses
+    # linux: pip install curses
+    import curses
     curses.wrapper(_console_asks, prompt=prompt, temperature=temperature, max_new_tokens=max_new_tokens)
 
 def hot_temp_main():

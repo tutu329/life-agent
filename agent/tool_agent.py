@@ -1,17 +1,15 @@
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 from agent.base_tool import PROMPT_REACT
 from agent.base_tool import Base_Tool
-from utils.extract import extract_code, extract_dict_string
-from colorama import Fore, Back, Style
+# from utils.extract import extract_code, extract_dict_string
+# from colorama import Fore, Back, Style
 
 import config
 from config import dred, dgreen, dblue, dcyan, dyellow
 
-from agent.tools.code_tool import Code_Tool
-from agent.tools.energy_investment_plan_tool import Energy_Investment_Plan_Tool
-from agent.tools.folder_tool import Folder_Tool
-from agent.tools.search_tool import Search_Tool
-from agent.tools.url_content_qa_tool import Url_Content_QA_Tool
+# from agent.tools.code_tool import Code_Tool
+# from agent.tools.energy_investment_plan_tool import Energy_Investment_Plan_Tool
+# from agent.tools.url_content_qa_tool import Url_Content_QA_Tool
 
 g_debug_think_times = 0
 
@@ -183,6 +181,7 @@ class Tool_Agent():
             # else:
             #     chunk =chunk
             chunk = chunk[2]
+            # dyellow(chunk, end='', flush=True)
 
             thoughts +=chunk
             thoughts_copy_to_print +=chunk
@@ -263,7 +262,7 @@ class Tool_Agent():
             g_debug_think_times += 1
 
         if self.__finished_keyword in answer_this_turn:
-            print(Fore.GREEN, flush=True)
+            # print(Fore.GREEN, flush=True)
             dblue(f'=============================answer=============================')
             dblue(answer_this_turn)
             dblue(f'-----------------------------answer-----------------------------')
@@ -393,6 +392,7 @@ def main():
     # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8002/v1')
     # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
 
+    from agent.tools.search_tool import Search_Tool
     tools=[Search_Tool, Url_Content_QA_Tool]
     # tools=[Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
 
@@ -433,6 +433,7 @@ def main():
             dred(f"\n[运行结果]失败，请进一步优化问题的描述。")
 
 def main2():
+    from agent.tools.search_tool import Search_Tool
     tools=[Search_Tool]
     query = '搜索网络告诉我莱温斯基是谁？'
     agent = Tool_Agent(in_query=query, in_tool_classes=tools)
@@ -446,10 +447,18 @@ def main2():
     print(agent.get_final_answer())
 
 def main3():
-    tools=[Folder_Tool, Search_Tool]
+    # from agent.tools.search_tool import Search_Tool
+    from agent.tools.folder_tool import Folder_Tool
+    tools=[Folder_Tool]
+    # tools=[Folder_Tool, Search_Tool]
     # query = '第一步：搜索"万向创新聚能城"，返回万向创新聚能城所在城市；第二步搜索所在城市，返回该城市概况'
-    query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
-    # query = '请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+    query=''
+    print(f'os: "{config.get_os()}"')
+    if config.get_os()=='windows':
+        # query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+    else:
+        query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
     agent = Tool_Agent(
         in_query=query,
         in_tool_classes=tools,
