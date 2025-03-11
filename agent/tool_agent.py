@@ -477,7 +477,8 @@ def main3():
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
         # query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
-        query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        # query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
     agent = Tool_Agent(

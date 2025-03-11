@@ -3,6 +3,38 @@ import sys
 import argparse
 from pathlib import Path
 
+# 获取某个文件夹下所有文件和文件夹的名字list，directory可以是绝对路径或相对路径
+def get_folder_all_items_string(directory):
+    # 获取当前工作目录
+    current_directory = os.getcwd()
+    # 打印当前工作目录
+    print(f'【get_folder_files_list()】当前工作目录是："{current_directory}"')
+
+    p = Path(directory)
+    print(f'【get_folder_files_list()】输入的目录是: "{p.absolute()}"')
+
+    if not p.exists():
+        print(f"错误：路径 '{directory}' 不存在。")
+        sys.exit(1)
+    if not p.is_dir():
+        print(f"错误：路径 '{directory}' 不是一个文件夹。")
+        sys.exit(1)
+
+    items_name_list = []
+    # 扫描目录，并区分文件夹和文件
+    with os.scandir(p) as entries:
+        for entry in entries:
+            if entry.is_dir():
+                items_name_list.append(f"文件夹: {entry.name}")
+                # print(f"文件夹: {entry.name}")
+            elif entry.is_file():
+                items_name_list.append(f"文件: {entry.name}")
+                # print(f"文件: {entry.name}")
+
+    if items_name_list:
+        return '\n'.join(items_name_list)
+    else:
+        return '该文件夹为空.'
 
 # 获取某个文件夹下所有文件的文件名信息list，directory可以是绝对路径或相对路径
 def get_folder_files_list(directory, mode='name'):
@@ -38,6 +70,9 @@ def get_folder_files_info_string(directory, mode='name'):
     info_string = '\n'.join(files_list)
 
     return info_string
+
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="列出指定文件夹下的所有文件名。")
