@@ -21,8 +21,6 @@ from config import dred, dgreen, dblue, dcyan, dyellow
 # from agent.tools.energy_investment_plan_tool import Energy_Investment_Plan_Tool
 # from agent.tools.url_content_qa_tool import Url_Content_QA_Tool
 
-g_debug_think_times = 0
-
 class Tool_Agent():
     def __init__(self,
                  in_query,
@@ -44,7 +42,7 @@ class Tool_Agent():
         self.temperature = in_temperature
         self.url = in_base_url
         self.api_key = in_api_key
-        self.agent_desc_and_action_history = ''
+        self.agent_tools_description_and_full_history = ''
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
         self.query=in_query
         self.tool_descs=''
@@ -64,6 +62,7 @@ class Tool_Agent():
         self.response_stop = ['[观察]']
         # self.response_stop = ['<结束>']
         # self.response_stop = ['<res_stop>']
+        self.turns_num = 0  # 用于统计当前对象的action轮次
 
         self.ostream_func = in_output_stream_buf            # 最终结果stream输出的的func
         self.ostream_end_func = in_output_end               # 最终结果stream输出的end的func
@@ -75,7 +74,7 @@ class Tool_Agent():
         self.output_list = inout_output_list     # 输出历史
 
         self.__finished_keyword = '最终答复'
-        self.final_answer = ''
+        self.final_answer = '尚未进行分析和答复'
 
     # 最终结果输出
     def output_print(self, in_string):
@@ -124,7 +123,7 @@ class Tool_Agent():
             print_input=False,
             max_new_tokens=config.LLM_Default.max_new_tokens
         )
-        self.agent_desc_and_action_history = PROMPT_REACT
+        self.agent_tools_description_and_full_history = PROMPT_REACT
 
         # 将所有工具转换为{tool_descs}和{tool_names}
         for tool in self.tool_classes:
@@ -145,7 +144,7 @@ class Tool_Agent():
 
         self.tool_names = ','.join(self.tool_names)
 
-        self.agent_desc_and_action_history = self.agent_desc_and_action_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+        self.agent_tools_description_and_full_history = self.agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
 
     def get_final_answer(self):
         return self.final_answer
@@ -154,6 +153,7 @@ class Tool_Agent():
         # self.__finished_keyword = '最终答复'
         # 去掉'[最终答复]'及之前的内容
         self.final_answer = answer.split(f'[{self.__finished_keyword}]')[-1]
+        # print(f'self.final_answer已解析，final answer关键字"{self.__finished_keyword}"已去除.')
 
     def run(self, in_max_retry=5):
         for i in range(in_max_retry):
@@ -253,12 +253,12 @@ class Tool_Agent():
         return thoughts
 
     def thinking(self):
-        global g_debug_think_times
-        print(f'****************************************thinking()***********************************************')
+        self.turns_num += 1
+        print(f'thinking(turn {self.turns_num})'.center(80, '='))
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
-        dred(f'self.response_stop: "{self.response_stop}"')
+        dred(f'manual_stop: "{self.response_stop}"')
         gen = self.llm.ask_prepare(
-            self.agent_desc_and_action_history,
+            self.agent_tools_description_and_full_history,
             # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
             manual_stop = self.response_stop,
         ).get_answer_generator()
@@ -267,35 +267,37 @@ class Tool_Agent():
 
         answer_this_turn = self._thoughts_stream_output(gen)
 
-        if g_debug_think_times == 0:
-            with open("answer_this_turn.txt", "w", encoding="utf-8") as file:
+        if self.turns_num == 1:
+            with open("answer(turn 1).txt", "w", encoding="utf-8") as file:
                 file.write(answer_this_turn)
-            g_debug_think_times += 1
+
+        self.agent_tools_description_and_full_history += '\n' + answer_this_turn
 
         if self.__finished_keyword in answer_this_turn:
+            # '最终答复'出现
             # print(Fore.GREEN, flush=True)
-            dblue(f'=============================answer=============================')
+            dblue()
+            dblue(f'final answer(turn {self.turns_num})'.center(80, '='))
             dblue(answer_this_turn)
-            dblue(f'-----------------------------answer-----------------------------')
+            dblue(f'/final answer(turn {self.turns_num})'.center(80, '-'))
 
-
-            print(f'----------------------------------------thinking()-----------------------------------------------')
+            print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
             return answer_this_turn
 
-        self.agent_desc_and_action_history += '\n' + answer_this_turn
         # self.agent_desc_and_action_history += '\n' + answer_this_turn + ']'
         # self.status_print(f'============================prompt start============================\n')
         # self.status_print(f'{self.prompt}\n------------------------prompt end------------------------')
-        dblue(f'=============================answer=============================')
-        dblue(answer_this_turn)
-        dblue(f'-----------------------------answer-----------------------------')
 
-        print(f'----------------------------------------thinking()-----------------------------------------------')
+        # dblue()
+        # dblue(f'answer(turn {self.turns_num})'.center(80, '='))
+        # dblue(answer_this_turn)
+        # dblue(f'/answer(turn {self.turns_num})'.center(80, '-'))
+
+        print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
         return answer_this_turn
 
     def action(self, in_answer):
-        dgreen(f'****************************************action()***********************************************')
-
+        dgreen(f'action(turn {self.turns_num})'.center(80, '='))
         # --------------------------- call tool ---------------------------
         action_result = ''
 
@@ -311,7 +313,7 @@ class Tool_Agent():
         # print(f'=============================thoughts=============================')
         # print(in_thoughts)
         # print(f'-----------------------------thoughts-----------------------------')
-        dblue(f'--------------【tool_name: "{tool_name}"】--------------')
+        dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
 
         # if 'Code_Tool'==tool_name:
         #     self.status_print('选择了[code_tool]')
@@ -341,9 +343,11 @@ class Tool_Agent():
 
         self.status_print(f'调用工具的行动结果为: \n{action_result}')
 
-        dblue(f'=============================action_result=============================')
-        dblue(action_result)
-        dblue(f'-----------------------------action_result-----------------------------')
+        # dblue(f'action_result(turn {self.turns_num})'.center(80, '='))
+        # dblue(action_result)
+        # dblue(f'/action_result(turn {self.turns_num})'.center(80, '-'))
+
+        dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
         return action_result
 
 #     def observation(self, in_action_result=''):
@@ -388,13 +392,13 @@ class Tool_Agent():
 
 
 
-        self.agent_desc_and_action_history += f'[观察]{in_action_result}'
+        self.agent_tools_description_and_full_history += f'[观察]{in_action_result}'
 
-        dcyan(f'=============================action_history=============================')
-        dcyan(self.agent_desc_and_action_history)
-        dcyan(f'-----------------------------action_history-----------------------------')
-        with open("agent_desc_and_action_history.txt", "w", encoding="utf-8") as file:
-            file.write(self.agent_desc_and_action_history)
+        # dcyan(f'==============================full_history(turn {self.turns_num})=======================')
+        # dcyan(self.agent_tools_description_and_full_history)
+        # dcyan(f'-----------------------------/full_history(turn {self.turns_num})-----------------------')
+        with open("agent_tools_description_and_full_history.txt", "w", encoding="utf-8") as file:
+            file.write(self.agent_tools_description_and_full_history)
         # print(f'============================prompt start============================\n')
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
 
@@ -466,8 +470,8 @@ def main3():
     query=''
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
-        # query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        # query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
     else:
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
     agent = Tool_Agent(

@@ -5,6 +5,15 @@ from colorama import Fore, Style
 
 import json5
 
+DEBUG = False
+# DEBUG = True
+
+def dprint(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
+    else:
+        pass
+
 PROMPT_REACT0 = """Answer the following questions as best you can. You have access to the following tools:
 
 {tool_descs}Use the following format:
@@ -193,8 +202,8 @@ class Base_Tool():
             # print(f'+++++++++++++++++++++dict_string in extract_tool_name() is : \n{dict_string}+++++++++++++++++++++')
             if not dict_string:
                 print(Fore.RED, flush=True)
-                print(f'dict_string为空')
-                print('返回tool_name=""')
+                print(f'dict_string为空', flush=True)
+                print('返回tool_name=""', flush=True)
                 print(Style.RESET_ALL, flush=True)
                 return ''
 
@@ -214,9 +223,10 @@ class Base_Tool():
             # dict_string__ = dict_string__.split('[观察]')
             # dict_string__.pop()
             # dict_string__ = ''.join(dict_string__)
-            print('-----------dict string to get tool_name is:----------')
-            print(dict_string__)
-            print('-----------------------------------------------------')
+
+            dprint('-----------dict string to get tool_name is:----------')
+            dprint(dict_string__)
+            dprint('-----------------------------------------------------')
 
             dict = json5.loads(dict_string__)
             # print('-----extract_tool_name5------')
@@ -226,8 +236,8 @@ class Base_Tool():
             rtn = dict['tool_name']
         except Exception as e:
             print(Fore.RED, flush=True)
-            print(f'extract_tool_name()错误: "{e}"')
-            print('返回tool_name=""')
+            print(f'extract_tool_name()错误: "{e}"', flush=True)
+            print('返回tool_name=""', flush=True)
             print(Style.RESET_ALL, flush=True)
             return ""
 

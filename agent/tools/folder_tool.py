@@ -25,7 +25,7 @@ class Folder_Tool(Base_Tool):
         pass
 
     def call(self, in_thoughts):
-        dred('-----------------Folder_Tool.call() invoked.---------------------')
+        # dred('-----------------Folder_Tool.call() invoked.---------------------')
         dict_string = extract_dict_string(in_thoughts)
         dict = json5.loads(dict_string)
         dir = dict['tool_parameters']['dir']
@@ -36,6 +36,6 @@ class Folder_Tool(Base_Tool):
 
         # 调用工具后，结果作为action_result返回
         action_result = files_str
-        dred('-----------------Folder_Tool.call() result:---------------------')
-        dred(action_result)
+        # dred('-----------------Folder_Tool.call() result:---------------------')
+        # dred(action_result)
         return action_result

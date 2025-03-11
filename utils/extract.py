@@ -1,6 +1,7 @@
 import re, json5
 
-DEBUG = True
+DEBUG = False
+# DEBUG = True
 
 def dprint(*args, **kwargs):
     if DEBUG:
