@@ -282,6 +282,10 @@ class Tool_Agent():
             dblue(f'/final answer(turn {self.turns_num})'.center(80, '-'))
 
             print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
+
+            with open("agent_tools_description_and_full_history.txt", "w", encoding="utf-8") as file:
+                file.write(self.agent_tools_description_and_full_history)
+
             return answer_this_turn
 
         # self.agent_desc_and_action_history += '\n' + answer_this_turn + ']'
@@ -397,8 +401,10 @@ class Tool_Agent():
         # dcyan(f'==============================full_history(turn {self.turns_num})=======================')
         # dcyan(self.agent_tools_description_and_full_history)
         # dcyan(f'-----------------------------/full_history(turn {self.turns_num})-----------------------')
-        with open("agent_tools_description_and_full_history.txt", "w", encoding="utf-8") as file:
-            file.write(self.agent_tools_description_and_full_history)
+
+        # with open("agent_tools_description_and_full_history.txt", "w", encoding="utf-8") as file:
+        #     file.write(self.agent_tools_description_and_full_history)
+
         # print(f'============================prompt start============================\n')
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
 
