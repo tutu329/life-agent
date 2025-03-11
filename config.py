@@ -19,6 +19,11 @@ def get_os():
     else:
         return "unknown"
 
+def get_members_name_list(obj):
+    import inspect
+    methods = [name for name, func in inspect.getmembers(obj, predicate=inspect.ismethod)]
+    return methods
+
 def get_local_ip():
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
@@ -223,6 +228,7 @@ def main():
     print(os)
     print(f'ssl_key: {Domain.ssl_keyfile}')
     print(f'ssl_cert: {Domain.ssl_certfile}')
+    print(f'get_members_name_list: "{get_members_name_list(LLM_Default())}"')
 
 if __name__ == "__main__":
     main()
