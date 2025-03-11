@@ -21,7 +21,10 @@ def get_os():
 
 def get_members_name_list(obj):
     import inspect
-    methods = [name for name, func in inspect.getmembers(obj, predicate=inspect.ismethod)]
+    methods = [
+        name for name, func in inspect.getmembers(obj, predicate=inspect.ismethod)
+        if not (name.startswith('__') or name.startswith('_'))
+    ]
     return methods
 
 def get_local_ip():
