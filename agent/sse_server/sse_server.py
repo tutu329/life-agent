@@ -5,6 +5,7 @@ import time
 import threading
 import queue
 import uuid
+from dataclasses import dataclass, field
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
@@ -17,13 +18,25 @@ from agent.tools.folder_tool import Folder_Tool
 app = Flask(__name__)
 CORS(app)  # 启用跨域请求支持
 
+@dataclass
+class Agent_Task_Status():
+    NOT_STARTED:str = 'not started'
+    STARTED:str = 'started'
+    FINISHED:str = 'finished'
+
+@dataclass
+class Agent_Task_Info():
+    task_id:str = ''                                                        # task的ID
+    task_status:str = Agent_Task_Status.NOT_STARTED                         # task的状态
+    task_msg_queue_obj:queue.Queue = field(default_factory=queue.Queue)     # task的msg队列（用于stream输出信息给client）
+
 # 用一个字典管理所有任务ID -> 消息队列(或其他数据结构)
-task_queues = {
-    # 'task_id_xxx': message_queue_obj
+g_tasks_info_dict = {
+    # 'task_id_xxx': Agent_Task_Info(xxx)
 }
 
-@app.route('/api/run-agent', methods=['POST'])
-def run_agent():
+@app.route('/api/start_agent_task', methods=['POST'])
+def start_agent_task():
     try:
         data = request.json
         query = data.get('query', '')
@@ -32,18 +45,19 @@ def run_agent():
         api_key = data.get('api_key', 'sk-c1d34a4f21e3413487bb4b2806f6c4b8')
 
         # 创建消息队列用于SSE
-        message_queue = queue.Queue()
+        task_message_queue = queue.Queue()
 
         # 生成唯一ID，并注册message_queue
         task_id = str(uuid.uuid4())
-        task_queues[task_id] = message_queue
+        # -------------------------------------------------------------全局字典g_tasks_status_dict--------------------------------------------------------------------
+        g_tasks_info_dict[task_id] = Agent_Task_Info(task_id=task_id, task_status=Agent_Task_Status.STARTED, task_msg_queue_obj=task_message_queue)
 
         tools = [Folder_Tool]
         # 创建agent实例
         agent = Tool_Agent(
             in_query=query,
             in_tool_classes=tools,
-            in_output_stream_buf=message_queue.put,
+            in_output_stream_buf=task_message_queue.put,
             # in_output_stream_buf=dyellow,
             # in_output_stream_to_console=True,
             in_base_url=base_url,
@@ -63,11 +77,26 @@ def run_agent():
         thread.daemon = True
         thread.start()
 
+        # 返回task_id
+        return jsonify({"task_id": task_id})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+@app.route('/api/get_agent_task_sse_stream', methods=['GET'])
+def get_agent_task_sse_stream():
+    try:
+        # 从URL参数/Query String中获取task_id
+        task_id = request.args.get("task_id")
+        if not task_id or task_id not in g_tasks_info_dict:
+            return jsonify({"error": "Invalid or missing task_id"}), 400
+        # --------------------------------------------------------从g_tasks_info_dict获取msg_queue-------------------------------------------------------------
+        task_message_queue = g_tasks_info_dict[task_id].task_msg_queue_obj
+
         # 返回SSE流
         def generate():
             received = False
             while True:
-                message = message_queue.get()
+                message = task_message_queue.get()
                 if message is None:  # 结束标志
                     break
                 if message and not received:
@@ -78,7 +107,7 @@ def run_agent():
                 yield f"data: {json.dumps({'message': message}, ensure_ascii=False)}\n\n"
             dyellow('\n')
             dyellow('后台队列信息'.center(80, '-'))
-            yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}\n\n"
 
         return Response(generate(), mimetype='text/event-stream')
 
@@ -214,17 +243,24 @@ def index():
                 };
 
                 // 发送POST请求
-                console.log('-------------------已发送/api/run-agent请求...--------------------------')
-                fetch('/api/run-agent', {
+                console.log('-------------------已发送/api/start_agent_task请求...--------------------------')
+                fetch('/api/start_agent_task', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(requestData)
                 }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // 解析 JSON 数据
+                })                
+                .then(data => {
+                    const task_id_from_server = data.task_id; // 后端返回的
+                    
                     // 创建SSE连接
-                    const url = new URL('/api/run-agent', window.location.href);
-                    eventSource = new EventSource(url);
+                    const eventSource = new EventSource('/api/get_agent_task_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
 
                     // 监听消息
                     eventSource.onmessage = function(event) {
@@ -247,8 +283,8 @@ def index():
                         console.error('SSE错误:', error);
                         eventSource.close();
                     };
-
-                }).catch(error => {
+                })
+                .catch(error => {
                     statusEl.textContent = '错误';
                     console.error('请求错误:', error);
                 });
