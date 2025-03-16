@@ -86,6 +86,8 @@ class Web_Server_Task_Manager():
             # 任务结束标志（重要！）
             task_stream_queue.put(None)
 
+            Web_Server_Task_Manager.g_tasks_info_dict[session_id].task_status = Web_Server_Task_Status.FINISHED
+
             dgreen(f'Web_Server_Task_Manager(): task(id "{session_id}") 已完成.')
 
         thread = threading.Thread(target=_run_task_thread)
