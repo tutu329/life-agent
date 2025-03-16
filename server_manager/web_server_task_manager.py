@@ -120,7 +120,6 @@ class Web_Server_Task_Manager():
             if received:
                 dyellow(f'/task stream队列(id "{task_id}")'.center(80, '-'))
         # ======================================SSE封装=========================================
-
         return _generate()
 
 def main():
