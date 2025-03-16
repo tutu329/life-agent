@@ -54,7 +54,6 @@ def start_agent_task():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/get_agent_task_sse_stream', methods=['GET'])
 def get_agent_task_sse_stream():
     try:
