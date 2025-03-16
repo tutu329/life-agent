@@ -40,4 +40,3 @@ class Folder_Tool(Base_Tool):
         # dred('-----------------Folder_Tool.call() result:---------------------')
         # dred(action_result)
         return action_result
-
