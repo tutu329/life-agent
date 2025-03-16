@@ -86,11 +86,16 @@ def get_agent_task_sse_stream():
         # ----------------------------------------这样写可以工作!!!很奇怪----------------------------------------------------
 
         # ----------------------------------------这样写就不可以工作!!!很奇怪----------------------------------------------------
-        # gen = Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=task_id)
+        # def generate():
+        #     for chunk in Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=task_id):
+        #         yield chunk
+        #
         # return Response(
-        #     gen,
+        #     generate(),
+        #     # Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=task_id),
         #     mimetype='text/event-stream'
         # )
+        # ----------------------------------------这样写就不可以工作!!!很奇怪----------------------------------------------------
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
