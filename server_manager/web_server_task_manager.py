@@ -40,6 +40,13 @@ class Web_Server_Task_Manager():
     def start_task(cls, task_obj, session_id=None):
         if session_id is not None:
             session_id = Session_ID.PREFIX + session_id
+
+            # client某浏览器重复执行了task
+            if not Web_Server_Task_Manager.g_local_debug and session_id in Web_Server_Task_Manager.g_tasks_info_dict:
+                if Web_Server_Task_Manager.g_tasks_info_dict[session_id].task_status == Web_Server_Task_Status.STARTED:
+                    dyellow(f'Web_Server_Task_Manager.start_task(): 任务(task id: "{session_id}")已启动，不重复执行.')
+                    task_id = session_id
+                    return task_id
         else:
             dyellow(f'warning: Web_Server_Task_Manager.start_task()未采用session_id.')
             session_id = Session_ID.PREFIX + str(uuid.uuid4())
