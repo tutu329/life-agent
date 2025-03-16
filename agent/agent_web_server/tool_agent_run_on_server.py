@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, session
 from flask_cors import CORS
 import json
 import time
@@ -20,6 +20,19 @@ from server_manager.web_server_task_manager import Web_Server_Task_Manager
 app = Flask(__name__)
 CORS(app)  # 启用跨域请求支持
 
+# 用于获取对应client某浏览器的匿名session id
+app.secret_key = 'tj112279_seaver'  # 用于签名 session
+# app.secret_key = '这里要放一个足够随机的秘钥字符串'  # 用于签名 session
+
+# 用于获取对应client某浏览器的匿名session id
+@app.before_request
+def ensure_session_id():
+    """
+    每一次请求到来之前，如果 session 中没有 'session_id'，则自动创建并存储。
+    """
+    if 'session_id' not in session:
+        session['session_id'] = str(uuid.uuid4())
+    # 这样一来，每个在浏览器端首次访问的用户都会生成一个 session_id
 
 @app.route('/api/start_agent_task', methods=['POST'])
 def start_agent_task():
@@ -42,7 +55,12 @@ def start_agent_task():
             in_api_key=api_key,
         )
 
-        session_id = str(uuid.uuid4())  # ------------------!!!!!!-------------------
+        # 用于获取对应client某浏览器的匿名session id
+        session_id = session.get('session_id')
+        dblue(f'client登录(session_id: "{session_id}").')
+        # session_id = str(uuid.uuid4())  # ------------------!!!!!!-------------------
+
+        # 启动task
         task_id = Web_Server_Task_Manager.start_task(
             task_obj=agent,
             session_id=session_id
