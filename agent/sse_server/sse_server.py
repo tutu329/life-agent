@@ -4,6 +4,7 @@ import json
 import time
 import threading
 import queue
+import uuid
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
@@ -16,6 +17,11 @@ from agent.tools.folder_tool import Folder_Tool
 app = Flask(__name__)
 CORS(app)  # 启用跨域请求支持
 
+# 用一个字典管理所有任务ID -> 消息队列(或其他数据结构)
+task_queues = {
+    # 'task_id_xxx': message_queue_obj
+}
+
 @app.route('/api/run-agent', methods=['POST'])
 def run_agent():
     try:
@@ -27,6 +33,10 @@ def run_agent():
 
         # 创建消息队列用于SSE
         message_queue = queue.Queue()
+
+        # 生成唯一ID，并注册message_queue
+        task_id = str(uuid.uuid4())
+        task_queues[task_id] = message_queue
 
         tools = [Folder_Tool]
         # 创建agent实例
@@ -55,13 +65,20 @@ def run_agent():
 
         # 返回SSE流
         def generate():
+            received = False
             while True:
                 message = message_queue.get()
                 if message is None:  # 结束标志
                     break
-                dyellow(f"data: {json.dumps({'message': message})}")
-                yield f"data: {json.dumps({'message': message})}\n\n"
-            yield f"data: {json.dumps({'done': True})}\n\n"
+                if message and not received:
+                    received = True
+                    dyellow('后台队列信息'.center(80, '='))
+
+                dyellow(message, end='', flush=True)
+                yield f"data: {json.dumps({'message': message}, ensure_ascii=False)}\n\n"
+            dyellow('\n')
+            dyellow('后台队列信息'.center(80, '-'))
+            yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
 
         return Response(generate(), mimetype='text/event-stream')
 
@@ -197,6 +214,7 @@ def index():
                 };
 
                 // 发送POST请求
+                console.log('-------------------已发送/api/run-agent请求...--------------------------')
                 fetch('/api/run-agent', {
                     method: 'POST',
                     headers: {
