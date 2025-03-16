@@ -15,25 +15,11 @@ from agent.tool_agent import Tool_Agent
 
 from agent.tools.folder_tool import Folder_Tool
 
+from server_manager.web_server_task_manager import Web_Server_Task_Manager
+
 app = Flask(__name__)
 CORS(app)  # 启用跨域请求支持
 
-@dataclass
-class Agent_Task_Status():
-    NOT_STARTED:str = 'not started'
-    STARTED:str = 'started'
-    FINISHED:str = 'finished'
-
-@dataclass
-class Agent_Task_Info():
-    task_id:str = ''                                                        # task的ID
-    task_status:str = Agent_Task_Status.NOT_STARTED                         # task的状态
-    task_msg_queue_obj:queue.Queue = field(default_factory=queue.Queue)     # task的msg队列（用于stream输出信息给client）
-
-# 用一个字典管理所有任务ID -> 消息队列(或其他数据结构)
-g_tasks_info_dict = {
-    # 'task_id_xxx': Agent_Task_Info(xxx)
-}
 
 @app.route('/api/start_agent_task', methods=['POST'])
 def start_agent_task():
@@ -44,54 +30,38 @@ def start_agent_task():
         base_url = data.get('base_url', 'https://api.deepseek.com/v1')
         api_key = data.get('api_key', 'sk-c1d34a4f21e3413487bb4b2806f6c4b8')
 
-        # 创建消息队列用于SSE
-        task_message_queue = queue.Queue()
-
-        # 生成唯一ID，并注册message_queue
-        task_id = str(uuid.uuid4())
-        # -------------------------------------------------------------全局字典g_tasks_status_dict--------------------------------------------------------------------
-        g_tasks_info_dict[task_id] = Agent_Task_Info(task_id=task_id, task_status=Agent_Task_Status.STARTED, task_msg_queue_obj=task_message_queue)
-
         tools = [Folder_Tool]
         # 创建agent实例
         agent = Tool_Agent(
             in_query=query,
             in_tool_classes=tools,
-            in_output_stream_buf=task_message_queue.put,
+            # in_output_stream_buf=task_message_queue.put,  # 该设置在Web_Server_Task_Manager.start_task()中完成
             # in_output_stream_buf=dyellow,
             # in_output_stream_to_console=True,
             in_base_url=base_url,
             in_api_key=api_key,
         )
 
-        # 初始化agent
-        agent.init()
-
-        # 在单独的线程中运行agent
-        def run_agent_thread():
-            success = agent.run()
-            # 发送完成标志
-            # message_queue.put(None)
-
-        thread = threading.Thread(target=run_agent_thread)
-        thread.daemon = True
-        thread.start()
+        session_id = str(uuid.uuid4())  # ------------------!!!!!!-------------------
+        task_id = Web_Server_Task_Manager.start_task(
+            task_obj=agent,
+            session_id=session_id
+        )
 
         # 返回task_id
         return jsonify({"task_id": task_id})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
 @app.route('/api/get_agent_task_sse_stream', methods=['GET'])
 def get_agent_task_sse_stream():
     try:
-        # 从URL参数/Query String中获取task_id
         task_id = request.args.get("task_id")
-        if not task_id or task_id not in g_tasks_info_dict:
-            return jsonify({"error": "Invalid or missing task_id"}), 400
-        # --------------------------------------------------------从g_tasks_info_dict获取msg_queue-------------------------------------------------------------
-        task_message_queue = g_tasks_info_dict[task_id].task_msg_queue_obj
 
+        # ----------------------------------------这样写可以工作!!!很奇怪----------------------------------------------------
+        task_message_queue = Web_Server_Task_Manager.g_tasks_info_dict[task_id].task_stream_queue_obj
         # 返回SSE流
         def generate():
             received = False
@@ -109,10 +79,22 @@ def get_agent_task_sse_stream():
             dyellow('后台队列信息'.center(80, '-'))
             yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}\n\n"
 
-        return Response(generate(), mimetype='text/event-stream')
+        return Response(
+            generate(),
+            mimetype='text/event-stream'
+        )
+        # ----------------------------------------这样写可以工作!!!很奇怪----------------------------------------------------
+
+        # ----------------------------------------这样写就不可以工作!!!很奇怪----------------------------------------------------
+        # gen = Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=task_id)
+        # return Response(
+        #     gen,
+        #     mimetype='text/event-stream'
+        # )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/')
 def index():
@@ -258,16 +240,22 @@ def index():
                 })                
                 .then(data => {
                     const task_id_from_server = data.task_id; // 后端返回的
-                    
+                    console.log('task_id_from_server: ', task_id_from_server)
+
                     // 创建SSE连接
-                    const eventSource = new EventSource('/api/get_agent_task_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    console.log('尝试创建SSE连接...')
+                    // const eventSource = new EventSource('/api/get_agent_task_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    eventSource = new EventSource('/api/get_agent_task_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    console.log('创建SSE连接成功.')
+                    console.log('eventSource: ', eventSource)
 
                     // 监听消息
                     eventSource.onmessage = function(event) {
                         console.log("收到SSE数据:", event.data);
                         const data = JSON.parse(event.data);
 
-                        if (data.done) {
+                        if (data['[done]']) {
+                        // if (data.done) {
                             // 处理完成
                             statusEl.textContent = '完成';
                             eventSource.close();

@@ -146,6 +146,9 @@ class Global():
         import os
         return os.path.abspath(os.curdir)
 
+@dataclass
+class Agent:
+    MAX_TRIES:int       = 20    # agent的最大尝试轮次
 
 @dataclass
 class Port():

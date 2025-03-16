@@ -76,6 +76,10 @@ class Tool_Agent():
         self.__finished_keyword = '最终答复'
         self.final_answer = '尚未进行分析和答复'
 
+    # 设置最终结果stream输出的func
+    def set_output_stream_buf(self, in_output_stream_buf):
+        self.ostream_func = in_output_stream_buf            # 最终结果stream输出的的func
+
     # 最终结果输出
     def output_print(self, in_string):
         if self.ostream_func is not None:
@@ -155,7 +159,8 @@ class Tool_Agent():
         self.final_answer = answer.split(f'[{self.__finished_keyword}]')[-1]
         # print(f'self.final_answer已解析，final answer关键字"{self.__finished_keyword}"已去除.')
 
-    def run(self, in_max_retry=5):
+    def run(self, in_max_retry=config.Agent.MAX_TRIES):
+        dblue(f'config.Agent.MAX_TRIES = {in_max_retry}')
         for i in range(in_max_retry):
             # 1、思考
             answer_this_turn = self.thinking()
