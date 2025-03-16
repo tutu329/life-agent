@@ -68,7 +68,6 @@ def run_agent():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/')
 def index():
     # 直接返回HTML内容，而不是尝试读取文件
