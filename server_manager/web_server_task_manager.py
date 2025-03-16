@@ -97,6 +97,9 @@ class Web_Server_Task_Manager():
         # 获取该task的msg_queue
         task_stream_queue = Web_Server_Task_Manager.g_tasks_info_dict[task_id].task_stream_queue_obj
 
+        # ======================================SSE封装=========================================
+        # 大坑：典型的 SSE（Server-Sent Events）坑点，SSE 规范要求每个事件块之间都要用一个空行（也就是至少 \n\n）来分隔，否则前端的 SSE 解析往往会报错或无法成功解析
+        # 因此，每一个f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"的最后必须要有\n\n才行，否则client会报错！！！
         def _generate():
             # 获取msg_queue的steam数据
             received = False
@@ -109,13 +112,14 @@ class Web_Server_Task_Manager():
                     dyellow(f'task stream队列(id "{task_id}")'.center(80, '='))
 
                 dyellow(chunk, end='', flush=True)
-                yield f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}"
+                yield f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"
 
-            yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}"
+            yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}\n\n"
             dyellow('\n')
 
             if received:
                 dyellow(f'/task stream队列(id "{task_id}")'.center(80, '-'))
+        # ======================================SSE封装=========================================
 
         return _generate()
 

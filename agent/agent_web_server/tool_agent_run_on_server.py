@@ -60,42 +60,11 @@ def get_agent_task_sse_stream():
     try:
         task_id = request.args.get("task_id")
 
-        # ----------------------------------------这样写可以工作!!!很奇怪----------------------------------------------------
-        task_message_queue = Web_Server_Task_Manager.g_tasks_info_dict[task_id].task_stream_queue_obj
-        # 返回SSE流
-        def generate():
-            received = False
-            while True:
-                message = task_message_queue.get()
-                if message is None:  # 结束标志
-                    break
-                if message and not received:
-                    received = True
-                    dyellow('后台队列信息'.center(80, '='))
-
-                dyellow(message, end='', flush=True)
-                yield f"data: {json.dumps({'message': message}, ensure_ascii=False)}\n\n"
-            dyellow('\n')
-            dyellow('后台队列信息'.center(80, '-'))
-            yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}\n\n"
-
         return Response(
-            generate(),
+            Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=task_id),
             mimetype='text/event-stream'
         )
-        # ----------------------------------------这样写可以工作!!!很奇怪----------------------------------------------------
 
-        # ----------------------------------------这样写就不可以工作!!!很奇怪----------------------------------------------------
-        # def generate():
-        #     for chunk in Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=task_id):
-        #         yield chunk
-        #
-        # return Response(
-        #     generate(),
-        #     # Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=task_id),
-        #     mimetype='text/event-stream'
-        # )
-        # ----------------------------------------这样写就不可以工作!!!很奇怪----------------------------------------------------
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
