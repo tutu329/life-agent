@@ -96,7 +96,6 @@ def get_agent_task_sse_stream():
         #     mimetype='text/event-stream'
         # )
         # ----------------------------------------这样写就不可以工作!!!很奇怪----------------------------------------------------
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
