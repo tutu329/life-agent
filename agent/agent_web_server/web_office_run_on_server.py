@@ -124,12 +124,16 @@ def index():
             margin: 0;
             padding: 20px;
             background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
         }
         .main-container {
             display: flex;
             max-width: 1200px;
             margin: 0 auto;
             gap: 20px;
+            height: calc(100vh - 40px); /* Account for the body padding */
         }
         .word-editor {
             flex: 2; /* Changed from 1 to 2 to make it 2/3 of the width */
@@ -137,7 +141,11 @@ def index():
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         .control-panel {
             flex: 1; /* This remains 1 to make it 1/3 of the width */
@@ -145,11 +153,16 @@ def index():
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
         }
         h1 {
             color: #333;
             text-align: center;
             font-size: 16px; /* Small sanhao size (小三号) */
+            margin-top: 0;
         }
         .form-group {
             margin-bottom: 15px;
@@ -185,17 +198,28 @@ def index():
             padding: 15px;
             border-radius: 4px;
             background-color: #f9f9f9;
-            min-height: 200px;
+            flex-grow: 1;
+            height: 0; /* This forces the element to respect flex constraints */
+            min-height: 200px; /* Minimum height for the output area */
+            max-height: 100%; /* Maximum height constraint */
+            overflow-y: auto; /* Add vertical scrollbar when needed */
             white-space: pre-wrap;
+            font-size: 9px; /* Reduced font size by 3 units from default 12px */
         }
         .status {
             margin-top: 10px;
             color: #666;
         }
         /* Word Editor-like styles */
+        #editor-container {
+            flex-grow: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
         #editor {
-            height: 500px;
-            margin-bottom: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
             border: 1px solid #ddd;
             background-color: white;
         }
@@ -222,6 +246,17 @@ def index():
             justify-content: flex-end; /* Align button to the right */
             margin-bottom: 15px;
         }
+        /* Control panel content layout */
+        .control-panel-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+        .control-panel-inputs {
+            flex-shrink: 0;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -231,40 +266,42 @@ def index():
     <div class="main-container">
         <!-- Word编辑器部分 -->
         <div class="word-editor">
-            <!-- Removed "Word文档编辑器" heading -->
-            
-            <!-- Removed font controls -->
-
             <!-- Quill editor with Word-like toolbar -->
-            <div id="editor"></div>
+            <div id="editor-container">
+                <div id="editor"></div>
+            </div>
         </div>
 
         <!-- 控制面板部分 -->
         <div class="control-panel">
-            <h1>报告自主编制</h1>
+            <div class="control-panel-content">
+                <div class="control-panel-inputs">
+                    <h1>报告自主编制</h1>
 
-            <div class="form-group">
-                <label for="query">查询内容：</label>
-                <textarea id="query" rows="3" placeholder="输入您的查询内容"></textarea>
+                    <div class="form-group">
+                        <label for="query">查询内容：</label>
+                        <textarea id="query" rows="3" placeholder="输入您的查询内容"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="base-url">API基础URL：</label>
+                        <input type="text" id="base-url" value="https://api.deepseek.com/v1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="api-key">API密钥：</label>
+                        <input type="text" id="api-key" value="sk-c1d34a4f21e3413487bb4b2806f6c4b8">
+                    </div>
+
+                    <div class="button-container">
+                        <button id="run-btn">运行</button>
+                    </div>
+
+                    <div class="status">状态：<span id="status">空闲</span></div>
+                </div>
+
+                <div class="output" id="output"></div>
             </div>
-
-            <div class="form-group">
-                <label for="base-url">API基础URL：</label>
-                <input type="text" id="base-url" value="https://api.deepseek.com/v1">
-            </div>
-
-            <div class="form-group">
-                <label for="api-key">API密钥：</label>
-                <input type="text" id="api-key" value="sk-c1d34a4f21e3413487bb4b2806f6c4b8">
-            </div>
-
-            <div class="button-container">
-                <button id="run-btn">运行</button>
-            </div>
-
-            <div class="status">状态：<span id="status">空闲</span></div>
-
-            <div class="output" id="output"></div>
         </div>
     </div>
 
@@ -350,9 +387,6 @@ def index():
                             statusEl.textContent = '完成';
                             eventSource.close();
                         } else if (data.message) {
-                            // --------------Append message to output area--------------
-                            //outputEl.textContent += data.message;
-
                             // --------------Append message to quill area--------------
                             // Insert message into Quill editor
                             // 获取编辑器内容长度，注意 -1 防止末尾换行
@@ -366,7 +400,6 @@ def index():
                             
                             // 可选：移动光标到插入文本之后
                             quill.setSelection(cursorPosition + data.message.length, 0);
-                            
                         }
                     };
 
@@ -403,9 +436,6 @@ def index():
                         console.error('thinking stream SSE错误:', error);
                         thinking_eventSource.close();
                     };
-                    
-                    
-                    
                 })
                 .catch(error => {
                     statusEl.textContent = '错误';
