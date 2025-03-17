@@ -296,6 +296,7 @@ class Web_Office_Write(Server_Base):
 
 
     def insert_heading_at_cursor(self, heading, style='标题 1'):
+        self.output_stream_buf('\n')
         self.output_stream_buf(heading)
         self.output_stream_buf('\n')
 
@@ -303,6 +304,7 @@ class Web_Office_Write(Server_Base):
         self.output_stream_buf(text)
 
     def insert_text_end_at_cursor(self):
+        self.output_stream_buf('\n')
         self.output_stream_buf('\n')
 
     def run(self) -> None:

@@ -399,6 +399,15 @@ def index():
                             // Insert message into Quill editor at correct position
                             quill.insertText(cursorPosition, data.message);
                             
+                            // 计算插入文本的长度
+                            let insertedLength = data.message.length;
+                            
+                            // 应用字体和字号（内联格式）
+                            quill.formatText(cursorPosition, insertedLength, {
+                              'font': 'SimSun',   // 设置字体为宋体
+                              'size': '16px'      // 设置字号为小四，约16px
+                            });
+                            
                             // 可选：移动光标到插入文本之后
                             quill.setSelection(cursorPosition + data.message.length, 0);
                         }
