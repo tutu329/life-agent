@@ -67,7 +67,7 @@ class Web_Server_Task_Manager():
         # 创建消息队列用于stream
         task_stream_queue = queue.Queue()
 
-        # 注册task info
+        # 注册task info(其中还调用了set_output_stream_buf)
         Web_Server_Task_Manager.g_tasks_info_dict[session_id] = Web_Server_Task_Info(
             task_id=session_id,
             task_obj=task_obj,
@@ -110,7 +110,7 @@ class Web_Server_Task_Manager():
         task_id = session_id
         return task_id
 
-    # 获取task的输出stream(用户client的sse stream调用)
+    # 获取task的输出stream(方便用户进行sse调用output、thinking、log等stream数据)
     @classmethod
     def get_task_sse_stream_gen(cls, task_id):
         if Web_Server_Task_Manager.g_local_debug:

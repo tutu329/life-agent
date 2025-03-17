@@ -284,6 +284,8 @@ class Web_Office_Write(Server_Base):
         self.api_key = api_key
         self.temperature = temperature
         self.output_stream_buf = None
+        self.thinking_stream_buf = None
+        self.log_stream_buf = None
 
     def init(self) -> None:
         pass
@@ -350,6 +352,12 @@ class Web_Office_Write(Server_Base):
 
     def set_output_stream_buf(self, in_output_stream_buf):
         self.output_stream_buf = in_output_stream_buf
+
+    def set_thinking_stream_buf(self, in_thinking_stream_buf):
+        self.thinking_stream_buf = in_thinking_stream_buf
+
+    def set_log_stream_buf(self, in_log_stream_buf):
+        self.log_stream_buf = in_log_stream_buf
 
 
 # 电厂接入系统报告的编制

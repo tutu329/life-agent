@@ -30,6 +30,8 @@ class Tool_Agent(Server_Base):
                  in_human=True,
                  inout_status_list=None,
                  in_output_stream_buf=None, # 最终答复stream输出的func
+                 in_thinking_stream_buf=None,
+                 in_log_stream_buf=None,
                  in_output_end=None,        # 最终答复输出end的func
                  in_output_stream_to_console=False, # 最终答复是否stream输出到console
                  in_output_stream_use_chunk=True,   # 最终答复stream输出是否采用chunk方式，还是full_string方式
@@ -66,7 +68,10 @@ class Tool_Agent(Server_Base):
         # self.response_stop = ['<res_stop>']
         self.turns_num = 0  # 用于统计当前对象的action轮次
 
-        self.ostream_func = in_output_stream_buf            # 最终结果stream输出的的func
+        self.output_stream_buf = in_output_stream_buf            # 最终结果stream输出的的func
+        self.thinking_stream_buf = in_thinking_stream_buf            # 最终结果stream输出的的func
+        self.log_stream_buf = in_log_stream_buf            # 最终结果stream输出的的func
+
         self.ostream_end_func = in_output_end               # 最终结果stream输出的end的func
         self.ostream_use_chunk = in_output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
         self.output_stream_to_console = in_output_stream_to_console
@@ -80,12 +85,20 @@ class Tool_Agent(Server_Base):
 
     # 设置最终结果stream输出的func
     def set_output_stream_buf(self, in_output_stream_buf):
-        self.ostream_func = in_output_stream_buf            # 最终结果stream输出的的func
+        self.output_stream_buf = in_output_stream_buf            # 最终结果stream输出的的func
+
+    # 设置thinking的stream输出的func
+    def set_thinking_stream_buf(self, in_thinking_stream_buf):
+        self.thinking_stream_buf = in_thinking_stream_buf            # 最终结果stream输出的的func
+
+    # 设置最终结果stream输出的func
+    def set_log_stream_buf(self, in_log_stream_buf):
+        self.log_stream_buf = in_log_stream_buf            # 最终结果stream输出的的func
 
     # 最终结果输出
     def output_print(self, in_string):
-        if self.ostream_func is not None:
-            self.ostream_func(in_string)
+        if self.output_stream_buf is not None:
+            self.output_stream_buf(in_string)
 
             if self.output_list is not None:
                 self.output_list.append(in_string)
@@ -104,13 +117,18 @@ class Tool_Agent(Server_Base):
 
     # 最终结果stream输出full_string
     def output_stream_full_string(self, in_full_response):
-        if self.ostream_func is not None:
-            self.ostream_func(in_full_response)
+        if self.output_stream_buf is not None:
+            self.output_stream_buf(in_full_response)
 
     # 最终结果stream输出chunk，注意：要确保chunk中没有'[最终答复]'或'终答复]'
     def output_stream_chunk(self, chunk, **kwargs):
-        if self.ostream_func is not None:
-            self.ostream_func(chunk, **kwargs)
+        if self.output_stream_buf is not None:
+            self.output_stream_buf(chunk, **kwargs)
+
+    # thinking内容的stream输出chunk
+    def thinking_stream_chunk(self, chunk, **kwargs):
+        if self.thinking_stream_buf is not None:
+            self.thinking_stream_buf(chunk, **kwargs)
 
     # 中间状态stream输出(注意：streamlit的status不支持stream输出，只能打印)
     def status_stream(self, in_chunk, in_full_response):
@@ -219,6 +237,7 @@ class Tool_Agent(Server_Base):
                     else:
                         # 输出到如word文档中
                         self.output_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
+                        self.thinking_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
                     str_last_turn = str_this_turn
                 else:
                     # 采用full_string输出
