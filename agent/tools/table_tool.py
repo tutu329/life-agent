@@ -26,6 +26,12 @@ def extract_table_to_word(excel_path, sheet_name, table_title='', is_vertical=Tr
 
     # 初始化 Excel 应用
     try:
+        # -------这两行可以解决开web server环境下调用excel的报错---------
+        # 报错：-2147221008, 尚未调用 CoInitialize
+        import pythoncom
+        pythoncom.CoInitialize()
+        # ---------------------------------------------------------
+
         excel = win32.gencache.EnsureDispatch('Excel.Application')
         excel.Visible = False  # 设置为 True 以调试
         excel.DisplayAlerts = False
