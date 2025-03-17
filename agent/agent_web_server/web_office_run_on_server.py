@@ -90,7 +90,7 @@ def index():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tool Agent SSE演示</title>
+    <title>报告自主编制</title>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <style>
         body {
@@ -107,7 +107,7 @@ def index():
             gap: 20px;
         }
         .word-editor {
-            flex: 1;
+            flex: 2; /* Changed from 1 to 2 to make it 2/3 of the width */
             background: white;
             padding: 20px;
             border-radius: 8px;
@@ -115,7 +115,7 @@ def index():
             min-height: 600px;
         }
         .control-panel {
-            flex: 1;
+            flex: 1; /* This remains 1 to make it 1/3 of the width */
             background: white;
             padding: 20px;
             border-radius: 8px;
@@ -124,6 +124,7 @@ def index():
         h1 {
             color: #333;
             text-align: center;
+            font-size: 16px; /* Small sanhao size (小三号) */
         }
         .form-group {
             margin-bottom: 15px;
@@ -190,22 +191,11 @@ def index():
         .ql-size-huge {
             font-size: 20px;
         }
-        /* Custom font size toolbar */
-        .font-size-toolbar {
+        /* Button alignment */
+        .button-container {
             display: flex;
-            padding: 8px;
-            background: #f0f0f0;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .font-size-label {
-            margin-right: 8px;
-            font-weight: bold;
-        }
-        .font-style-label {
-            margin-right: 8px;
-            margin-left: 16px;
-            font-weight: bold;
+            justify-content: flex-end; /* Align button to the right */
+            margin-bottom: 15px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -216,39 +206,9 @@ def index():
     <div class="main-container">
         <!-- Word编辑器部分 -->
         <div class="word-editor">
-            <h1>Word文档编辑器</h1>
-
-            <!-- Custom font controls -->
-            <div class="font-size-toolbar">
-                <span class="font-style-label">字体:</span>
-                <select id="font-style-selector">
-                    <option value="SimSun">宋体</option>
-                    <option value="SimHei" selected>黑体</option>
-                    <option value="Microsoft YaHei">微软雅黑</option>
-                    <option value="KaiTi">楷体</option>
-                    <option value="FangSong">仿宋</option>
-                    <option value="Arial">Arial</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                </select>
-
-                <span class="font-size-label" style="margin-left: 15px;">字号:</span>
-                <select id="font-size-selector">
-                    <option value="42px">初号 (42px)</option>
-                    <option value="36px">小初 (36px)</option>
-                    <option value="26px">一号 (26px)</option>
-                    <option value="24px">小一 (24px)</option>
-                    <option value="22px">二号 (22px)</option>
-                    <option value="18px">小二 (18px)</option>
-                    <option value="16px">三号 (16px)</option>
-                    <option value="15px">小三 (15px)</option>
-                    <option value="14px" selected>四号 (14px)</option>
-                    <option value="12px">小四 (12px)</option>
-                    <option value="10.5px">五号 (10.5px)</option>
-                    <option value="9px">小五 (9px)</option>
-                </select>
-
-                <button id="save-btn" style="margin-left: 15px;">保存为Word</button>
-            </div>
+            <!-- Removed "Word文档编辑器" heading -->
+            
+            <!-- Removed font controls -->
 
             <!-- Quill editor with Word-like toolbar -->
             <div id="editor"></div>
@@ -256,7 +216,7 @@ def index():
 
         <!-- 控制面板部分 -->
         <div class="control-panel">
-            <h1>Tool Agent SSE演示</h1>
+            <h1>报告自主编制</h1>
 
             <div class="form-group">
                 <label for="query">查询内容：</label>
@@ -273,7 +233,9 @@ def index():
                 <input type="text" id="api-key" value="sk-c1d34a4f21e3413487bb4b2806f6c4b8">
             </div>
 
-            <button id="run-btn">运行</button>
+            <div class="button-container">
+                <button id="run-btn">运行</button>
+            </div>
 
             <div class="status">状态：<span id="status">空闲</span></div>
 
@@ -300,9 +262,6 @@ def index():
                 theme: 'snow'
             });
 
-            const fontStyleSelector = document.getElementById('font-style-selector');
-            const fontSizeSelector = document.getElementById('font-size-selector');
-            const saveBtn = document.getElementById('save-btn');
             const runBtn = document.getElementById('run-btn');
             const outputEl = document.getElementById('output');
             const statusEl = document.getElementById('status');
@@ -311,68 +270,6 @@ def index():
             const apiKeyEl = document.getElementById('api-key');
 
             let eventSource = null;
-
-            // Apply font style changes
-            function applyFontStyle() {
-                const fontFamily = fontStyleSelector.value;
-                quill.format('font', fontFamily);
-
-                // Global application of font family to editor
-                document.querySelector('.ql-editor').style.fontFamily = fontFamily;
-            }
-
-            // Apply font size changes
-            function applyFontSize() {
-                const fontSize = fontSizeSelector.value;
-
-                // Global application of font size to editor
-                document.querySelector('.ql-editor').style.fontSize = fontSize;
-            }
-
-            // Initial font settings
-            applyFontStyle();
-            applyFontSize();
-
-            // Event listeners for font changes
-            fontStyleSelector.addEventListener('change', applyFontStyle);
-            fontSizeSelector.addEventListener('change', applyFontSize);
-
-            // Save as Word document
-            saveBtn.addEventListener('click', function() {
-                const editorContent = document.querySelector('.ql-editor').innerHTML;
-                const editorText = document.querySelector('.ql-editor').innerText;
-                const fontSize = parseInt(fontSizeSelector.value);
-                const fontFamily = fontStyleSelector.value;
-
-                // Create a new Word document
-                const doc = new docx.Document({
-                    sections: [{
-                        properties: {},
-                        children: [
-                            new docx.Paragraph({
-                                children: [
-                                    new docx.TextRun({
-                                        text: editorText,
-                                        size: fontSize * 2, // Convert px to docx size
-                                        font: {
-                                            name: fontFamily
-                                        }
-                                    })
-                                ]
-                            })
-                        ]
-                    }]
-                });
-
-                // Generate and download the Word file
-                docx.Packer.toBlob(doc).then(blob => {
-                    saveAs(blob, "document.docx");
-                    alert("Word文档已保存!");
-                }).catch(err => {
-                    console.error("保存文档时出错:", err);
-                    alert("保存文档时出错，请查看控制台获取详情。");
-                });
-            });
 
             // Run SSE task
             runBtn.addEventListener('click', function() {
@@ -442,27 +339,8 @@ def index():
                             // Insert message into Quill editor at correct position
                             quill.insertText(cursorPosition, data.message);
                             
-                            // Apply current font settings to newly inserted text
-                            quill.formatText(
-                                cursorPosition,
-                                data.message.length,
-                                {
-                                    'font': fontStyleSelector.value
-                                }
-                            );
-                            
                             // 可选：移动光标到插入文本之后
                             quill.setSelection(cursorPosition + data.message.length, 0);
-
-                            // Apply current font settings to newly inserted text
-                            quill.formatText(
-                                cursorPosition, 
-                                data.message.length, 
-                                {
-                                    'font': fontStyleSelector.value
-                                }
-                            );
-                            // --------------/Append message to quill area--------------
                             
                         }
                     };
