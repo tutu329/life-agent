@@ -74,7 +74,7 @@ def get_agent_task_sse_stream():
         task_id = request.args.get("task_id")
 
         return Response(
-            Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=task_id),
+            Web_Server_Task_Manager.get_task_output_sse_stream_gen(task_id=task_id),
             mimetype='text/event-stream'
         )
 

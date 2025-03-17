@@ -31,8 +31,14 @@ class Web_Server_Task_Info():
     # task的状态
     task_status:str                 = Web_Server_Task_Status.NOT_STARTED
 
-    # task的msg队列（用于stream输出信息给client）
-    task_stream_queue_obj:queue.Queue  = field(default_factory=queue.Queue)
+    # task的output msg队列（用于stream输出信息给client）
+    task_output_stream_queue_obj:queue.Queue  = field(default_factory=queue.Queue)
+
+    # task的thinking msg队列（用于stream输出信息给client）
+    task_thinking_stream_queue_obj:queue.Queue  = field(default_factory=queue.Queue)
+
+    # task的log msg队列（用于stream输出信息给client）
+    task_log_stream_queue_obj:queue.Queue  = field(default_factory=queue.Queue)
 
 # 用于管理在web server侧运行的task
 # 1、全系统唯一的task ID
@@ -65,14 +71,18 @@ class Web_Server_Task_Manager():
             session_id = Session_ID.PREFIX + str(uuid.uuid4())
 
         # 创建消息队列用于stream
-        task_stream_queue = queue.Queue()
+        task_output_stream_queue = queue.Queue()
+        task_thinking_stream_queue = queue.Queue()
+        task_log_stream_queue = queue.Queue()
 
         # 注册task info(其中还调用了set_output_stream_buf)
         Web_Server_Task_Manager.g_tasks_info_dict[session_id] = Web_Server_Task_Info(
             task_id=session_id,
             task_obj=task_obj,
             task_status=Web_Server_Task_Status.STARTED,
-            task_stream_queue_obj=task_stream_queue,
+            task_output_stream_queue_obj=task_output_stream_queue,
+            task_thinking_stream_queue_obj=task_thinking_stream_queue,
+            task_log_stream_queue_obj=task_log_stream_queue,
         )
 
         # task初始化
@@ -80,7 +90,7 @@ class Web_Server_Task_Manager():
             task_obj.init()
             try:
                 # 设置最终结果stream输出的func
-                task_obj.set_output_stream_buf(task_stream_queue.put)
+                task_obj.set_output_stream_buf(task_output_stream_queue.put)
             except Exception as e:
                 dred(f'Web_Server_Task_Manager.start_task() set_output_stream_buf()报错: "{e}"')
 
@@ -92,12 +102,12 @@ class Web_Server_Task_Manager():
 
             # 测试stream
             if Web_Server_Task_Manager.g_local_debug:
-                task_stream_queue.put('5')
-                task_stream_queue.put('6')
-                task_stream_queue.put('7')
+                task_output_stream_queue.put('5')
+                task_output_stream_queue.put('6')
+                task_output_stream_queue.put('7')
 
             # 任务结束标志（重要！）
-            task_stream_queue.put(None)
+            task_output_stream_queue.put(None)
 
             Web_Server_Task_Manager.g_tasks_info_dict[session_id].task_status = Web_Server_Task_Status.FINISHED
 
@@ -112,12 +122,12 @@ class Web_Server_Task_Manager():
 
     # 获取task的输出stream(方便用户进行sse调用output、thinking、log等stream数据)
     @classmethod
-    def get_task_sse_stream_gen(cls, task_id):
+    def get_task_output_sse_stream_gen(cls, task_id):
         if Web_Server_Task_Manager.g_local_debug:
             task_id = Session_ID.PREFIX + task_id
 
         # 获取该task的msg_queue
-        task_stream_queue = Web_Server_Task_Manager.g_tasks_info_dict[task_id].task_stream_queue_obj
+        task_output_stream_queue = Web_Server_Task_Manager.g_tasks_info_dict[task_id].task_output_stream_queue_obj
 
         # ======================================SSE封装=========================================
         # 大坑：典型的 SSE（Server-Sent Events）坑点，SSE 规范要求每个事件块之间都要用一个空行（也就是至少 \n\n）来分隔，否则前端的 SSE 解析往往会报错或无法成功解析
@@ -126,12 +136,12 @@ class Web_Server_Task_Manager():
             # 获取msg_queue的steam数据
             received = False
             while True:
-                chunk = task_stream_queue.get()
+                chunk = task_output_stream_queue.get()
                 if chunk is None:  # 结束标志
                     break
                 if chunk and not received:
                     received = True
-                    dyellow(f'task stream队列(id "{task_id}")'.center(80, '='))
+                    dyellow(f'task output stream队列(id "{task_id}")'.center(80, '='))
 
                 dyellow(chunk, end='', flush=True)
                 yield f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"
@@ -140,7 +150,73 @@ class Web_Server_Task_Manager():
             dyellow('\n')
 
             if received:
-                dyellow(f'/task stream队列(id "{task_id}")'.center(80, '-'))
+                dyellow(f'/task output stream队列(id "{task_id}")'.center(80, '-'))
+        # ======================================SSE封装=========================================
+        return _generate()
+
+    @classmethod
+    def get_task_thinking_sse_stream_gen(cls, task_id):
+        if Web_Server_Task_Manager.g_local_debug:
+            task_id = Session_ID.PREFIX + task_id
+
+        # 获取该task的msg_queue
+        task_thinking_stream_queue = Web_Server_Task_Manager.g_tasks_info_dict[task_id].task_thinking_stream_queue_obj
+
+        # ======================================SSE封装=========================================
+        # 大坑：典型的 SSE（Server-Sent Events）坑点，SSE 规范要求每个事件块之间都要用一个空行（也就是至少 \n\n）来分隔，否则前端的 SSE 解析往往会报错或无法成功解析
+        # 因此，每一个f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"的最后必须要有\n\n才行，否则client会报错！！！
+        def _generate():
+            # 获取msg_queue的steam数据
+            received = False
+            while True:
+                chunk = task_thinking_stream_queue.get()
+                if chunk is None:  # 结束标志
+                    break
+                if chunk and not received:
+                    received = True
+                    dyellow(f'task thinking stream队列(id "{task_id}")'.center(80, '='))
+
+                dyellow(chunk, end='', flush=True)
+                yield f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"
+
+            yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}\n\n"
+            dyellow('\n')
+
+            if received:
+                dyellow(f'/task thinking stream队列(id "{task_id}")'.center(80, '-'))
+        # ======================================SSE封装=========================================
+        return _generate()
+
+    @classmethod
+    def get_task_log_sse_stream_gen(cls, task_id):
+        if Web_Server_Task_Manager.g_local_debug:
+            task_id = Session_ID.PREFIX + task_id
+
+        # 获取该task的msg_queue
+        task_log_stream_queue = Web_Server_Task_Manager.g_tasks_info_dict[task_id].task_log_stream_queue_obj
+
+        # ======================================SSE封装=========================================
+        # 大坑：典型的 SSE（Server-Sent Events）坑点，SSE 规范要求每个事件块之间都要用一个空行（也就是至少 \n\n）来分隔，否则前端的 SSE 解析往往会报错或无法成功解析
+        # 因此，每一个f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"的最后必须要有\n\n才行，否则client会报错！！！
+        def _generate():
+            # 获取msg_queue的steam数据
+            received = False
+            while True:
+                chunk = task_log_stream_queue.get()
+                if chunk is None:  # 结束标志
+                    break
+                if chunk and not received:
+                    received = True
+                    dyellow(f'task log stream队列(id "{task_id}")'.center(80, '='))
+
+                dyellow(chunk, end='', flush=True)
+                yield f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"
+
+            yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}\n\n"
+            dyellow('\n')
+
+            if received:
+                dyellow(f'/task log stream队列(id "{task_id}")'.center(80, '-'))
         # ======================================SSE封装=========================================
         return _generate()
 
@@ -152,7 +228,7 @@ def main():
     print()
     print(Web_Server_Task_Manager.g_tasks_info_dict[Session_ID.PREFIX+session_id])
     print()
-    gen = Web_Server_Task_Manager.get_task_sse_stream_gen(task_id=session_id)
+    gen = Web_Server_Task_Manager.get_task_output_sse_stream_gen(task_id=session_id)
     for chunk in gen:
         print(chunk)
         # print(chunk, end='', flush=True)
