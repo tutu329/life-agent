@@ -41,8 +41,10 @@ class Tool_Agent(Server_Base):
                  in_api_key='empty',
                  in_temperature=0.7,
                  # remove_content_in_think_pairs=False,
+                 in_is_web_server=True,
                  ):
         self.llm = None
+        self.is_web_server = in_is_web_server
         self.temperature = in_temperature
         self.url = in_base_url
         self.api_key = in_api_key
@@ -372,7 +374,7 @@ class Tool_Agent(Server_Base):
         #     action_result = tool.call(in_answer)
         # else:
         if self.registered_tool_instances_dict.get(tool_name):
-            action_result = self.registered_tool_instances_dict[tool_name].call(in_answer)
+            action_result = self.registered_tool_instances_dict[tool_name].call(in_answer, in_is_web_server=self.is_web_server)
         else:
             self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------

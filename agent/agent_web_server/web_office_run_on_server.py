@@ -13,6 +13,7 @@ from agent.base_tool import PROMPT_REACT
 from agent.base_tool import Base_Tool
 from agent.tool_agent import Tool_Agent
 from agent.tools.folder_tool import Folder_Tool
+from agent.tools.table_tool import Table_Tool
 from server_manager.web_server_task_manager import Web_Server_Task_Manager
 
 from client.office.office_client import Web_Office_Write
@@ -42,10 +43,11 @@ def start_agent_task():
         base_url = data.get('base_url', 'https://api.deepseek.com/v1')
         api_key = data.get('api_key', 'sk-c1d34a4f21e3413487bb4b2806f6c4b8')
 
-        tools = [Folder_Tool]
+        # tools = [Folder_Tool, Table_Tool]
         # Create agent instance
         agent = Web_Office_Write(
-            scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
+            scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲.txt',
+            # scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
             base_url=base_url,
             api_key=api_key,
             temperature=config.LLM_Default.temperature

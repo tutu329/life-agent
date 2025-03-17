@@ -10,7 +10,18 @@ import json5
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 
-def extract_table_to_word(excel_path, sheet_name, table_title='', is_vertical=True, draw_table='true') -> str:
+def _draw_table_on_web_page(table_data):
+    dred(f'_draw_table_on_web_page() starts to draw table on web page...')
+    pass
+
+def extract_table_to_word(
+        excel_path,
+        sheet_name,
+        table_title='',
+        is_vertical=True,
+        draw_table='true',
+        is_web_server=True,
+) -> str:
     """
     从指定的 Excel 文件和工作表中提取表格数据，并将其以文本形式复制到 Word 中，
     根据每个单元格的 NumberFormat 格式化数值，包括百分数格式。
@@ -101,6 +112,10 @@ def extract_table_to_word(excel_path, sheet_name, table_title='', is_vertical=Tr
         excel.Quit()
 
         if draw_table=='false':
+            return table_text
+
+        if is_web_server:
+            _draw_table_on_web_page(table_data=data)
             return table_text
 
         # 获取当前光标位置
@@ -282,7 +297,7 @@ class Table_Tool(Base_Tool):
     def __init__(self):
         pass
 
-    def call(self, in_thoughts):
+    def call(self, in_thoughts, in_is_web_server=True):
         dred('-----------------Table_Tool.call() invoked.---------------------')
         dict_string = extract_dict_string(in_thoughts)
         dict = json5.loads(dict_string)
@@ -300,6 +315,7 @@ class Table_Tool(Base_Tool):
             table_title=table_title,
             is_vertical=is_vertical,
             draw_table=draw_table,
+            is_web_server=in_is_web_server,
         )
 
         # 调用工具后，结果作为action_result返回
