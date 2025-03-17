@@ -432,7 +432,7 @@ def index():
 
                     // Listen for errors
                     thinking_eventSource.onerror = function(error) {
-                        statusEl.textContent = 'thinking stream错误';
+                        // statusEl.textContent = 'thinking stream错误';
                         console.error('thinking stream SSE错误:', error);
                         thinking_eventSource.close();
                     };
