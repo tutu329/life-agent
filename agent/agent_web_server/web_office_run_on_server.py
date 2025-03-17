@@ -83,6 +83,7 @@ def get_agent_task_output_sse_stream():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/api/get_agent_task_thinking_sse_stream', methods=['GET'])
 def get_agent_task_thinking_sse_stream():
     try:
@@ -96,6 +97,7 @@ def get_agent_task_thinking_sse_stream():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/api/get_agent_task_log_sse_stream', methods=['GET'])
 def get_agent_task_log_sse_stream():
     try:
@@ -108,6 +110,7 @@ def get_agent_task_log_sse_stream():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/')
 def index():
@@ -392,22 +395,22 @@ def index():
                             // Insert message into Quill editor
                             // 获取编辑器内容长度，注意 -1 防止末尾换行
                             let cursorPosition = quill.getLength() - 1;
-                            
+
                             // 防止编辑器为空时报错
                             cursorPosition = cursorPosition < 0 ? 0 : cursorPosition;
-                            
+
                             // Insert message into Quill editor at correct position
                             quill.insertText(cursorPosition, data.message);
-                            
+
                             // 计算插入文本的长度
                             let insertedLength = data.message.length;
-                            
+
                             // 应用字体和字号（内联格式）
                             quill.formatText(cursorPosition, insertedLength, {
                               'font': 'SimSun',   // 设置字体为宋体
                               'size': '16px'      // 设置字号为小四，约16px
                             });
-                            
+
                             // 可选：移动光标到插入文本之后
                             quill.setSelection(cursorPosition + data.message.length, 0);
                         }
@@ -419,8 +422,8 @@ def index():
                         console.error('SSE错误:', error);
                         eventSource.close();
                     };
-                    
-                    
+
+
                     thinking_eventSource = new EventSource('/api/get_agent_task_thinking_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
                     console.log('创建thinking SSE连接成功.');
                     console.log('thinking_eventSource: ', thinking_eventSource);
