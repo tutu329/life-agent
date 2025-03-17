@@ -22,17 +22,30 @@ class Web_Server_Task_Status():
 
 @dataclass
 class Web_Server_Task_Info():
-    task_id:str                     = ''                                                        # task的ID
-    task_obj:Any                    = None                                                      # 无类型限制，使用Any
-    task_status:str                 = Web_Server_Task_Status.NOT_STARTED                        # task的状态
-    task_stream_queue_obj:queue.Queue  = field(default_factory=queue.Queue)                     # task的msg队列（用于stream输出信息给client）
+    # task的ID，目前为PREFIX+session_id(浏览器唯一), 后续可以为PREFIX+user_id+uuid
+    task_id:str                     = ''
 
+    # task对象，如agent_obj
+    task_obj:Any                    = None
+
+    # task的状态
+    task_status:str                 = Web_Server_Task_Status.NOT_STARTED
+
+    # task的msg队列（用于stream输出信息给client）
+    task_stream_queue_obj:queue.Queue  = field(default_factory=queue.Queue)
+
+# 用于管理在web server侧运行的task
+# 1、全系统唯一的task ID
+# 2、task对应的obj，如agent_obj
+# 3、task状态
+# 4、task向前端输出的sse stream(通过queue实现)
 class Web_Server_Task_Manager():
-    # 用一个字典管理所有任务ID -> 消息队列(或其他数据结构)
+    # 用一个字典管理所有任务ID
     g_tasks_info_dict = {
-        # 'task_id_xxx': Agent_Task_Info(xxx)
+        # 'task_id_xxx': Web_Server_Task_Info(xxx)
     }
 
+    # 用于判断是否为local debug
     g_local_debug = False
 
     # 启动task
