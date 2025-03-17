@@ -130,6 +130,11 @@ class Tool_Agent(Server_Base):
         if self.thinking_stream_buf is not None:
             self.thinking_stream_buf(chunk, **kwargs)
 
+    # log内容的stream输出chunk
+    def log_stream_chunk(self, chunk, **kwargs):
+        if self.log_stream_buf is not None:
+            self.log_stream_buf(chunk, **kwargs)
+
     # 中间状态stream输出(注意：streamlit的status不支持stream输出，只能打印)
     def status_stream(self, in_chunk, in_full_response):
         if self.sstream is not None:
@@ -373,6 +378,7 @@ class Tool_Agent(Server_Base):
         # --------------------------- call tool ---------------------------
 
         self.status_print(f'调用工具的行动结果为: \n{action_result}')
+        self.log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
 
         # dblue(f'action_result(turn {self.turns_num})'.center(80, '='))
         # dblue(action_result)

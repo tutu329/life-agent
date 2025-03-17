@@ -196,15 +196,14 @@ def index():
             margin-top: 20px;
             border: 1px solid #ddd;
             padding: 15px;
+            padding-bottom: 20px; /* 增加底部内边距 */
             border-radius: 4px;
             background-color: #f9f9f9;
-            flex-grow: 1;
-            height: 0; /* This forces the element to respect flex constraints */
-            min-height: 200px; /* Minimum height for the output area */
-            max-height: 100%; /* Maximum height constraint */
-            overflow-y: auto; /* Add vertical scrollbar when needed */
+            flex-grow: 1; /* 自适应高度 */
+            overflow-y: auto; /* 保持滚动条 */
             white-space: pre-wrap;
-            font-size: 9px; /* Reduced font size by 3 units from default 12px */
+            font-size: 9px;
+            box-sizing: border-box; /* 确保内边距计算正确 */
         }
         .status {
             margin-top: 10px;
@@ -426,7 +425,10 @@ def index():
                             thinking_eventSource.close();
                         } else if (data.message) {
                             // --------------Append message to output area--------------
-                            outputEl.textContent += data.message;                           
+                            //outputEl.textContent += data.message;      
+                            let color = "green";    
+                            outputEl.innerHTML += `<span style="color:${color}">${data.message}</span>`;
+                            outputEl.scrollTop = outputEl.scrollHeight; // 自动滚动到底部             
                         }
                     };
 
@@ -435,6 +437,35 @@ def index():
                         // statusEl.textContent = 'thinking stream错误';
                         console.error('thinking stream SSE错误:', error);
                         thinking_eventSource.close();
+                    };
+
+                    log_eventSource = new EventSource('/api/get_agent_task_log_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    console.log('创建log SSE连接成功.');
+                    console.log('log_eventSource: ', log_eventSource);
+
+                    // Listen for log messages
+                    log_eventSource.onmessage = function(event) {
+                        console.log("收到log SSE数据:", event.data);
+                        const data = JSON.parse(event.data);
+
+                        if (data['[done]']) {
+                            // Processing complete
+                            statusEl.textContent = '完成';
+                            thinking_eventSource.close();
+                        } else if (data.message) {
+                            // --------------Append message to output area--------------
+                            //outputEl.textContent += data.message;      
+                            let color = "black";    
+                            outputEl.innerHTML += `<span style="color:${color}">${data.message}</span>`;
+                            outputEl.scrollTop = outputEl.scrollHeight; // 自动滚动到底部             
+                        }
+                    };
+
+                    // Listen for errors
+                    log_eventSource.onerror = function(error) {
+                        // statusEl.textContent = 'log stream错误';
+                        console.error('log stream SSE错误:', error);
+                        log_eventSource.close();
                     };
                 })
                 .catch(error => {
