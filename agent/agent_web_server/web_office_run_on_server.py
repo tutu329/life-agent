@@ -428,12 +428,31 @@ def index():
                             statusEl.textContent = '完成';
                             eventSource.close();
                         } else if (data.message) {
-                            // Append message to output area
+                            // --------------Append message to output area--------------
                             outputEl.textContent += data.message;
 
+                            // --------------Append message to quill area--------------
                             // Insert message into Quill editor
-                            const cursorPosition = quill.getLength();
+                            // 获取编辑器内容长度，注意 -1 防止末尾换行
+                            let cursorPosition = quill.getLength() - 1;
+                            
+                            // 防止编辑器为空时报错
+                            cursorPosition = cursorPosition < 0 ? 0 : cursorPosition;
+                            
+                            // Insert message into Quill editor at correct position
                             quill.insertText(cursorPosition, data.message);
+                            
+                            // Apply current font settings to newly inserted text
+                            quill.formatText(
+                                cursorPosition,
+                                data.message.length,
+                                {
+                                    'font': fontStyleSelector.value
+                                }
+                            );
+                            
+                            // 可选：移动光标到插入文本之后
+                            quill.setSelection(cursorPosition + data.message.length, 0);
 
                             // Apply current font settings to newly inserted text
                             quill.formatText(
@@ -443,6 +462,8 @@ def index():
                                     'font': fontStyleSelector.value
                                 }
                             );
+                            // --------------/Append message to quill area--------------
+                            
                         }
                     };
 
