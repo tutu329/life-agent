@@ -68,8 +68,8 @@ def start_agent_task():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/get_agent_task_sse_stream', methods=['GET'])
-def get_agent_task_sse_stream():
+@app.route('/api/get_agent_task_output_sse_stream', methods=['GET'])
+def get_agent_task_output_sse_stream():
     try:
         task_id = request.args.get("task_id")
 
@@ -81,6 +81,31 @@ def get_agent_task_sse_stream():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/get_agent_task_thinking_sse_stream', methods=['GET'])
+def get_agent_task_thinking_sse_stream():
+    try:
+        task_id = request.args.get("task_id")
+
+        return Response(
+            Web_Server_Task_Manager.get_task_thinking_sse_stream_gen(task_id=task_id),
+            mimetype='text/event-stream'
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/get_agent_task_log_sse_stream', methods=['GET'])
+def get_agent_task_log_sse_stream():
+    try:
+        task_id = request.args.get("task_id")
+
+        return Response(
+            Web_Server_Task_Manager.get_task_log_sse_stream_gen(task_id=task_id),
+            mimetype='text/event-stream'
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/')
 def index():
@@ -311,11 +336,11 @@ def index():
                     console.log('task_id_from_server: ', task_id_from_server);
                     console.log('尝试创建SSE连接...');
 
-                    eventSource = new EventSource('/api/get_agent_task_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    eventSource = new EventSource('/api/get_agent_task_output_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
                     console.log('创建SSE连接成功.');
                     console.log('eventSource: ', eventSource);
 
-                    // Listen for messages
+                    // Listen for output messages
                     eventSource.onmessage = function(event) {
                         console.log("收到SSE数据:", event.data);
                         const data = JSON.parse(event.data);
@@ -326,7 +351,7 @@ def index():
                             eventSource.close();
                         } else if (data.message) {
                             // --------------Append message to output area--------------
-                            outputEl.textContent += data.message;
+                            //outputEl.textContent += data.message;
 
                             // --------------Append message to quill area--------------
                             // Insert message into Quill editor
@@ -351,6 +376,36 @@ def index():
                         console.error('SSE错误:', error);
                         eventSource.close();
                     };
+                    
+                    
+                    thinking_eventSource = new EventSource('/api/get_agent_task_thinking_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    console.log('创建thinking SSE连接成功.');
+                    console.log('thinking_eventSource: ', thinking_eventSource);
+
+                    // Listen for thinking messages
+                    thinking_eventSource.onmessage = function(event) {
+                        console.log("收到thinking SSE数据:", event.data);
+                        const data = JSON.parse(event.data);
+
+                        if (data['[done]']) {
+                            // Processing complete
+                            statusEl.textContent = '完成';
+                            thinking_eventSource.close();
+                        } else if (data.message) {
+                            // --------------Append message to output area--------------
+                            outputEl.textContent += data.message;                           
+                        }
+                    };
+
+                    // Listen for errors
+                    thinking_eventSource.onerror = function(error) {
+                        statusEl.textContent = 'thinking stream错误';
+                        console.error('thinking stream SSE错误:', error);
+                        thinking_eventSource.close();
+                    };
+                    
+                    
+                    
                 })
                 .catch(error => {
                     statusEl.textContent = '错误';

@@ -240,6 +240,8 @@ def _ask_agent(
         prompt,
         output_stream_buf=dyellow,
         output_stream_end_func=None,
+        thinking_stream_buf=None,
+        log_stream_buf=None,
         base_url=config.LLM_Default.url,
         temperature=0.7,
         api_key='empty'
@@ -249,6 +251,8 @@ def _ask_agent(
         in_query=prompt,
         in_tool_classes=tools,
         in_output_stream_buf=output_stream_buf,     # 最终输出 -> dyellow
+        in_thinking_stream_buf=thinking_stream_buf,
+        in_log_stream_buf=log_stream_buf,
         in_output_end=output_stream_end_func,
         in_base_url=base_url,
         in_api_key=api_key,
@@ -327,6 +331,8 @@ class Web_Office_Write(Server_Base):
                     result = _ask_agent(
                         prompt,
                         output_stream_buf=self.insert_text_at_cursor_without_end,
+                        thinking_stream_buf=self.thinking_stream_buf,
+                        log_stream_buf=self.log_stream_buf,
                         output_stream_end_func=self.insert_text_end_at_cursor,
                         base_url=self.base_url,
                         api_key=self.api_key,
@@ -340,6 +346,8 @@ class Web_Office_Write(Server_Base):
                     result = _ask_agent(
                         prompt,
                         output_stream_buf=self.insert_text_at_cursor_without_end,
+                        thinking_stream_buf=self.thinking_stream_buf,
+                        log_stream_buf=self.log_stream_buf,
                         output_stream_end_func=self.insert_text_end_at_cursor,
                         base_url=self.base_url,
                         api_key=self.api_key,

@@ -89,8 +89,10 @@ class Web_Server_Task_Manager():
         if task_obj is not None:
             task_obj.init()
             try:
-                # 设置最终结果stream输出的func
+                # 设置stream输出的func
                 task_obj.set_output_stream_buf(task_output_stream_queue.put)
+                task_obj.set_thinking_stream_buf(task_thinking_stream_queue.put)
+                task_obj.set_log_stream_buf(task_log_stream_queue.put)
             except Exception as e:
                 dred(f'Web_Server_Task_Manager.start_task() set_output_stream_buf()报错: "{e}"')
 

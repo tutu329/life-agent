@@ -237,13 +237,14 @@ class Tool_Agent(Server_Base):
                     else:
                         # 输出到如word文档中
                         self.output_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
-                        self.thinking_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
+                        # self.thinking_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
                     str_last_turn = str_this_turn
                 else:
                     # 采用full_string输出
                     self.output_stream_full_string(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
                     # self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
             else:
+                self.thinking_stream_chunk(chunk)
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
                 # self.status_stream(chunk, thoughts)
 
