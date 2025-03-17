@@ -17,11 +17,13 @@ from agent.base_tool import Base_Tool
 import config
 from config import dred, dgreen, dblue, dcyan, dyellow
 
+from server_manager.server_base import Server_Base
+
 # from agent.tools.code_tool import Code_Tool
 # from agent.tools.energy_investment_plan_tool import Energy_Investment_Plan_Tool
 # from agent.tools.url_content_qa_tool import Url_Content_QA_Tool
 
-class Tool_Agent():
+class Tool_Agent(Server_Base):
     def __init__(self,
                  in_query,
                  in_tool_classes,
