@@ -28,6 +28,7 @@ from agent.tools.search_tool import Search_Tool
 from agent.tools.table_tool import Table_Tool
 
 from config import dred, dgreen, dblue, dcyan, dyellow
+from server_manager.server_base import Server_Base
 
 @singleton
 class Office_Client():
@@ -271,6 +272,85 @@ def _ask_agent(
 
     return result
 
+class Web_Office_Write(Server_Base):
+    def __init__(self,
+                 scheme_file_path,
+                 base_url=config.LLM_Default.url,
+                 api_key=config.LLM_Default.api_key,
+                 temperature=config.LLM_Default.temperature
+                 ):
+        self.scheme_file_path = scheme_file_path
+        self.base_url = base_url
+        self.api_key = api_key
+        self.temperature = temperature
+        self.output_stream_buf = None
+
+    def init(self) -> None:
+        pass
+
+
+    def insert_heading_at_cursor(self, heading, style='标题 1'):
+        pass
+
+    def insert_text_at_cursor_without_end(self, text, style='！正文'):
+        pass
+
+    def insert_text_end_at_cursor(self):
+        pass
+
+    def run(self) -> None:
+        # 读取报告编制指令
+        scheme_list = get_scheme_list(self.scheme_file_path)
+        dyellow(f'报告提纲({self.scheme_file_path})读取完毕.')
+
+        # 初始化office自动化工具
+        # office = Office_Client(
+        #     base_url=base_url,
+        #     api_key=api_key,
+        #     temperature=temperature,
+        # )
+        # dyellow(f'已获取office对象.')
+
+        # 编制报告
+        for item in scheme_list:
+            chapter_info = _get_chapter_info(item)
+            if chapter_info.type == 'chapter':
+                dblue(f'chapter_info: "{chapter_info}"')
+                # 编写标题
+                self.insert_heading_at_cursor(heading=chapter_info.heading, style=chapter_info.heading_style)
+                if chapter_info.prompt != '':
+                    # 编写正文
+                    prompt = chapter_info.prompt
+                    result = _ask_agent(
+                        prompt,
+                        output_stream_buf=self.insert_text_at_cursor_without_end,
+                        output_stream_end_func=self.insert_text_end_at_cursor,
+                        base_url=self.base_url,
+                        api_key=self.api_key,
+                        temperature=self.temperature
+                    )
+                    # office.word_insert_text_at_cursor(text=result)
+            elif chapter_info.type == 'alone_text':
+                if chapter_info.prompt != '':
+                    # 编写正文
+                    prompt = chapter_info.prompt
+                    result = _ask_agent(
+                        prompt,
+                        output_stream_buf=self.insert_text_at_cursor_without_end,
+                        output_stream_end_func=self.insert_text_end_at_cursor,
+                        base_url=self.base_url,
+                        api_key=self.api_key,
+                        temperature=self.temperature
+                    )
+
+        # office.word_insert_heading_at_cursor('一、概要', '标题 1')
+        # office.word_insert_heading_at_cursor('1、现状', '标题 2')
+        # office.word_insert_llm_stream_at_cursor('我叫土土')
+
+    def set_output_stream_buf(self, in_output_stream_buf):
+        self.output_stream_buf = in_output_stream_buf
+
+
 # 电厂接入系统报告的编制
 def report_on_plant_grid_connection_system(scheme_file_path, base_url=config.LLM_Default.url, api_key=config.LLM_Default.api_key, temperature=config.LLM_Default.temperature):
     # 读取报告编制指令
@@ -349,6 +429,10 @@ def agent_tool_test():
     print(f'最终答复:')
     print(agent.get_final_answer())
 
+def server_main():
+    Web_Office_Write
+
 if __name__ == "__main__":
-    main()
+    # main()
+    server_main()
     # agent_tool_test()
