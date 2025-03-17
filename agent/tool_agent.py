@@ -503,7 +503,25 @@ def main3():
     agent.init()
     success = agent.run()
 
+def table_main():
+    from agent.tools.table_tool import Table_Tool
+    tools = [Table_Tool]
+    base_url = 'https://api.deepseek.com/v1'
+    api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
+
+    prompt = '从"Y:/life-agent/agent/agent_web_server/负荷数据.xlsx"的工作表"节点"里获取负荷预测数据，并返回'
+    agent = Tool_Agent(in_query=prompt, in_tool_classes=tools, in_base_url=base_url, in_api_key=api_key)
+    agent.init()
+    success = agent.run()
+
+    if success:
+        dblue(f"\n[运行结果]大语言模型agent(Table_Tool)执行成功。")
+        result = agent.get_final_answer()
+        dblue(result)
+
 if __name__ == "__main__":
     # main()
     # main2()
-    main3()
+
+    table_main()
+    # main3()

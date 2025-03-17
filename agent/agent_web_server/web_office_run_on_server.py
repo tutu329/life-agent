@@ -45,9 +45,9 @@ def start_agent_task():
         tools = [Folder_Tool]
         # Create agent instance
         agent = Web_Office_Write(
-            scheme_file_path='Y:/life-agent/client/office/xiaoshan_prj/scheme.txt',
-            base_url=config.LLM_Default.url,
-            api_key=config.LLM_Default.api_key,
+            scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
+            base_url=base_url,
+            api_key=api_key,
             temperature=config.LLM_Default.temperature
         )
 
