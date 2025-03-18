@@ -114,14 +114,17 @@ def get_agent_task_log_sse_stream():
 
 @app.route('/')
 def index():
-    # Return the improved HTML content with fixes for Word editor
+    # Return the improved HTML content with CKEditor5 replacing Quill editor
     html_content = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>报告自主编制</title>
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <!-- 移除 Quill CSS -->
+    <!-- <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"> -->
+    <!-- 引入 CKEditor5 Classic Build -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -138,10 +141,10 @@ def index():
             max-width: 1200px;
             margin: 0 auto;
             gap: 20px;
-            height: calc(100vh - 40px); /* Account for the body padding */
+            height: calc(100vh - 40px);
         }
         .word-editor {
-            flex: 2; /* Changed from 1 to 2 to make it 2/3 of the width */
+            flex: 2;
             background: white;
             padding: 20px;
             border-radius: 8px;
@@ -153,7 +156,7 @@ def index():
             overflow: hidden;
         }
         .control-panel {
-            flex: 1; /* This remains 1 to make it 1/3 of the width */
+            flex: 1;
             background: white;
             padding: 20px;
             border-radius: 8px;
@@ -166,7 +169,7 @@ def index():
         h1 {
             color: #333;
             text-align: center;
-            font-size: 16px; /* Small sanhao size (小三号) */
+            font-size: 16px;
             margin-top: 0;
         }
         .form-group {
@@ -201,56 +204,38 @@ def index():
             margin-top: 20px;
             border: 1px solid #ddd;
             padding: 15px;
-            padding-bottom: 20px; /* 增加底部内边距 */
+            padding-bottom: 20px;
             border-radius: 4px;
             background-color: #f9f9f9;
-            flex-grow: 1; /* 自适应高度 */
-            overflow-y: auto; /* 保持滚动条 */
+            flex-grow: 1;
+            overflow-y: auto;
             white-space: pre-wrap;
             font-size: 9px;
-            box-sizing: border-box; /* 确保内边距计算正确 */
+            box-sizing: border-box;
         }
         .status {
             margin-top: 10px;
             color: #666;
         }
-        /* Word Editor-like styles */
+        /* CKEditor 容器样式 */
         #editor-container {
             flex-grow: 1;
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
+        /* 保证 CKEditor 实例全屏展示 */
         #editor {
             flex-grow: 1;
             overflow-y: auto;
             border: 1px solid #ddd;
             background-color: white;
         }
-        .ql-toolbar {
-            border-top-left-radius: 4px;
-            border-top-right-radius: 4px;
-        }
-        /* Font size styles that match actual Word sizes */
-        .ql-size-small {
-            font-size: 10px;
-        }
-        .ql-size-normal {
-            font-size: 12px;
-        }
-        .ql-size-large {
-            font-size: 16px;
-        }
-        .ql-size-huge {
-            font-size: 20px;
-        }
-        /* Button alignment */
         .button-container {
             display: flex;
-            justify-content: flex-end; /* Align button to the right */
+            justify-content: flex-end;
             margin-bottom: 15px;
         }
-        /* Control panel content layout */
         .control-panel-content {
             flex-grow: 1;
             display: flex;
@@ -262,15 +247,12 @@ def index():
             flex-shrink: 0;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/5.0.2/docx.min.js"></script>
 </head>
 <body>
     <div class="main-container">
         <!-- Word编辑器部分 -->
         <div class="word-editor">
-            <!-- Quill editor with Word-like toolbar -->
+            <!-- CKEditor 容器 -->
             <div id="editor-container">
                 <div id="editor"></div>
             </div>
@@ -311,22 +293,15 @@ def index():
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Quill editor with Word-like toolbar options
-            var quill = new Quill('#editor', {
-                modules: {
-                    toolbar: [
-                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ 'color': [] }, { 'background': [] }],
-                        [{ 'align': [] }],
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        ['link', 'image'],
-                        ['clean']
-                    ]
-                },
-                placeholder: '在此输入内容...',
-                theme: 'snow'
-            });
+            // 初始化 CKEditor5
+            ClassicEditor
+                .create(document.querySelector('#editor'))
+                .then(editorInstance => {
+                    window.editor = editorInstance;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
 
             const runBtn = document.getElementById('run-btn');
             const outputEl = document.getElementById('output');
@@ -339,18 +314,18 @@ def index():
 
             // Run SSE task
             runBtn.addEventListener('click', function() {
-                // Clear previous output
+                // 清空之前的输出
                 outputEl.textContent = '';
 
-                // Update status
+                // 更新状态
                 statusEl.textContent = '处理中...';
 
-                // Close any existing connection
+                // 关闭任何已存在的连接
                 if (eventSource) {
                     eventSource.close();
                 }
 
-                // Prepare request data
+                // 准备请求数据
                 const requestData = {
                     query: queryEl.value,
                     tools: [],
@@ -358,7 +333,6 @@ def index():
                     api_key: apiKeyEl.value
                 };
 
-                // Send POST request
                 console.log('-------------------已发送/api/start_agent_task请求...--------------------------');
                 fetch('/api/start_agent_task', {
                     method: 'POST',
@@ -381,104 +355,74 @@ def index():
                     console.log('创建SSE连接成功.');
                     console.log('eventSource: ', eventSource);
 
-                    // Listen for output messages
+                    // 监听输出消息
                     eventSource.onmessage = function(event) {
                         console.log("收到SSE数据:", event.data);
                         const data = JSON.parse(event.data);
 
                         if (data['[done]']) {
-                            // Processing complete
                             statusEl.textContent = '完成';
                             eventSource.close();
                         } else if (data.message) {
-                            // --------------Append message to quill area--------------
-                            // 在这里绘制一个3x3的表格(表格数据随意示意一下) 
-                            // Insert message into Quill editor
-                            // 获取编辑器内容长度，注意 -1 防止末尾换行
-                            let cursorPosition = quill.getLength() - 1;
-
-                            // 防止编辑器为空时报错
-                            cursorPosition = cursorPosition < 0 ? 0 : cursorPosition;
-
-                            // Insert message into Quill editor at correct position
-                            quill.insertText(cursorPosition, data.message);
-
-                            // 计算插入文本的长度
-                            let insertedLength = data.message.length;
-
-                            // 应用字体和字号（内联格式）
-                            quill.formatText(cursorPosition, insertedLength, {
-                              'font': 'SimSun',   // 设置字体为宋体
-                              'size': '16px'      // 设置字号为小四，约16px
-                            });
-
-                            // 可选：移动光标到插入文本之后
-                            quill.setSelection(cursorPosition + data.message.length, 0);
+                            // 将消息追加到 CKEditor 内容末尾
+                            if (window.editor) {
+                                window.editor.model.change(writer => {
+                                    const root = window.editor.model.document.getRoot();
+                                    const insertPosition = window.editor.model.createPositionAt(root, 'end');
+                                    writer.insertText(data.message, {}, insertPosition);
+                                });
+                            }
                         }
                     };
 
-                    // Listen for errors
                     eventSource.onerror = function(error) {
                         statusEl.textContent = '错误';
                         console.error('SSE错误:', error);
                         eventSource.close();
                     };
 
-
-                    thinking_eventSource = new EventSource('/api/get_agent_task_thinking_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    let thinking_eventSource = new EventSource('/api/get_agent_task_thinking_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
                     console.log('创建thinking SSE连接成功.');
                     console.log('thinking_eventSource: ', thinking_eventSource);
 
-                    // Listen for thinking messages
                     thinking_eventSource.onmessage = function(event) {
                         console.log("收到thinking SSE数据:", event.data);
                         const data = JSON.parse(event.data);
 
                         if (data['[done]']) {
-                            // Processing complete
                             statusEl.textContent = '完成';
                             thinking_eventSource.close();
                         } else if (data.message) {
-                            // --------------Append message to output area--------------
-                            //outputEl.textContent += data.message;      
                             let color = "green";    
-                            outputEl.innerHTML += `<span style="color:${color}">${data.message}</span>`;
-                            outputEl.scrollTop = outputEl.scrollHeight; // 自动滚动到底部             
+                            outputEl.innerHTML += '<span style="color:' + color + '">' + data.message + '</span>';
+                            outputEl.scrollTop = outputEl.scrollHeight;
                         }
                     };
 
-                    // Listen for errors
                     thinking_eventSource.onerror = function(error) {
-                        // statusEl.textContent = 'thinking stream错误';
                         console.error('thinking stream SSE错误:', error);
                         thinking_eventSource.close();
                     };
 
-                    log_eventSource = new EventSource('/api/get_agent_task_log_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    let log_eventSource = new EventSource('/api/get_agent_task_log_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
                     console.log('创建log SSE连接成功.');
                     console.log('log_eventSource: ', log_eventSource);
 
-                    // Listen for log messages
                     log_eventSource.onmessage = function(event) {
                         console.log("收到log SSE数据:", event.data);
                         const data = JSON.parse(event.data);
 
                         if (data['[done]']) {
-                            // Processing complete
                             statusEl.textContent = '完成';
-                            thinking_eventSource.close();
+                            log_eventSource.close();
                         } else if (data.message) {
-                            // --------------Append message to output area--------------
-                            //outputEl.textContent += data.message;      
                             let color = "black";    
-                            outputEl.innerHTML += `<span style="color:${color}">${data.message}</span>`;
-                            outputEl.scrollTop = outputEl.scrollHeight; // 自动滚动到底部             
+                            outputEl.innerHTML += '<span style="color:' + color + '">' + data.message + '</span>';
+                            outputEl.scrollTop = outputEl.scrollHeight;
                         }
                     };
 
-                    // Listen for errors
                     log_eventSource.onerror = function(error) {
-                        // statusEl.textContent = 'log stream错误';
                         console.error('log stream SSE错误:', error);
                         log_eventSource.close();
                     };
