@@ -404,10 +404,25 @@ def index():
                             if (window.editor) {
                                 window.editor.model.change(writer => {
                                     const root = window.editor.model.document.getRoot();
+                                    // 定位到内容末尾，以便追加
                                     const insertPosition = window.editor.model.createPositionAt(root, 'end');
-                                    writer.insertText(data.message, {}, insertPosition);
+                                    
+                                    // 拆分行
+                                    const lines = data.message.split('\\n');
+                                    // const lines = data.message.split(/\\r?\\n/);
+                                    // 逐行插入
+                                    for (let i = 0; i < lines.length; i++) {
+                                        // 插入该行文本
+                                        writer.insertText(lines[i], insertPosition);
+                    
+                                        // 如果不是最后一行，则插入一个softBreak元素
+                                        // softBreak在CKEditor中会呈现出换行效果
+                                        if (i < lines.length - 1) {
+                                            writer.insertElement('softBreak', insertPosition);
+                                        }
+                                    }
                                 });
-                            } 
+                            }
                         }
                     };
 
