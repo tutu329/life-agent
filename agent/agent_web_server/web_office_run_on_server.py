@@ -288,12 +288,12 @@ def index():
                     </div>
 
                     <div class="form-group">
-                        <label for="base-url">API基础URL：</label>
+                        <label for="base-url">API Base-URL：</label>
                         <input type="text" id="base-url" value="https://api.deepseek.com/v1">
                     </div>
 
                     <div class="form-group">
-                        <label for="api-key">API密钥：</label>
+                        <label for="api-key">API-key：</label>
                         <input type="text" id="api-key" value="sk-c1d34a4f21e3413487bb4b2806f6c4b8">
                     </div>
 
@@ -392,6 +392,7 @@ def index():
                             eventSource.close();
                         } else if (data.message) {
                             // --------------Append message to quill area--------------
+                            // 在这里绘制一个3x3的表格(表格数据随意示意一下)
                             // Insert message into Quill editor
                             // 获取编辑器内容长度，注意 -1 防止末尾换行
                             let cursorPosition = quill.getLength() - 1;
