@@ -217,19 +217,30 @@ def index():
             margin-top: 10px;
             color: #666;
         }
-        /* CKEditor 容器样式 */
-        #editor-container {
+        /* 确保 CKEditor 编辑区域填满容器 */
+        .ck-editor__editable {
+            min-height: 400px !important;
+            height: 100% !important;
+        }
+        
+        /* 确保 CKEditor 容器本身也填满父容器 */
+        .ck.ck-editor {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .ck.ck-editor__main {
             flex-grow: 1;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
-        /* 保证 CKEditor 实例全屏展示 */
-        #editor {
-            flex-grow: 1;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            background-color: white;
+        
+        /* 确保编辑器容器有足够的高度 */
+        #editor-container {
+            height: calc(100%);
+            display: flex;
+            flex-direction: column;
         }
         .button-container {
             display: flex;
