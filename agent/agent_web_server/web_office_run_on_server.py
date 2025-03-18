@@ -371,7 +371,7 @@ def index():
                                     const insertPosition = window.editor.model.createPositionAt(root, 'end');
                                     writer.insertText(data.message, {}, insertPosition);
                                 });
-                            }
+                            } 
                         }
                     };
 
