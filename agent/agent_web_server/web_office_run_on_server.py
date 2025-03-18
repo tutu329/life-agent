@@ -46,8 +46,8 @@ def start_agent_task():
         # tools = [Folder_Tool, Table_Tool]
         # Create agent instance
         agent = Web_Office_Write(
-            # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲.txt',
-            scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
+            scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
+            # scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
             base_url=base_url,
             api_key=api_key,
             temperature=config.LLM_Default.temperature
