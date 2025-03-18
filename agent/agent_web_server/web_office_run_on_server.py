@@ -281,6 +281,13 @@ def index():
             min-height: 0 !important; /* 避免被默认撑高 */
             overflow-y: auto !important; /* 内容多时出现滚动 */
         }
+        /* 给编辑器最终渲染区（.ck-content）里的 table、td、th 加 1px 实线边框 */
+        .ck-content table,
+        .ck-content th,
+        .ck-content td {
+            border: 1px solid #000000;
+            border-collapse: collapse;
+        }        
     </style>
 
 </head>
@@ -400,6 +407,31 @@ def index():
                             statusEl.textContent = '完成';
                             eventSource.close();
                         } else if (data.message) {
+                            // 在这里绘制一个3x4的表格，表格数据随意示意下
+                            if (window.editor) {
+                                // 1) 创建表格
+                                window.editor.execute('insertTable', { rows: 3, columns: 4 });
+                                // 2) 写入文字
+                                window.editor.model.change(writer => {
+                                    const root = window.editor.model.document.getRoot();
+                                    const tableElement = root.getChild(root.childCount - 1);
+                            
+                                    for (let r = 0; r < tableElement.childCount; r++) {
+                                        const row = tableElement.getChild(r);
+                                        for (let c = 0; c < row.childCount; c++) {
+                                            const cell = row.getChild(c);
+                                            // 移除空段落
+                                            for (const child of Array.from(cell.getChildren())) {
+                                                writer.remove(child);
+                                            }
+                                            // 创建一个段落并写一些文本
+                                            const paragraph = writer.createElement('paragraph');
+                                            writer.insertText(`第${r + 1}行-第${c + 1}列`, paragraph);
+                                            writer.append(paragraph, cell);
+                                        }
+                                    }
+                                });
+                            }
                             // 将消息追加到 CKEditor 内容末尾
                             if (window.editor) {
                                 window.editor.model.change(writer => {
