@@ -126,46 +126,62 @@ def index():
     <!-- 引入 CKEditor5 Classic Build -->
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
     <style>
+        /* ********** 通用布局部分 ********** */
         body {
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
             margin: 0;
             padding: 20px;
             background-color: #f5f5f5;
+            /* 保证页面可用区域是可计算的固定高度，这里用 100vh - 40px 做演示 */
             height: 100vh;
-            overflow: hidden; 
+            overflow: hidden;
             box-sizing: border-box;
         }
         .main-container {
+            /* 让主容器本身有确定的高度，从 body 继承： */
+            height: calc(100vh - 40px);
             display: flex;
             max-width: 1200px;
             margin: 0 auto;
             gap: 20px;
-            height: calc(100vh - 40px);
+            box-sizing: border-box;
         }
+    
+        /* ********** CKEditor 左侧编辑区 ********** */
         .word-editor {
-            flex: 2;
+            /* 这块要让它随父容器(main-container)的高度自动分配 */
+            flex: 2;                
+            display: flex;          
+            flex-direction: column; 
+            box-sizing: border-box;
+    
+            /* 注意：如果此处写 overflow: hidden; 会把可滚动区域裁掉，或许你本意只是想隐藏外边框溢出。 
+               但为了避免干扰 CKEditor 内部滚动，这里最好先去掉。 */
+            /* overflow: hidden;  */
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            box-sizing: border-box;
-            overflow: hidden;
+    
+            /* flex 子元素想要正常弹性缩放，需要 min-height: 0; 保证可以被“压缩” */
+            min-height: 0;
         }
+    
+        /* ********** 右侧控制面板部分 ********** */
         .control-panel {
-            flex: 1;
+            flex: 1;                
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            min-height: 0; /* 同理，避免高度被“撑开” */
+            
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            box-sizing: border-box;
         }
+    
         h1 {
             color: #333;
             text-align: center;
@@ -180,7 +196,8 @@ def index():
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input[type="text"], textarea {
+        input[type="text"],
+        textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
@@ -200,11 +217,22 @@ def index():
         button:hover {
             background-color: #45a049;
         }
+    
+        /* ********** 右侧面板内的输出 ********** */
+        .control-panel-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* 避免被挤压时的高度问题 */
+            overflow: hidden;
+        }
+        .control-panel-inputs {
+            flex-shrink: 0;
+        }
         .output {
             margin-top: 20px;
             border: 1px solid #ddd;
-            padding: 15px;
-            padding-bottom: 20px;
+            padding: 15px 20px;
             border-radius: 4px;
             background-color: #f9f9f9;
             flex-grow: 1;
@@ -217,47 +245,44 @@ def index():
             margin-top: 10px;
             color: #666;
         }
-        /* 确保 CKEditor 编辑区域填满容器 */
-        .ck-editor__editable {
-            min-height: 400px !important;
-            height: 100% !important;
-        }
-        
-        /* 确保 CKEditor 容器本身也填满父容器 */
-        .ck.ck-editor {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        
-        .ck.ck-editor__main {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* 确保编辑器容器有足够的高度 */
-        #editor-container {
-            height: calc(100%);
-            display: flex;
-            flex-direction: column;
-        }
         .button-container {
             display: flex;
             justify-content: flex-end;
             margin-bottom: 15px;
         }
-        .control-panel-content {
-            flex-grow: 1;
+    
+        /* ********** CKEditor 填满父容器并滚动的关键 ********** */
+        #editor-container {
+            /* 让父容器可弹性伸缩，占满 .word-editor 中除去 padding 的剩余空间 */
+            flex: 1;
             display: flex;
             flex-direction: column;
-            height: 100%;
+            min-height: 0; /* 避免“被子元素撑高” */
+            /* 如果想让外面也有“裁剪”行为，可在此写 overflow: hidden; */
             overflow: hidden;
         }
-        .control-panel-inputs {
-            flex-shrink: 0;
+        /* CKEditor 最高父级 (.ck.ck-editor) 也要让它自适应伸缩 */
+        .ck.ck-editor {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        /* 让主编辑区 .ck.ck-editor__main 可以继续填满剩余空间 */
+        .ck.ck-editor__main {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0; /* 允许被挤压 */
+        }
+        /* 最终在可滚动的编辑区里打开滚动条 */
+        .ck-editor__editable {
+            flex: 1;
+            min-height: 0 !important; /* 避免被默认撑高 */
+            overflow-y: auto !important; /* 内容多时出现滚动 */
         }
     </style>
+
 </head>
 <body>
     <div class="main-container">
