@@ -392,7 +392,7 @@ def index():
                             eventSource.close();
                         } else if (data.message) {
                             // --------------Append message to quill area--------------
-                            // 在这里绘制一个3x3的表格(表格数据随意示意一下)
+                            // 在这里绘制一个3x3的表格(表格数据随意示意一下) 
                             // Insert message into Quill editor
                             // 获取编辑器内容长度，注意 -1 防止末尾换行
                             let cursorPosition = quill.getLength() - 1;
