@@ -8,6 +8,7 @@ from agent.base_tool import Base_Tool
 from utils.extract import extract_dict_string
 from utils.folder import get_folder_files_info_string
 import json5
+import json
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 from dataclasses import dataclass, asdict
@@ -330,7 +331,10 @@ class Table_Tool(Base_Tool):
         if draw_table=='true' and in_is_web_server and in_client_data_sse_stream_buf:
             table_data = Web_Client_Table_Data(content=table_text, caption=sheet_name)
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TABLE, data=table_data)
-            client_data_str = json5.dumps(asdict(client_data)).encode('utf-8').decode('unicode_escape')
+            client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+            # json5会导致传到client为JavaScript的对象字面量({type: "table", data: {content: "...", caption: "..."}})
+            # 而不是json格式({"type": "table", "data": {"content": "...", "caption": "..."}})
+            # client_data_str = json5.dumps(asdict(client_data)).encode('utf-8').decode('unicode_escape')
             dred(f'-----------------client data_str---------------\n{client_data_str}')
             dred(f'-----------------------------------------------\n')
             in_client_data_sse_stream_buf(client_data_str)
