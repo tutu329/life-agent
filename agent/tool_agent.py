@@ -32,6 +32,7 @@ class Tool_Agent(Server_Base):
                  in_output_stream_buf=None, # 最终答复stream输出的func
                  in_thinking_stream_buf=None,
                  in_log_stream_buf=None,
+                 in_tool_client_data_stream_buf=None,
                  in_output_end=None,        # 最终答复输出end的func
                  in_output_stream_to_console=False, # 最终答复是否stream输出到console
                  in_output_stream_use_chunk=True,   # 最终答复stream输出是否采用chunk方式，还是full_string方式
@@ -73,6 +74,7 @@ class Tool_Agent(Server_Base):
         self.output_stream_buf = in_output_stream_buf            # 最终结果stream输出的的func
         self.thinking_stream_buf = in_thinking_stream_buf            # 最终结果stream输出的的func
         self.log_stream_buf = in_log_stream_buf            # 最终结果stream输出的的func
+        self.tool_client_data_stream_buf = in_tool_client_data_stream_buf            # 最终结果stream输出的的func
 
         self.ostream_end_func = in_output_end               # 最终结果stream输出的end的func
         self.ostream_use_chunk = in_output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
@@ -96,6 +98,9 @@ class Tool_Agent(Server_Base):
     # 设置最终结果stream输出的func
     def set_log_stream_buf(self, in_log_stream_buf):
         self.log_stream_buf = in_log_stream_buf            # 最终结果stream输出的的func
+
+    def set_tool_client_data_stream_buf(self, in_tool_client_data_stream_buf):
+        self.tool_client_data_stream_buf = in_tool_client_data_stream_buf            # 最终结果stream输出的的func
 
     # 最终结果输出
     def output_print(self, in_string):

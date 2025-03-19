@@ -46,8 +46,8 @@ def start_agent_task():
         # tools = [Folder_Tool, Table_Tool]
         # Create agent instance
         agent = Web_Office_Write(
-            scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
-            # scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
+            # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
+            scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
             base_url=base_url,
             api_key=api_key,
             temperature=config.LLM_Default.temperature
@@ -67,7 +67,7 @@ def start_agent_task():
         return jsonify({"task_id": task_id})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"start_agent_task error": str(e)}), 500
 
 
 @app.route('/api/get_agent_task_output_sse_stream', methods=['GET'])
@@ -81,7 +81,7 @@ def get_agent_task_output_sse_stream():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"get_agent_task_output_sse_stream error": str(e)}), 500
 
 
 @app.route('/api/get_agent_task_thinking_sse_stream', methods=['GET'])
@@ -95,7 +95,7 @@ def get_agent_task_thinking_sse_stream():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"get_agent_task_thinking_sse_stream error": str(e)}), 500
 
 
 @app.route('/api/get_agent_task_log_sse_stream', methods=['GET'])
@@ -109,8 +109,20 @@ def get_agent_task_log_sse_stream():
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"get_agent_task_log_sse_stream error": str(e)}), 500
 
+@app.route('/api/get_task_tool_client_data_sse_stream', methods=['GET'])
+def get_task_tool_client_data_sse_stream():
+    try:
+        task_id = request.args.get("task_id")
+
+        return Response(
+            Web_Server_Task_Manager.get_task_tool_client_data_sse_stream_gen(task_id=task_id),
+            mimetype='text/event-stream'
+        )
+
+    except Exception as e:
+        return jsonify({"get_task_tool_client_data_sse_stream error": str(e)}), 500
 
 @app.route('/')
 def index():

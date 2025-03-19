@@ -26,3 +26,8 @@ class Server_Base(ABC):
     @abstractmethod
     def set_log_stream_buf(self, in_log_stream_buf):
         pass
+
+    # tool client data输出的buf
+    @abstractmethod
+    def set_tool_client_data_stream_buf(self, in_tool_client_data_stream_buf):
+        pass

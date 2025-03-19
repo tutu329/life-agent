@@ -40,6 +40,41 @@ class Web_Server_Task_Info():
     # task的log msg队列（用于stream输出信息给client）
     task_log_stream_queue_obj:queue.Queue  = field(default_factory=queue.Queue)
 
+    # task返回的tool client data的msg队列（用于stream输出信息给client）
+    task_tool_client_data_stream_queue_obj:queue.Queue  = field(default_factory=queue.Queue)
+
+# 返回给client的data的格式
+@dataclass
+class Web_Client_Data_Type():
+    TEXT:str        = 'text'
+    IMAGE:str       = 'image'
+    TABLE:str       = 'table'
+
+# 返回给client的text data的格式
+@dataclass
+class Web_Client_Text_Data():
+    content:str = None  # 如'my data'
+    size:str    = None  # 如'14pt'
+    color:str   = None  # 如'green'
+
+# 返回给client的image data的格式
+@dataclass
+class Web_Client_Image_Data():
+    content:str = None  # image data
+    caption:str = None  # 如'xxx示意图'
+
+# 返回给client的table data的格式
+@dataclass
+class Web_Client_Table_Data():
+    content:str = None  # table data
+    caption:str = None  # 如'xxx表'
+
+# 返回给client的data
+@dataclass
+class Web_Client_Data():
+    type:str        = None  # 如 Web_Client_Data_Type.TEXT
+    data:str        = None  # 如 Web_Client_Text_Data、Web_Client_Image_Data、Web_Client_Table_Data
+
 # 用于管理在web server侧运行的task
 # 1、全系统唯一的task ID
 # 2、task对应的obj，如agent_obj
@@ -74,6 +109,7 @@ class Web_Server_Task_Manager():
         task_output_stream_queue = queue.Queue()
         task_thinking_stream_queue = queue.Queue()
         task_log_stream_queue = queue.Queue()
+        task_tool_client_data_stream_queue = queue.Queue()
 
         # 注册task info(其中还调用了set_output_stream_buf)
         Web_Server_Task_Manager.g_tasks_info_dict[session_id] = Web_Server_Task_Info(
@@ -83,6 +119,7 @@ class Web_Server_Task_Manager():
             task_output_stream_queue_obj=task_output_stream_queue,
             task_thinking_stream_queue_obj=task_thinking_stream_queue,
             task_log_stream_queue_obj=task_log_stream_queue,
+            task_tool_client_data_stream_queue_obj=task_tool_client_data_stream_queue,
         )
 
         # task初始化
@@ -93,6 +130,7 @@ class Web_Server_Task_Manager():
                 task_obj.set_output_stream_buf(task_output_stream_queue.put)
                 task_obj.set_thinking_stream_buf(task_thinking_stream_queue.put)
                 task_obj.set_log_stream_buf(task_log_stream_queue.put)
+                task_obj.set_tool_client_data_stream_buf(task_tool_client_data_stream_queue.put)
             except Exception as e:
                 dred(f'Web_Server_Task_Manager.start_task() set_output_stream_buf()报错: "{e}"')
 
@@ -122,7 +160,7 @@ class Web_Server_Task_Manager():
         task_id = session_id
         return task_id
 
-    # 获取task的输出stream(方便用户进行sse调用output、thinking、log等stream数据)
+    # 获取task的llm结论输出stream(方便用户进行sse调用output、thinking、log等stream数据)
     @classmethod
     def get_task_output_sse_stream_gen(cls, task_id):
         if Web_Server_Task_Manager.g_local_debug:
@@ -156,6 +194,7 @@ class Web_Server_Task_Manager():
         # ======================================SSE封装=========================================
         return _generate()
 
+    # 获取task的llm的thinking输出stream
     @classmethod
     def get_task_thinking_sse_stream_gen(cls, task_id):
         if Web_Server_Task_Manager.g_local_debug:
@@ -189,6 +228,7 @@ class Web_Server_Task_Manager():
         # ======================================SSE封装=========================================
         return _generate()
 
+    # 获取task的log的输出(不是llm输出)
     @classmethod
     def get_task_log_sse_stream_gen(cls, task_id):
         if Web_Server_Task_Manager.g_local_debug:
@@ -219,6 +259,40 @@ class Web_Server_Task_Manager():
 
             if received:
                 dyellow(f'/task log stream队列(id "{task_id}")'.center(80, '-'))
+        # ======================================SSE封装=========================================
+        return _generate()
+
+    # 获取task的tool的client data输出(不是llm输出)
+    @classmethod
+    def get_task_tool_client_data_sse_stream_gen(cls, task_id):
+        if Web_Server_Task_Manager.g_local_debug:
+            task_id = Session_ID.PREFIX + task_id
+
+        # 获取该task的msg_queue
+        task_tool_client_data_stream_queue = Web_Server_Task_Manager.g_tasks_info_dict[task_id].task_tool_client_data_stream_queue_obj
+
+        # ======================================SSE封装=========================================
+        # 大坑：典型的 SSE（Server-Sent Events）坑点，SSE 规范要求每个事件块之间都要用一个空行（也就是至少 \n\n）来分隔，否则前端的 SSE 解析往往会报错或无法成功解析
+        # 因此，每一个f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"的最后必须要有\n\n才行，否则client会报错！！！
+        def _generate():
+            # 获取msg_queue的steam数据
+            received = False
+            while True:
+                chunk = task_tool_client_data_stream_queue.get()
+                if chunk is None:  # 结束标志
+                    break
+                if chunk and not received:
+                    received = True
+                    dyellow(f'task tool client data stream队列(id "{task_id}")'.center(80, '='))
+
+                dyellow(chunk, end='', flush=True)
+                yield f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"
+
+            yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}\n\n"
+            dyellow('\n')
+
+            if received:
+                dyellow(f'/task tool client data stream队列(id "{task_id}")'.center(80, '-'))
         # ======================================SSE封装=========================================
         return _generate()
 
