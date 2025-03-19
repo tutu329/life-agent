@@ -3,7 +3,7 @@ from win32com.client import constants
 import os
 import re
 
-from server_manager.web_server_task_manager import Web_Client_Table_Data
+from server_manager.web_server_task_manager import Web_Client_Data, Web_Client_Data_Type, Web_Client_Table_Data
 from agent.base_tool import Base_Tool
 from utils.extract import extract_dict_string
 from utils.folder import get_folder_files_info_string
@@ -312,7 +312,7 @@ class Table_Tool(Base_Tool):
         table_title = dict['tool_parameters']['table_title']
         is_vertical = dict['tool_parameters']['is_vertical']
         draw_table = dict['tool_parameters']['draw_table']
-        dyellow(f'draw_table: {draw_table}')
+        dyellow(f'draw_table: {draw_table!r}')
 
         # 读取xls数据，并在word里绘制(仅在local调用word时)
         table_text = extract_table_to_word(
@@ -324,12 +324,16 @@ class Table_Tool(Base_Tool):
             is_web_server=in_is_web_server,
         )
 
+        dred(f'-----------------draw_table({draw_table})--------------')
         dred(f'-----------------in_is_web_server({in_is_web_server})--------------')
         dred(f'-----------------in_client_data_sse_stream_buf({in_client_data_sse_stream_buf})--------------')
-        if in_is_web_server and in_client_data_sse_stream_buf:
-            data_str = json5.dumps(asdict(Web_Client_Table_Data(content=table_text, caption=sheet_name)))
-            dred(f'-----------------table data_str---------------\n: {data_str}')
-            in_client_data_sse_stream_buf(data_str)
+        if draw_table=='true' and in_is_web_server and in_client_data_sse_stream_buf:
+            table_data = Web_Client_Table_Data(content=table_text, caption=sheet_name)
+            client_data = Web_Client_Data(type=Web_Client_Data_Type.TABLE, data=table_data)
+            client_data_str = json5.dumps(asdict(client_data)).encode('utf-8').decode('unicode_escape')
+            dred(f'-----------------client data_str---------------\n{client_data_str}')
+            dred(f'-----------------------------------------------\n')
+            in_client_data_sse_stream_buf(client_data_str)
 
         # 调用工具后，结果作为action_result返回
         action_result = table_text

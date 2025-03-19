@@ -509,6 +509,7 @@ def index():
                             statusEl.textContent = '完成';
                             tool_data_eventSource.close();
                         } else if (data.message) {
+                            if (data.message.)
                             // 在这里绘制一个3x4的表格，表格数据随意示意下
                             console.log('----------------------table data--------------------------------')
                             console.log(data.message)
