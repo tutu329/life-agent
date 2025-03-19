@@ -10,6 +10,7 @@ from utils.folder import get_folder_files_info_string
 import json5
 
 from config import dred, dgreen, dblue, dcyan, dyellow
+from dataclasses import dataclass, asdict
 
 def _draw_table_on_web_page(table_data):
     dred(f'_draw_table_on_web_page() starts to draw table on web page...')
@@ -324,7 +325,9 @@ class Table_Tool(Base_Tool):
         )
 
         if in_is_web_server and in_client_data_sse_stream_buf:
-            in_client_data_sse_stream_buf(Web_Client_Table_Data(content=table_text, caption=sheet_name))
+            data_str = json5.dumps(asdict(Web_Client_Table_Data(content=table_text, caption=sheet_name)))
+            dred(f'-----------------table data_str---------------\n: {data_str}')
+            in_client_data_sse_stream_buf(data_str)
 
         # 调用工具后，结果作为action_result返回
         action_result = table_text

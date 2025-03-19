@@ -419,62 +419,6 @@ def index():
                             statusEl.textContent = '完成';
                             eventSource.close();
                         } else if (data.message) {
-                            // 在这里绘制一个3x4的表格，表格数据随意示意下
-                            if (window.editor) {
-                                // 先执行插入表格命令（这个命令会修改模型并尝试设置 selection，但不一定成功）
-                                window.editor.execute('insertTable', { rows: 3, columns: 4 });
-                            
-                                // 在一个新的 model.change 事务中修改刚刚插入的表格内容
-                                window.editor.model.change(writer => {
-                                    const root = window.editor.model.document.getRoot();
-                            
-                                    // 尝试使用 selection 获取表格元素
-                                    let tableElement = window.editor.model.document.selection.getSelectedElement();
-                                    // 如果 selection 没有返回表格，则从根节点倒序查找
-                                    if (!tableElement || tableElement.name !== 'table') {
-                                        for (let i = root.childCount - 1; i >= 0; i--) {
-                                            const element = root.getChild(i);
-                                            if (element.is('element', 'table')) {
-                                                tableElement = element;
-                                                break;
-                                            }
-                                        }
-                                    }
-                            
-                                    // 如果依然没找到表格，则输出错误并返回
-                                    if (!tableElement) {
-                                        console.error('无法找到插入的表格元素');
-                                        return;
-                                    }
-                                    console.log('tableElement:', tableElement);
-                            
-                                    // 遍历表格行和单元格，插入文字
-                                    for (let r = 0; r < tableElement.childCount; r++) {
-                                        const row = tableElement.getChild(r);
-                                        console.log('row:', r, row);
-                            
-                                        for (let c = 0; c < row.childCount; c++) {
-                                            const cell = row.getChild(c);
-                                            console.log('cell:', c, cell);
-                            
-                                            // 移除单元格中现有的所有子元素
-                                            for (const child of Array.from(cell.getChildren())) {
-                                                writer.remove(child);
-                                            }
-                            
-                                            // 先创建一个段落并追加到单元格中
-                                            const paragraph = writer.createElement('paragraph');
-                                            writer.append(paragraph, cell);
-                            
-                                            // 再向这个已经插入到文档的段落中插入文本
-                                            const text = `第${r + 1}行-第${c + 1}列`;
-                                            console.log('Inserting text:', text);
-                                            writer.insertText(text, paragraph, 0);
-                                        }
-                                    }
-                                });
-                            }
-
                             // 将消息追加到 CKEditor 内容末尾
                             if (window.editor) {
                                 window.editor.model.change(writer => {
@@ -552,6 +496,85 @@ def index():
                         console.error('log stream SSE错误:', error);
                         log_eventSource.close();
                     };
+                    
+                    let tool_data_eventSource = new EventSource('/api/get_task_tool_client_data_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
+                    console.log('创建tool data SSE连接成功.');
+                    console.log('tool_data_eventSource: ', log_eventSource);
+
+                    tool_data_eventSource.onmessage = function(event) {
+                        console.log("收到tool data SSE数据:", event.data);
+                        const data = JSON.parse(event.data);
+
+                        if (data['[done]']) {
+                            statusEl.textContent = '完成';
+                            tool_data_eventSource.close();
+                        } else if (data.message) {
+                            // 在这里绘制一个3x4的表格，表格数据随意示意下
+                            console.log('----------------------table data--------------------------------')
+                            console.log(data.message)
+                            console.log('---------------------/table data--------------------------------')
+                            if (window.editor) {
+                                // 先执行插入表格命令（这个命令会修改模型并尝试设置 selection，但不一定成功）
+                                window.editor.execute('insertTable', { rows: 3, columns: 4 });
+                            
+                                // 在一个新的 model.change 事务中修改刚刚插入的表格内容
+                                window.editor.model.change(writer => {
+                                    const root = window.editor.model.document.getRoot();
+                            
+                                    // 尝试使用 selection 获取表格元素
+                                    let tableElement = window.editor.model.document.selection.getSelectedElement();
+                                    // 如果 selection 没有返回表格，则从根节点倒序查找
+                                    if (!tableElement || tableElement.name !== 'table') {
+                                        for (let i = root.childCount - 1; i >= 0; i--) {
+                                            const element = root.getChild(i);
+                                            if (element.is('element', 'table')) {
+                                                tableElement = element;
+                                                break;
+                                            }
+                                        }
+                                    }
+                            
+                                    // 如果依然没找到表格，则输出错误并返回
+                                    if (!tableElement) {
+                                        console.error('无法找到插入的表格元素');
+                                        return;
+                                    }
+                                    console.log('tableElement:', tableElement);
+                            
+                                    // 遍历表格行和单元格，插入文字
+                                    for (let r = 0; r < tableElement.childCount; r++) {
+                                        const row = tableElement.getChild(r);
+                                        console.log('row:', r, row);
+                            
+                                        for (let c = 0; c < row.childCount; c++) {
+                                            const cell = row.getChild(c);
+                                            console.log('cell:', c, cell);
+                            
+                                            // 移除单元格中现有的所有子元素
+                                            for (const child of Array.from(cell.getChildren())) {
+                                                writer.remove(child);
+                                            }
+                            
+                                            // 先创建一个段落并追加到单元格中
+                                            const paragraph = writer.createElement('paragraph');
+                                            writer.append(paragraph, cell);
+                            
+                                            // 再向这个已经插入到文档的段落中插入文本
+                                            const text = `第${r + 1}行-第${c + 1}列`;
+                                            console.log('Inserting text:', text);
+                                            writer.insertText(text, paragraph, 0);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    };
+
+                    tool_data_eventSource.onerror = function(error) {
+                        console.error('tool data stream SSE错误:', error);
+                        tool_data_eventSource.close();
+                    };
+
                 })
                 .catch(error => {
                     statusEl.textContent = '错误';
