@@ -325,10 +325,10 @@ class Table_Tool(Base_Tool):
             is_web_server=in_is_web_server,
         )
 
-        dred(f'-----------------draw_table({draw_table})--------------')
-        dred(f'-----------------in_is_web_server({in_is_web_server})--------------')
-        dred(f'-----------------in_client_data_sse_stream_buf({in_client_data_sse_stream_buf})--------------')
-        if draw_table=='true' and in_is_web_server and in_client_data_sse_stream_buf:
+        dred(f'-----------------draw_table({draw_table!r})--------------')
+        dred(f'-----------------in_is_web_server({in_is_web_server!r})--------------')
+        dred(f'-----------------in_client_data_sse_stream_buf({in_client_data_sse_stream_buf!r})--------------')
+        if (draw_table=='true' or draw_table=='True') and in_is_web_server and in_client_data_sse_stream_buf:
             table_data = Web_Client_Table_Data(content=table_text, caption=sheet_name)
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TABLE, data=table_data)
             client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)

@@ -545,7 +545,43 @@ def index():
                                     const rows = table_data.length
                                     const columns = Math.max(...table_data.map(row => row.length));
                                     
-                                    window.editor.execute('insertTable', { rows: rows, columns: columns });
+                                    // window.editor.execute('insertTable', { rows: rows, columns: columns });
+                                    window.editor.model.change(writer => {
+                                        const root = window.editor.model.document.getRoot();
+                                    
+                                        // 获取编辑器内容末尾的位置
+                                        const insertPosition = writer.createPositionAt(root, 'end');
+                                    
+                                        // 插入表格
+                                        const tableElement = writer.createElement('table');
+                                    
+                                        writer.insert(tableElement, insertPosition);
+                                    
+                                        // 创建指定行数和列数的表格
+                                        for (let r = 0; r < rows; r++) {
+                                            const tableRow = writer.createElement('tableRow');
+                                            writer.append(tableRow, tableElement);
+                                    
+                                            for (let c = 0; c < columns; c++) {
+                                                const tableCell = writer.createElement('tableCell');
+                                                writer.append(tableCell, tableRow);
+                                    
+                                                const paragraph = writer.createElement('paragraph');
+                                                writer.append(paragraph, tableCell);
+                                    
+                                                const text = table_data[r][c] || ''; // 安全获取内容
+                                                writer.insertText(text, paragraph);
+                                            }
+                                        }
+                                    
+                                        // 表格插入完成后，在表格后插入一个段落，使光标移到表格后面
+                                        const paragraphAfterTable = writer.createElement('paragraph');
+                                        writer.insert(paragraphAfterTable, writer.createPositionAfter(tableElement));
+                                    
+                                        // 移动光标到表格后的段落，以便后续插入正常
+                                        writer.setSelection(paragraphAfterTable, 'end');
+                                    });
+
                                 
                                     // 在一个新的 model.change 事务中修改刚刚插入的表格内容
                                     window.editor.model.change(writer => {
