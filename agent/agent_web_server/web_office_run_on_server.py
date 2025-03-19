@@ -538,33 +538,65 @@ def index():
                                         });
                                     }
                                     
-                                    const data1 = parseTableData(tableString);
+                                    const table_data = parseTableData(tableString);
                                     console.log('----------------------parsed table str content--------------------------------')
-                                    console.log(data1)
+                                    console.log(table_data)
                                     console.log('---------------------/parsed table str content--------------------------------')
+                                    const rows = table_data.length
+                                    const columns = Math.max(...table_data.map(row => row.length));
                                     
-                                    // 使用 CKEditor5 模型 API 构造并插入表格
-                                    editor.model.change( writer => {
-                                        // 创建 table 元素
-                                        const tableElement = writer.createElement('table');
-                                    
-                                        data1.forEach((rowData, rowIndex) => {
-                                            // 为第一行使用 tableHeaderCell，其余使用 tableCell（你可以根据需求调整）
-                                            const tableRow = writer.createElement('tableRow');
-                                            rowData.forEach(cellText => {
-                                                const cellElement = rowIndex === 0
-                                                    ? writer.createElement('tableHeaderCell')
-                                                    : writer.createElement('tableCell');
-                                                // 在单元格中插入文本
-                                                writer.insertText(cellText, cellElement);
-                                                writer.append(cellElement, tableRow);
-                                            });
-                                            writer.append(tableRow, tableElement);
-                                        });
-                                    
-                                        // 将构造好的表格插入到当前选区
-                                        editor.model.insertContent(tableElement, editor.model.document.selection);
-                                    });
+                                    window.editor.execute('insertTable', { rows: rows, columns: columns });
+                                
+                                    // 在一个新的 model.change 事务中修改刚刚插入的表格内容
+                                    window.editor.model.change(writer => {
+                                        const root = window.editor.model.document.getRoot();
+                                
+                                        // 尝试使用 selection 获取表格元素
+                                        let tableElement = window.editor.model.document.selection.getSelectedElement();
+                                        // 如果 selection 没有返回表格，则从根节点倒序查找
+                                        if (!tableElement || tableElement.name !== 'table') {
+                                            for (let i = root.childCount - 1; i >= 0; i--) {
+                                                const element = root.getChild(i);
+                                                if (element.is('element', 'table')) {
+                                                    tableElement = element;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                
+                                        // 如果依然没找到表格，则输出错误并返回
+                                        if (!tableElement) {
+                                            console.error('无法找到插入的表格元素');
+                                            return;
+                                        }
+                                        console.log('tableElement:', tableElement);
+                                
+                                        // 遍历表格行和单元格，插入文字
+                                        for (let r = 0; r < tableElement.childCount; r++) {
+                                            const row = tableElement.getChild(r);
+                                            console.log('row:', r, row);
+                                
+                                            for (let c = 0; c < row.childCount; c++) {
+                                                const cell = row.getChild(c);
+                                                console.log('cell:', c, cell);
+                                
+                                                // 移除单元格中现有的所有子元素
+                                                for (const child of Array.from(cell.getChildren())) {
+                                                    writer.remove(child);
+                                                }
+                                
+                                                // 先创建一个段落并追加到单元格中
+                                                const paragraph = writer.createElement('paragraph');
+                                                writer.append(paragraph, cell);
+                                
+                                                // 再向这个已经插入到文档的段落中插入文本
+                                                // const text = `第${r + 1}行-第${c + 1}列`;
+                                                const text = table_data[r][c]
+                                                console.log('Inserting text:', text);
+                                                writer.insertText(text, paragraph, 0);
+                                            }
+                                        }
+                                    });                                    
 
                                 }
                             }
