@@ -379,7 +379,11 @@ class Tool_Agent(Server_Base):
         #     action_result = tool.call(in_answer)
         # else:
         if self.registered_tool_instances_dict.get(tool_name):
-            action_result = self.registered_tool_instances_dict[tool_name].call(in_answer, in_is_web_server=self.is_web_server)
+            action_result = self.registered_tool_instances_dict[tool_name].call(
+                in_answer,
+                in_is_web_server=self.is_web_server,
+                in_client_data_sse_stream_buf=self.tool_client_data_stream_buf,
+            )
         else:
             self.status_print('未选择任何工具。')
         # --------------------------- call tool ---------------------------

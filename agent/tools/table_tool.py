@@ -3,6 +3,7 @@ from win32com.client import constants
 import os
 import re
 
+from server_manager.web_server_task_manager import Web_Client_Table_Data
 from agent.base_tool import Base_Tool
 from utils.extract import extract_dict_string
 from utils.folder import get_folder_files_info_string
@@ -297,7 +298,11 @@ class Table_Tool(Base_Tool):
     def __init__(self):
         pass
 
-    def call(self, in_thoughts, in_is_web_server=True):
+    def call(self,
+             in_thoughts,
+             in_is_web_server=True,
+             in_client_data_sse_stream_buf=None,
+             ):
         dred('-----------------Table_Tool.call() invoked.---------------------')
         dict_string = extract_dict_string(in_thoughts)
         dict = json5.loads(dict_string)
@@ -308,7 +313,7 @@ class Table_Tool(Base_Tool):
         draw_table = dict['tool_parameters']['draw_table']
         dyellow(f'draw_table: {draw_table}')
 
-        # 调用工具
+        # 读取xls数据，并在word里绘制(仅在local调用word时)
         table_text = extract_table_to_word(
             excel_path=excel_path,
             sheet_name=sheet_name,
@@ -317,6 +322,9 @@ class Table_Tool(Base_Tool):
             draw_table=draw_table,
             is_web_server=in_is_web_server,
         )
+
+        if in_is_web_server and in_client_data_sse_stream_buf:
+            in_client_data_sse_stream_buf(Web_Client_Table_Data(content=table_text, caption=sheet_name))
 
         # 调用工具后，结果作为action_result返回
         action_result = table_text
