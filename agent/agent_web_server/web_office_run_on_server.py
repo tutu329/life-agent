@@ -518,7 +518,7 @@ def index():
                             console.log(data.message.type)
                             console.log(data.message['type'])
                             console.log('-----------------------------')
-                            if (data.message['type']=='table') {
+                            if (data.message.type=='table') {
                                 // 在这里绘制一个3x4的表格，表格数据随意示意下
                                 console.log('----------------------table data--------------------------------')
                                 console.log(data.message)
