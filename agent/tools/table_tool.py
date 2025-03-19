@@ -324,6 +324,8 @@ class Table_Tool(Base_Tool):
             is_web_server=in_is_web_server,
         )
 
+        dred(f'-----------------in_is_web_server({in_is_web_server})--------------')
+        dred(f'-----------------in_client_data_sse_stream_buf({in_client_data_sse_stream_buf})--------------')
         if in_is_web_server and in_client_data_sse_stream_buf:
             data_str = json5.dumps(asdict(Web_Client_Table_Data(content=table_text, caption=sheet_name)))
             dred(f'-----------------table data_str---------------\n: {data_str}')

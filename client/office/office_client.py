@@ -242,6 +242,7 @@ def _ask_agent(
         output_stream_end_func=None,
         thinking_stream_buf=None,
         log_stream_buf=None,
+        tool_client_data_stream_buf=None,
         base_url=config.LLM_Default.url,
         temperature=0.7,
         api_key='empty'
@@ -261,6 +262,7 @@ def _ask_agent(
     dblue(f'tools registered: {agent.registered_tool_instances_dict}')
 
     agent.init()
+    agent.set_tool_client_data_stream_buf(in_tool_client_data_stream_buf=tool_client_data_stream_buf)
     success = agent.run()
 
     result = ''
@@ -339,6 +341,7 @@ class Web_Office_Write(Server_Base):
                         output_stream_buf=self.insert_text_at_cursor_without_end,
                         thinking_stream_buf=self.thinking_stream_buf,
                         log_stream_buf=self.log_stream_buf,
+                        tool_client_data_stream_buf=self.tool_client_data_stream_buf,
                         output_stream_end_func=self.insert_text_end_at_cursor,
                         base_url=self.base_url,
                         api_key=self.api_key,
@@ -354,6 +357,7 @@ class Web_Office_Write(Server_Base):
                         output_stream_buf=self.insert_text_at_cursor_without_end,
                         thinking_stream_buf=self.thinking_stream_buf,
                         log_stream_buf=self.log_stream_buf,
+                        tool_client_data_stream_buf=self.tool_client_data_stream_buf,
                         output_stream_end_func=self.insert_text_end_at_cursor,
                         base_url=self.base_url,
                         api_key=self.api_key,
