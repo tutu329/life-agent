@@ -1114,7 +1114,8 @@ class LLM_Client():
 # async的非联网llm调用
 class Async_LLM(Server_Base):
     def __init__(self):
-        
+        super().__init__()
+        dred('Async_LLM.__init__ 1')
         self.llm = None
         self.stream_buf_callback = None
         self.task = None
@@ -1137,6 +1138,7 @@ class Async_LLM(Server_Base):
         self.result_stream_buf = None
         self.log_stream_buf = None
         self.tool_cliet_data_stream_buf = None
+        dred('Async_LLM.__init__ 2')
 
     def init(self,
              in_stream_buf_callback,
@@ -1188,7 +1190,7 @@ class Async_LLM(Server_Base):
         if self.task:
             self.task.join()
 
-    def _run(self):
+    def run(self):
         # print(f'【Async_LLM】run(temperature={self.temperature}) invoked.')
         gen = self.llm.ask_prepare(self.prompt).get_result_generator()
         # gen = self.llm.ask_prepare(self.prompt).get_answer_generator()
@@ -1233,9 +1235,9 @@ class Async_LLM(Server_Base):
 
         dprint(f'【Async_LLM】run() completed. temperature={self.temperature}, final_response="{self.final_response}"')
 
-    def run(self):
+    def start(self):
         # 由于streamlit对thread支持不好，这里必须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext
-        self.task = threading.Thread(target=self._run)
+        self.task = threading.Thread(target=self.run)
         if self.run_in_streamlit:
             from streamlit.runtime.scriptrunner import add_script_run_ctx
             add_script_run_ctx(self.task)
@@ -1897,7 +1899,9 @@ def async_llm_main():
         in_temperature=0.6,
     )
     allm.set_output_stream_buf(dyellow)
-    allm.run()
+    allm.start()
+    print('quit.')
+    allm.wait()
 
 if __name__ == "__main__" :
     # base_main()

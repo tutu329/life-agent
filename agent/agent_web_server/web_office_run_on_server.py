@@ -19,7 +19,7 @@ from server_manager.web_server_task_manager import Web_Server_Task_Manager
 
 from client.office.office_client import Web_Office_Write
 
-from tools.llm.api_client import LLM_Client
+from tools.llm.api_client import LLM_Client, Async_LLM
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS support
@@ -53,14 +53,32 @@ def start_agent_task():
         agent = None
 
         if query:
+            # llm = LLM_Client(url=base_url, api_key=api_key)
+            # gen = llm.ask_prepare(question=query, temperature=0.6).get_result_generator()
+            # for chunk in gen:
+            #     dyellow(chunk, end='', flush=True)
+            # dyellow()
+            dblue('start1...')
+            agent = Async_LLM(
+                in_prompt=query,
+                in_url=base_url,
+                in_api_key=api_key,
+                in_stream_buf_callback=None,
+                in_temperature=0.6,
+            )
+            dblue('start2...')
             session_id = session.get('session_id')
-            llm = LLM_Client(url=base_url, api_key=api_key)
-            gen = llm.ask_prepare(question=query, temperature=0.6).get_result_generator()
-            for chunk in gen:
-                dyellow(chunk, end='', flush=True)
-            dyellow()
+            dblue('start3...')
+            dblue(f'client login (session_id: "{session_id}").')
 
-            task_id = session_id
+            # Start task
+            task_id = Web_Server_Task_Manager.start_task(
+                task_obj=agent,
+                session_id=session_id
+            )
+
+            dblue(f'task_id: "{task_id}"')
+
             return jsonify({"task_id": task_id})
             # tools = [Table_Tool]
             # agent = Tool_Agent(
