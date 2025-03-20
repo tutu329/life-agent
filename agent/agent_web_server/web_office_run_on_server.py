@@ -756,7 +756,7 @@ def index():
 
                     // 监听输出消息
                     eventSource.onmessage = function(event) {
-                        console.log("收到SSE数据:", event.data);
+                        // console.log("收到SSE数据:", event.data);
                         const data = JSON.parse(event.data);
 
                         if (data['[done]']) {
@@ -766,7 +766,7 @@ def index():
                             runBtn.disabled = false;
                         } else if (data.message) {
                             // 处理字体
-                            console.log('--------------------text属性--------------------------')
+                            // console.log('--------------------text属性--------------------------')
                             // console.log(typeof data.message);
                             let obj = JSON.parse(data.message).data;
                             let text = obj.content
@@ -776,12 +776,12 @@ def index():
                             let font_size = obj.size
                             let font_color = obj.color
                             // console.log('obj: ', obj);
-                            console.log('text: ', text);
-                            console.log('alignment: ', alignment);
-                            console.log('font_name: ', font_name);
-                            console.log('font_size: ', font_size);
-                            console.log('font_color: ', font_color);
-                            console.log('-------------------/text属性--------------------------')
+                            // console.log('text: ', text);
+                            // console.log('alignment: ', alignment);
+                            // console.log('font_name: ', font_name);
+                            // console.log('font_size: ', font_size);
+                            // console.log('font_color: ', font_color);
+                            // console.log('-------------------/text属性--------------------------')
                             // 将消息追加到 CKEditor 内容末尾
                             if (window.editor) {
                                 window.editor.model.change(writer => {
@@ -793,6 +793,9 @@ def index():
                                     // const lines = data.message.split('\\n');
                                     const lines = text.split(/\\r?\\n/);
                                     // 逐行插入
+                                    // console.log('--------------lines-----------------')
+                                    // console.log(lines)
+                                    // console.log('-------------/lines-----------------')
                                     for (let i = 0; i < lines.length; i++) {
                                         if (is_heading=='true') {
                                             console.log('--------------绘制red标题-----------------')
@@ -823,8 +826,25 @@ def index():
 
                                         // 如果不是最后一行，则插入一个softBreak元素
                                         // softBreak在CKEditor中会呈现出换行效果
-                                        if (i < lines.length - 1) {
-                                            writer.insertElement('softBreak', insertPosition);
+                                        // if (i < lines.length - 1) {
+                                        //     writer.insertElement('softBreak', insertPosition);
+                                        // }
+                                        if (i < lines.length - 1 && lines[i].trim() !== '') {
+                                            console.log('-------------出现软回车-----------------')
+                                            console.log('回车之前的字为："', lines[i], '"')
+                                            console.log('-------------/出现软回车-----------------')
+                                            // writer.insertElement('softBreak', insertPosition);
+                                            const paragraph = writer.createElement('paragraph');
+                                            // 创建文本节点，应用字体、大小和颜色属性
+                                            const textNode = writer.createText('\\n', {
+                                                fontFamily: font_name,
+                                                fontSize: font_size,
+                                                fontColor: font_color
+                                            });
+                                            // 将文本节点添加到段落中
+                                            writer.append(textNode, paragraph);
+                                            // 将段落插入到文档中
+                                            writer.insert(paragraph, insertPosition); 
                                         }
                                     }
                                 });
