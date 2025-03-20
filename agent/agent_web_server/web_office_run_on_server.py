@@ -111,6 +111,7 @@ def get_agent_task_log_sse_stream():
     except Exception as e:
         return jsonify({"get_agent_task_log_sse_stream error": str(e)}), 500
 
+
 @app.route('/api/get_task_tool_client_data_sse_stream', methods=['GET'])
 def get_task_tool_client_data_sse_stream():
     try:
@@ -123,6 +124,7 @@ def get_task_tool_client_data_sse_stream():
 
     except Exception as e:
         return jsonify({"get_task_tool_client_data_sse_stream error": str(e)}), 500
+
 
 @app.route('/')
 def index():
@@ -137,6 +139,10 @@ def index():
     <!-- <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"> -->
     <!-- 引入 CKEditor5 Classic Build -->
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+    <!-- 引入 jsTree -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
     <style>
         /* ********** 通用布局部分 ********** */
         body {
@@ -154,46 +160,62 @@ def index():
             /* 让主容器本身有确定的高度，从 body 继承： */
             height: calc(100vh - 40px);
             display: flex;
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
             gap: 20px;
             box-sizing: border-box;
         }
-    
-        /* ********** CKEditor 左侧编辑区 ********** */
-        .word-editor {
-            /* 这块要让它随父容器(main-container)的高度自动分配 */
-            flex: 2;                
-            display: flex;          
-            flex-direction: column; 
+
+        /* ********** 左侧树状结构面板 ********** */
+        .tree-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             box-sizing: border-box;
-    
-            /* 注意：如果此处写 overflow: hidden; 会把可滚动区域裁掉，或许你本意只是想隐藏外边框溢出。 
-               但为了避免干扰 CKEditor 内部滚动，这里最好先去掉。 */
-            /* overflow: hidden;  */
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    
-            /* flex 子元素想要正常弹性缩放，需要 min-height: 0; 保证可以被“压缩” */
+            min-height: 0;
+            overflow: hidden;
+        }
+        .tree-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        #jstree-container {
+            flex: 1;
+            overflow: auto;
+        }
+
+        /* ********** CKEditor 中间编辑区 ********** */
+        .word-editor {
+            flex: 2;                
+            display: flex;          
+            flex-direction: column; 
+            box-sizing: border-box;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             min-height: 0;
         }
-    
+
         /* ********** 右侧控制面板部分 ********** */
         .control-panel {
             flex: 1;                
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            min-height: 0; /* 同理，避免高度被“撑开” */
-            
+            min-height: 0; /* 同理，避免高度被"撑开" */
+
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-    
+
         h1 {
             color: #333;
             text-align: center;
@@ -229,7 +251,7 @@ def index():
         button:hover {
             background-color: #45a049;
         }
-    
+
         /* ********** 右侧面板内的输出 ********** */
         .control-panel-content {
             flex-grow: 1;
@@ -262,15 +284,15 @@ def index():
             justify-content: flex-end;
             margin-bottom: 15px;
         }
-    
+
         /* ********** CKEditor 填满父容器并滚动的关键 ********** */
         #editor-container {
             /* 让父容器可弹性伸缩，占满 .word-editor 中除去 padding 的剩余空间 */
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 0; /* 避免“被子元素撑高” */
-            /* 如果想让外面也有“裁剪”行为，可在此写 overflow: hidden; */
+            min-height: 0; /* 避免"被子元素撑高" */
+            /* 如果想让外面也有"裁剪"行为，可在此写 overflow: hidden; */
             overflow: hidden;
         }
         /* CKEditor 最高父级 (.ck.ck-editor) 也要让它自适应伸缩 */
@@ -305,9 +327,14 @@ def index():
 </head>
 <body>
     <div class="main-container">
+        <!-- 左侧树状结构面板 -->
+        <div class="tree-panel">
+            <h2>目录结构</h2>
+            <div id="jstree-container"></div>
+        </div>
+
         <!-- Word编辑器部分 -->
         <div class="word-editor">
-            <!-- CKEditor 容器 -->
             <div id="editor-container">
                 <div id="editor"></div>
             </div>
@@ -348,6 +375,135 @@ def index():
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // 初始化树状结构
+            $('#jstree-container').jstree({
+                'core': {
+                    'data': [
+                        {
+                            'text': '公司',
+                            'children': [
+                                {
+                                    'text': '本部',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '杭州',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '宁波',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '温州',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '绍兴',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            'text': '政府',
+                            'children': [
+                                {
+                                    'text': '浙江',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '杭州',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '宁波',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '温州',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '绍兴',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            'text': '其他',
+                            'children': [
+                                {
+                                    'text': '社科院',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                },
+                                {
+                                    'text': '中电联',
+                                    'children': [
+                                        {'text': '电量平衡情况表'},
+                                        {'text': '电网负荷特性表'},
+                                        {'text': '全社会用电分类情况表'}
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                'plugins': ['wholerow', 'state'],
+                'state': {
+                    'key': 'jstree_demo'
+                }
+            });
+
+            // 绑定树节点点击事件
+            $('#jstree-container').on('select_node.jstree', function(e, data) {
+                const nodeText = data.node.text;
+                document.getElementById('query').value = '@' + nodeText;
+            });
+
             // 初始化 CKEditor5
             ClassicEditor
                 .create(document.querySelector('#editor'))
@@ -425,7 +581,7 @@ def index():
                                     const root = window.editor.model.document.getRoot();
                                     // 定位到内容末尾，以便追加
                                     const insertPosition = window.editor.model.createPositionAt(root, 'end');
-                                    
+
                                     // 拆分行
                                     const lines = data.message.split('\\n');
                                     // const lines = data.message.split(/\\r?\\n/);
@@ -433,7 +589,7 @@ def index():
                                     for (let i = 0; i < lines.length; i++) {
                                         // 插入该行文本
                                         writer.insertText(lines[i], insertPosition);
-                    
+
                                         // 如果不是最后一行，则插入一个softBreak元素
                                         // softBreak在CKEditor中会呈现出换行效果
                                         if (i < lines.length - 1) {
@@ -496,7 +652,7 @@ def index():
                         console.error('log stream SSE错误:', error);
                         log_eventSource.close();
                     };
-                    
+
                     let tool_data_eventSource = new EventSource('/api/get_task_tool_client_data_sse_stream?task_id=' + encodeURIComponent(task_id_from_server));
                     console.log('创建tool data SSE连接成功.');
                     console.log('tool_data_eventSource: ', log_eventSource);
@@ -513,7 +669,7 @@ def index():
                             console.log(typeof data.message);
                             obj = JSON.parse(data.message);
                             console.log(typeof data.message);
-                              
+
                             console.log(obj)
                             console.log(obj.type)
                             console.log(obj['type'])
@@ -537,56 +693,56 @@ def index():
                                             return line.split('\\t').map(cell => cell.trim()).filter(cell => cell);
                                         });
                                     }
-                                    
+
                                     const table_data = parseTableData(tableString);
                                     console.log('----------------------parsed table str content--------------------------------')
                                     console.log(table_data)
                                     console.log('---------------------/parsed table str content--------------------------------')
                                     const rows = table_data.length
                                     const columns = Math.max(...table_data.map(row => row.length));
-                                    
+
                                     // window.editor.execute('insertTable', { rows: rows, columns: columns });
                                     window.editor.model.change(writer => {
                                         const root = window.editor.model.document.getRoot();
-                                    
+
                                         // 获取编辑器内容末尾的位置
                                         const insertPosition = writer.createPositionAt(root, 'end');
-                                    
+
                                         // 插入表格
                                         const tableElement = writer.createElement('table');
-                                    
+
                                         writer.insert(tableElement, insertPosition);
-                                    
+
                                         // 创建指定行数和列数的表格
                                         for (let r = 0; r < rows; r++) {
                                             const tableRow = writer.createElement('tableRow');
                                             writer.append(tableRow, tableElement);
-                                    
+
                                             for (let c = 0; c < columns; c++) {
                                                 const tableCell = writer.createElement('tableCell');
                                                 writer.append(tableCell, tableRow);
-                                    
+
                                                 const paragraph = writer.createElement('paragraph');
                                                 writer.append(paragraph, tableCell);
-                                    
+
                                                 const text = table_data[r][c] || ''; // 安全获取内容
                                                 writer.insertText(text, paragraph);
                                             }
                                         }
-                                    
+
                                         // 表格插入完成后，在表格后插入一个段落，使光标移到表格后面
                                         const paragraphAfterTable = writer.createElement('paragraph');
                                         writer.insert(paragraphAfterTable, writer.createPositionAfter(tableElement));
-                                    
+
                                         // 移动光标到表格后的段落，以便后续插入正常
                                         writer.setSelection(paragraphAfterTable, 'end');
                                     });
 
-                                
+
                                     // 在一个新的 model.change 事务中修改刚刚插入的表格内容
                                     window.editor.model.change(writer => {
                                         const root = window.editor.model.document.getRoot();
-                                
+
                                         // 尝试使用 selection 获取表格元素
                                         let tableElement = window.editor.model.document.selection.getSelectedElement();
                                         // 如果 selection 没有返回表格，则从根节点倒序查找
@@ -599,32 +755,32 @@ def index():
                                                 }
                                             }
                                         }
-                                
+
                                         // 如果依然没找到表格，则输出错误并返回
                                         if (!tableElement) {
                                             console.error('无法找到插入的表格元素');
                                             return;
                                         }
                                         console.log('tableElement:', tableElement);
-                                
+
                                         // 遍历表格行和单元格，插入文字
                                         for (let r = 0; r < tableElement.childCount; r++) {
                                             const row = tableElement.getChild(r);
                                             console.log('row:', r, row);
-                                
+
                                             for (let c = 0; c < row.childCount; c++) {
                                                 const cell = row.getChild(c);
                                                 console.log('cell:', c, cell);
-                                
+
                                                 // 移除单元格中现有的所有子元素
                                                 for (const child of Array.from(cell.getChildren())) {
                                                     writer.remove(child);
                                                 }
-                                
+
                                                 // 先创建一个段落并追加到单元格中
                                                 const paragraph = writer.createElement('paragraph');
                                                 writer.append(paragraph, cell);
-                                
+
                                                 // 再向这个已经插入到文档的段落中插入文本
                                                 // const text = `第${r + 1}行-第${c + 1}列`;
                                                 const text = table_data[r][c]
@@ -655,6 +811,7 @@ def index():
 </body>
 </html>"""
     return html_content
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
