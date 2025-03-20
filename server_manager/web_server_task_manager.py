@@ -54,6 +54,7 @@ class Web_Client_Data_Type():
 @dataclass
 class Web_Client_Text_Data():
     content:str = None  # 如'my data'
+    font:str    = None  # 如'simhei'、'simsun'
     size:str    = None  # 如'14pt'
     color:str   = None  # 如'green'
 

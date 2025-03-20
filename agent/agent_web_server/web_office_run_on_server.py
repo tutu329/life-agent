@@ -621,6 +621,20 @@ def index():
                             // 任务完成时启用运行按钮
                             runBtn.disabled = false;
                         } else if (data.message) {
+                            // 处理字体
+                            console.log('--------------------text属性--------------------------')
+                            console.log(typeof data.message);
+                            let obj = JSON.parse(data.message).data;
+                            let text = obj.content
+                            let font_name = obj.font
+                            let font_size = obj.size
+                            let font_color = obj.color
+                            console.log('obj: ', obj);
+                            console.log('text: ', text);
+                            console.log('font_name: ', font_name);
+                            console.log('font_size: ', font_size);
+                            console.log('font_color: ', font_color);
+                            console.log('-------------------/text属性--------------------------')
                             // 将消息追加到 CKEditor 内容末尾
                             if (window.editor) {
                                 window.editor.model.change(writer => {
@@ -629,8 +643,8 @@ def index():
                                     const insertPosition = window.editor.model.createPositionAt(root, 'end');
 
                                     // 拆分行
-                                    const lines = data.message.split('\\n');
-                                    // const lines = data.message.split(/\\r?\\n/);
+                                    // const lines = data.message.split('\\n');
+                                    const lines = text.split(/\\r?\\n/);
                                     // 逐行插入
                                     for (let i = 0; i < lines.length; i++) {
                                         // 插入该行文本

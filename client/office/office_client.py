@@ -11,6 +11,8 @@
 import config
 # 目前报告自动编制.docm中的运行宏的快捷键定义为"Ctrl+9"
 
+import json
+from dataclasses import dataclass, asdict
 
 from singleton import singleton
 
@@ -29,6 +31,7 @@ from agent.tools.table_tool import Table_Tool
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 from server_manager.server_base import Server_Base
+from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Data, Web_Client_Table_Data, Web_Client_Text_Data, Web_Client_Image_Data
 
 @singleton
 class Office_Client():
@@ -300,18 +303,79 @@ class Web_Office_Write(Server_Base):
 
     def insert_heading_at_cursor(self, heading, style='标题 1'):
         if heading.startswith('0 '):
-            self.output_stream_buf(heading[2:])
-            self.output_stream_buf('\n')
+            text_data = Web_Client_Text_Data(
+                content=heading[2:],
+                font='simhei',
+                size='28pt',
+                color='red'
+            )
+            client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+            client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+            self.output_stream_buf(client_data_str)
+
+            text_data = Web_Client_Text_Data(
+                content='\n',
+                font='simhei',
+                size='14pt',
+                color='red'
+            )
+            client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+            client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+            self.output_stream_buf(client_data_str)
+
+            # self.output_stream_buf(heading[2:])
+            # self.output_stream_buf('\n')
         else:
-            self.output_stream_buf(heading)
-            self.output_stream_buf('\n')
+            text_data = Web_Client_Text_Data(
+                content=heading,
+                font='simsun',
+                size='14pt',
+                color='black'
+            )
+            client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+            client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+            self.output_stream_buf(client_data_str)
+
+            text_data = Web_Client_Text_Data(
+                content='\n',
+                font='simsun',
+                size='14pt',
+                color='black'
+            )
+            client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+            client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+            self.output_stream_buf(client_data_str)
+
+            # self.output_stream_buf(heading)
+            # self.output_stream_buf('\n')
 
     def insert_text_at_cursor_without_end(self, text, style='！正文'):
-        self.output_stream_buf(text)
+        text_data = Web_Client_Text_Data(
+            content=text,
+            font='simsun',
+            size='14pt',
+            color='black'
+        )
+        client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+        client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+        self.output_stream_buf(client_data_str)
+
+        # self.output_stream_buf(text)
 
     def insert_text_end_at_cursor(self):
-        self.output_stream_buf('\n')
-        self.output_stream_buf('\n')
+        text_data = Web_Client_Text_Data(
+            content='\n',
+            font='simsun',
+            size='14pt',
+            color='black'
+        )
+        client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+        client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+        self.output_stream_buf(client_data_str)
+
+
+        # self.output_stream_buf('\n')
+        # self.output_stream_buf('\n')
 
     def run(self) -> None:
         # 读取报告编制指令
