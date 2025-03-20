@@ -48,6 +48,8 @@ def start_agent_task():
         dblue(f'------------------------/query-------------------------')
         base_url = 'https://api.deepseek.com/v1'
         api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
+        # base_url = 'https://powerai.cc:8001/v1'
+        # api_key = 'empty'
         # Create agent instance
         agent = None
 
@@ -87,7 +89,6 @@ def start_agent_task():
 <回答要求>
 1、由于你的回答是输出到word环境中，因此你的回答绝对不能用markdown格式。
 2、你的输出内容如果涉及层次内容，各个层级的标题要用"一、"、"二、"、"三、"、"1、"、"2、"、"3、"以及"(1)"、"(2)"、"(3)"这类。
-3、不要输出\n\n
 </回答要求>
 '''
                 agent = Async_LLM(
@@ -127,8 +128,8 @@ def start_agent_task():
                 return jsonify({"task_id": task_id})
             elif answer=='编制报告':
                 agent = Web_Office_Write(
-                    scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
-                    # scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
+                    # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
+                    scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
                     base_url=base_url,
                     api_key=api_key,
                     temperature=config.LLM_Default.temperature
