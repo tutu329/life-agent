@@ -40,6 +40,9 @@ def start_agent_task():
     try:
         data = request.json
         query = data.get('query', '')
+        dblue(f'-------------------------query-------------------------')
+        dblue(f'{query!r}')
+        dblue(f'------------------------/query-------------------------')
         base_url = data.get('base_url', 'https://api.deepseek.com/v1')
         api_key = data.get('api_key', 'sk-c1d34a4f21e3413487bb4b2806f6c4b8')
 
@@ -256,14 +259,18 @@ def index():
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 8px 12px;  /* 减小按钮内边距 */
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;    /* 减小按钮字体大小 */
             margin-right: 10px;
         }
         button:hover {
             background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
 
         /* ********** 右侧面板内的输出 ********** */
@@ -292,6 +299,10 @@ def index():
         .status {
             margin-top: 10px;
             color: #666;
+            font-size: 12px;  /* 减小状态标签字体大小 */
+        }
+        .status-label {
+            font-size: 12px;  /* 减小"状态："文字的字体大小 */
         }
         .button-container {
             display: flex;
@@ -376,10 +387,10 @@ def index():
                     </div>
 
                     <div class="button-container">
-                        <button id="run-btn">运行</button>
+                        <button id="run-btn" style="width: 80px;">运行</button>
                     </div>
 
-                    <div class="status">状态：<span id="status">空闲</span></div>
+                    <div class="status"><span class="status-label">状态：</span><span id="status">空闲</span></div>
                 </div>
 
                 <div class="output" id="output"></div>
@@ -554,6 +565,9 @@ def index():
 
             // Run SSE task
             runBtn.addEventListener('click', function() {
+                // 禁用运行按钮
+                runBtn.disabled = true;
+
                 // 清空之前的输出
                 outputEl.textContent = '';
 
@@ -568,6 +582,7 @@ def index():
                 // 准备请求数据
                 const requestData = {
                     query: queryEl.value,
+                    query_text: queryEl.value,  // 添加query_text参数
                     tools: [],
                     base_url: baseUrlEl.value,
                     api_key: apiKeyEl.value
@@ -603,6 +618,8 @@ def index():
                         if (data['[done]']) {
                             statusEl.textContent = '完成';
                             eventSource.close();
+                            // 任务完成时启用运行按钮
+                            runBtn.disabled = false;
                         } else if (data.message) {
                             // 将消息追加到 CKEditor 内容末尾
                             if (window.editor) {
@@ -647,6 +664,8 @@ def index():
                         if (data['[done]']) {
                             statusEl.textContent = '完成';
                             thinking_eventSource.close();
+                            // 任务完成时启用运行按钮
+                            runBtn.disabled = false;
                         } else if (data.message) {
                             let color = "green";    
                             outputEl.innerHTML += '<span style="color:' + color + '">' + data.message + '</span>';
@@ -670,6 +689,8 @@ def index():
                         if (data['[done]']) {
                             statusEl.textContent = '完成';
                             log_eventSource.close();
+                            // 任务完成时启用运行按钮
+                            runBtn.disabled = false;
                         } else if (data.message) {
                             let color = "black";    
                             outputEl.innerHTML += '<span style="color:' + color + '">' + data.message + '</span>';
@@ -693,6 +714,8 @@ def index():
                         if (data['[done]']) {
                             statusEl.textContent = '完成';
                             tool_data_eventSource.close();
+                            // 任务完成时启用运行按钮
+                            runBtn.disabled = false;
                         } else if (data.message) {
                             console.log('--------data.message---------')
                             console.log(typeof data.message);
