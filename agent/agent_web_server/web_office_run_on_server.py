@@ -80,8 +80,18 @@ def start_agent_task():
             dred('----------------/用户意图-----------------------')
 
             if answer=='直接问答':
+                question = f'''请根据以下的用户问题，按要求回答:
+<用户问题>
+{query}
+</用户问题>
+<回答要求>
+1、由于你的回答是输出到word环境中，因此你的回答绝对不能用markdown格式。
+2、你的输出内容如果涉及层次内容，各个层级的标题要用"一、"、"二、"、"三、"、"1、"、"2、"、"3、"以及"(1)"、"(2)"、"(3)"这类。
+3、不要输出\n\n
+</回答要求>
+'''
                 agent = Async_LLM(
-                    question=query,
+                    question=question,
                     url=base_url,
                     api_key=api_key,
                     temperature=0.6,
