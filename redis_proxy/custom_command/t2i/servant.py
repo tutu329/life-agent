@@ -236,7 +236,7 @@ def t2i_servant(s_redis_proxy_server_data, s_redis_client, **arg_dict):
             task_data['command_system'][0]['thread'] = Task_Worker_Thread()
             thread = task_data['command_system'][0]['thread']
             thread.init(in_callback_func=callback, status_key=status_key, result_key=result_key, obj=obj, arg_dict=arg_dict)
-            thread.start()
+            thread.run()
 
         # if command==str(Redis_Proxy_Command_LLM.CANCEL):
         #     llm = task_data['command_system'][0]['obj']

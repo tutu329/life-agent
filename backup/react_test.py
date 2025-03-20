@@ -207,7 +207,7 @@ def call_plugin(plugin_name: str, plugin_args: str) -> str:
         os.environ["SERPAPI_API_KEY"] = os.getenv("SERPAPI_API_KEY", default='')
         from langchain import SerpAPIWrapper
 
-        return SerpAPIWrapper().run(json5.loads(plugin_args)['search_query'])
+        return SerpAPIWrapper()._run(json5.loads(plugin_args)['search_query'])
     elif plugin_name == 'image_gen':
         import urllib.parse
 

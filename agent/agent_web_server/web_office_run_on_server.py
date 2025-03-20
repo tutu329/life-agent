@@ -4,6 +4,7 @@ import json
 import time
 import threading
 import uuid
+import queue
 from dataclasses import dataclass, field
 
 # Import your existing modules
@@ -17,6 +18,8 @@ from agent.tools.table_tool import Table_Tool
 from server_manager.web_server_task_manager import Web_Server_Task_Manager
 
 from client.office.office_client import Web_Office_Write
+
+from tools.llm.api_client import LLM_Client
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS support
@@ -46,28 +49,56 @@ def start_agent_task():
         base_url = data.get('base_url', 'https://api.deepseek.com/v1')
         api_key = data.get('api_key', 'sk-c1d34a4f21e3413487bb4b2806f6c4b8')
 
-        # tools = [Folder_Tool, Table_Tool]
         # Create agent instance
-        agent = Web_Office_Write(
-            # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
-            scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
-            base_url=base_url,
-            api_key=api_key,
-            temperature=config.LLM_Default.temperature
-        )
+        agent = None
 
-        # Get client's anonymous session ID
-        session_id = session.get('session_id')
-        dblue(f'client login (session_id: "{session_id}").')
+        if query:
+            session_id = session.get('session_id')
+            llm = LLM_Client(url=base_url, api_key=api_key)
+            gen = llm.ask_prepare(question=query, temperature=0.6).get_result_generator()
+            for chunk in gen:
+                dyellow(chunk, end='', flush=True)
+            dyellow()
 
-        # Start task
-        task_id = Web_Server_Task_Manager.start_task(
-            task_obj=agent,
-            session_id=session_id
-        )
+            task_id = session_id
+            return jsonify({"task_id": task_id})
+            # tools = [Table_Tool]
+            # agent = Tool_Agent(
+            #     in_query=query,
+            #     in_base_url='https://api.deepseek.com/v1',
+            #     in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+            #     in_temperature=0.6,
+            #     in_tool_classes=tools,
+            #     in_is_web_server=True,
+            # )
+            #
+            # session_id = session.get('session_id')
+            # task_id = Web_Server_Task_Manager.start_task(
+            #     task_obj=agent,
+            #     session_id=session_id
+            # )
+            # return jsonify({"task_id": task_id})
+        else:
+            agent = Web_Office_Write(
+                # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
+                scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
+                base_url=base_url,
+                api_key=api_key,
+                temperature=config.LLM_Default.temperature
+            )
 
-        # Return task_id
-        return jsonify({"task_id": task_id})
+            # Get client's anonymous session ID
+            session_id = session.get('session_id')
+            dblue(f'client login (session_id: "{session_id}").')
+
+            # Start task
+            task_id = Web_Server_Task_Manager.start_task(
+                task_obj=agent,
+                session_id=session_id
+            )
+
+            # Return task_id
+            return jsonify({"task_id": task_id})
 
     except Exception as e:
         return jsonify({"start_agent_task error": str(e)}), 500

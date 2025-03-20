@@ -40,7 +40,7 @@ class Tool_Agent(Server_Base):
                  in_status_stream_buf=None,
                  in_base_url=config.LLM_Default.url,
                  in_api_key='empty',
-                 in_temperature=0.7,
+                 in_temperature=config.LLM_Default.temperature,
                  # remove_content_in_think_pairs=False,
                  in_is_web_server=True,
                  ):

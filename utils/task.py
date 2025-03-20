@@ -108,10 +108,10 @@ class Task_Base():
 
             # 启动timeout的timer
             if self.timeout_timer:
-                self.timeout_timer.start()
+                self.timeout_timer.run()
 
             # 启动task的timer
-            self.thread.start()
+            self.thread.run()
         else:
             dred(f"Task {self.task_info['task_name']} already started and not completed. No more started.")
 

@@ -25,6 +25,8 @@ from dataclasses import dataclass, field, asdict
 from typing import List, Optional, Dict
 # from redis_client import Redis_Client
 
+from server_manager.server_base import Server_Base
+
 # DEBUG = True
 DEBUG = False
 
@@ -67,7 +69,7 @@ def status_to_redis(in_status: LLM_Client_Status):
     # redis.set_dict(f'client last_response', in_status.last_response)
 
 
-class LLM_Client:
+class LLM_Client():
     LLM_SERVER = config.LLM_Default.url
     # LLM_SERVER = 'http://127.0.0.1:8001/v1/'
     def __init__(self,
@@ -154,6 +156,7 @@ class LLM_Client:
     #     else:
     #         self.history_list.append({"role": "user", "content": self.role_prompt})
     #         self.history_list.append({"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
+
     @classmethod
     def Set_All_LLM_Server(cls, in_url):
         cls.LLM_SERVER = in_url
@@ -622,6 +625,20 @@ class LLM_Client:
         self.question_last_turn = question
         return self
 
+    def set_thinking_stream_buf(self, output_stream_buf):
+        self.thinking_stream_buf = output_stream_buf
+
+    def set_result_stream_buf(self, result_stream_buf):
+        self.result_stream_buf = result_stream_buf
+
+    def thinking_stream(self, chunk):
+        if self.thinking_stream_buf:
+            self.thinking_stream_buf(chunk)
+
+    def result_stream(self, chunk):
+        if self.result_stream_buf:
+            self.result_stream_buf(chunk)
+
     def get_think_generator(self):
         think_started = False
         for chunk in self.get_answer_generator():
@@ -634,6 +651,7 @@ class LLM_Client:
                 return None
             if think_chunk:
                 think_started = True
+                self.thinking_stream(think_chunk)
                 yield think_chunk
             if (not think_chunk) and think_started:
                 # 此时think内容结束，退出，便于后面获取result内容
@@ -648,6 +666,7 @@ class LLM_Client:
             full_chunk = chunk[0]
             think_chunk = chunk[1]
             result_chunk = chunk[2]
+            # self.result_stream(result_chunk)
             yield result_chunk
 
     def get_answer_and_sync_print(self):
@@ -1093,7 +1112,7 @@ class LLM_Client:
         self.response_canceled = True
 
 # async的非联网llm调用
-class Async_LLM:
+class Async_LLM(Server_Base):
     def __init__(self):
         
         self.llm = None
@@ -1114,10 +1133,30 @@ class Async_LLM:
 
         self.temperature = None
 
-    def init(self, in_stream_buf_callback, in_prompt, in_role_prompt='', in_extra_suffix='', in_streamlit=False, in_temperature=0.7):
+        self.thinking_stream_buf = None
+        self.result_stream_buf = None
+        self.log_stream_buf = None
+        self.tool_cliet_data_stream_buf = None
+
+    def init(self,
+             in_stream_buf_callback,
+             in_prompt,
+             in_url=config.LLM_Default.url,
+             in_api_key=config.LLM_Default.api_key,
+             in_role_prompt='',
+             in_extra_suffix='',
+             in_streamlit=False,
+             in_temperature=config.LLM_Default.temperature,
+             ):
         self.complete = False
         
-        self.llm = LLM_Client(history=True, print_input=False, temperature=in_temperature)
+        self.llm = LLM_Client(
+            history=True,
+            print_input=False,
+            temperature=in_temperature,
+            url=in_url,
+            api_key=in_api_key,
+        )
         self.llm.set_role_prompt(in_role_prompt)
         self.stream_buf_callback = in_stream_buf_callback
         self.prompt = in_prompt
@@ -1128,6 +1167,19 @@ class Async_LLM:
         self.flicker = Flicker_Task()
 
         self.temperature = in_temperature
+
+    def set_output_stream_buf(self, in_output_stream_buf):
+        self.result_stream_buf = in_output_stream_buf
+
+    def set_thinking_stream_buf(self, in_thinking_stream_buf):
+        self.thinking_stream_buf = in_thinking_stream_buf            # 最终结果stream输出的的func
+
+    def set_log_stream_buf(self, in_log_stream_buf):
+        self.log_stream_buf = in_log_stream_buf            # 最终结果stream输出的的func
+
+    # 暂时没用，主要用于tool_agent
+    def set_tool_client_data_stream_buf(self, in_tool_client_data_stream_buf):
+        self.tool_client_data_stream_buf = in_tool_client_data_stream_buf            # 最终结果stream输出的的func
         
     def get_final_response(self):
         return self.final_response
@@ -1136,9 +1188,10 @@ class Async_LLM:
         if self.task:
             self.task.join()
 
-    def run(self):
+    def _run(self):
         # print(f'【Async_LLM】run(temperature={self.temperature}) invoked.')
-        gen = self.llm.ask_prepare(self.prompt).get_answer_generator()
+        gen = self.llm.ask_prepare(self.prompt).get_result_generator()
+        # gen = self.llm.ask_prepare(self.prompt).get_answer_generator()
         full_response = ''
 
         # 将for chunk in gen的同步next(gen)改造为异步，从而在stream暂时没有数据时，从而让光标闪烁等事件能够被响应。
@@ -1150,6 +1203,7 @@ class Async_LLM:
                     self.getting_chunk = True
                     try:
                         self.chunk=next(gen)
+                        self.result_stream_buf(self.chunk)
                     except StopIteration as e:
                         self.complete = True
                     self.getting_chunk = False
@@ -1160,9 +1214,10 @@ class Async_LLM:
                 t = threading.Thread(target=get_chunk)
                 t.start()
                 #chunk = next(gen)    
-                    
-            self.stream_buf_callback(full_response + self.flicker.get_flicker())
-            time.sleep(0.05)
+
+            if self.stream_buf_callback:
+                self.stream_buf_callback(full_response + self.flicker.get_flicker())
+            # time.sleep(0.05)
 
         # 注意：vllm并行query刚开始时，这行代码这里会卡死2-3秒钟。因此需要改造为异步，从而让光标闪烁等事件能够被响应。
         # for chunk in gen:
@@ -1171,21 +1226,22 @@ class Async_LLM:
         
         # print(f'【Async_LLM】extra_suffix= {self.extra_suffix}')
         full_response += self.extra_suffix
-        self.stream_buf_callback(full_response)
+        if self.stream_buf_callback:
+            self.stream_buf_callback(full_response)
 
         self.final_response = full_response
 
         dprint(f'【Async_LLM】run() completed. temperature={self.temperature}, final_response="{self.final_response}"')
 
-    def start(self):
+    def run(self):
         # 由于streamlit对thread支持不好，这里必须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext
-        self.task = threading.Thread(target=self.run)
+        self.task = threading.Thread(target=self._run)
         if self.run_in_streamlit:
             from streamlit.runtime.scriptrunner import add_script_run_ctx
             add_script_run_ctx(self.task)
         
         self.task.start()
-        self.flicker.init(flicker1='█ ', flicker2='  ').start()
+        self.flicker.init(flicker1='█ ', flicker2='  ').run()
 
     async def wrong_run(self):
         dprint(f'Async_LLM._stream_output_process() invoked.')
@@ -1261,7 +1317,7 @@ class Concurrent_LLMs:
         self.llms_num = len(self.llms)
 
         self.flicker = Flicker_Task()
-        self.flicker.init(flicker1='█ ', flicker2='  ').start()
+        self.flicker.init(flicker1='█ ', flicker2='  ').run()
 
     # 用于yield返回状态：
     # status = {
@@ -1803,10 +1859,10 @@ def think_main():
 def base_main():
     llm = LLM_Client(
         temperature=0.7,
-        url='https://powerai.cc:8001/v1'
+        # url='https://powerai.cc:8001/v1'
 
-        # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
-        # url='https://api.deepseek.com/v1',
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
+        url='https://api.deepseek.com/v1',
 
         # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
         # url='https://ark.cn-beijing.volces.com/api/v3/',
@@ -1831,9 +1887,22 @@ def think_and_result_test():
         print(c, end='', flush=True)
     print()
 
+def async_llm_main():
+    allm = Async_LLM()
+    allm.init(
+        in_prompt='你是谁',
+        in_url='https://api.deepseek.com/v1',
+        in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        in_stream_buf_callback=None,
+        in_temperature=0.6,
+    )
+    allm.set_output_stream_buf(dyellow)
+    allm.run()
+
 if __name__ == "__main__" :
     # base_main()
-    think_and_result_test()
+    # think_and_result_test()
+    async_llm_main()
 
     # pic_main() # 带pic
     # think_main()

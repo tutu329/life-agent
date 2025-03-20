@@ -78,7 +78,7 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
             in_streamlit=True,
             in_temperature= st.session_state.local_llm_temperature,
         )
-        async_llm.start()
+        async_llm.run()
     return async_llms
 
 def llm_response_concurrently(prompt, role_prompt, connecting_internet):

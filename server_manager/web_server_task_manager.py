@@ -141,7 +141,7 @@ class Web_Server_Task_Manager():
         def _run_task_thread():
             dgreen(f'Web_Server_Task_Manager(): task(id "{session_id}") 已启动...')
             if task_obj is not None:
-                success = task_obj.run()
+                success = task_obj._run()
 
             # 测试stream
             if Web_Server_Task_Manager.g_local_debug:

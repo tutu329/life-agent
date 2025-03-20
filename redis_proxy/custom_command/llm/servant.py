@@ -157,7 +157,7 @@ def llm_servant(s_redis_proxy_server_data, s_redis_client, status_key, result_ke
         # print(f'llm: {llm}')
         thread = cmd_data['thread']
         thread.init(in_callback_func=llm_callback, status_key=status_key, result_key=result_key, llm_obj=llm, arg_dict=arg_dict)
-        thread.start()
+        thread.run()
 
         if not Config.command_parallel:
             thread.join()   # 等待线程完成

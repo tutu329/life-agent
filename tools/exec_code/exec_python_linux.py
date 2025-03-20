@@ -106,7 +106,7 @@ def execute_python_file_in_docker(
             #         print(status)
 
         dprint(f"【docker】运行 {file_path} 于 '{image_name}' 容器中...")
-        container: DockerContainer = client.containers.run(
+        container: DockerContainer = client.containers._run(
             image_name,
             [
                 "python",

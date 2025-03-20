@@ -387,7 +387,7 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
             in_streamlit=True,
             in_temperature= st.session_state.session_data['paras']['local_llm_temperature'],
         )
-        async_llm.start()
+        async_llm.run()
     return async_llms
 
 def agent_init():

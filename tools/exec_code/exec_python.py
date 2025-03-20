@@ -92,7 +92,7 @@ def execute_python_file(
                     print(status)
 
         print(f"Running {file_path} in a {image_name} container...")
-        container: DockerContainer = client.containers.run(
+        container: DockerContainer = client.containers._run(
             image_name,
             [
                 "python",

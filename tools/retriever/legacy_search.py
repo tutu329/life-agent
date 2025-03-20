@@ -117,7 +117,7 @@ class Bing_Searcher():
     def legacy_search_and_ask(self, in_question):
         prompt = in_question
         self.flicker = Flicker_Task(in_stream_buf_callback=self.stream_buf_callback)
-        self.flicker.init(in_streamlit=True).start()
+        self.flicker.init(in_streamlit=True).run()
 
         internet_search_resultes = self.search(prompt)  # [(url, content_para_list), (url, content_para_list), ...]
         print_long_content_with_urls(internet_search_resultes)
