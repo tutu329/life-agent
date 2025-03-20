@@ -26,6 +26,9 @@ from typing import List, Optional, Dict
 # from redis_client import Redis_Client
 
 from server_manager.server_base import Server_Base
+from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Data, Web_Client_Table_Data, Web_Client_Text_Data, Web_Client_Image_Data
+import json
+
 
 # DEBUG = True
 DEBUG = False
@@ -1113,13 +1116,19 @@ class LLM_Client():
 
 # async的非联网llm调用
 class Async_LLM(Server_Base):
-    def __init__(self):
-        super().__init__()
-        dred('Async_LLM.__init__ 1')
+    def __init__(self,
+                 question,
+                 url=config.LLM_Default.url,
+                 api_key=config.LLM_Default.api_key,
+                 temperature=config.LLM_Default.temperature,
+                 role_prompt='',
+                 extra_suffix='',
+                 streamlit=False,
+                 is_web_server=False,
+                 ):
         self.llm = None
         self.stream_buf_callback = None
         self.task = None
-        self.prompt = ''
         self.role_prompt = ''
         self.extra_suffix = ''
         self.final_response = ''
@@ -1132,43 +1141,32 @@ class Async_LLM(Server_Base):
         self.getting_chunk = False
         self.chunk = ''
 
-        self.temperature = None
+        self.prompt = question
+        self.temperature = temperature
+        self.api_key = api_key
+        self.base_url = url
+        self.role_prompt = role_prompt
+        self.extra_suffix = extra_suffix    # 输出的额外内容
+        self.run_in_streamlit = streamlit
+        self.is_web_server = is_web_server
 
         self.thinking_stream_buf = None
         self.result_stream_buf = None
         self.log_stream_buf = None
         self.tool_cliet_data_stream_buf = None
-        dred('Async_LLM.__init__ 2')
 
-    def init(self,
-             in_stream_buf_callback,
-             in_prompt,
-             in_url=config.LLM_Default.url,
-             in_api_key=config.LLM_Default.api_key,
-             in_role_prompt='',
-             in_extra_suffix='',
-             in_streamlit=False,
-             in_temperature=config.LLM_Default.temperature,
-             ):
+    def init(self):
         self.complete = False
         
         self.llm = LLM_Client(
             history=True,
             print_input=False,
-            temperature=in_temperature,
-            url=in_url,
-            api_key=in_api_key,
+            temperature=self.temperature,
+            url=self.base_url,
+            api_key=self.api_key,
         )
-        self.llm.set_role_prompt(in_role_prompt)
-        self.stream_buf_callback = in_stream_buf_callback
-        self.prompt = in_prompt
-        self.role_prompt = in_role_prompt
-        self.extra_suffix = in_extra_suffix # 输出的额外内容
-        self.run_in_streamlit = in_streamlit
-
+        self.llm.set_role_prompt(self.role_prompt)
         self.flicker = Flicker_Task()
-
-        self.temperature = in_temperature
 
     def set_output_stream_buf(self, in_output_stream_buf):
         self.result_stream_buf = in_output_stream_buf
@@ -1190,6 +1188,22 @@ class Async_LLM(Server_Base):
         if self.task:
             self.task.join()
 
+    def result_stream(self, chunk):
+        if self.result_stream_buf:
+            if self.is_web_server:
+                text_data = Web_Client_Text_Data(
+                    content=chunk,
+                    font='宋体, SimSun',
+                    size='12',
+                    color='black'
+                )
+                client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+                client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+                self.result_stream_buf(client_data_str)
+
+            else:
+                self.result_stream_buf(chunk)
+
     def run(self):
         # print(f'【Async_LLM】run(temperature={self.temperature}) invoked.')
         gen = self.llm.ask_prepare(self.prompt).get_result_generator()
@@ -1205,7 +1219,7 @@ class Async_LLM(Server_Base):
                     self.getting_chunk = True
                     try:
                         self.chunk=next(gen)
-                        self.result_stream_buf(self.chunk)
+                        self.result_stream(self.chunk)
                     except StopIteration as e:
                         self.complete = True
                     self.getting_chunk = False
@@ -1890,14 +1904,13 @@ def think_and_result_test():
     print()
 
 def async_llm_main():
-    allm = Async_LLM()
-    allm.init(
-        in_prompt='你是谁',
-        in_url='https://api.deepseek.com/v1',
-        in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        in_stream_buf_callback=None,
-        in_temperature=0.6,
+    allm = Async_LLM(
+        question='你是谁',
+        url='https://api.deepseek.com/v1',
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        temperature=0.6,
     )
+    allm.init()
     allm.set_output_stream_buf(dyellow)
     allm.start()
     print('quit.')

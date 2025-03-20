@@ -60,11 +60,11 @@ def start_agent_task():
             # dyellow()
             dblue('start1...')
             agent = Async_LLM(
-                in_prompt=query,
-                in_url=base_url,
-                in_api_key=api_key,
-                in_stream_buf_callback=None,
-                in_temperature=0.6,
+                question=query,
+                url=base_url,
+                api_key=api_key,
+                temperature=0.6,
+                is_web_server=True,
             )
             dblue('start2...')
             session_id = session.get('session_id')
