@@ -260,6 +260,7 @@ def index():
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             min-height: 0;
+            border: 1px solid #ddd;
         }
 
         /* ********** 右侧控制面板部分 ********** */
@@ -360,7 +361,8 @@ def index():
             display: flex;
             flex-direction: column;
             min-height: 0; /* 避免"被子元素撑高" */
-            /* 如果想让外面也有"裁剪"行为，可在此写 overflow: hidden; */
+            border: 1px solid #ddd;
+            border-radius: 4px;
             overflow: hidden;
         }
         /* CKEditor 最高父级 (.ck.ck-editor) 也要让它自适应伸缩 */
@@ -420,16 +422,16 @@ def index():
                     </div>
 
                     <div class="form-group">
-                        <label for="base-url">API Base-URL：</label>
-                        <input type="text" id="base-url" value="https://api.deepseek.com/v1">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="api-key">API-key：</label>
-                        <input type="text" id="api-key" value="sk-c1d34a4f21e3413487bb4b2806f6c4b8">
+                        <label for="model-select">模型选择：</label>
+                        <select id="model-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                            <option value="671B模型">671B模型</option>
+                            <option value="110B模型">110B模型</option>
+                            <option value="72B模型">72B模型</option>
+                        </select>
                     </div>
 
                     <div class="button-container">
+                        <button id="clear-btn" style="width: 80px;">清空</button>
                         <button id="run-btn" style="width: 80px;">运行</button>
                     </div>
 
@@ -650,13 +652,25 @@ def index():
                 });
 
             const runBtn = document.getElementById('run-btn');
+            const clearBtn = document.getElementById('clear-btn');
             const outputEl = document.getElementById('output');
             const statusEl = document.getElementById('status');
             const queryEl = document.getElementById('query');
-            const baseUrlEl = document.getElementById('base-url');
-            const apiKeyEl = document.getElementById('api-key');
+            const modelSelectEl = document.getElementById('model-select');
 
             let eventSource = null;
+
+            // Clear button click handler
+            clearBtn.addEventListener('click', function() {
+                // Clear CKEditor content
+                if (window.editor) {
+                    window.editor.setData('');
+                }
+                // Clear output element
+                outputEl.textContent = '';
+                // Reset status
+                statusEl.textContent = '空闲';
+            });
 
             // Run SSE task
             runBtn.addEventListener('click', function() {
@@ -679,8 +693,8 @@ def index():
                     query: queryEl.value,
                     query_text: queryEl.value,  // 添加query_text参数
                     tools: [],
-                    base_url: baseUrlEl.value,
-                    api_key: apiKeyEl.value
+                    base_url: 'https://api.deepseek.com/v1',  // 使用默认值
+                    api_key: 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'  // 使用默认值
                 };
 
                 console.log('-------------------已发送/api/start_agent_task请求...--------------------------');
