@@ -623,14 +623,14 @@ def index():
                         } else if (data.message) {
                             // 处理字体
                             console.log('--------------------text属性--------------------------')
-                            console.log(typeof data.message);
+                            // console.log(typeof data.message);
                             let obj = JSON.parse(data.message).data;
                             let text = obj.content
                             let alignment = obj.alignment
                             let font_name = obj.font
                             let font_size = obj.size
                             let font_color = obj.color
-                            console.log('obj: ', obj);
+                            // console.log('obj: ', obj);
                             console.log('text: ', text);
                             console.log('alignment: ', alignment);
                             console.log('font_name: ', font_name);
@@ -650,6 +650,7 @@ def index():
                                     // 逐行插入
                                     for (let i = 0; i < lines.length; i++) {
                                         if (alignment=='middle') {
+                                            console.log('--------------绘制red标题-----------------')
                                             // 创建一个新的段落
                                             const paragraph = writer.createElement('paragraph');
                                             
@@ -664,7 +665,9 @@ def index():
                                             writer.append(textNode, paragraph);
                                             
                                             // 将段落插入到文档中
-                                            writer.insert(paragraph, insertPosition);                                        
+                                            writer.insert(paragraph, insertPosition);  
+                                                                                  
+                                            console.log('-------------/绘制red标题-----------------')
                                         }
                                         else {
                                             // 插入该行文本
