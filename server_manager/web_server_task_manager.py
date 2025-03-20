@@ -54,7 +54,8 @@ class Web_Client_Data_Type():
 @dataclass
 class Web_Client_Text_Data():
     content:str = None  # 如'my data'
-    alignment:str='left'# 如'middle'、'left'、'right'
+    alignment:str='left'# 如'center'、'left'、'right'
+    is_heading:str='false'
     font:str    = None  # 如'黑体, SimHei'、'宋体, SimSun'
     size:str    = None  # 如'22'、'12'
     color:str   = None  # 如'green'

@@ -677,6 +677,7 @@ def index():
                             let obj = JSON.parse(data.message).data;
                             let text = obj.content
                             let alignment = obj.alignment
+                            let is_heading = obj.is_heading
                             let font_name = obj.font
                             let font_size = obj.size
                             let font_color = obj.color
@@ -699,11 +700,11 @@ def index():
                                     const lines = text.split(/\\r?\\n/);
                                     // 逐行插入
                                     for (let i = 0; i < lines.length; i++) {
-                                        if (alignment=='middle') {
+                                        if (is_heading=='true') {
                                             console.log('--------------绘制red标题-----------------')
                                             // 创建一个新的段落
                                             const paragraph = writer.createElement('paragraph', {
-                                                alignment: 'center'  // 设置段落居中
+                                                alignment: alignment  // 设置段落居中
                                             });
 
                                             // 创建文本节点，应用字体、大小和颜色属性

@@ -305,7 +305,8 @@ class Web_Office_Write(Server_Base):
         if heading.startswith('0 '):
             text_data = Web_Client_Text_Data(
                 content=heading[2:],
-                alignment='middle',
+                alignment='center',
+                is_heading='true',
                 font='黑体, SimHei',
                 size='22',
                 color='red'
@@ -314,38 +315,41 @@ class Web_Office_Write(Server_Base):
             client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
             self.output_stream_buf(client_data_str)
 
-            text_data = Web_Client_Text_Data(
-                content='\n',
-                font='黑体, SimHei',
-                size='22',
-                color='red'
-            )
-            client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
-            client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
-            self.output_stream_buf(client_data_str)
+            # text_data = Web_Client_Text_Data(
+            #     content='\n',
+            #     is_heading='true',
+            #     font='黑体, SimHei',
+            #     size='22',
+            #     color='red'
+            # )
+            # client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+            # client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+            # self.output_stream_buf(client_data_str)
 
             # self.output_stream_buf(heading[2:])
             # self.output_stream_buf('\n')
         else:
             text_data = Web_Client_Text_Data(
                 content=heading,
+                is_heading='true',
                 font='宋体, SimSun',
                 size='12',
-                color='black'
+                color='red'
             )
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
             client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
             self.output_stream_buf(client_data_str)
 
-            text_data = Web_Client_Text_Data(
-                content='\n',
-                font='宋体, SimSun',
-                size='12',
-                color='black'
-            )
-            client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
-            client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
-            self.output_stream_buf(client_data_str)
+            # text_data = Web_Client_Text_Data(
+            #     content='\n',
+            #     is_heading='true',
+            #     font='宋体, SimSun',
+            #     size='12',
+            #     color='red'
+            # )
+            # client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
+            # client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
+            # self.output_stream_buf(client_data_str)
 
             # self.output_stream_buf(heading)
             # self.output_stream_buf('\n')
