@@ -46,73 +46,98 @@ def start_agent_task():
         dblue(f'-------------------------query-------------------------')
         dblue(f'{query!r}')
         dblue(f'------------------------/query-------------------------')
-        base_url = data.get('base_url', 'https://api.deepseek.com/v1')
-        api_key = data.get('api_key', 'sk-c1d34a4f21e3413487bb4b2806f6c4b8')
-
+        base_url = 'https://api.deepseek.com/v1'
+        api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
         # Create agent instance
         agent = None
 
         if query:
-            # llm = LLM_Client(url=base_url, api_key=api_key)
-            # gen = llm.ask_prepare(question=query, temperature=0.6).get_result_generator()
-            # for chunk in gen:
-            #     dyellow(chunk, end='', flush=True)
-            # dyellow()
-            agent = Async_LLM(
-                question=query,
-                url=base_url,
-                api_key=api_key,
-                temperature=0.6,
-                is_web_server=True,
-            )
-            session_id = session.get('session_id')
-            dblue(f'client login (session_id: "{session_id}").')
+            llm = LLM_Client(url=base_url, api_key=api_key)
+            prompt = f'''以下是用户的问题或请求：
+<用户的问题或请求>
+{query}
+</用户的问题或请求>
+请根据其内容判断其诉求，并选择以下之一进行回复：
+<回复的可选内容>
+直接问答
+通过工具问答
+编制报告
+</回复的可选内容>
+<回复要求>
+不能进行任何解释，直接回复可选项的内容
+不要加任何引号、括号等修饰
+</回复要求>
+'''
+            gen = llm.ask_prepare(question=prompt, temperature=0).get_result_generator()
+            answer = ''
+            for chunk in gen:
+                answer += chunk
+                dyellow(chunk, end='', flush=True)
+            dyellow()
 
-            # Start task
-            task_id = Web_Server_Task_Manager.start_task(
-                task_obj=agent,
-                session_id=session_id
-            )
+            dred('-----------------用户意图-----------------------')
+            dred(answer)
+            dred('----------------/用户意图-----------------------')
 
-            dblue(f'task_id: "{task_id}"')
-            return jsonify({"task_id": task_id})
-            # tools = [Table_Tool]
-            # agent = Tool_Agent(
-            #     in_query=query,
-            #     in_base_url='https://api.deepseek.com/v1',
-            #     in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-            #     in_temperature=0.6,
-            #     in_tool_classes=tools,
-            #     in_is_web_server=True,
-            # )
-            #
-            # session_id = session.get('session_id')
-            # task_id = Web_Server_Task_Manager.start_task(
-            #     task_obj=agent,
-            #     session_id=session_id
-            # )
-            # return jsonify({"task_id": task_id})
-        else:
-            agent = Web_Office_Write(
-                # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
-                scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
-                base_url=base_url,
-                api_key=api_key,
-                temperature=config.LLM_Default.temperature
-            )
+            if answer=='直接问答':
+                agent = Async_LLM(
+                    question=query,
+                    url=base_url,
+                    api_key=api_key,
+                    temperature=0.6,
+                    is_web_server=True,
+                )
+                session_id = session.get('session_id')
+                dblue(f'client login (session_id: "{session_id}").')
 
-            # Get client's anonymous session ID
-            session_id = session.get('session_id')
-            dblue(f'client login (session_id: "{session_id}").')
+                # Start task
+                task_id = Web_Server_Task_Manager.start_task(
+                    task_obj=agent,
+                    session_id=session_id
+                )
 
-            # Start task
-            task_id = Web_Server_Task_Manager.start_task(
-                task_obj=agent,
-                session_id=session_id
-            )
+                dblue(f'task_id: "{task_id}"')
+                return jsonify({"task_id": task_id})
+            elif answer=='通过工具问答':
+                tools = [Table_Tool]
+                agent = Tool_Agent(
+                    in_query=query,
+                    in_base_url=base_url,
+                    in_api_key=api_key,
+                    in_temperature=0.6,
+                    in_tool_classes=tools,
+                    in_is_web_server=True,
+                )
 
-            # Return task_id
-            return jsonify({"task_id": task_id})
+                session_id = session.get('session_id')
+                task_id = Web_Server_Task_Manager.start_task(
+                    task_obj=agent,
+                    session_id=session_id
+                )
+                return jsonify({"task_id": task_id})
+            elif answer=='编制报告':
+                agent = Web_Office_Write(
+                    # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
+                    scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
+                    base_url=base_url,
+                    api_key=api_key,
+                    temperature=config.LLM_Default.temperature
+                )
+
+                # Get client's anonymous session ID
+                session_id = session.get('session_id')
+                dblue(f'client login (session_id: "{session_id}").')
+
+                # Start task
+                task_id = Web_Server_Task_Manager.start_task(
+                    task_obj=agent,
+                    session_id=session_id
+                )
+
+                # Return task_id
+                return jsonify({"task_id": task_id})
+            else:
+                return None
 
     except Exception as e:
         return jsonify({"start_agent_task error": str(e)}), 500
