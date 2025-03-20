@@ -127,12 +127,13 @@ def start_agent_task():
                 return jsonify({"task_id": task_id})
             elif answer=='编制报告':
                 agent = Web_Office_Write(
-                    # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
-                    scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
+                    scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
+                    # scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
                     base_url=base_url,
                     api_key=api_key,
                     temperature=config.LLM_Default.temperature
                 )
+
 
                 # Get client's anonymous session ID
                 session_id = session.get('session_id')
@@ -733,6 +734,7 @@ def index():
                 };
 
                 console.log('-------------------已发送/api/start_agent_task请求...--------------------------');
+                let start=0
                 fetch('/api/start_agent_task', {
                     method: 'POST',
                     headers: {
@@ -788,6 +790,10 @@ def index():
                                     const root = window.editor.model.document.getRoot();
                                     // 定位到内容末尾，以便追加
                                     const insertPosition = window.editor.model.createPositionAt(root, 'end');
+                                    
+                                    // --------------------用于测试---------------
+                                    if (start==0) {
+                                    }
 
                                     // 拆分行
                                     // const lines = data.message.split('\\n');
@@ -797,7 +803,18 @@ def index():
                                     // console.log('--------------lines-----------------')
                                     // console.log(lines)
                                     // console.log('-------------/lines-----------------')
-                                    for (let i = 0; i < lines.length; i++) {
+                                    if ( text.includes('\\n') ) {
+                                        console.log('--------------有换行-----------------')
+                                        console.log(lines)
+                                        console.log('length=',lines.length)
+                                        for (let i = lines.length; i > 0; i--) {
+                                            console.log('i=',i)
+                                        }
+                                        console.log('-------------/有换行-----------------')
+                                    } 
+                                    
+                                    // ----------------------超级大坑：ckeditor的model.change里，为了方便撤销，所有操作的顺序是反的，所以要先插入'softBreak'、然后再插入'。'----------------------
+                                    for (let i = lines.length-1; i >= 0; i--) {
                                         if (is_heading=='true') {
                                             console.log('--------------绘制red标题-----------------')
                                             // 创建一个新的段落
@@ -821,40 +838,26 @@ def index():
                                             console.log('-------------/绘制red标题-----------------')
                                         }
                                         else {
-                                            // 插入该行文本
                                             writer.insertText(lines[i], insertPosition);
-                                        }
-
-                                        // 如果不是最后一行，则插入一个softBreak元素
-                                        // softBreak在CKEditor中会呈现出换行效果
-                                        // if (i < lines.length - 1) {
-                                        //     writer.insertElement('softBreak', insertPosition);
-                                        // }
-                                        if (i < lines.length - 1 && lines[i].trim() !== '') {
-                                            console.log('-------------出现软回车-----------------')
-                                            console.log('原文: "', text, '"')
-                                            console.log('回车之前的字为："', lines[i], '"')
-                                            for (let i = 0; i < lines.length; i++) {
-                                                console.log('"', lines[i], '"')
+                                            // if (i < lines.length - 1 && lines[i].trim() !== '') {
+                                            if (i > 0 && lines.length>=2) {
+                                                writer.insertElement('softBreak', insertPosition);
+                                                
+                                                // const paragraph = writer.createElement('paragraph');
+                                                // // 创建文本节点，应用字体、大小和颜色属性
+                                                // const textNode = writer.createText('\\n', {
+                                                //     fontFamily: font_name,
+                                                //     fontSize: font_size,
+                                                //     fontColor: font_color
+                                                // });
+                                                // // 将文本节点添加到段落中
+                                                // writer.append(textNode, paragraph);
+                                                // // 将段落插入到文档中
+                                                // writer.insert(paragraph, insertPosition); 
                                             }
-                                            console.log('-------------/出现软回车-----------------')
-                                            // insertPosition = window.editor.model.createPositionAt(root, 'end');
-                                            
-                                            writer.insertElement('softBreak', insertPosition);
-                                            
-                                            // const paragraph = writer.createElement('paragraph');
-                                            // // 创建文本节点，应用字体、大小和颜色属性
-                                            // const textNode = writer.createText('\\n', {
-                                            //     fontFamily: font_name,
-                                            //     fontSize: font_size,
-                                            //     fontColor: font_color
-                                            // });
-                                            // // 将文本节点添加到段落中
-                                            // writer.append(textNode, paragraph);
-                                            // // 将段落插入到文档中
-                                            // writer.insert(paragraph, insertPosition); 
                                         }
                                     }
+                                    // ---------------------/超级大坑：ckeditor的model.change里，为了方便撤销，所有操作的顺序是反的，所以要先插入'softBreak'、然后再插入'。'----------------------
                                 });
                             }
                         }
