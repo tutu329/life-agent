@@ -138,10 +138,8 @@ def index():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>报告自主编制</title>
-    <!-- 移除 Quill CSS -->
-    <!-- <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"> -->
-    <!-- 引入 CKEditor5 Classic Build -->
-    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+    <!-- 引入 CKEditor5 -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/decoupled-document/ckeditor.js"></script>
     <!-- 引入 jsTree -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -545,10 +543,62 @@ def index():
             });
 
             // 初始化 CKEditor5
-            ClassicEditor
-                .create(document.querySelector('#editor'))
-                .then(editorInstance => {
-                    window.editor = editorInstance;
+            DecoupledEditor
+                .create(document.querySelector('#editor'), {
+                    toolbar: {
+                        items: [
+                            'undo', 'redo',
+                            '|', 'heading',
+                            '|', 'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor',
+                            '|', 'bold', 'italic', 'underline', 'strikethrough',
+                            '|', 'alignment',
+                            '|', 'numberedList', 'bulletedList',
+                            '|', 'indent', 'outdent',
+                            '|', 'link', 'blockQuote', 'insertTable', 'mediaEmbed'
+                        ],
+                        shouldNotGroupWhenFull: true
+                    },
+                    fontFamily: {
+                        options: [
+                            'default',
+                            'Arial, Helvetica, sans-serif',
+                            'Courier New, Courier, monospace',
+                            'Georgia, serif',
+                            'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                            'Tahoma, Geneva, sans-serif',
+                            'Times New Roman, Times, serif',
+                            'Trebuchet MS, Helvetica, sans-serif',
+                            'Verdana, Geneva, sans-serif',
+                            '宋体, SimSun',
+                            '黑体, SimHei',
+                            '微软雅黑, Microsoft YaHei',
+                            '楷体, KaiTi',
+                            '仿宋, FangSong'
+                        ]
+                    },
+                    fontSize: {
+                        options: [
+                            9,
+                            11,
+                            12,
+                            14,
+                            16,
+                            18,
+                            20,
+                            22,
+                            24,
+                            26,
+                            28,
+                            36,
+                            42
+                        ]
+                    },
+                    language: 'zh-cn'
+                })
+                .then(editor => {
+                    const toolbarContainer = document.querySelector('#editor-container');
+                    toolbarContainer.prepend(editor.ui.view.toolbar.element);
+                    window.editor = editor;
                 })
                 .catch(error => {
                     console.error(error);
@@ -653,20 +703,20 @@ def index():
                                             console.log('--------------绘制red标题-----------------')
                                             // 创建一个新的段落
                                             const paragraph = writer.createElement('paragraph');
-                                            
+
                                             // 创建文本节点，应用字体、大小和颜色属性
                                             const textNode = writer.createText(lines[i], {
                                                 fontFamily: font_name,
                                                 fontSize: font_size,
                                                 fontColor: font_color
                                             });
-                                            
+
                                             // 将文本节点添加到段落中
                                             writer.append(textNode, paragraph);
-                                            
+
                                             // 将段落插入到文档中
                                             writer.insert(paragraph, insertPosition);  
-                                                                                  
+
                                             console.log('-------------/绘制red标题-----------------')
                                         }
                                         else {
