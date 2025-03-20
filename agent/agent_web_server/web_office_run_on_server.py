@@ -135,7 +135,6 @@ def start_agent_task():
                     temperature=config.LLM_Default.temperature
                 )
 
-
                 # Get client's anonymous session ID
                 session_id = session.get('session_id')
                 dblue(f'client login (session_id: "{session_id}").')
