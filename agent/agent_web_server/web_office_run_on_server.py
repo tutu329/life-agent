@@ -58,7 +58,6 @@ def start_agent_task():
             # for chunk in gen:
             #     dyellow(chunk, end='', flush=True)
             # dyellow()
-            dblue('start1...')
             agent = Async_LLM(
                 question=query,
                 url=base_url,
@@ -66,9 +65,7 @@ def start_agent_task():
                 temperature=0.6,
                 is_web_server=True,
             )
-            dblue('start2...')
             session_id = session.get('session_id')
-            dblue('start3...')
             dblue(f'client login (session_id: "{session_id}").')
 
             # Start task
@@ -78,7 +75,6 @@ def start_agent_task():
             )
 
             dblue(f'task_id: "{task_id}"')
-
             return jsonify({"task_id": task_id})
             # tools = [Table_Tool]
             # agent = Tool_Agent(
