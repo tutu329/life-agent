@@ -702,7 +702,9 @@ def index():
                                         if (alignment=='middle') {
                                             console.log('--------------绘制red标题-----------------')
                                             // 创建一个新的段落
-                                            const paragraph = writer.createElement('paragraph');
+                                            const paragraph = writer.createElement('paragraph', {
+                                                alignment: 'center'  // 设置段落居中
+                                            });
 
                                             // 创建文本节点，应用字体、大小和颜色属性
                                             const textNode = writer.createText(lines[i], {

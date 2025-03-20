@@ -306,8 +306,8 @@ class Web_Office_Write(Server_Base):
             text_data = Web_Client_Text_Data(
                 content=heading[2:],
                 alignment='middle',
-                font='simhei',
-                size='28pt',
+                font='黑体, SimHei',
+                size='22',
                 color='red'
             )
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
@@ -316,8 +316,8 @@ class Web_Office_Write(Server_Base):
 
             text_data = Web_Client_Text_Data(
                 content='\n',
-                font='simhei',
-                size='14pt',
+                font='黑体, SimHei',
+                size='22',
                 color='red'
             )
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
@@ -329,8 +329,8 @@ class Web_Office_Write(Server_Base):
         else:
             text_data = Web_Client_Text_Data(
                 content=heading,
-                font='simsun',
-                size='14pt',
+                font='宋体, SimSun',
+                size='12',
                 color='black'
             )
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
@@ -339,8 +339,8 @@ class Web_Office_Write(Server_Base):
 
             text_data = Web_Client_Text_Data(
                 content='\n',
-                font='simsun',
-                size='14pt',
+                font='宋体, SimSun',
+                size='12',
                 color='black'
             )
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
@@ -353,8 +353,8 @@ class Web_Office_Write(Server_Base):
     def insert_text_at_cursor_without_end(self, text, style='！正文'):
         text_data = Web_Client_Text_Data(
             content=text,
-            font='simsun',
-            size='14pt',
+            font='宋体, SimSun',
+            size='12',
             color='black'
         )
         client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
@@ -366,8 +366,8 @@ class Web_Office_Write(Server_Base):
     def insert_text_end_at_cursor(self):
         text_data = Web_Client_Text_Data(
             content='\n',
-            font='simsun',
-            size='14pt',
+            font='宋体, SimSun',
+            size='12',
             color='black'
         )
         client_data = Web_Client_Data(type=Web_Client_Data_Type.TEXT, data=text_data)
