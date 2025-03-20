@@ -791,7 +791,8 @@ def index():
 
                                     // 拆分行
                                     // const lines = data.message.split('\\n');
-                                    const lines = text.split(/\\r?\\n/);
+                                    // const lines = text.split(/\\r?\\n/);
+                                    const lines = text.split(/\\r?\\n/).filter(line => line !== undefined);
                                     // 逐行插入
                                     // console.log('--------------lines-----------------')
                                     // console.log(lines)
@@ -831,20 +832,27 @@ def index():
                                         // }
                                         if (i < lines.length - 1 && lines[i].trim() !== '') {
                                             console.log('-------------出现软回车-----------------')
+                                            console.log('原文: "', text, '"')
                                             console.log('回车之前的字为："', lines[i], '"')
+                                            for (let i = 0; i < lines.length; i++) {
+                                                console.log('"', lines[i], '"')
+                                            }
                                             console.log('-------------/出现软回车-----------------')
-                                            // writer.insertElement('softBreak', insertPosition);
-                                            const paragraph = writer.createElement('paragraph');
-                                            // 创建文本节点，应用字体、大小和颜色属性
-                                            const textNode = writer.createText('\\n', {
-                                                fontFamily: font_name,
-                                                fontSize: font_size,
-                                                fontColor: font_color
-                                            });
-                                            // 将文本节点添加到段落中
-                                            writer.append(textNode, paragraph);
-                                            // 将段落插入到文档中
-                                            writer.insert(paragraph, insertPosition); 
+                                            // insertPosition = window.editor.model.createPositionAt(root, 'end');
+                                            
+                                            writer.insertElement('softBreak', insertPosition);
+                                            
+                                            // const paragraph = writer.createElement('paragraph');
+                                            // // 创建文本节点，应用字体、大小和颜色属性
+                                            // const textNode = writer.createText('\\n', {
+                                            //     fontFamily: font_name,
+                                            //     fontSize: font_size,
+                                            //     fontColor: font_color
+                                            // });
+                                            // // 将文本节点添加到段落中
+                                            // writer.append(textNode, paragraph);
+                                            // // 将段落插入到文档中
+                                            // writer.insert(paragraph, insertPosition); 
                                         }
                                     }
                                 });
