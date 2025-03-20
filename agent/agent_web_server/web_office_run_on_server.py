@@ -187,6 +187,20 @@ def index():
         #jstree-container {
             flex: 1;
             overflow: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background: #fff;
+        }
+        /* 自定义表格节点的图标 */
+        .jstree-default .jstree-icon.jstree-themeicon-custom {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='3' y1='9' x2='21' y2='9'%3E%3C/line%3E%3Cline x1='3' y1='15' x2='21' y2='15'%3E%3C/line%3E%3C/svg%3E");
+            background-size: 16px 16px;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
         }
 
         /* ********** CKEditor 中间编辑区 ********** */
@@ -329,7 +343,7 @@ def index():
     <div class="main-container">
         <!-- 左侧树状结构面板 -->
         <div class="tree-panel">
-            <h2>目录结构</h2>
+            <h2>数据资源</h2>
             <div id="jstree-container"></div>
         </div>
 
@@ -385,41 +399,41 @@ def index():
                                 {
                                     'text': '本部',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '电量平衡情况表(公司-本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电网负荷特性表(公司-本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '全社会用电分类情况表(公司-本部)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '杭州',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '电量平衡情况表(公司-杭州)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电网负荷特性表(公司-杭州)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '全社会用电分类情况表(公司-杭州)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '宁波',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '电量平衡情况表(公司-宁波)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电网负荷特性表(公司-宁波)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '全社会用电分类情况表(公司-宁波)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '温州',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '电量平衡情况表(公司-温州)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电网负荷特性表(公司-温州)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '全社会用电分类情况表(公司-温州)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '绍兴',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '电量平衡情况表(公司-绍兴)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电网负荷特性表(公司-绍兴)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '全社会用电分类情况表(公司-绍兴)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 }
                             ]
@@ -430,41 +444,41 @@ def index():
                                 {
                                     'text': '浙江',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '浙江省能源消费总量表(政府-浙江)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '浙江省GDP增长情况表(政府-浙江)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '浙江省产业结构变化表(政府-浙江)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '杭州',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '杭州市能源消费总量表(政府-杭州)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '杭州市GDP增长情况表(政府-杭州)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '杭州市产业结构变化表(政府-杭州)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '宁波',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '宁波市能源消费总量表(政府-宁波)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '宁波市GDP增长情况表(政府-宁波)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '宁波市产业结构变化表(政府-宁波)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '温州',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '温州市能源消费总量表(政府-温州)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '温州市GDP增长情况表(政府-温州)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '温州市产业结构变化表(政府-温州)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '绍兴',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '绍兴市能源消费总量表(政府-绍兴)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '绍兴市GDP增长情况表(政府-绍兴)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '绍兴市产业结构变化表(政府-绍兴)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 }
                             ]
@@ -475,33 +489,48 @@ def index():
                                 {
                                     'text': '社科院',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '能源消费预测分析表(其他-社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '经济发展趋势预测表(其他-社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '产业结构优化建议表(其他-社科院)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '中电联',
                                     'children': [
-                                        {'text': '电量平衡情况表'},
-                                        {'text': '电网负荷特性表'},
-                                        {'text': '全社会用电分类情况表'}
+                                        {'text': '全国电力供需平衡表(其他-中电联)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电力行业发展趋势表(其他-中电联)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电力体制改革进展表(其他-中电联)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 }
                             ]
                         }
                     ]
                 },
-                'plugins': ['wholerow', 'state'],
+                'plugins': ['wholerow', 'state', 'checkbox'],
                 'state': {
                     'key': 'jstree_demo'
+                },
+                'checkbox': {
+                    'three_state': false,
+                    'cascade': 'down'
                 }
             });
 
             // 绑定树节点点击事件
-            $('#jstree-container').on('select_node.jstree', function(e, data) {
-                const nodeText = data.node.text;
-                document.getElementById('query').value = '@' + nodeText;
+            $('#jstree-container').on('select_node.jstree deselect_node.jstree', function(e, data) {
+                // 获取所有选中的节点
+                const selectedNodes = $('#jstree-container').jstree('get_selected');
+                // 获取所有选中节点的文本，但只包含表格节点（有自定义图标的节点）
+                const selectedTexts = selectedNodes.map(nodeId => {
+                    const node = $('#jstree-container').jstree('get_node', nodeId);
+                    // 只处理有自定义图标的节点（表格节点）
+                    if (node.icon === 'jstree-themeicon-custom') {
+                        return '@' + node.text;
+                    }
+                    return '';
+                }).filter(text => text !== ''); // 过滤掉空字符串
+                // 用空格连接所有选中的文本
+                document.getElementById('query').value = selectedTexts.join(' ');
             });
 
             // 初始化 CKEditor5
