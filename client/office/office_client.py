@@ -305,6 +305,7 @@ class Web_Office_Write(Server_Base):
         if heading.startswith('0 '):
             text_data = Web_Client_Text_Data(
                 content=heading[2:],
+                alignment='middle',
                 font='simhei',
                 size='28pt',
                 color='red'

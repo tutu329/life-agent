@@ -626,11 +626,13 @@ def index():
                             console.log(typeof data.message);
                             let obj = JSON.parse(data.message).data;
                             let text = obj.content
+                            let alignment = obj.alignment
                             let font_name = obj.font
                             let font_size = obj.size
                             let font_color = obj.color
                             console.log('obj: ', obj);
                             console.log('text: ', text);
+                            console.log('alignment: ', alignment);
                             console.log('font_name: ', font_name);
                             console.log('font_size: ', font_size);
                             console.log('font_color: ', font_color);
@@ -647,8 +649,27 @@ def index():
                                     const lines = text.split(/\\r?\\n/);
                                     // 逐行插入
                                     for (let i = 0; i < lines.length; i++) {
-                                        // 插入该行文本
-                                        writer.insertText(lines[i], insertPosition);
+                                        if (alignment=='middle') {
+                                            // 创建一个新的段落
+                                            const paragraph = writer.createElement('paragraph');
+                                            
+                                            // 创建文本节点，应用字体、大小和颜色属性
+                                            const textNode = writer.createText(lines[i], {
+                                                fontFamily: font_name,
+                                                fontSize: font_size,
+                                                fontColor: font_color
+                                            });
+                                            
+                                            // 将文本节点添加到段落中
+                                            writer.append(textNode, paragraph);
+                                            
+                                            // 将段落插入到文档中
+                                            writer.insert(paragraph, insertPosition);                                        
+                                        }
+                                        else {
+                                            // 插入该行文本
+                                            writer.insertText(lines[i], insertPosition);
+                                        }
 
                                         // 如果不是最后一行，则插入一个softBreak元素
                                         // softBreak在CKEditor中会呈现出换行效果
