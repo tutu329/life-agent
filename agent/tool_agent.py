@@ -40,6 +40,7 @@ class Tool_Agent(Server_Base):
                  in_status_stream_buf=None,
                  in_base_url=config.LLM_Default.url,
                  in_api_key='empty',
+                 in_model_id='',
                  in_temperature=config.LLM_Default.temperature,
                  # remove_content_in_think_pairs=False,
                  in_is_web_server=True,
@@ -49,6 +50,7 @@ class Tool_Agent(Server_Base):
         self.temperature = in_temperature
         self.url = in_base_url
         self.api_key = in_api_key
+        self.model_id = in_model_id
         self.agent_tools_description_and_full_history = ''
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
         self.query=in_query
@@ -154,6 +156,7 @@ class Tool_Agent(Server_Base):
         self.llm = LLM_Client(
             url=self.url,
             api_key=self.api_key,
+            model_id=self.model_id,
             temperature=self.temperature,
             history=False,
             print_input=False,

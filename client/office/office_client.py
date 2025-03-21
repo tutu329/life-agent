@@ -247,6 +247,7 @@ def _ask_agent(
         log_stream_buf=None,
         tool_client_data_stream_buf=None,
         base_url=config.LLM_Default.url,
+        model_id='',
         temperature=0.7,
         api_key='empty'
 ) -> str:
@@ -260,6 +261,7 @@ def _ask_agent(
         in_output_end=output_stream_end_func,
         in_base_url=base_url,
         in_api_key=api_key,
+        in_model_id=model_id,
         in_temperature=temperature
     )
     dblue(f'tools registered: {agent.registered_tool_instances_dict}')
@@ -286,11 +288,13 @@ class Web_Office_Write(Server_Base):
                  scheme_file_path,
                  base_url=config.LLM_Default.url,
                  api_key=config.LLM_Default.api_key,
+                 model_id='',
                  temperature=config.LLM_Default.temperature
                  ):
         self.scheme_file_path = scheme_file_path
         self.base_url = base_url
         self.api_key = api_key
+        self.model_id = model_id
         self.temperature = temperature
         self.output_stream_buf = None
         self.thinking_stream_buf = None
@@ -414,6 +418,7 @@ class Web_Office_Write(Server_Base):
                         output_stream_end_func=self.insert_text_end_at_cursor,
                         base_url=self.base_url,
                         api_key=self.api_key,
+                        model_id=self.model_id,
                         temperature=self.temperature
                     )
                     # office.word_insert_text_at_cursor(text=result)
@@ -430,6 +435,7 @@ class Web_Office_Write(Server_Base):
                         output_stream_end_func=self.insert_text_end_at_cursor,
                         base_url=self.base_url,
                         api_key=self.api_key,
+                        model_id=self.model_id,
                         temperature=self.temperature
                     )
 

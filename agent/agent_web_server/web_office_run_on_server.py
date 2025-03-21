@@ -43,18 +43,32 @@ def start_agent_task():
     try:
         data = request.json
         query = data.get('query', '')
+        model = data.get('model', '')  # Get the model value from request data
         dblue(f'-------------------------query-------------------------')
         dblue(f'{query!r}')
         dblue(f'------------------------/query-------------------------')
-        base_url = 'https://api.deepseek.com/v1'
-        api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
-        # base_url = 'https://powerai.cc:8001/v1'
-        # api_key = 'empty'
+        dblue(f'-------------------------model-------------------------')
+        dblue(f'{model!r}')
+        dblue(f'------------------------/model-------------------------')
+
+        if model=='V3模型':
+            base_url = 'https://api.deepseek.com/v1'
+            api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
+            model_id = 'deepseek-chat'
+        elif model=='R1模型':
+            base_url = 'https://api.deepseek.com/v1'
+            api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
+            model_id = 'deepseek-reasoner'
+        elif model=='72B模型':
+            base_url = 'https://powerai.cc:8001/v1'
+            api_key = 'empty'
+            model_id = ''
+
         # Create agent instance
         agent = None
 
         if query:
-            llm = LLM_Client(url=base_url, api_key=api_key)
+            llm = LLM_Client(url=base_url, api_key=api_key, model_id=model_id)
             prompt = f'''以下是用户的问题或请求：
 <用户的问题或请求>
 {query}
@@ -81,7 +95,7 @@ def start_agent_task():
             dred(answer)
             dred('----------------/用户意图-----------------------')
 
-            if answer=='直接问答':
+            if answer == '直接问答':
                 question = f'''请根据以下的用户问题，按要求回答:
 <用户问题>
 {query}
@@ -95,6 +109,7 @@ def start_agent_task():
                     question=question,
                     url=base_url,
                     api_key=api_key,
+                    model_id=model_id,
                     temperature=0.6,
                     is_web_server=True,
                 )
@@ -109,12 +124,13 @@ def start_agent_task():
 
                 dblue(f'task_id: "{task_id}"')
                 return jsonify({"task_id": task_id})
-            elif answer=='通过工具问答':
+            elif answer == '通过工具问答':
                 tools = [Table_Tool]
                 agent = Tool_Agent(
                     in_query=query,
                     in_base_url=base_url,
                     in_api_key=api_key,
+                    in_model_id='',
                     in_temperature=0.6,
                     in_tool_classes=tools,
                     in_is_web_server=True,
@@ -126,12 +142,13 @@ def start_agent_task():
                     session_id=session_id
                 )
                 return jsonify({"task_id": task_id})
-            elif answer=='编制报告':
+            elif answer == '编制报告':
                 agent = Web_Office_Write(
                     # scheme_file_path='D:/server/life-agent/agent/agent_web_server/提纲_13900.txt',
                     scheme_file_path='Y:/life-agent/agent/agent_web_server/提纲.txt',
                     base_url=base_url,
                     api_key=api_key,
+                    model_id='',
                     temperature=config.LLM_Default.temperature
                 )
 
@@ -218,7 +235,7 @@ def index():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>报告自主编制</title>
+    <title>电力看经济研究咨询平台</title>
     <!-- 引入 CKEditor5 -->
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/decoupled-document/ckeditor.js"></script>
     <!-- 引入 jsTree -->
@@ -242,7 +259,7 @@ def index():
             /* 让主容器本身有确定的高度，从 body 继承： */
             height: calc(100vh - 40px);
             display: flex;
-            max-width: 1600px;
+            max-width: 2000px;
             margin: 0 auto;
             gap: 20px;
             box-sizing: border-box;
@@ -450,7 +467,7 @@ def index():
         <div class="control-panel">
             <div class="control-panel-content">
                 <div class="control-panel-inputs">
-                    <h1>报告自主编制</h1>
+                    <h1>"电力看经济"研究咨询平台</h1>
 
                     <div class="form-group">
                         <label for="query">查询内容：</label>
@@ -460,9 +477,9 @@ def index():
                     <div class="form-group">
                         <label for="model-select">模型选择：</label>
                         <select id="model-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-                            <option value="671B模型">671B模型</option>
-                            <option value="110B模型">110B模型</option>
-                            <option value="72B模型">72B模型</option>
+                            <option value="V3模型">光明-671B-V3模型</option>
+                            <option value="R1模型">光明-671B-R1模型(推理)</option>
+                            <option value="72B模型">光明-72B-模型</option>
                         </select>
                     </div>
 
@@ -491,9 +508,14 @@ def index():
                                 {
                                     'text': '本部',
                                     'children': [
-                                        {'text': '电量平衡情况表(公司-本部)', 'icon': 'jstree-themeicon-custom'},
-                                        {'text': '电网负荷特性表(公司-本部)', 'icon': 'jstree-themeicon-custom'},
-                                        {'text': '全社会用电分类情况表(公司-本部)', 'icon': 'jstree-themeicon-custom'}
+                                        {'text': '区域电网电量交换情况(公司本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '供用电综合情况(公司本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电量平衡情况(公司本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '全社会用电分类情况(公司本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '分城市全社会用电分类情况(公司本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '电网负荷特性(公司本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '系统无功补偿设备情况(公司本部)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '分布式发电生产情况(公司本部)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
@@ -581,17 +603,26 @@ def index():
                                 {
                                     'text': '社科院',
                                     'children': [
-                                        {'text': '能源消费预测分析表(其他-社科院)', 'icon': 'jstree-themeicon-custom'},
-                                        {'text': '经济发展趋势预测表(其他-社科院)', 'icon': 'jstree-themeicon-custom'},
-                                        {'text': '产业结构优化建议表(其他-社科院)', 'icon': 'jstree-themeicon-custom'}
+                                        {'text': '2024-中国交通年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2024-中国会计年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2024-中国农村统计年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2024-中国劳动统计年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2024-中国商务年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2023-中国城市建设统计年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2022-中国能源统计年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2022-世界经济年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2022-中国国有资产监督管理年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2021-中国信息产业年鉴(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2018-中国500强企业发展报告(社科院)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '2017-国家电网公司年鉴(社科院)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 },
                                 {
                                     'text': '中电联',
                                     'children': [
-                                        {'text': '全国电力供需平衡表(其他-中电联)', 'icon': 'jstree-themeicon-custom'},
-                                        {'text': '电力行业发展趋势表(其他-中电联)', 'icon': 'jstree-themeicon-custom'},
-                                        {'text': '电力体制改革进展表(其他-中电联)', 'icon': 'jstree-themeicon-custom'}
+                                        {'text': '电力行业统计调查制度调查表-目录表(中电联)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '向国家统计局报送的具体统计资料清单(中电联)', 'icon': 'jstree-themeicon-custom'},
+                                        {'text': '向统计信息共享数据库提供的统计资料清单(中电联)', 'icon': 'jstree-themeicon-custom'}
                                     ]
                                 }
                             ]
@@ -728,6 +759,7 @@ def index():
                 const requestData = {
                     query: queryEl.value,
                     query_text: queryEl.value,  // 添加query_text参数
+                    model: modelSelectEl.value,  // 添加选中的模型值
                     tools: [],
                     base_url: 'https://api.deepseek.com/v1',  // 使用默认值
                     api_key: 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'  // 使用默认值
@@ -790,7 +822,7 @@ def index():
                                     const root = window.editor.model.document.getRoot();
                                     // 定位到内容末尾，以便追加
                                     const insertPosition = window.editor.model.createPositionAt(root, 'end');
-                                    
+
                                     // --------------------用于测试---------------
                                     if (start==0) {
                                     }
@@ -812,7 +844,7 @@ def index():
                                         }
                                         console.log('-------------/有换行-----------------')
                                     } 
-                                    
+
                                     // ----------------------超级大坑：ckeditor的model.change里，为了方便撤销，所有操作的顺序是反的，所以要先插入'softBreak'、然后再插入'。'----------------------
                                     for (let i = lines.length-1; i >= 0; i--) {
                                         if (is_heading=='true') {
@@ -842,7 +874,7 @@ def index():
                                             // if (i < lines.length - 1 && lines[i].trim() !== '') {
                                             if (i > 0 && lines.length>=2) {
                                                 writer.insertElement('softBreak', insertPosition);
-                                                
+
                                                 // const paragraph = writer.createElement('paragraph');
                                                 // // 创建文本节点，应用字体、大小和颜色属性
                                                 // const textNode = writer.createText('\\n', {
@@ -1079,6 +1111,7 @@ def index():
 </body>
 </html>"""
     return html_content
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)

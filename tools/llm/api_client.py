@@ -97,6 +97,7 @@ class LLM_Client():
         max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
 
         dblue(f'【LLM_Client】url="{url}"')
+        dblue(f'【LLM_Client】model_id="{model_id}"')
 
         self.url = url
         self.openai = None
@@ -1120,6 +1121,7 @@ class Async_LLM(Server_Base):
                  question,
                  url=config.LLM_Default.url,
                  api_key=config.LLM_Default.api_key,
+                 model_id=None,
                  temperature=config.LLM_Default.temperature,
                  role_prompt='',
                  extra_suffix='',
@@ -1145,6 +1147,8 @@ class Async_LLM(Server_Base):
         self.temperature = temperature
         self.api_key = api_key
         self.base_url = url
+        self.model_id = model_id
+
         self.role_prompt = role_prompt
         self.extra_suffix = extra_suffix    # 输出的额外内容
         self.run_in_streamlit = streamlit
@@ -1164,6 +1168,7 @@ class Async_LLM(Server_Base):
             temperature=self.temperature,
             url=self.base_url,
             api_key=self.api_key,
+            model_id=self.model_id
         )
         self.llm.set_role_prompt(self.role_prompt)
         self.flicker = Flicker_Task()

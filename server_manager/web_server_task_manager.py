@@ -186,11 +186,16 @@ class Web_Server_Task_Manager():
                     received = True
                     dyellow(f'task output stream队列(id "{task_id}")'.center(80, '='))
 
-                dyellow(chunk, end='', flush=True)
+                # dyellow(chunk, end='', flush=True)
+                ch = json.loads(chunk)
+                content_chunk = ch['data']['content']
+                dyellow(content_chunk, end='', flush=True)
                 yield f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"
 
             yield f"data: {json.dumps({'[done]': True}, ensure_ascii=False)}\n\n"
-            dyellow('\n')
+            dgreen('\n------------------------------------------------------------------------------------------------')
+            dred('-------------web_server_task_manager.get_task_output_sse_stream_gen() [done]--------------------')
+            dgreen('------------------------------------------------------------------------------------------------')
 
             if received:
                 dyellow(f'/task output stream队列(id "{task_id}")'.center(80, '-'))
