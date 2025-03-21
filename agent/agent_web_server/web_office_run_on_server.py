@@ -118,13 +118,13 @@ def start_agent_task():
 <用户问题>
 {query}
 </用户问题>
-<table>
-{table_analysis_string}
-</table>
 <回答要求>
 1、由于你的回答是输出到word环境中，因此你的回答绝对不能用markdown格式。
 2、你的输出内容如果涉及层次内容，各个层级的标题要用"一、"、"二、"、"三、"、"1、"、"2、"、"3、"以及"(1)"、"(2)"、"(3)"这类，如果没有层次化内容，不要用这些标题。
 </回答要求>
+<表格内容>
+{table_analysis_string}
+</表格内容>
 '''
                         dyellow(question)
 
@@ -138,13 +138,13 @@ def start_agent_task():
 <用户问题>
 {query}
 </用户问题>
-<table>
-{table_35kv_company_string}
-</table>
 <回答要求>
 1、由于你的回答是输出到word环境中，因此你的回答绝对不能用markdown格式。
 2、你的输出内容如果涉及层次内容，各个层级的标题要用"一、"、"二、"、"三、"、"1、"、"2、"、"3、"以及"(1)"、"(2)"、"(3)"这类，如果没有层次化内容，不要用这些标题。
 </回答要求>
+<表格内容>
+{table_35kv_company_string}
+</表格内容>
 '''
                         dyellow(question)
 
