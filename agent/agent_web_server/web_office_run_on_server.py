@@ -109,9 +109,45 @@ def start_agent_task():
                 if '@' in query:
                     from agent.agent_web_server.temp_table_data import table_analysis_string, table_35kv_company_string
                     if '@电力行业统计调查制度调查表-目录表(中电联)' in query:
-                        question=f'请严格根据表格内容: \n<table>\n{table_analysis_string}\n</table>，回答用户问题:\n{query}'
+                        query = query.split('\n')[-1]
+                        dred(f'------query------')
+                        dred(query)
+                        dred(f'------query------')
+                        question=f'''
+请严格根据表格内容和回答要求，回答用户问题: 
+<用户问题>
+{query}
+</用户问题>
+<table>
+{table_analysis_string}
+</table>
+<回答要求>
+1、由于你的回答是输出到word环境中，因此你的回答绝对不能用markdown格式。
+2、你的输出内容如果涉及层次内容，各个层级的标题要用"一、"、"二、"、"三、"、"1、"、"2、"、"3、"以及"(1)"、"(2)"、"(3)"这类，如果没有层次化内容，不要用这些标题。
+</回答要求>
+'''
+                        dyellow(question)
+
                     elif '@电量平衡情况表(公司-杭州) @电网负荷特性表(公司-杭州) @全社会用电分类情况表(公司-杭州)' in query:
-                        question=f'请严格根据表格内容: \n<table>\n{table_35kv_company_string}\n</table>，回答用户问题:\n{query}'
+                        query = query.split('\n')[-1]
+                        dred(f'------query------')
+                        dred(query)
+                        dred(f'------query------')
+                        question = f'''
+请严格根据表格内容和回答要求，回答用户问题: 
+<用户问题>
+{query}
+</用户问题>
+<table>
+{table_35kv_company_string}
+</table>
+<回答要求>
+1、由于你的回答是输出到word环境中，因此你的回答绝对不能用markdown格式。
+2、你的输出内容如果涉及层次内容，各个层级的标题要用"一、"、"二、"、"三、"、"1、"、"2、"、"3、"以及"(1)"、"(2)"、"(3)"这类，如果没有层次化内容，不要用这些标题。
+</回答要求>
+'''
+                        dyellow(question)
+
                 # ---------------------/特例----------------------
 
                 agent = Async_LLM(
