@@ -95,7 +95,7 @@ def start_agent_task():
             dred(answer)
             dred('----------------/用户意图-----------------------')
 
-            if answer == '直接问答':
+            if answer == '直接问答' or '@' in query:
                 question = f'''请根据以下的用户问题，按要求回答:
 <用户问题>
 {query}
@@ -105,6 +105,15 @@ def start_agent_task():
 2、你的输出内容如果涉及层次内容，各个层级的标题要用"一、"、"二、"、"三、"、"1、"、"2、"、"3、"以及"(1)"、"(2)"、"(3)"这类，如果没有层次化内容，不要用这些标题。
 </回答要求>
 '''
+                # ----------------------特例----------------------
+                if '@' in query:
+                    from agent.agent_web_server.temp_table_data import table_analysis_string, table_35kv_company_string
+                    if '@电力行业统计调查制度调查表-目录表(中电联)' in query:
+                        question=f'请严格根据表格内容: \n<table>\n{table_analysis_string}\n</table>，回答用户问题:\n{query}'
+                    elif '@电量平衡情况表(公司-杭州) @电网负荷特性表(公司-杭州) @全社会用电分类情况表(公司-杭州)' in query:
+                        question=f'请严格根据表格内容: \n<table>\n{table_35kv_company_string}\n</table>，回答用户问题:\n{query}'
+                # ---------------------/特例----------------------
+
                 agent = Async_LLM(
                     question=question,
                     url=base_url,
