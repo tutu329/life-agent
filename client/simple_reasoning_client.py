@@ -23,7 +23,7 @@ elif model == 'qwen-72':
         api_key='empty',
         base_url='https://powerai.cc:8001/v1',
     )
-    model_id = model=oai.models.list().data[0].id
+    model_id = oai.models.list().data[0].id
 
 def stream(gen):
     reasoning_finished = False
@@ -50,7 +50,7 @@ def main():
             max_tokens=1024,
         )
 
-        # 流式输出LLM的推理
+        # 流式输出LLM的思考和回复
         print('-----------------------------思考-----------------------------')
         reasoning_finished_printed = False
         for res in stream(gen):
