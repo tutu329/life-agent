@@ -196,7 +196,7 @@ class LLM_Client():
             if self.model_id is None or self.model_id=='':
                 try:
                     self.model_id = self.openai.models.list().data[0].id
-                    dblue(f'【LLM_Client】model_id="{self.model_id}"\n')
+                    dblue(f'【LLM_Client】change model_id to "{self.model_id}"\n')
                 except Exception as e:
                     dred(f'【LLM_Client异常】refresh_endpoint(): "{e}"')
                     dred(f'【LLM_Client异常】refresh_endpoint(): 可能是IP或Port设置错误，当前url为: {self.url}')
@@ -484,8 +484,9 @@ class LLM_Client():
         )
         try:
             if self.model_id is None or self.model_id=='':
+                old_model_id = self.model_id
                 self.model_id = self.openai.models.list().data[0].id
-                dblue(f'【LLM_Client】model_id="{self.model_id}"\n')
+                dblue(f'【LLM_Client】change model_id from "{old_model_id}" to "{self.model_id}"\n')
         except Exception as e:
             print(f'【LLM_Client异常】ask_prepare(): "{e}"')
             print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
@@ -1882,10 +1883,10 @@ def think_main():
 def base_main():
     llm = LLM_Client(
         temperature=0.7,
-        # url='https://powerai.cc:8001/v1'
+        url='https://powerai.cc:8001/v1'
 
-        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
-        url='https://api.deepseek.com/v1',
+        # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
+        # url='https://api.deepseek.com/v1',
 
         # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
         # url='https://ark.cn-beijing.volces.com/api/v3/',
@@ -1924,9 +1925,9 @@ def async_llm_main():
     allm.wait()
 
 if __name__ == "__main__" :
-    # base_main()
+    base_main()
     # think_and_result_test()
-    async_llm_main()
+    # async_llm_main()
 
     # pic_main() # 带pic
     # think_main()

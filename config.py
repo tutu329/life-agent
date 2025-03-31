@@ -166,6 +166,8 @@ class Port():
 
     # api底层服务
     m3e_api:int = 7870  # 由xinference发布的
+    qdrant1:int = 7872  # qdrant
+    qdrant2:int = 7873  # qdrant
 
     llm_api0:int = 8000  # vllm
     llm_api1:int = 8001  # vllm

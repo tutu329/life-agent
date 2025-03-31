@@ -1,4 +1,4 @@
-from agent.mem.mem_base import Mem_Base
+from agent.mem.mem_0 import Mem_0
 
 class Mem_Manager():
     _instance = None
@@ -7,22 +7,16 @@ class Mem_Manager():
     def get_singleton_mem(cls, mem_class):
         if cls._instance is None:
             cls._instance = mem_class()
+            cls._instance.init()
         return cls._instance
 
-
-class _Mem_Child_Test(Mem_Base):
-    def __init__(self):
-        super().__init__()
-
-    def init(self):
-        pass
-
 def main():
-    mem1 = Mem_Manager.get_singleton_mem(_Mem_Child_Test)
-    mem2 = Mem_Manager.get_singleton_mem(_Mem_Child_Test)
+    mem1 = Mem_Manager.get_singleton_mem(Mem_0)
+    mem2 = Mem_Manager.get_singleton_mem(Mem_0)
 
     print(mem1.id)
     print(mem2.id)
+    mem1.get_related_memories(question='我是谁？')
 
 if __name__ == "__main__":
     main()
