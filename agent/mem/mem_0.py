@@ -11,13 +11,25 @@ class Mem_0(Mem_Base):
         pip install mem0ai
     2、安装向量库:
         vi qdrant.sh
-sudo docker pull qdrant/qdrant
-sudo docker run -p 7872:6333 -p 7873:6334 -v $(pwd)/qdrant_storage:/qdrant/storage:z qdrant/qdrant
+            sudo docker pull qdrant/qdrant
+            sudo docker run -p 7872:6333 -p 7873:6334 -v $(pwd)/qdrant_storage:/qdrant/storage:z qdrant/qdrant
         chmod +x qdrant.sh
         ./qdrant.sh
-    3、qdrant新建一个collection(如mem_collection)，防止报dim应为1536(qdrant默认collection mem0即为1536)却为1024（如m3e的dim为1024）的错
+    3、运行embedding模型如m3e
+        安装xinference(支持embeddings和openai api)
+        1)下载m3e
+            git clone https://www.modelscope.cn/Jerry0/M3E-large.git
+        2)安装xinference并运行m3e
+            conda create -n m3e python=3.10
+            conda activate m3e
+            pip install "xinference[all]"
+            xinference-local -p 7870 (xinference-local --help解释很全)
+                1）注册下自定义模型m3e，/home/tutu/models/M3E-large
+                2）刷新下页面，运行自定义模型m3e，模型名称即为m3e (此时已经运行了openai格式的m3e的嵌入api)
+                3）此时可以正常访问: http://localhost:7870/v1 或 http://powerai.cc:7870/v1
+    4、qdrant新建一个collection(如mem_collection)，防止报dim应为1536(qdrant默认collection mem0即为1536)却为1024（如m3e的dim为1024）的错
         vi qdrant_create_collection.sh
-curl -X PUT 'http://localhost:7872/collections/mem_collection' -H 'Content-Type: application/json' --data-raw '{ "vectors": { "size": 1024, "distance": "Cosine" } }'
+            curl -X PUT 'http://localhost:7872/collections/mem_collection' -H 'Content-Type: application/json' --data-raw '{ "vectors": { "size": 1024, "distance": "Cosine" } }'
         chmod +x qdrant_create_collection.sh
         ./qdrant_create_collection.sh
         http://powerai.cc:7872/dashboard可以看到新建的collection
