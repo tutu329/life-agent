@@ -332,23 +332,19 @@ def main():
     print()
     gen = Web_Server_Task_Manager.get_task_output_sse_stream_gen(task_id=session_id)
     for chunk in gen:
-        dred(f'{chunk!r}')
+        # dred(f'{chunk!r}')
         # chunk = 'data: {"message": "{\\"type\\": \\"text\\", \\"data\\": {\\"content\\": \\"我是\\", \\"alignment\\": \\"left\\", \\"is_heading\\": \\"false\\", \\"font\\": \\"宋体, SimSun\\", \\"size\\": \\"12\\", \\"color\\": \\"black\\"}}"}\n\n'
+        # chunk = 'data: {"[done]": true}\n\n'
 
         # 去掉前缀和换行符
-        clean_str = chunk.strip().replace("data: ", "")
+        chunk = chunk.strip().replace("data:", "")
         # 第一次解析
-        first_layer = json.loads(clean_str)
+        chunk = json.loads(chunk)
         # 第二次解析 message 字段
-        if 'message' in first_layer:
-            second_layer = json.loads(first_layer['message'])
-
-            print(second_layer['data']['content'])
-        # dred(f'{res!r}')
-        # if chunk['type']==Web_Client_Data_Type.TEXT:
-        #     if chunk['data']['content'] is not None:
-        #         print(chunk['data']['content'])
-        # print(chunk, end='', flush=True)
+        if 'message' in chunk:
+            second_layer = json.loads(chunk['message'])
+            print(second_layer['data']['content'], end='', flush=True)
+    print()
 
 if __name__ == "__main__":
     main()
