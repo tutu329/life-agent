@@ -9,6 +9,7 @@ import json
 from pprint import pprint
 
 from config import dred, dgreen, dblue, dcyan, dyellow
+from server_manager.server_base import Server_Base
 
 @dataclass
 class Session_ID():
@@ -94,7 +95,7 @@ class Web_Server_Task_Manager():
 
     # 启动task
     @classmethod
-    def start_task(cls, task_obj, session_id=None):
+    def start_task(cls, task_obj:Server_Base, session_id=None):
         if session_id is not None:
             session_id = Session_ID.PREFIX + session_id
 
