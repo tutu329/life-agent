@@ -170,8 +170,8 @@ class Web_Server_Task_Manager():
         return task_id
 
     # 获取task的llm结论输出stream(方便用户进行sse调用output、thinking、log等stream数据)
-    #   chunk被格式化为{data:{message:{...}}}
-    # 或chunk被格式化为{data:{'[done]':true}}
+    #   chunk已被格式化为{data:{message:{...}}}
+    # 或chunk已被格式化为{data:{'[done]':true}}
     @classmethod
     def get_task_output_sse_stream_gen(cls, task_id):
         if Web_Server_Task_Manager.g_local_debug:
