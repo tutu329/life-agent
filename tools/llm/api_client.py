@@ -1193,6 +1193,8 @@ class Async_LLM(Server_Base):
         if self.task:
             self.task.join()
 
+    # 如果is_web_server，async llm对数据chunk进行格式化
+    # 格式化后的chunk = {'type':Web_Client_Data_Type.TEXT, 'data':{'content':,...}}
     def result_stream(self, chunk):
         if self.result_stream_buf:
             if self.is_web_server:
