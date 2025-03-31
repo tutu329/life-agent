@@ -142,15 +142,21 @@ class Web_Server_Task_Manager():
             dgreen(f'Web_Server_Task_Manager(): task(id "{session_id}") 已启动...')
             if task_obj is not None:
                 success = task_obj.run()
+            else:
+                dred(f'Web_Server_Task_Manager(): task(id "{session_id}") 对象为空，任务为空任务.')
 
             # 测试stream
             if Web_Server_Task_Manager.g_local_debug:
-                task_output_stream_queue.put('5')
-                task_output_stream_queue.put('6')
-                task_output_stream_queue.put('7')
+                pass
+                # task_output_stream_queue.put('5')
+                # task_output_stream_queue.put('6')
+                # task_output_stream_queue.put('7')
 
             # 任务结束标志（重要！）
             task_output_stream_queue.put(None)
+            task_thinking_stream_queue.put(None)
+            task_log_stream_queue.put(None)
+            task_tool_client_data_stream_queue.put(None)
 
             Web_Server_Task_Manager.g_tasks_info_dict[session_id].task_status = Web_Server_Task_Status.FINISHED
 
@@ -305,16 +311,43 @@ class Web_Server_Task_Manager():
         return _generate()
 
 def main():
+    from tools.llm.api_client import Async_LLM
+    from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Text_Data
+    import json, json5
+
     Web_Server_Task_Manager.g_local_debug = True
 
+    obj = Async_LLM(
+        question='你是谁',
+        url='https://powerai.cc:8001/v1',
+        api_key='empty',
+        temperature=0.6,
+        is_web_server=True,
+    )
+
     session_id ='329'
-    Web_Server_Task_Manager.start_task(task_obj=None, session_id=session_id)
+    Web_Server_Task_Manager.start_task(task_obj=obj, session_id=session_id)
     print()
     print(Web_Server_Task_Manager.g_tasks_info_dict[Session_ID.PREFIX+session_id])
     print()
     gen = Web_Server_Task_Manager.get_task_output_sse_stream_gen(task_id=session_id)
     for chunk in gen:
-        print(chunk)
+        dred(f'{chunk!r}')
+        # chunk = 'data: {"message": "{\\"type\\": \\"text\\", \\"data\\": {\\"content\\": \\"我是\\", \\"alignment\\": \\"left\\", \\"is_heading\\": \\"false\\", \\"font\\": \\"宋体, SimSun\\", \\"size\\": \\"12\\", \\"color\\": \\"black\\"}}"}\n\n'
+
+        # 去掉前缀和换行符
+        clean_str = chunk.strip().replace("data: ", "")
+        # 第一次解析
+        first_layer = json.loads(clean_str)
+        # 第二次解析 message 字段
+        if 'message' in first_layer:
+            second_layer = json.loads(first_layer['message'])
+
+            print(second_layer['data']['content'])
+        # dred(f'{res!r}')
+        # if chunk['type']==Web_Client_Data_Type.TEXT:
+        #     if chunk['data']['content'] is not None:
+        #         print(chunk['data']['content'])
         # print(chunk, end='', flush=True)
 
 if __name__ == "__main__":
