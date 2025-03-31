@@ -52,13 +52,15 @@ sudo docker run -p 7872:6333 -p 7873:6334 -v $(pwd)/qdrant_storage:/qdrant/stora
             #         "embedding_model_dims": 1536
             #     }
             # },
-            # "embedder": {
-            #     "provider": "openai",
-            #     "config": {
-            #         "model": "text-embedding-3-small",
-            #         "embedding_dims": 256,
-            #     }
-            # },
+            "embedder": {
+                "provider": "openai",
+                "config": {
+                    "model": "m3e",
+                    "embedding_dims": 256,
+                    "openai_base_url": 'http://powerai.cc:7870',
+                    "port": 7870,
+                }
+            },
             # "version": "v1.1"
         }
 
