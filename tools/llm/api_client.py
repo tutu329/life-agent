@@ -484,13 +484,21 @@ class LLM_Client():
         )
         try:
             if self.model_id is None or self.model_id=='':
+                print('------------------------------1--------------------------')
                 old_model_id = self.model_id
+                print('------------------------------2--------------------------')
+                print(self.openai.models)
+                print(self.openai.models.list())
+                print('------------------------------2.1--------------------------')
                 self.model_id = self.openai.models.list().data[0].id
+                print('------------------------------3--------------------------')
                 dblue(f'【LLM_Client】change model_id from "{old_model_id}" to "{self.model_id}"\n')
         except Exception as e:
+            print('------------------------------4--------------------------')
             print(f'【LLM_Client异常】ask_prepare(): "{e}"')
             print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
             self.model_id = 'wrong'
+            print('------------------------------5--------------------------')
 
         self.usage = None   # 清空输入和输出的token数量统计
 
@@ -1883,7 +1891,8 @@ def think_main():
 def base_main():
     llm = LLM_Client(
         temperature=0.7,
-        url='https://powerai.cc:8001/v1'
+        url='http://powerai.cc:28001/v1',
+        # url='https://powerai.cc:8001/v1'
 
         # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
         # url='https://api.deepseek.com/v1',
@@ -1892,6 +1901,7 @@ def base_main():
         # url='https://ark.cn-beijing.volces.com/api/v3/',
         # model_id='deepseek-r1-250120',
         # model_id='deepseek-v3-241226',
+        # model_id='qwq-32b',
     )
     llm.ask_prepare('你是谁？').get_answer_and_sync_print()
     llm.ask_prepare('我叫土土').get_answer_and_sync_print()

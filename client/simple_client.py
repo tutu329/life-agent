@@ -14,7 +14,8 @@ if model == 'v3':
 elif model == 'qwen-72':
     oai = OpenAI(
         api_key='empty',
-        base_url='https://powerai.cc:8001/v1',
+        base_url='http://powerai.cc:28001/v1',
+        # base_url='https://powerai.cc:8001/v1',
     )
     model_id = oai.models.list().data[0].id     # 直接用model列表中的第一个（本地部署时，经常只在一个IP:Port上运行一个model）
 
