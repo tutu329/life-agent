@@ -82,7 +82,9 @@ class LLM_Client():
                  history_clear_method='pop',
                  api_key=None,
                  # api_key='b1ad5dac212f563be4765b646543ca1b',
-                 temperature=None,
+                 temperature=config.LLM_Default.temperature,
+                 top_p=config.LLM_Default.top_p,
+                 # top_p=None,
                  url=None,
                  max_new_tokens=None,
                  print_input=True,
@@ -110,6 +112,7 @@ class LLM_Client():
         self.stop = None    # 用于对vllm的openai api的stop进行过滤
         self.response_canceled = False  # response过程是否被中断
         self.temperature = temperature
+        self.top_p = top_p
         self.system_prompt = config.Global.llm_system_prompt
         # self.system_prompt = '' # 系统提示
         # self.top_p = top_p
@@ -429,6 +432,7 @@ class LLM_Client():
             question,
             image_url=None,
             temperature=None,
+            top_p=None,
             max_new_tokens=None,
             # in_top_p=None,
             clear_history=False,
@@ -464,17 +468,18 @@ class LLM_Client():
 
 
         dprint(f'{"-" * 40}输入参数{"-" * 40}')
-        dprint(f'self.url: "{self.url}"')
-        dprint(f'self.history: "{self.history}"')
-        dprint(f'clear_history: "{clear_history}"')
-        dprint(f'self.model_id: "{self.model_id}"')
-        dprint(f'self.api_key: "{self.api_key}"')
+        dprint(f'self.url: {self.url!r}')
+        dprint(f'self.history: {self.history!r}')
+        dprint(f'clear_history: {clear_history!r}')
+        dprint(f'self.model_id: {self.model_id!r}')
+        dprint(f'self.api_key: {self.api_key!r}')
 
-        dprint(f'in_temperature: {temperature}')
-        dprint(f'in_stream: {stream}')
-        dprint(f'in_max_new_tokens: {max_new_tokens}')
-        dprint(f'in_stop: {stop}')
-        dprint(f'in_question: "【{question}】"')
+        dprint(f'temperature: {temperature!r}')
+        dprint(f'top_p: {top_p!r}')
+        dprint(f'stream: {stream!r}')
+        dprint(f'max_new_tokens: {max_new_tokens!r}')
+        dprint(f'stop: {stop!r}')
+        dprint(f'question: "【{question!r}】"')
         dprint(f'{"-" * 40}采用参数{"-" * 40}')
 
         self.openai = OpenAI(
@@ -528,47 +533,24 @@ class LLM_Client():
             run_temperature = self.temperature
         else:
             run_temperature = temperature
-            
-        # if in_top_p is None:
-        #     run_top_p = self.top_p
-        # else:
-        #     run_top_p = in_top_p
 
-        # msgs_string = ''
-        # for msg in msgs:
-        #     msgs_string += msg['role'] + ':\t'
-        #     msgs_string += msg['content'][:50] + '\n'
-        # # print(f'msgs: {msgs}')
-        # # msgs_string = '\n'.join(msgs)
-        # dgreen(f'query: "\n{msgs_string[:300]}...\n"(len: {len(msgs_string)})')
-        # # print(f'query: "{msgs_string[:100]}..."(len: {len(msgs_string)}, url: "{self.url}")')
-
-        # dprint(f'{"-"*80}')
-        # dprint(f'【LLM_Client】 ask_prepare(): in_temperature={in_temperature}')
-        # dprint(f'【LLM_Client】 ask_prepare(): self.temperature={self.temperature}')
-        # dprint(f'【LLM_Client】 ask_prepare(): 最终选择run_temperature={run_temperature}')
-        # dprint(f'【LLM_Client】 ask_prepare(): messages')
-        # for chat in msgs:
-        #     dprint(f'{chat}')
-        # dprint(f'【LLM_Client】 ask_prepare(): stream={in_stream}')
-        # dprint(f'【LLM_Client】 ask_prepare(): max_new_tokens={max_new_tokens}')
-
-        # ==========================================================
-        # self.remove_content_in_think_pairs = remove_content_in_think_pairs
-        # self.think_pair = think_pair
+        if top_p is None:
+            run_top_p = self.top_p
+        else:
+            run_top_p = top_p
 
         if self.print_input:
             if image_url is None:
                 # question为文本
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature})')
+                dgreen(f'</User>(temperature={run_temperature}, top_p={run_top_p})')
                 # dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"))')
             else:
                 # question为文本和图片
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'][0]['text'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature} with image.)')
+                dgreen(f'</User>(temperature={run_temperature}, top_p={run_top_p} with image.)')
                 # dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"), with image.)')
 
         if stop is None:
@@ -589,12 +571,13 @@ class LLM_Client():
 
         dprint(f'{"-" * 80}')
         # dprint(f'self.openai: {self.openai}')
-        dprint(f'self.model_id: "{self.model_id}"')
-        dprint(f'run_temperature: {run_temperature}')
-        dprint(f'stream: {stream}')
-        dprint(f'max_tokens: {max_new_tokens}')
-        dprint(f'stop: {stop}')
-        dprint(f'messages: {msgs}')
+        dprint(f'self.model_id: {self.model_id!r}')
+        dprint(f'run_temperature: {run_temperature!r}')
+        dprint(f'run_top_p: {run_top_p!r}')
+        dprint(f'stream: {stream!r}')
+        dprint(f'max_tokens: {max_new_tokens!r}')
+        dprint(f'stop: {stop!r}')
+        dprint(f'messages: {msgs!r}')
 
         self.status.question = question
         self.status.model_id = self.model_id
@@ -609,6 +592,7 @@ class LLM_Client():
             gen = self.openai.chat.completions.create(
                 model=self.model_id,
                 temperature=run_temperature,
+                top_p = run_top_p,
                 # top_k=self.top_k,
                 # top_p = run_top_p,
                 # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
@@ -1132,6 +1116,7 @@ class Async_LLM(Server_Base):
                  api_key=config.LLM_Default.api_key,
                  model_id=None,
                  temperature=config.LLM_Default.temperature,
+                 top_p=config.LLM_Default.top_p,
                  role_prompt='',
                  extra_suffix='',
                  streamlit=False,
@@ -1154,6 +1139,7 @@ class Async_LLM(Server_Base):
 
         self.prompt = question
         self.temperature = temperature
+        self.top_p = top_p
         self.api_key = api_key
         self.base_url = url
         self.model_id = model_id
@@ -1175,6 +1161,7 @@ class Async_LLM(Server_Base):
             history=True,
             print_input=False,
             temperature=self.temperature,
+            top_p=self.top_p,
             url=self.base_url,
             api_key=self.api_key,
             model_id=self.model_id
@@ -1263,7 +1250,7 @@ class Async_LLM(Server_Base):
 
         self.final_response = full_response
 
-        dprint(f'【Async_LLM】run() completed. temperature={self.temperature}, final_response="{self.final_response}"')
+        dprint(f'【Async_LLM】run() completed. temperature={self.temperature}, top_p={self.top_p}, final_response="{self.final_response}"')
 
     def start(self):
         # 由于streamlit对thread支持不好，这里必须在threading.Thread(target=self.run)之后紧跟调用add_script_run_ctx(t)才能正常调用run()里面的st.markdown()这类功能，不然会报错：missing xxxxContext
@@ -1890,7 +1877,7 @@ def think_main():
 
 def base_main():
     llm = LLM_Client(
-        temperature=0.7,
+        temperature=0.6,
         url='http://powerai.cc:28001/v1',
         # url='https://powerai.cc:8001/v1'
 

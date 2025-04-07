@@ -221,6 +221,7 @@ class Domain():
 @dataclass
 class LLM_Default:
     temperature:float   = 0.6
+    top_p:float         = 1.0
     max_new_tokens:int  = 2048
     # stop:List[str]      = field(default_factory=list)
     stream:int         = 1          # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
