@@ -24,7 +24,11 @@ class Folder_Tool(Base_Tool):
     def __init__(self):
         pass
 
-    def call(self, in_thoughts):
+    def call(self,
+             in_thoughts,
+             in_is_web_server=True,
+             in_client_data_sse_stream_buf=None,
+             ):
         # dred('-----------------Folder_Tool.call() invoked.---------------------')
         dict_string = extract_dict_string(in_thoughts)
         dict = json5.loads(dict_string)

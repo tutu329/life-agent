@@ -523,10 +523,10 @@ def main3():
     query=''
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        # query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
         # query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
         # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
-        # query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
+        query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
     agent = Tool_Agent(
@@ -535,10 +535,12 @@ def main3():
         in_output_stream_buf=dyellow,
         in_output_stream_to_console=True,
         # remove_content_in_think_pairs=True,
-        # in_base_url='https://powerai.cc:8001/v1',
-        # in_api_key='empty',
-        in_base_url='https://api.deepseek.com/v1',
-        in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        # in_base_url='http://powerai.cc:28001/v1', #deepseek-r1-671b
+        in_base_url='http://powerai.cc:38001/v1',   #llama-4-400b
+        in_api_key='empty',
+
+        # in_base_url='https://api.deepseek.com/v1',
+        # in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
     )
     agent.init()
     success = agent.run()
@@ -563,5 +565,5 @@ if __name__ == "__main__":
     # main()
     # main2()
 
-    table_main()
-    # main3()
+    # table_main()
+    main3()

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Dict, List
 
 from utils.extract import extract_code, extract_dict_string
@@ -183,7 +184,7 @@ PROMPT_REACT = """###你必须回答接下来的问题，而且系统已经为�
 
 [问题]{query}"""
 
-class Base_Tool():
+class Base_Tool(ABC):
     name: str
     description: str
     parameters: List[Dict]
@@ -191,7 +192,12 @@ class Base_Tool():
     def __init__(self):
         pass
 
-    def call(self):
+    @abstractmethod
+    def call(self,
+             in_thoughts,
+             in_is_web_server=True,
+             in_client_data_sse_stream_buf=None,
+             ):
         pass
 
     @classmethod
