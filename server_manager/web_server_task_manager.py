@@ -9,7 +9,7 @@ import json
 from pprint import pprint
 
 from config import dred, dgreen, dblue, dcyan, dyellow
-from server_manager.server_base import Server_Base
+from server_manager.web_server_base import Web_Server_Base
 
 @dataclass
 class Session_ID():
@@ -95,7 +95,7 @@ class Web_Server_Task_Manager():
 
     # 启动task
     @classmethod
-    def start_task(cls, task_obj:Server_Base, session_id=None):
+    def start_task(cls, task_obj:Web_Server_Base, session_id=None):
         if session_id is not None:
             session_id = Session_ID.PREFIX + session_id
 
@@ -131,10 +131,16 @@ class Web_Server_Task_Manager():
             task_obj.init()
             try:
                 # 设置stream输出的func
-                task_obj.set_stream_result(task_output_stream_queue.put)
-                task_obj.set_stream_thinking(task_thinking_stream_queue.put)
-                task_obj.set_stream_log(task_log_stream_queue.put)
-                task_obj.set_stream_tool_result_data(task_tool_client_data_stream_queue.put)
+                task_obj.set_stream(
+                    task_output_stream_queue.put,
+                    task_thinking_stream_queue.put,
+                    task_log_stream_queue.put,
+                    task_tool_client_data_stream_queue.put,
+                )
+                # task_obj.set_stream_result(task_output_stream_queue.put)
+                # task_obj.set_stream_thinking(task_thinking_stream_queue.put)
+                # task_obj.set_stream_log(task_log_stream_queue.put)
+                # task_obj.set_stream_tool_result_data(task_tool_client_data_stream_queue.put)
             except Exception as e:
                 dred(f'Web_Server_Task_Manager.start_task() set_output_stream_buf()报错: "{e}"')
 

@@ -25,7 +25,7 @@ from dataclasses import dataclass, field, asdict
 from typing import List, Optional, Dict
 # from redis_client import Redis_Client
 
-from server_manager.server_base import Server_Base
+from server_manager.web_server_base import Web_Server_Base
 from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Data, Web_Client_Table_Data, Web_Client_Text_Data, Web_Client_Image_Data
 import json
 
@@ -1109,7 +1109,7 @@ class LLM_Client():
         self.response_canceled = True
 
 # async的非联网llm调用
-class Async_LLM(Server_Base):
+class Async_LLM(Web_Server_Base):
     def __init__(self,
                  question,
                  url=config.LLM_Default.url,

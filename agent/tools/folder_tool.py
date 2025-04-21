@@ -1,9 +1,5 @@
 from agent.base_tool import Base_Tool
-from utils.extract import extract_dict_string
 from utils.folder import get_folder_files_info_string, get_folder_all_items_string
-import json5
-
-from config import dred, dgreen, dblue, dcyan, dyellow
 
 class Folder_Tool(Base_Tool):
     name='Folder_Tool'
@@ -25,13 +21,12 @@ class Folder_Tool(Base_Tool):
         pass
 
     def call(self,
-             in_thoughts,
+             tool_paras_dict,
+             # in_thoughts,
              agent_config
              ):
-        # dred('-----------------Folder_Tool.call() invoked.---------------------')
-        dict_string = extract_dict_string(in_thoughts)
-        dict = json5.loads(dict_string)
-        dir = dict['tool_parameters']['dir']
+        print(f'tool_paras_dict: "{tool_paras_dict}"')
+        dir = tool_paras_dict['dir']
 
         # 调用工具
         # files_str = get_folder_files_info_string(directory=dir, mode='name')
@@ -40,8 +35,6 @@ class Folder_Tool(Base_Tool):
 
         # 调用工具后，结果作为action_result返回
         action_result = items_str
-        # dred('-----------------Folder_Tool.call() result:---------------------')
-        # dred(action_result)
         return action_result
 
 def main_folder():

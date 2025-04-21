@@ -14,39 +14,19 @@ from agent.base_tool import Base_Tool
 
 import config
 from config import dred, dgreen, dblue, dcyan, dyellow
-from server_manager.server_base import Server_Base
+from server_manager.web_server_base import Web_Server_Base
 from agent.agent_config import Config
+from utils.extract import extract_dict_string
+import json5
 
-class Tool_Agent(Server_Base):
+class Tool_Agent(Web_Server_Base):
     def __init__(self,
                  query,
                  tool_classes,
                  agent_config:Config,
-                 # in_human=True,
-                 # inout_status_list=None,
-                 # stream_result=None,  # agent最终答复result的stream输出func, 如print或streamlit的st.some_component.empty().markdown
-                 # stream_thinking=None,  # agent思考过程thinking的stream输出func
-                 # stream_log=None,  # agent日志信息log的stream输出func
-                 # stream_tool_client_data=None,  # agent工具调用结果数据的stream输出func
-                 # in_output_end=None,  # 最终答复输出end的func
-                 # in_output_stream_to_console=False,  # 最终答复是否stream输出到console
-                 # in_output_stream_use_chunk=True,  # 最终答复stream输出是否采用chunk方式，还是full_string方式
-                 # inout_output_list=None,
-                 # in_status_stream_buf=None,
-                 # in_base_url=config.LLM_Default.url,
-                 # in_api_key='empty',
-                 # in_model_id='',
-                 # in_temperature=config.LLM_Default.temperature,
-                 # remove_content_in_think_pairs=False,
-                 # is_web_server=True,
                  ):
         self.llm = None
         self.agent_config = agent_config
-        # self.output_stream_buf = stream_result            # 最终结果stream输出的的func
-        # self.thinking_stream_buf = stream_thinking            # 最终结果stream输出的的func
-        # self.log_stream_buf = stream_log            # 最终结果stream输出的的func
-        # self.tool_client_data_stream_buf = stream_tool_client_data            # 最终结果stream输出的的func
-        # self.is_web_server = is_web_server
 
         self.temperature = self.agent_config.temperature
         self.url = self.agent_config.base_url
@@ -86,23 +66,11 @@ class Tool_Agent(Server_Base):
         self.final_answer = '尚未进行分析和答复'
 
     # 设置最终结果stream输出的func
-    def set_stream_result(self, result_output_func):
-        self.agent_config.stream_result = result_output_func            # 最终结果stream输出的的func
-        # self.output_stream_buf = result_output_func            # 最终结果stream输出的的func
-
-    # 设置thinking的stream输出的func
-    def set_stream_thinking(self, thinking_output_func):
-        self.agent_config.stream_thinking = thinking_output_func            # 最终结果stream输出的的func
-        # self.thinking_stream_buf = thinking_output_func            # 最终结果stream输出的的func
-
-    # 设置最终结果stream输出的func
-    def set_stream_log(self, log_output_func):
-        self.agent_config.stream_log = log_output_func            # 最终结果stream输出的的func
-        # self.log_stream_buf = log_output_func            # 最终结果stream输出的的func
-
-    def set_stream_tool_result_data(self, tool_result_data_output_func):
-        self.agent_config.stream_tool_client_data = tool_result_data_output_func            # 最终结果stream输出的的func
-        # self.tool_client_data_stream_buf = tool_result_data_output_func            # 最终结果stream输出的的func
+    def set_stream(self, result_output_func, thinking_output_func, log_output_func, tool_result_data_output_func):
+        self.agent_config.web_server_stream_result = result_output_func                        # stream输出的func
+        self.agent_config.web_server_stream_thinking = thinking_output_func                    # stream输出的func
+        self.agent_config.web_server_stream_log = log_output_func                              # stream输出的func
+        self.agent_config.web_server_stream_tool_client_data = tool_result_data_output_func    # stream输出的func
 
     # 最终结果输出
     def output_print(self, in_string):
@@ -125,27 +93,27 @@ class Tool_Agent(Server_Base):
             print(in_string)
 
     # 最终结果stream输出full_string
-    def output_stream_full_string(self, in_full_response):
-        if self.agent_config.stream_result is not None:
-            self.agent_config.stream_result(in_full_response)
+    def output_result_stream_full_string(self, in_full_response):
+        if self.agent_config.web_server_stream_result is not None:
+            self.agent_config.web_server_stream_result(in_full_response)
 
     # 最终结果stream输出chunk，注意：要确保chunk中没有'[最终答复]'或'终答复]'
-    def output_stream_chunk(self, chunk, **kwargs):
-        if self.agent_config.stream_result is not None:
-            self.agent_config.stream_result(chunk, **kwargs)
+    def output_result_stream_chunk(self, chunk, **kwargs):
+        if self.agent_config.web_server_stream_result is not None:
+            self.agent_config.web_server_stream_result(chunk, **kwargs)
 
     # thinking内容的stream输出chunk
-    def thinking_stream_chunk(self, chunk, **kwargs):
-        if self.agent_config.stream_thinking is not None:
-            self.agent_config.stream_thinking(chunk, **kwargs)
+    def output_thinking_stream_chunk(self, chunk, **kwargs):
+        if self.agent_config.web_server_stream_thinking is not None:
+            self.agent_config.web_server_stream_thinking(chunk, **kwargs)
 
     # log内容的stream输出chunk
-    def log_stream_chunk(self, chunk, **kwargs):
-        if self.agent_config.stream_log is not None:
-            self.agent_config.stream_log(chunk, **kwargs)
+    def output_log_stream_chunk(self, chunk, **kwargs):
+        if self.agent_config.web_server_stream_log is not None:
+            self.agent_config.web_server_stream_log(chunk, **kwargs)
 
     # 中间状态stream输出(注意：streamlit的status不支持stream输出，只能打印)
-    def status_stream(self, in_chunk, in_full_response):
+    def output_status_stream(self, in_chunk, in_full_response):
         if self.sstream is not None:
             # self.sstream(in_chunk)
             pass
@@ -203,14 +171,6 @@ class Tool_Agent(Server_Base):
                 self._parse_final_answer(answer_this_turn)
                 return True
 
-            # if i>0:
-            #     if self.human:
-            #         human_input = input('[暂停]是否需要继续, y/n?')
-            #         if human_input=='y':
-            #             pass
-            #         else:
-            #             return False
-
             # 2、行动
             action_result = self.action(in_answer=answer_this_turn)
             # 3、观察
@@ -226,13 +186,7 @@ class Tool_Agent(Server_Base):
         # stream输出
         str_last_turn = ''
         for chunk in gen:
-            # if self.llm.remove_content_in_think_pairs:
-            #     chunk =chunk[2]
-            # else:
-            #     chunk =chunk
-            # dred(chunk)
             chunk = chunk[2]
-            # dyellow(chunk, end='', flush=True)
 
             thoughts +=chunk
             thoughts_copy_to_print +=chunk
@@ -244,22 +198,22 @@ class Tool_Agent(Server_Base):
                     # dyellow(f'-----> "{str_this_turn}"')
                     if self.output_stream_to_console:
                         # 输出到console
-                        self.output_stream_chunk(
+                        self.output_result_stream_chunk(
                             str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn ,
                             end='',
                             flush=True
                         )
                     else:
                         # 输出到如word文档中
-                        self.output_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
+                        self.output_result_stream_chunk(str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn)
                         # self.thinking_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
                     str_last_turn = str_this_turn
                 else:
                     # 采用full_string输出
-                    self.output_stream_full_string(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
+                    self.output_result_stream_full_string(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
                     # self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
             else:
-                self.thinking_stream_chunk(chunk)
+                self.output_thinking_stream_chunk(chunk)
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
                 # self.status_stream(chunk, thoughts)
 
@@ -331,15 +285,6 @@ class Tool_Agent(Server_Base):
 
             return answer_this_turn
 
-        # self.agent_desc_and_action_history += '\n' + answer_this_turn + ']'
-        # self.status_print(f'============================prompt start============================\n')
-        # self.status_print(f'{self.prompt}\n------------------------prompt end------------------------')
-
-        # dblue()
-        # dblue(f'answer(turn {self.turns_num})'.center(80, '='))
-        # dblue(answer_this_turn)
-        # dblue(f'/answer(turn {self.turns_num})'.center(80, '-'))
-
         print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
         return answer_this_turn
 
@@ -362,29 +307,13 @@ class Tool_Agent(Server_Base):
         # print(f'-----------------------------thoughts-----------------------------')
         dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
 
-        # if 'Code_Tool'==tool_name:
-        #     self.status_print('选择了[code_tool]')
-        #     tool = Code_Tool()
-        #     action_result = tool.call(in_answer)
-        #     if action_result=='':
-        #         action_result = 'code_tool未输出有效信息，可能是因为调用code_tool时，输入的代码没有用print输出结果。'
-        #     # self.status_print(f'action_result = "{action_result}"')
-        # elif 'Search_Tool'==tool_name:
-        #     self.status_print('选择了[search_tool]')
-        #     tool = Search_Tool()
-        #     action_result = tool.call(in_answer)
-        # elif 'Energy_Investment_Plan_Tool'==tool_name:
-        #     self.status_print('选择了[energy_investment_plan_tool]')
-        #     tool = Energy_Investment_Plan_Tool()
-        #     action_result = tool.call(in_answer)
-        # elif 'QA_Url_Content_Tool'==tool_name:
-        #     self.status_print('选择了[qa_url_content_tool]')
-        #     tool = QA_Url_Content_Tool()
-        #     action_result = tool.call(in_answer)
-        # else:
         if self.registered_tool_instances_dict.get(tool_name):
+            dict_string = extract_dict_string(in_answer)
+            dict = json5.loads(dict_string)
+            tool_paras_dict = dict['tool_parameters']
             action_result = self.registered_tool_instances_dict[tool_name].call(
-                in_answer,
+                tool_paras_dict,
+                # in_answer,
                 self.agent_config,
                 # in_is_web_server=self.is_web_server,
                 # in_client_data_sse_stream_buf=self.tool_client_data_stream_buf,
@@ -394,7 +323,7 @@ class Tool_Agent(Server_Base):
         # --------------------------- call tool ---------------------------
 
         self.status_print(f'调用工具的行动结果为: \n{action_result}')
-        self.log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
+        self.output_log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
 
         # dblue(f'action_result(turn {self.turns_num})'.center(80, '='))
         # dblue(action_result)
@@ -403,48 +332,7 @@ class Tool_Agent(Server_Base):
         dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
         return action_result
 
-#     def observation(self, in_action_result=''):
-#         # agent_desc_and_action_history去掉最后一个[观察]及其后续内容
-#         kword = '[观察]'
-#         last_his = self.agent_desc_and_action_history.split(kword)
-#         last_his.pop()
-#         last_his = kword.join(last_his)
-#
-#         # 构造观察数据
-#         obs_result = '\n' + kword
-#         obs_result += '''
-# {{
-#     'observer':'system',
-#     'status':'system returned',
-#     'result':'{result}',
-# }}
-# '''
-#         obs_result = obs_result.format(result=in_action_result)
-#         self.agent_desc_and_action_history = last_his + obs_result
-#
-#         print(Fore.CYAN, flush=True)
-#         print(f'=============================action_history=============================', flush=True)
-#         print(self.agent_desc_and_action_history, flush=True)
-#         print(f'-----------------------------action_history-----------------------------', flush=True)
-#         print(Style.RESET_ALL, flush=True)
-#         # print(f'============================prompt start============================\n')
-#         # print(f'{self.prompt}\n------------------------prompt end------------------------')
     def observation(self, in_action_result=''):
-        # agent_desc_and_action_history去掉最后一个[观察]及其后续内容
-        # kword = '[观察]'
-        # last_his = self.agent_desc_and_action_history.split(kword)
-        # last_his.pop()
-        # last_his = kword.join(last_his)
-
-        # 构造观察数据
-        # obs_result = '\n' + kword
-        # obs_result += f'[观察]{in_action_result}'
-
-        # obs_result = obs_result.format(result=in_action_result)
-        # self.agent_desc_and_action_history = last_his + obs_result
-
-
-
         self.agent_tools_description_and_full_history += f'[观察]{in_action_result}'
 
         # dcyan(f'==============================full_history(turn {self.turns_num})=======================')
@@ -458,10 +346,6 @@ class Tool_Agent(Server_Base):
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
 
 def main():
-    # torch.cuda.manual_seed_all(20000)
-    # LLM_Client.Set_All_LLM_Server('http://127.0.0.1:8002/v1')
-    # LLM_Client.Set_All_LLM_Server('http://116.62.63.204:8001/v1')
-
     from agent.tools.search_tool import Search_Tool
     tools=[Search_Tool, Url_Content_QA_Tool]
     # tools=[Search_Tool, Code_Tool, Energy_Investment_Plan_Tool, QA_Url_Content_Tool]
@@ -516,7 +400,7 @@ def main2():
     print(f'最终答复:')
     print(agent.get_final_answer())
 
-def main3():
+def main_folder():
     # from agent.tools.search_tool import Search_Tool
     from agent.tools.folder_tool import Folder_Tool
     tools=[Folder_Tool]
@@ -566,6 +450,5 @@ def table_main():
 if __name__ == "__main__":
     # main()
     # main2()
-
     # table_main()
-    main3()
+    main_folder()

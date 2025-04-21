@@ -244,6 +244,7 @@ class Base_Tool(ABC):
         except Exception as e:
             print(Fore.RED, flush=True)
             print(f'extract_tool_name()错误: "{e}"', flush=True)
+            print(f'full answer is: "{in_answer}"')
             print('返回tool_name=""', flush=True)
             print(Style.RESET_ALL, flush=True)
             return ""

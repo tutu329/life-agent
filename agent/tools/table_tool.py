@@ -301,19 +301,24 @@ class Table_Tool(Base_Tool):
         pass
 
     def call(self,
-             in_thoughts,
+             tool_paras_dict,
              agent_config,
              # in_is_web_server=True,
              # in_client_data_sse_stream_buf=None,
              ):
         dred('-----------------Table_Tool.call() invoked.---------------------')
-        dict_string = extract_dict_string(in_thoughts)
-        dict = json5.loads(dict_string)
-        excel_path = dict['tool_parameters']['excel_path']
-        sheet_name = dict['tool_parameters']['sheet_name']
-        table_title = dict['tool_parameters']['table_title']
-        is_vertical = dict['tool_parameters']['is_vertical']
-        draw_table = dict['tool_parameters']['draw_table']
+        # dict_string = extract_dict_string(in_thoughts)
+        # dict = json5.loads(dict_string)
+        # excel_path = dict['tool_parameters']['excel_path']
+        # sheet_name = dict['tool_parameters']['sheet_name']
+        # table_title = dict['tool_parameters']['table_title']
+        # is_vertical = dict['tool_parameters']['is_vertical']
+        # draw_table = dict['tool_parameters']['draw_table']
+        excel_path = tool_paras_dict['excel_path']
+        sheet_name = tool_paras_dict['sheet_name']
+        table_title = tool_paras_dict['table_title']
+        is_vertical = tool_paras_dict['is_vertical']
+        draw_table = tool_paras_dict['draw_table']
         dyellow(f'draw_table: {draw_table!r}')
 
         # 读取xls数据，并在word里绘制(仅在local调用word时)
@@ -328,7 +333,7 @@ class Table_Tool(Base_Tool):
 
         dred(f'-----------------draw_table({draw_table!r})--------------')
         dred(f'-----------------agent_config.is_web_server({agent_config.is_web_server!r})--------------')
-        dred(f'-----------------agent_config.stream_tool_client_data({agent_config.stream_tool_client_data!r})--------------')
+        dred(f'-----------------agent_config.stream_tool_client_data({agent_config.web_server_stream_tool_client_data!r})--------------')
         if (draw_table=='true' or draw_table=='True') and agent_config.is_web_server and self.tool_client_data_stream_buf:
             table_data = Web_Client_Table_Data(content=table_text, caption=sheet_name)
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TABLE, data=table_data)
@@ -338,7 +343,7 @@ class Table_Tool(Base_Tool):
             # client_data_str = json5.dumps(asdict(client_data)).encode('utf-8').decode('unicode_escape')
             dred(f'-----------------client data_str---------------\n{client_data_str}')
             dred(f'-----------------------------------------------\n')
-            agent_config.stream_tool_client_data(client_data_str)
+            agent_config.web_server_stream_tool_client_data(client_data_str)
 
         # 调用工具后，结果作为action_result返回
         action_result = table_text
