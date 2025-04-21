@@ -25,6 +25,7 @@ from typing import List, Optional, Dict
 
 from server_manager.web_server_base import Web_Server_Base
 from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Data, Web_Client_Table_Data, Web_Client_Text_Data, Web_Client_Image_Data
+from utils.image import get_image_string_from_url
 import json
 
 
@@ -464,6 +465,11 @@ class LLM_Client():
         if role_prompt is not None:
             self.set_role_prompt(role_prompt)
 
+
+
+        # 如果输入image的path
+        if image_url:
+            image_url = get_image_string_from_url(image_url)
 
         dprint(f'{"-" * 40}输入参数{"-" * 40}')
         dprint(f'self.url: {self.url!r}')

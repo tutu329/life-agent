@@ -1,11 +1,22 @@
-import base64
+import base64,mimetypes
 import requests
 from PIL import Image
 from io import BytesIO
-import matplotlib.pyplot as plt
+
+def get_image_string_from_url(pic_url):
+    with open(pic_url, "rb") as image_file:
+        mime_type, _ = mimetypes.guess_type(pic_url)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+
+        base64_string = base64.b64encode(image_file.read()).decode('utf-8')
+        base64_data_url = f"data:{mime_type};base64,{base64_string}" # 必须转为该形式的string，才能让api读取
+
+        return base64_data_url
 
 # 显示图片字节流
 def show_image_from_bytes(image_bytes):
+    import matplotlib.pyplot as plt
     img = Image.open(BytesIO(image_bytes))
     plt.imshow(img)
     plt.axis('off')  # 隐藏坐标轴
@@ -13,6 +24,7 @@ def show_image_from_bytes(image_bytes):
 
 # 显示本地图片
 def show_local_image(image_path):
+    import matplotlib.pyplot as plt
     img = Image.open(image_path)
     plt.imshow(img)
     plt.axis('off')  # 隐藏坐标轴
@@ -28,6 +40,7 @@ def get_local_image_bytes(image_path):
 
 # 显示URL图片
 def show_url_image(image_url):
+    import matplotlib.pyplot as plt
     response = requests.get(image_url)
     img = Image.open(BytesIO(response.content))
     plt.imshow(img)
