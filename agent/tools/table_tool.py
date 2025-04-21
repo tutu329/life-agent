@@ -374,7 +374,6 @@ def main_client():
         base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
         # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
         api_key='empty',
-
     )
     agent = Tool_Agent(
         query=query,

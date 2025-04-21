@@ -48,6 +48,8 @@ def main_folder():
     import config
     from agent.tool_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
+    from agent.agent_config import Config
+
     tools=[Folder_Tool]
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
@@ -55,12 +57,17 @@ def main_folder():
         query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
+
+    config = Config(
+        base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
+        # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        api_key='empty',
+    )
+
     agent = Tool_Agent(
         query=query,
         tool_classes=tools,
-        in_base_url='http://powerai.cc:28001/v1', #llama-4-400b#llama-4-400b
-        # in_base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
-        in_api_key='empty',
+        agent_config=config
     )
     agent.init()
     success = agent.run()
