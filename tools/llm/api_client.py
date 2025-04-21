@@ -1466,36 +1466,26 @@ def main():
         llm.ask_prepare(query, max_new_tokens=500).get_answer_and_sync_print()
 
 def pic_main():
+    import os
+
     llm = LLM_Client(
-        temperature=0.9,
-        url='http://powerai.cc:8001/v1/'
+        temperature=0.6,
+        url='http://powerai.cc:28001/v1/'
     )
-    # print('models: ', openai.models.list().data)
-    import base64
-    import mimetypes
 
-    # url = 'C:\\Users\\tutu\\Downloads\\我的证书.png'
-    # url = 'C:\\Users\\tutu\\Downloads\\tiger.jpg'
-    url = 'C:\\Users\\tutu\\Downloads\\mouse.jpeg'
-    with open(url, "rb") as image_file:
-        mime_type, _ = mimetypes.guess_type(url)
-        if not mime_type:
-            mime_type = "application/octet-stream"
+    cwd = os.getcwd()
+    print("当前工作目录是：", cwd)
+    pic_name = '110kV沈家湾变主接线图.jpg'
+    pic_path = cwd + '/' + pic_name
+    # pic_path = cwd + '\\' + pic_name
 
-        base64_string = base64.b64encode(image_file.read()).decode('utf-8')
-        base64_data_url = f"data:{mime_type};base64,{base64_string}" # 必须转为该形式的string，才能让api读取
+    llm.ask_prepare(
+        question='图中的黄色母线的电压等级是多少？黄色母线上有多少出线，各个出线的名称是什么？',
+        image_url=pic_path,
+        max_new_tokens=1024,
+    ).get_answer_and_sync_print()
 
-        llm.ask_prepare(
-            question='图里是什么？',
-            image_url=base64_data_url,
-            # image_url='https://raw.githubusercontent.com/open-mmlab/mmdeploy/main/tests/data/tiger.jpeg',
-            max_new_tokens=500,
-        ).get_answer_and_sync_print()
-
-    llm.ask_prepare('刚才那张图里是什么？', max_new_tokens=500).get_answer_and_sync_print()
-
-    # llm.ask_prepare('你是谁？我的名字叫土土', max_new_tokens=500).get_answer_and_sync_print()
-    # llm.ask_prepare('我告诉你我叫什么？', max_new_tokens=500).get_answer_and_sync_print()
+    llm.ask_prepare('我刚才问你什么了？', max_new_tokens=1024).get_answer_and_sync_print()
 
 def main2():
     llm = LLM_Client(
@@ -1930,11 +1920,11 @@ def async_llm_main():
     allm.wait()
 
 if __name__ == "__main__" :
-    base_main()
+    # base_main()
+    pic_main() # 带pic
     # think_and_result_test()
     # async_llm_main()
 
-    # pic_main() # 带pic
     # think_main()
 
     # 直接采样64个完整结果的BoN筛选的正确率，比每个step采样20次、最多尝试10个steps的BoN筛选的正确率高，且step方式采用不清楚多少steps刚好完成。
