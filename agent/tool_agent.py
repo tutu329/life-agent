@@ -21,36 +21,37 @@ class Tool_Agent(Server_Base):
     def __init__(self,
                  query,
                  tool_classes,
+                 agent_config:Config,
                  # in_human=True,
                  # inout_status_list=None,
                  # stream_result=None,  # agent最终答复result的stream输出func, 如print或streamlit的st.some_component.empty().markdown
                  # stream_thinking=None,  # agent思考过程thinking的stream输出func
                  # stream_log=None,  # agent日志信息log的stream输出func
                  # stream_tool_client_data=None,  # agent工具调用结果数据的stream输出func
-                 in_output_end=None,  # 最终答复输出end的func
-                 in_output_stream_to_console=False,  # 最终答复是否stream输出到console
-                 in_output_stream_use_chunk=True,  # 最终答复stream输出是否采用chunk方式，还是full_string方式
-                 inout_output_list=None,
-                 in_status_stream_buf=None,
-                 in_base_url=config.LLM_Default.url,
-                 in_api_key='empty',
-                 in_model_id='',
-                 in_temperature=config.LLM_Default.temperature,
+                 # in_output_end=None,  # 最终答复输出end的func
+                 # in_output_stream_to_console=False,  # 最终答复是否stream输出到console
+                 # in_output_stream_use_chunk=True,  # 最终答复stream输出是否采用chunk方式，还是full_string方式
+                 # inout_output_list=None,
+                 # in_status_stream_buf=None,
+                 # in_base_url=config.LLM_Default.url,
+                 # in_api_key='empty',
+                 # in_model_id='',
+                 # in_temperature=config.LLM_Default.temperature,
                  # remove_content_in_think_pairs=False,
                  # is_web_server=True,
                  ):
         self.llm = None
-        self.agent_config = Config()
+        self.agent_config = agent_config
         # self.output_stream_buf = stream_result            # 最终结果stream输出的的func
         # self.thinking_stream_buf = stream_thinking            # 最终结果stream输出的的func
         # self.log_stream_buf = stream_log            # 最终结果stream输出的的func
         # self.tool_client_data_stream_buf = stream_tool_client_data            # 最终结果stream输出的的func
         # self.is_web_server = is_web_server
 
-        self.temperature = in_temperature
-        self.url = in_base_url
-        self.api_key = in_api_key
-        self.model_id = in_model_id
+        self.temperature = self.agent_config.temperature
+        self.url = self.agent_config.base_url
+        self.api_key = self.agent_config.api_key
+        self.model_id = self.agent_config.model_id
         self.agent_tools_description_and_full_history = ''
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
         self.query=query
@@ -73,13 +74,13 @@ class Tool_Agent(Server_Base):
         # self.response_stop = ['<res_stop>']
         self.turns_num = 0  # 用于统计当前对象的action轮次
 
-        self.ostream_end_func = in_output_end               # 最终结果stream输出的end的func
-        self.ostream_use_chunk = in_output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
-        self.output_stream_to_console = in_output_stream_to_console
-        self.sstream = in_status_stream_buf                 # 中间状态输出的stream
+        self.ostream_end_func = self.agent_config.output_end               # 最终结果stream输出的end的func
+        self.ostream_use_chunk = self.agent_config.output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
+        self.output_stream_to_console = self.agent_config.output_stream_to_console
+        self.sstream = self.agent_config.status_stream_buf                 # 中间状态输出的stream
 
         # self.status_list = inout_status_list     # 状态历史
-        self.output_list = inout_output_list     # 输出历史
+        self.output_list = self.agent_config.inout_output_list     # 输出历史
 
         self.__finished_keyword = '最终答复'
         self.final_answer = '尚未进行分析和答复'

@@ -26,8 +26,7 @@ class Folder_Tool(Base_Tool):
 
     def call(self,
              in_thoughts,
-             in_is_web_server=True,
-             in_client_data_sse_stream_buf=None,
+             agent_config
              ):
         # dred('-----------------Folder_Tool.call() invoked.---------------------')
         dict_string = extract_dict_string(in_thoughts)
@@ -59,8 +58,6 @@ def main_folder():
     agent = Tool_Agent(
         query=query,
         tool_classes=tools,
-        stream_result=dyellow,
-        in_output_stream_to_console=True,
         in_base_url='http://powerai.cc:28001/v1', #llama-4-400b#llama-4-400b
         # in_base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
         in_api_key='empty',

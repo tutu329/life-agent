@@ -357,6 +357,7 @@ def main_word():
 def main_client():
     import config
     from agent.tool_agent import Tool_Agent
+    from agent.agent_config import Config
 
     tools=[Table_Tool]
     # tools=[Folder_Tool, Search_Tool]
@@ -368,13 +369,17 @@ def main_client():
         # query = r'请返回d:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
     else:
         query = r'请告诉我y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
+
+    config = Config(
+        base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
+        # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        api_key='empty',
+
+    )
     agent = Tool_Agent(
         query=query,
         tool_classes=tools,
-        in_output_stream_to_console=True,
-        in_base_url='http://powerai.cc:28001/v1', #llama-4-400b#llama-4-400b
-        # in_base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
-        in_api_key='empty',
+        agent_config=config,
     )
     agent.init()
     success = agent.run()
