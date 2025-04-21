@@ -178,7 +178,7 @@ def start_agent_task():
                     in_model_id='',
                     in_temperature=0.6,
                     tool_classes=tools,
-                    in_is_web_server=True,
+                    is_web_server=True,
                 )
 
                 session_id = session.get('session_id')

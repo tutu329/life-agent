@@ -267,7 +267,7 @@ def _ask_agent(
     dblue(f'tools registered: {agent.registered_tool_instances_dict}')
 
     agent.init()
-    agent.set_tool_client_data_stream_buf(in_tool_client_data_stream_buf=tool_client_data_stream_buf)
+    agent.set_stream_tool_result_data(tool_result_data_output_func=tool_client_data_stream_buf)
     success = agent.run()
 
     result = ''
@@ -443,17 +443,17 @@ class Web_Office_Write(Server_Base):
         # office.word_insert_heading_at_cursor('1、现状', '标题 2')
         # office.word_insert_llm_stream_at_cursor('我叫土土')
 
-    def set_output_stream_buf(self, in_output_stream_buf):
-        self.output_stream_buf = in_output_stream_buf
+    def set_stream_result(self, result_output_func):
+        self.output_stream_buf = result_output_func
 
-    def set_thinking_stream_buf(self, in_thinking_stream_buf):
-        self.thinking_stream_buf = in_thinking_stream_buf
+    def set_stream_thinking(self, thinking_output_func):
+        self.thinking_stream_buf = thinking_output_func
 
-    def set_log_stream_buf(self, in_log_stream_buf):
-        self.log_stream_buf = in_log_stream_buf
+    def set_stream_log(self, log_output_func):
+        self.log_stream_buf = log_output_func
 
-    def set_tool_client_data_stream_buf(self, in_tool_client_data_stream_buf):
-        self.tool_client_data_stream_buf = in_tool_client_data_stream_buf
+    def set_stream_tool_result_data(self, tool_result_data_output_func):
+        self.tool_client_data_stream_buf = tool_result_data_output_func
 
 # 电厂接入系统报告的编制
 def report_on_plant_grid_connection_system(scheme_file_path, base_url=config.LLM_Default.url, api_key=config.LLM_Default.api_key, temperature=config.LLM_Default.temperature):

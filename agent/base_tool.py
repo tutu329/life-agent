@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
-
 from utils.extract import extract_code, extract_dict_string
 from colorama import Fore, Style
-
 import json5
+
+from agent.agent_config import Config
 
 DEBUG = False
 # DEBUG = True
@@ -195,8 +195,9 @@ class Base_Tool(ABC):
     @abstractmethod
     def call(self,
              in_thoughts,
-             in_is_web_server=True,
-             in_client_data_sse_stream_buf=None,
+             agent_config:Config,
+             # in_is_web_server=True,
+             # in_client_data_sse_stream_buf=None,
              ):
         pass
 

@@ -302,8 +302,9 @@ class Table_Tool(Base_Tool):
 
     def call(self,
              in_thoughts,
-             in_is_web_server=True,
-             in_client_data_sse_stream_buf=None,
+             agent_config,
+             # in_is_web_server=True,
+             # in_client_data_sse_stream_buf=None,
              ):
         dred('-----------------Table_Tool.call() invoked.---------------------')
         dict_string = extract_dict_string(in_thoughts)
@@ -322,13 +323,13 @@ class Table_Tool(Base_Tool):
             table_title=table_title,
             is_vertical=is_vertical,
             draw_table=draw_table,
-            is_web_server=in_is_web_server,
+            is_web_server=agent_config.is_web_server,
         )
 
         dred(f'-----------------draw_table({draw_table!r})--------------')
-        dred(f'-----------------in_is_web_server({in_is_web_server!r})--------------')
-        dred(f'-----------------in_client_data_sse_stream_buf({in_client_data_sse_stream_buf!r})--------------')
-        if (draw_table=='true' or draw_table=='True') and in_is_web_server and in_client_data_sse_stream_buf:
+        dred(f'-----------------agent_config.is_web_server({agent_config.is_web_server!r})--------------')
+        dred(f'-----------------agent_config.stream_tool_client_data({agent_config.stream_tool_client_data!r})--------------')
+        if (draw_table=='true' or draw_table=='True') and agent_config.is_web_server and self.tool_client_data_stream_buf:
             table_data = Web_Client_Table_Data(content=table_text, caption=sheet_name)
             client_data = Web_Client_Data(type=Web_Client_Data_Type.TABLE, data=table_data)
             client_data_str = json.dumps(asdict(client_data), ensure_ascii=False)
@@ -337,7 +338,7 @@ class Table_Tool(Base_Tool):
             # client_data_str = json5.dumps(asdict(client_data)).encode('utf-8').decode('unicode_escape')
             dred(f'-----------------client data_str---------------\n{client_data_str}')
             dred(f'-----------------------------------------------\n')
-            in_client_data_sse_stream_buf(client_data_str)
+            agent_config.stream_tool_client_data(client_data_str)
 
         # 调用工具后，结果作为action_result返回
         action_result = table_text
@@ -345,11 +346,39 @@ class Table_Tool(Base_Tool):
         dred(action_result)
         return action_result
 
-# 使用示例
-if __name__ == "__main__":
-    excel_file = 'd:/demo/负荷及平衡.xlsx'        # Excel 文件路径
-    # excel_file = 'y:/demo/负荷及平衡.xlsx'        # Excel 文件路径
+def main_word():
+    # excel_file = 'd:/demo/负荷及平衡.xlsx'        # Excel 文件路径
+    excel_file = 'y:/demo/负荷及平衡.xlsx'        # Excel 文件路径
     sheet = '负荷预测'                          # 工作表名称
     word_file = 'output.docx'                   # 输出的 Word 文件路径（可选）
 
     print(extract_table_to_word(excel_file, sheet, table_title='负荷预测表', word_path=word_file ))
+
+def main_client():
+    import config
+    from agent.tool_agent import Tool_Agent
+
+    tools=[Table_Tool]
+    # tools=[Folder_Tool, Search_Tool]
+    # query = '第一步：搜索"万向创新聚能城"，返回万向创新聚能城所在城市；第二步搜索所在城市，返回该城市概况'
+    query=''
+    print(f'os: "{config.get_os()}"')
+    if config.get_os()=='windows':
+        query = r'请返回y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据，不绘制表格'
+        # query = r'请返回d:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
+    else:
+        query = r'请告诉我y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
+    agent = Tool_Agent(
+        query=query,
+        tool_classes=tools,
+        in_output_stream_to_console=True,
+        in_base_url='http://powerai.cc:28001/v1', #llama-4-400b#llama-4-400b
+        # in_base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        in_api_key='empty',
+    )
+    agent.init()
+    success = agent.run()
+
+# 使用示例
+if __name__ == "__main__":
+    main_client()

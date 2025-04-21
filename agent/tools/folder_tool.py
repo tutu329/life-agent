@@ -44,3 +44,29 @@ class Folder_Tool(Base_Tool):
         # dred('-----------------Folder_Tool.call() result:---------------------')
         # dred(action_result)
         return action_result
+
+def main_folder():
+    import config
+    from agent.tool_agent import Tool_Agent
+    from agent.tools.folder_tool import Folder_Tool
+    tools=[Folder_Tool]
+    print(f'os: "{config.get_os()}"')
+    if config.get_os()=='windows':
+        # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
+        query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
+    else:
+        query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
+    agent = Tool_Agent(
+        query=query,
+        tool_classes=tools,
+        stream_result=dyellow,
+        in_output_stream_to_console=True,
+        in_base_url='http://powerai.cc:28001/v1', #llama-4-400b#llama-4-400b
+        # in_base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        in_api_key='empty',
+    )
+    agent.init()
+    success = agent.run()
+
+if __name__ == "__main__":
+    main_folder()

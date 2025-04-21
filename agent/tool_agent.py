@@ -11,17 +11,11 @@
 from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
 from agent.base_tool import PROMPT_REACT
 from agent.base_tool import Base_Tool
-# from utils.extract import extract_code, extract_dict_string
-# from colorama import Fore, Back, Style
 
 import config
 from config import dred, dgreen, dblue, dcyan, dyellow
-
 from server_manager.server_base import Server_Base
-
-# from agent.tools.code_tool import Code_Tool
-# from agent.tools.energy_investment_plan_tool import Energy_Investment_Plan_Tool
-# from agent.tools.url_content_qa_tool import Url_Content_QA_Tool
+from agent.agent_config import Config
 
 class Tool_Agent(Server_Base):
     def __init__(self,
@@ -29,10 +23,10 @@ class Tool_Agent(Server_Base):
                  tool_classes,
                  # in_human=True,
                  # inout_status_list=None,
-                 stream_result=None,            # agent最终答复result的stream输出func, 如print或streamlit的st.some_component.empty().markdown
-                 stream_thinking=None,          # agent思考过程thinking的stream输出func
-                 stream_log=None,               # agent日志信息log的stream输出func
-                 stream_tool_client_data=None,  # agent工具调用结果数据的stream输出func
+                 # stream_result=None,  # agent最终答复result的stream输出func, 如print或streamlit的st.some_component.empty().markdown
+                 # stream_thinking=None,  # agent思考过程thinking的stream输出func
+                 # stream_log=None,  # agent日志信息log的stream输出func
+                 # stream_tool_client_data=None,  # agent工具调用结果数据的stream输出func
                  in_output_end=None,  # 最终答复输出end的func
                  in_output_stream_to_console=False,  # 最终答复是否stream输出到console
                  in_output_stream_use_chunk=True,  # 最终答复stream输出是否采用chunk方式，还是full_string方式
@@ -43,10 +37,16 @@ class Tool_Agent(Server_Base):
                  in_model_id='',
                  in_temperature=config.LLM_Default.temperature,
                  # remove_content_in_think_pairs=False,
-                 in_is_web_server=True,
+                 # is_web_server=True,
                  ):
         self.llm = None
-        self.is_web_server = in_is_web_server
+        self.agent_config = Config()
+        # self.output_stream_buf = stream_result            # 最终结果stream输出的的func
+        # self.thinking_stream_buf = stream_thinking            # 最终结果stream输出的的func
+        # self.log_stream_buf = stream_log            # 最终结果stream输出的的func
+        # self.tool_client_data_stream_buf = stream_tool_client_data            # 最终结果stream输出的的func
+        # self.is_web_server = is_web_server
+
         self.temperature = in_temperature
         self.url = in_base_url
         self.api_key = in_api_key
@@ -73,11 +73,6 @@ class Tool_Agent(Server_Base):
         # self.response_stop = ['<res_stop>']
         self.turns_num = 0  # 用于统计当前对象的action轮次
 
-        self.output_stream_buf = stream_result            # 最终结果stream输出的的func
-        self.thinking_stream_buf = stream_thinking            # 最终结果stream输出的的func
-        self.log_stream_buf = stream_log            # 最终结果stream输出的的func
-        self.tool_client_data_stream_buf = stream_tool_client_data            # 最终结果stream输出的的func
-
         self.ostream_end_func = in_output_end               # 最终结果stream输出的end的func
         self.ostream_use_chunk = in_output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
         self.output_stream_to_console = in_output_stream_to_console
@@ -90,19 +85,23 @@ class Tool_Agent(Server_Base):
         self.final_answer = '尚未进行分析和答复'
 
     # 设置最终结果stream输出的func
-    def set_output_stream_buf(self, in_output_stream_buf):
-        self.output_stream_buf = in_output_stream_buf            # 最终结果stream输出的的func
+    def set_stream_result(self, result_output_func):
+        self.agent_config.stream_result = result_output_func            # 最终结果stream输出的的func
+        # self.output_stream_buf = result_output_func            # 最终结果stream输出的的func
 
     # 设置thinking的stream输出的func
-    def set_thinking_stream_buf(self, in_thinking_stream_buf):
-        self.thinking_stream_buf = in_thinking_stream_buf            # 最终结果stream输出的的func
+    def set_stream_thinking(self, thinking_output_func):
+        self.agent_config.stream_thinking = thinking_output_func            # 最终结果stream输出的的func
+        # self.thinking_stream_buf = thinking_output_func            # 最终结果stream输出的的func
 
     # 设置最终结果stream输出的func
-    def set_log_stream_buf(self, in_log_stream_buf):
-        self.log_stream_buf = in_log_stream_buf            # 最终结果stream输出的的func
+    def set_stream_log(self, log_output_func):
+        self.agent_config.stream_log = log_output_func            # 最终结果stream输出的的func
+        # self.log_stream_buf = log_output_func            # 最终结果stream输出的的func
 
-    def set_tool_client_data_stream_buf(self, in_tool_client_data_stream_buf):
-        self.tool_client_data_stream_buf = in_tool_client_data_stream_buf            # 最终结果stream输出的的func
+    def set_stream_tool_result_data(self, tool_result_data_output_func):
+        self.agent_config.stream_tool_client_data = tool_result_data_output_func            # 最终结果stream输出的的func
+        # self.tool_client_data_stream_buf = tool_result_data_output_func            # 最终结果stream输出的的func
 
     # 最终结果输出
     def output_print(self, in_string):
@@ -126,23 +125,23 @@ class Tool_Agent(Server_Base):
 
     # 最终结果stream输出full_string
     def output_stream_full_string(self, in_full_response):
-        if self.output_stream_buf is not None:
-            self.output_stream_buf(in_full_response)
+        if self.agent_config.stream_result is not None:
+            self.agent_config.stream_result(in_full_response)
 
     # 最终结果stream输出chunk，注意：要确保chunk中没有'[最终答复]'或'终答复]'
     def output_stream_chunk(self, chunk, **kwargs):
-        if self.output_stream_buf is not None:
-            self.output_stream_buf(chunk, **kwargs)
+        if self.agent_config.stream_result is not None:
+            self.agent_config.stream_result(chunk, **kwargs)
 
     # thinking内容的stream输出chunk
     def thinking_stream_chunk(self, chunk, **kwargs):
-        if self.thinking_stream_buf is not None:
-            self.thinking_stream_buf(chunk, **kwargs)
+        if self.agent_config.stream_thinking is not None:
+            self.agent_config.stream_thinking(chunk, **kwargs)
 
     # log内容的stream输出chunk
     def log_stream_chunk(self, chunk, **kwargs):
-        if self.log_stream_buf is not None:
-            self.log_stream_buf(chunk, **kwargs)
+        if self.agent_config.stream_log is not None:
+            self.agent_config.stream_log(chunk, **kwargs)
 
     # 中间状态stream输出(注意：streamlit的status不支持stream输出，只能打印)
     def status_stream(self, in_chunk, in_full_response):
@@ -385,8 +384,9 @@ class Tool_Agent(Server_Base):
         if self.registered_tool_instances_dict.get(tool_name):
             action_result = self.registered_tool_instances_dict[tool_name].call(
                 in_answer,
-                in_is_web_server=self.is_web_server,
-                in_client_data_sse_stream_buf=self.tool_client_data_stream_buf,
+                self.agent_config,
+                # in_is_web_server=self.is_web_server,
+                # in_client_data_sse_stream_buf=self.tool_client_data_stream_buf,
             )
         else:
             self.status_print('未选择任何工具。')

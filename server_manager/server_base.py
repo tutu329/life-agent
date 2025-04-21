@@ -14,20 +14,20 @@ class Server_Base(ABC):
 
     # 最终输出的buf
     @abstractmethod
-    def set_output_stream_buf(self, in_output_stream_buf):
+    def set_stream_result(self, result_output_func):
         pass
 
     # thinking输出的buf
     @abstractmethod
-    def set_thinking_stream_buf(self, in_thinking_stream_buf):
+    def set_stream_thinking(self, thinking_output_func):
         pass
 
     # log输出的buf
     @abstractmethod
-    def set_log_stream_buf(self, in_log_stream_buf):
+    def set_stream_log(self, log_output_func):
         pass
 
     # tool client data输出的buf
     @abstractmethod
-    def set_tool_client_data_stream_buf(self, in_tool_client_data_stream_buf):
+    def set_stream_tool_result_data(self, tool_result_data_output_func):
         pass

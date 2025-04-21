@@ -131,10 +131,10 @@ class Web_Server_Task_Manager():
             task_obj.init()
             try:
                 # 设置stream输出的func
-                task_obj.set_output_stream_buf(task_output_stream_queue.put)
-                task_obj.set_thinking_stream_buf(task_thinking_stream_queue.put)
-                task_obj.set_log_stream_buf(task_log_stream_queue.put)
-                task_obj.set_tool_client_data_stream_buf(task_tool_client_data_stream_queue.put)
+                task_obj.set_stream_result(task_output_stream_queue.put)
+                task_obj.set_stream_thinking(task_thinking_stream_queue.put)
+                task_obj.set_stream_log(task_log_stream_queue.put)
+                task_obj.set_stream_tool_result_data(task_tool_client_data_stream_queue.put)
             except Exception as e:
                 dred(f'Web_Server_Task_Manager.start_task() set_output_stream_buf()报错: "{e}"')
 
