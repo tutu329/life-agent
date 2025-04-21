@@ -15,8 +15,6 @@ import asyncio
 import threading
 
 import config
-from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
-from utils.task import Flicker_Task
 from utils.string_util import str_remove_partial_substring_or_right, str_remove_content_in_partial_pairs, _str_get_content_in_partial_pairs
 
 from config import dred, dgreen, dblue, dcyan, dyellow
@@ -1155,6 +1153,8 @@ class Async_LLM(Web_Server_Base):
         self.tool_cliet_data_stream_buf = None
 
     def init(self):
+        from utils.task import Flicker_Task
+
         self.complete = False
         
         self.llm = LLM_Client(
@@ -1313,6 +1313,8 @@ class Concurrent_LLMs:
         in_max_new_tokens=2048,
         in_content_short_enough=True,  # 如果short_enough, 则每个qa只需要调用short_content_qa而不用调用long_content_qa(分段)
     ):
+        from tools.qa.long_content_qa import short_content_qa, long_content_qa_concurrently
+
         self.prompts = in_prompts
         self.contents = in_contents
         self.content_short_enough = in_content_short_enough

@@ -8,7 +8,7 @@
 # 其中“--paths=.”表示将/home/tutu/server/life-agent加入到PyInstaller分析路径中，以便找到tools模块
 # 可执行代码将输出至~/tool_agent/下，包括可执行代码和关联so等文件
 
-from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
+from tools.llm.api_client import LLM_Client
 from agent.base_tool import PROMPT_REACT
 from agent.base_tool import Base_Tool
 
@@ -310,13 +310,10 @@ class Tool_Agent(Web_Server_Base):
         if self.registered_tool_instances_dict.get(tool_name):
             dict_string = extract_dict_string(in_answer)
             dict = json5.loads(dict_string)
-            tool_paras_dict = dict['tool_parameters']
+            callback_tool_paras_dict = dict['tool_parameters']
             action_result = self.registered_tool_instances_dict[tool_name].call(
-                tool_paras_dict,
-                # in_answer,
-                self.agent_config,
-                # in_is_web_server=self.is_web_server,
-                # in_client_data_sse_stream_buf=self.tool_client_data_stream_buf,
+                callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
+                callback_agent_config=self.agent_config,            # 将agent配置传给tool
             )
         else:
             self.status_print('未选择任何工具。')
@@ -401,54 +398,67 @@ def main2():
     print(agent.get_final_answer())
 
 def main_folder():
-    # from agent.tools.search_tool import Search_Tool
+    import config
+    from agent.tool_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
+    from agent.agent_config import Config
+
     tools=[Folder_Tool]
+    print(f'os: "{config.get_os()}"')
+    if config.get_os()=='windows':
+        # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
+        query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
+    else:
+        query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
+
+    config = Config(
+        base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
+        # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        api_key='empty',
+    )
+
+    agent = Tool_Agent(
+        query=query,
+        tool_classes=tools,
+        agent_config=config
+    )
+    agent.init()
+    success = agent.run()
+
+def main_table():
+    import config
+    from agent.tool_agent import Tool_Agent
+    from agent.tools.table_tool import Table_Tool
+    from agent.agent_config import Config
+
+    tools=[Table_Tool]
     # tools=[Folder_Tool, Search_Tool]
     # query = '第一步：搜索"万向创新聚能城"，返回万向创新聚能城所在城市；第二步搜索所在城市，返回该城市概况'
     query=''
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        # query = '请告诉我"d:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
-        # query = r'请告诉我"y:\demo\依据"文件夹里有哪些文件，不作任何解释，直接输出结果'
-        # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
-        query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
+        query = r'请返回y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据，不绘制表格'
+        # query = r'请返回d:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
     else:
-        query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        query = r'请告诉我y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
+
+    config = Config(
+        base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
+        # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        api_key='empty',
+    )
     agent = Tool_Agent(
         query=query,
         tool_classes=tools,
-        stream_result=dyellow,
-        in_output_stream_to_console=True,
-        # remove_content_in_think_pairs=True,
-        in_base_url='http://powerai.cc:28001/v1', #llama-4-400b#llama-4-400b
-        # in_base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
-        in_api_key='empty',
-
-        # in_base_url='https://api.deepseek.com/v1',
-        # in_api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        agent_config=config,
     )
     agent.init()
     success = agent.run()
-
-def table_main():
-    from agent.tools.table_tool import Table_Tool
-    tools = [Table_Tool]
-    base_url = 'https://api.deepseek.com/v1'
-    api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
-
-    prompt = '从"Y:/life-agent/agent/agent_web_server/负荷数据.xlsx"的工作表"节点"里获取负荷预测数据，并返回'
-    agent = Tool_Agent(query=prompt, tool_classes=tools, in_base_url=base_url, in_api_key=api_key)
-    agent.init()
-    success = agent.run()
-
-    if success:
-        dblue(f"\n[运行结果]大语言模型agent(Table_Tool)执行成功。")
-        result = agent.get_final_answer()
-        dblue(result)
 
 if __name__ == "__main__":
     # main()
     # main2()
     # table_main()
-    main_folder()
+
+    # main_folder()
+    main_table()

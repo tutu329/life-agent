@@ -21,12 +21,12 @@ class Folder_Tool(Base_Tool):
         pass
 
     def call(self,
-             tool_paras_dict,
+             callback_tool_paras_dict,
              # in_thoughts,
-             agent_config
+             callback_agent_config
              ):
-        print(f'tool_paras_dict: "{tool_paras_dict}"')
-        dir = tool_paras_dict['dir']
+        print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
+        dir = callback_tool_paras_dict['dir']
 
         # 调用工具
         # files_str = get_folder_files_info_string(directory=dir, mode='name')
