@@ -879,13 +879,13 @@ def ask_llm(prompt, paras):
             print(tool.name+', ')
         print(f'] 已加载.')
         agent = Tool_Agent(
-            in_query=prompt,
-            in_tool_classes=tools,
+            query=prompt,
+            tool_classes=tools,
             inout_status_list=status_data['status_list'],
             in_status_stream_buf=status.markdown,
             inout_output_list=final_answer_list,
             in_output_stream_use_chunk=False,
-            in_output_stream_buf=placeholder1.markdown,
+            stream_result=placeholder1.markdown,
         )
         agent.init()
         success = agent.run()

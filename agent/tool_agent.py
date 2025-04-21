@@ -25,17 +25,17 @@ from server_manager.server_base import Server_Base
 
 class Tool_Agent(Server_Base):
     def __init__(self,
-                 in_query,
-                 in_tool_classes,
-                 in_human=True,
-                 inout_status_list=None,
-                 in_output_stream_buf=None, # 最终答复stream输出的func
-                 in_thinking_stream_buf=None,
-                 in_log_stream_buf=None,
-                 in_tool_client_data_stream_buf=None,
-                 in_output_end=None,        # 最终答复输出end的func
-                 in_output_stream_to_console=False, # 最终答复是否stream输出到console
-                 in_output_stream_use_chunk=True,   # 最终答复stream输出是否采用chunk方式，还是full_string方式
+                 query,
+                 tool_classes,
+                 # in_human=True,
+                 # inout_status_list=None,
+                 stream_result=None,            # agent最终答复result的stream输出func, 如print或streamlit的st.some_component.empty().markdown
+                 stream_thinking=None,          # agent思考过程thinking的stream输出func
+                 stream_log=None,               # agent日志信息log的stream输出func
+                 stream_tool_client_data=None,  # agent工具调用结果数据的stream输出func
+                 in_output_end=None,  # 最终答复输出end的func
+                 in_output_stream_to_console=False,  # 最终答复是否stream输出到console
+                 in_output_stream_use_chunk=True,  # 最终答复stream输出是否采用chunk方式，还是full_string方式
                  inout_output_list=None,
                  in_status_stream_buf=None,
                  in_base_url=config.LLM_Default.url,
@@ -53,19 +53,19 @@ class Tool_Agent(Server_Base):
         self.model_id = in_model_id
         self.agent_tools_description_and_full_history = ''
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
-        self.query=in_query
+        self.query=query
         self.tool_descs=''
         self.tool_names=[]
 
-        self.tool_classes = in_tool_classes
+        self.tool_classes = tool_classes
         # 创建一个字典，将工具名称映射到其实例
         self.registered_tool_instances_dict = {}
-        for tool_cls in in_tool_classes:
+        for tool_cls in tool_classes:
             tool_instance = tool_cls()
             tool_name = tool_cls.__name__
             self.registered_tool_instances_dict[tool_name] = tool_instance
 
-        self.human = in_human    # 是否和human交互
+        # self.human = in_human    # 是否和human交互
         self.action_stop = ['[观察]']
         self.observation_stop = ['[观察]']
         self.response_stop = ['[观察]']
@@ -73,17 +73,17 @@ class Tool_Agent(Server_Base):
         # self.response_stop = ['<res_stop>']
         self.turns_num = 0  # 用于统计当前对象的action轮次
 
-        self.output_stream_buf = in_output_stream_buf            # 最终结果stream输出的的func
-        self.thinking_stream_buf = in_thinking_stream_buf            # 最终结果stream输出的的func
-        self.log_stream_buf = in_log_stream_buf            # 最终结果stream输出的的func
-        self.tool_client_data_stream_buf = in_tool_client_data_stream_buf            # 最终结果stream输出的的func
+        self.output_stream_buf = stream_result            # 最终结果stream输出的的func
+        self.thinking_stream_buf = stream_thinking            # 最终结果stream输出的的func
+        self.log_stream_buf = stream_log            # 最终结果stream输出的的func
+        self.tool_client_data_stream_buf = stream_tool_client_data            # 最终结果stream输出的的func
 
         self.ostream_end_func = in_output_end               # 最终结果stream输出的end的func
         self.ostream_use_chunk = in_output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
         self.output_stream_to_console = in_output_stream_to_console
         self.sstream = in_status_stream_buf                 # 中间状态输出的stream
 
-        self.status_list = inout_status_list     # 状态历史
+        # self.status_list = inout_status_list     # 状态历史
         self.output_list = inout_output_list     # 输出历史
 
         self.__finished_keyword = '最终答复'
@@ -288,9 +288,10 @@ class Tool_Agent(Server_Base):
         else:
             # 中间状态输出历史
             # self.status_print(thoughts) # streamlit的status无法stream输出，只能这里print输出
-            if self.status_list is not None:
-                # print(f'self.status_list.append: {thoughts}')
-                self.status_list.append(thoughts)
+
+            pass
+            # if self.status_list is not None:
+            #     self.status_list.append(thoughts)
 
         return thoughts
 
@@ -492,7 +493,7 @@ def main():
             cont = False
             continue
             
-        agent = Tool_Agent(in_query=query, in_tool_classes=tools)
+        agent = Tool_Agent(query=query, tool_classes=tools)
         agent.init()
         success = agent.run()
         if success:
@@ -504,7 +505,7 @@ def main2():
     from agent.tools.search_tool import Search_Tool
     tools=[Search_Tool]
     query = '搜索网络告诉我莱温斯基是谁？'
-    agent = Tool_Agent(in_query=query, in_tool_classes=tools)
+    agent = Tool_Agent(query=query, tool_classes=tools)
     agent.init()
     success = agent.run()
     if success:
@@ -530,13 +531,13 @@ def main3():
     else:
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
     agent = Tool_Agent(
-        in_query=query,
-        in_tool_classes=tools,
-        in_output_stream_buf=dyellow,
+        query=query,
+        tool_classes=tools,
+        stream_result=dyellow,
         in_output_stream_to_console=True,
         # remove_content_in_think_pairs=True,
-        # in_base_url='http://powerai.cc:28001/v1', #deepseek-r1-671b
-        in_base_url='http://powerai.cc:38001/v1',   #llama-4-400b
+        in_base_url='http://powerai.cc:28001/v1', #llama-4-400b#llama-4-400b
+        # in_base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
         in_api_key='empty',
 
         # in_base_url='https://api.deepseek.com/v1',
@@ -552,7 +553,7 @@ def table_main():
     api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8'
 
     prompt = '从"Y:/life-agent/agent/agent_web_server/负荷数据.xlsx"的工作表"节点"里获取负荷预测数据，并返回'
-    agent = Tool_Agent(in_query=prompt, in_tool_classes=tools, in_base_url=base_url, in_api_key=api_key)
+    agent = Tool_Agent(query=prompt, tool_classes=tools, in_base_url=base_url, in_api_key=api_key)
     agent.init()
     success = agent.run()
 

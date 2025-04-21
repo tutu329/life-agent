@@ -253,11 +253,11 @@ def _ask_agent(
 ) -> str:
     tools = [Folder_Tool, Search_Tool, Table_Tool]
     agent = Tool_Agent(
-        in_query=prompt,
-        in_tool_classes=tools,
-        in_output_stream_buf=output_stream_buf,     # 最终输出 -> dyellow
-        in_thinking_stream_buf=thinking_stream_buf,
-        in_log_stream_buf=log_stream_buf,
+        query=prompt,
+        tool_classes=tools,
+        stream_result=output_stream_buf,     # 最终输出 -> dyellow
+        stream_thinking=thinking_stream_buf,
+        stream_log=log_stream_buf,
         in_output_end=output_stream_end_func,
         in_base_url=base_url,
         in_api_key=api_key,
@@ -522,7 +522,7 @@ def agent_tool_test():
     # query = '告诉我"D:\\ComfyUI\\models\\checkpoints"下有哪些文件'
     query = '请返回"d:/demo/负荷及平衡.xlsx"的"负荷预测"标签里的表格给我'
     # query = '告诉我"y:\\demo\\依据"下有哪些文件'
-    agent = Tool_Agent(in_query=query, in_tool_classes=tools)
+    agent = Tool_Agent(query=query, tool_classes=tools)
     print(f'tools registered: {agent.registered_tool_instances_dict}')
     agent.init()
     success = agent.run()

@@ -172,12 +172,12 @@ def start_agent_task():
             elif answer == '通过工具问答':
                 tools = [Table_Tool]
                 agent = Tool_Agent(
-                    in_query=query,
+                    query=query,
                     in_base_url=base_url,
                     in_api_key=api_key,
                     in_model_id='',
                     in_temperature=0.6,
-                    in_tool_classes=tools,
+                    tool_classes=tools,
                     in_is_web_server=True,
                 )
 

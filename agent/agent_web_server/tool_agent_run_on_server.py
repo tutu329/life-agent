@@ -42,8 +42,8 @@ def start_agent_task():
         tools = [Folder_Tool]
         # Create agent instance
         agent = Tool_Agent(
-            in_query=query,
-            in_tool_classes=tools,
+            query=query,
+            tool_classes=tools,
             in_base_url=base_url,
             in_api_key=api_key,
         )
