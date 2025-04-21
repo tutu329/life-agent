@@ -19,6 +19,10 @@ def get_os():
     else:
         return "unknown"
 
+if get_os()=='windows':
+    from colorama import init, Fore, Style
+    init()  # 启动后才能正确在 Windows 控制台输出颜色
+
 def get_members_name_list(obj):
     import inspect
     methods = [

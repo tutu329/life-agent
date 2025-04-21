@@ -487,21 +487,21 @@ class LLM_Client():
         )
         try:
             if self.model_id is None or self.model_id=='':
-                print('------------------------------1--------------------------')
+                # print('------------------------------1--------------------------')
                 old_model_id = self.model_id
-                print('------------------------------2--------------------------')
-                print(self.openai.models)
-                print(self.openai.models.list())
-                print('------------------------------2.1--------------------------')
+                # print('------------------------------2--------------------------')
+                # print(self.openai.models)
+                # print(self.openai.models.list())
+                # print('------------------------------2.1--------------------------')
                 self.model_id = self.openai.models.list().data[0].id
-                print('------------------------------3--------------------------')
+                # print('------------------------------3--------------------------')
                 dblue(f'【LLM_Client】change model_id from "{old_model_id}" to "{self.model_id}"\n')
         except Exception as e:
-            print('------------------------------4--------------------------')
+            # print('------------------------------4--------------------------')
             print(f'【LLM_Client异常】ask_prepare(): "{e}"')
             print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
             self.model_id = 'wrong'
-            print('------------------------------5--------------------------')
+            # print('------------------------------5--------------------------')
 
         self.usage = None   # 清空输入和输出的token数量统计
 
