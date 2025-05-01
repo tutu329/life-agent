@@ -8,8 +8,8 @@ import config
 class Config:
     # 基本配置
     output_end:Any = None                   # 最终答复输出end的func
-    output_stream_to_console:bool = False    # 最终答复是否stream输出到console
-    output_stream_use_chunk:bool = True      # 最终答复stream输出是否采用chunk方式，还是full_string方式
+    output_stream_to_console:bool = True    # 最终答复是否stream输出到console
+    output_stream_use_chunk:bool = True     # 最终答复stream输出是否采用chunk方式，还是full_string方式
     inout_output_list:Any = None
     status_stream_buf:Any = None
 

@@ -114,7 +114,7 @@ def extract_table_to_word(
         workbook.Close(SaveChanges=False)
         excel.Quit()
 
-        if draw_table=='false':
+        if draw_table=='false' or draw_table=='False' or draw_table==False:
             return table_text
 
         if is_web_server:
@@ -307,6 +307,9 @@ class Table_Tool(Base_Tool):
              # in_client_data_sse_stream_buf=None,
              ):
         dred('-----------------Table_Tool.call() invoked.---------------------')
+        dred('------table_tool paras-------')
+        dred(callback_tool_paras_dict)
+        dred('-----/table_tool paras-------')
         # dict_string = extract_dict_string(in_thoughts)
         # dict = json5.loads(dict_string)
         # excel_path = dict['tool_parameters']['excel_path']

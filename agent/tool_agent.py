@@ -80,7 +80,8 @@ class Tool_Agent(Web_Server_Base):
             if self.output_list is not None:
                 self.output_list.append(in_string)
         else:
-            print(in_string)
+            pass
+            # print(in_string)
 
     # 中间状态输出
     def status_print(self, in_string):
@@ -90,7 +91,8 @@ class Tool_Agent(Web_Server_Base):
             if self.status_list is not None:
                 self.status_list.append(in_string)
         else:
-            print(in_string)
+            pass
+            # print(in_string)
 
     # 最终结果stream输出full_string
     def output_result_stream_full_string(self, in_full_response):
@@ -118,7 +120,8 @@ class Tool_Agent(Web_Server_Base):
             # self.sstream(in_chunk)
             pass
         else:
-            print(in_chunk, end='', flush=True)
+            pass
+            # print(in_chunk, end='', flush=True)
 
     def init(self):
         self.llm = LLM_Client(
@@ -189,6 +192,8 @@ class Tool_Agent(Web_Server_Base):
             chunk = chunk[2]
 
             thoughts +=chunk
+
+            dgreen(chunk, end='', flush=True)
             thoughts_copy_to_print +=chunk
             if f'[{self.__finished_keyword}]' in thoughts:
                 # 最终结果stream输出(去除'[最终答复]'这些字)
@@ -228,6 +233,7 @@ class Tool_Agent(Web_Server_Base):
                     l = thoughts_copy_to_print.split('\n\n')
                     l.pop(0)
                     thoughts_copy_to_print = '\n\n'.join(l)    # 这里用' '.join而不用'\n'.join是为了防止streamlit中status.markdown额外输出\n
+        dgreen()
 
         # stream输出最后的end
         if self.ostream_end_func:
@@ -443,8 +449,9 @@ def main_table():
         query = r'请告诉我y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
 
     config = Config(
-        base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
-        # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
+        # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
+        base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
         api_key='empty',
     )
     agent = Tool_Agent(
