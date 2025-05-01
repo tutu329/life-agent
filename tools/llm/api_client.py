@@ -1887,8 +1887,9 @@ def think_main():
 
 def base_main():
     llm = LLM_Client(
-        temperature=0.6,
-        url='http://powerai.cc:28001/v1',
+        # temperature=0.6,
+        # url='http://powerai.cc:28001/v1',
+        url='http://powerai.cc:38001/v1',
         # url='https://powerai.cc:8001/v1'
 
         # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
@@ -1932,8 +1933,8 @@ def async_llm_main():
     allm.wait()
 
 if __name__ == "__main__" :
-    # base_main()
-    pic_main() # 带pic
+    base_main()
+    # pic_main() # 带pic
     # think_and_result_test()
     # async_llm_main()
 
