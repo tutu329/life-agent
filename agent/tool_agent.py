@@ -443,15 +443,16 @@ def main_table():
     query=''
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        query = r'请返回y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据，不绘制表格'
-        # query = r'请返回d:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
+        # query = r'请返回y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据，不绘制表格'
+        query = r'请返回d:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据，不绘制表格'
     else:
         query = r'请告诉我y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
 
     config = Config(
         # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
         # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
-        base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
+        base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         api_key='empty',
     )
     agent = Tool_Agent(
