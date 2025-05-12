@@ -4,6 +4,8 @@
 # 注2：推理deepseek的vllm可能要增加(https://github.com/vllm-project/vllm/pull/17784)：
 # --enable-auto-tool-choice --tool-call-parser deepseek_v3 --chat-template examples/tool_chat_template_deepseekv3.jinja
 
+# pip install openai-agents
+
 import asyncio
 from openai import AsyncOpenAI
 
