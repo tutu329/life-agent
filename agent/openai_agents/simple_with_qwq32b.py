@@ -1,10 +1,14 @@
+# pip install openai-agents
+
 # 注1：vllm要增加：--enable-auto-tool-choice --tool-call-parser hermes
 # "--enable-auto-tool-choice --tool-call-parser hermes" 主要用于openai-agents的tool调用，其中qwq-32b需要--tool-call-parser hermes
 
 # 注2：推理deepseek的vllm可能要增加(https://github.com/vllm-project/vllm/pull/17784)：
 # --enable-auto-tool-choice --tool-call-parser deepseek_v3 --chat-template examples/tool_chat_template_deepseekv3.jinja
+# 否则会报错：openai.BadRequestError: Error code: 400 - {'object': 'error', 'message': '"auto" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set', 'type': 'BadRequestError', 'param': None, 'code': 400}
 
-# pip install openai-agents
+# 核心是学习openai-agents的模式
+# https://github.com/openai/openai-agents-python/tree/main/examples/agent_patterns，这个里面有详细内容
 
 import asyncio
 from openai import AsyncOpenAI
