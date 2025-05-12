@@ -154,7 +154,7 @@ class Tool_Agent(Web_Server_Base):
 
         self.tool_names = ','.join(self.tool_names)
 
-        self.agent_tools_description_and_full_history = self.agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+        self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
 
     def get_final_answer(self):
         return self.final_answer
