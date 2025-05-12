@@ -450,9 +450,9 @@ def main_table():
 
     config = Config(
         # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
-        # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
+        base_url='http://powerai.cc:28002/v1',  # qwen3-235b
         # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
-        base_url='http://powerai.cc:8001/v1',   #qwen3-30b
+        # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         api_key='empty',
     )
     agent = Tool_Agent(
