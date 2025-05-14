@@ -1,11 +1,12 @@
-import json
+import json, json5
 
 from agent.base_tool import Base_Tool
+# from agent.base_tool import Data_Attached_Tool
 
 class Database_Tool(Base_Tool):
     name='Database_Tool'
     description=\
-'''通过表名和字段名，获取数据库中对应数据，并将数据存放于全局共享变量g_agent_share_data_dict["some_agent_id"]["some_var_name"]中。
+'''通过表名和字段名，获取数据库中对应数据，并将数据通过push_to_frontend("some_agent_id", "some_var_name")传给前端中。
 '''
     parameters=[
         {
@@ -35,14 +36,17 @@ class Database_Tool(Base_Tool):
              callback_agent_config,
              callback_agent_id
              ):
-        print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
+        print(f'tool_paras_dict: {callback_tool_paras_dict!r}')
         table_name = callback_tool_paras_dict['table_name']
-        field_names = json.loads(callback_tool_paras_dict['field_names'])
+        field_names = callback_tool_paras_dict['field_names']
+        print(f'field_names: {field_names!r}')
+        field_names = json5.loads(callback_tool_paras_dict['field_names'])
 
         # 调用工具
         print(f'工具"Database_Tool"已被调用，table_name:{table_name!r}, field_names:{field_names!r}')
         share_data_name = 'shared_database_data'
-        rtn_str = f'工具"Database_Tool"调用成功，数据已成功存入全局共享变量g_agent_share_data_dict[{callback_agent_id}][{share_data_name}]'
+        rtn_str = f'工具"Database_Tool"调用成功，数据已成功通过push_to_frontend({callback_agent_id}, {share_data_name})发给了前端。'
+        print(rtn_str)
 
         # 调用工具后，结果作为action_result返回
         action_result = rtn_str
@@ -51,12 +55,13 @@ class Database_Tool(Base_Tool):
 def main_db_tool():
     import config
     from agent.tool_agent import Tool_Agent
+    from agent.tools.frontend_chart_code_transfer_foo import Frontend_Chart_Code_Transfer_Tool
     from agent.agent_config import Config
 
-    tools=[Database_Tool]
+    tools=[Database_Tool, Frontend_Chart_Code_Transfer_Tool]
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        query = r'请分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。表名是hangzhou_elec_2024，字段名有date、electricity、gdp'
+        query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
     else:
         pass
 
