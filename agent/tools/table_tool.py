@@ -305,6 +305,7 @@ class Table_Tool(Base_Tool):
              callback_agent_config,
              # in_is_web_server=True,
              # in_client_data_sse_stream_buf=None,
+             callback_agent_id
              ):
         dred('-----------------Table_Tool.call() invoked.---------------------')
         dred('------table_tool paras-------')

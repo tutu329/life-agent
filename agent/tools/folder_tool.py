@@ -23,7 +23,8 @@ class Folder_Tool(Base_Tool):
     def call(self,
              callback_tool_paras_dict,
              # in_thoughts,
-             callback_agent_config
+             callback_agent_config,
+             callback_agent_id
              ):
         print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
         dir = callback_tool_paras_dict['dir']

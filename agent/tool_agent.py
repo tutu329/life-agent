@@ -18,6 +18,7 @@ from server_manager.web_server_base import Web_Server_Base
 from agent.agent_config import Config
 from utils.extract import extract_dict_string
 import json5
+from uuid import uuid4
 
 class Tool_Agent(Web_Server_Base):
     def __init__(self,
@@ -27,6 +28,7 @@ class Tool_Agent(Web_Server_Base):
                  ):
         self.llm = None
         self.agent_config = agent_config
+        self.agent_id = str(uuid4())
 
         self.temperature = self.agent_config.temperature
         self.url = self.agent_config.base_url
@@ -320,6 +322,7 @@ class Tool_Agent(Web_Server_Base):
             action_result = self.registered_tool_instances_dict[tool_name].call(
                 callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                 callback_agent_config=self.agent_config,            # 将agent配置传给tool
+                callback_agent_id=self.agent_id,                    # 将agent_id传给tool
             )
         else:
             self.status_print('未选择任何工具。')

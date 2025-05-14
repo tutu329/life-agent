@@ -74,8 +74,9 @@ class Base_Tool(ABC):
     @abstractmethod
     def call(
             self,
-            callback_tool_paras_dict,   # agent调用tool时的输入参数
-            callback_agent_config:Config,        # agent配置参数
+            callback_tool_paras_dict,       # agent调用tool时的输入参数
+            callback_agent_config:Config,   # agent配置参数
+            callback_agent_id,              # agent_id
     ):
         pass
 
