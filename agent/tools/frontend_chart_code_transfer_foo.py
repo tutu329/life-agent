@@ -2,27 +2,18 @@ import json
 
 from agent.base_tool import Base_Tool
 
-class Database_Tool(Base_Tool):
-    name='Database_Tool'
+class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
+    name='Frontend_Chart_Code_Transfer_Tool'
     description=\
-'''通过表名和字段名，获取数据库中对应数据，并将数据存放于全局共享变量g_agent_share_data_dict["some_agent_id"]["some_var_name"]中。
+'''通过全局共享变量g_agent_share_data_dict["some_agent_id"]["shared_database_data"]获取数据，并根据数据生成前端页面用的交互图的代码。
 '''
-    parameters=[
+    parameters = [
         {
-            'name': 'table_name',
+            'name': 'frontend_chart_code',
             'type': 'string',
             'description': \
 '''
-本参数为数据库的表名
-''',
-            'required': 'True',
-        },
-        {
-            'name': 'field_names',
-            'type': 'string',
-            'description': \
-'''
-本参数为数据库的字段名列表字符串，如"['field1','field2', ...]"
+本参数为需要传给前端的chart代码
 ''',
             'required': 'True',
         },
@@ -36,13 +27,11 @@ class Database_Tool(Base_Tool):
              callback_agent_id
              ):
         print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
-        table_name = callback_tool_paras_dict['table_name']
-        field_names = json.loads(callback_tool_paras_dict['field_names'])
 
         # 调用工具
-        print(f'工具"Database_Tool"已被调用，table_name:{table_name!r}, field_names:{field_names!r}')
+        print(f'工具"Frontend_Chart_Code_Transfer_Tool"已被调用，agent_id:{callback_agent_id!r}')
         share_data_name = 'shared_database_data'
-        rtn_str = f'工具"Database_Tool"调用成功，数据已成功存入全局共享变量g_agent_share_data_dict[{callback_agent_id}][{share_data_name}]'
+        rtn_str = f'工具"Frontend_Chart_Code_Generate_Tool"调用成功，代码已被传给前端。'
 
         # 调用工具后，结果作为action_result返回
         action_result = rtn_str
@@ -53,16 +42,16 @@ def main_db_tool():
     from agent.tool_agent import Tool_Agent
     from agent.agent_config import Config
 
-    tools=[Database_Tool]
+    tools=[Frontend_Chart_Code_Transfer_Tool]
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        query = r'请分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户'
+        query = r'请将代码"print("hello world")"传给前端'
     else:
         pass
 
     config = Config(
         base_url='http://powerai.cc:28001/v1',   #qwen3-235b
-        base_url='http://powerai.cc:28002/v1',   #qwq
+        # base_url='http://powerai.cc:28002/v1',   #qwq
         api_key='empty',
     )
     agent = Tool_Agent(
