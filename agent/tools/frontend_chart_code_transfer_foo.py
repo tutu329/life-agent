@@ -5,7 +5,7 @@ from agent.base_tool import Base_Tool
 class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
     name='Frontend_Chart_Code_Transfer_Tool'
     description=\
-'''通过全局共享变量g_agent_share_data_dict["some_agent_id"]["shared_database_data"]获取数据，并根据数据生成前端页面用的交互图的代码。
+'''将已生成的前端chart代码发送给前端，并在前端动态执行。
 '''
     parameters = [
         {
@@ -14,6 +14,15 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
             'description': \
 '''
 本参数为需要传给前端的chart代码
+''',
+            'required': 'True',
+        },
+        {
+            'name': 'field_names_used_to_draw_chart_by_frontend',
+            'type': 'string',
+            'description': \
+'''
+本参数为需要告诉前端的用于绘制chart的数据的字段名列表字符串，如"['field1','field2', ...]"
 ''',
             'required': 'True',
         },
@@ -27,11 +36,12 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
              callback_agent_id
              ):
         print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
+        frontend_chart_code = callback_tool_paras_dict['frontend_chart_code']
 
         # 调用工具
         print(f'工具"Frontend_Chart_Code_Transfer_Tool"已被调用，agent_id:{callback_agent_id!r}')
         share_data_name = 'shared_database_data'
-        rtn_str = f'工具"Frontend_Chart_Code_Generate_Tool"调用成功，代码已被传给前端。'
+        rtn_str = f'工具"Frontend_Chart_Code_Generate_Tool"调用成功，代码已被传给前端，并已成功执行。\n代码为："\n{frontend_chart_code}"'
 
         # 调用工具后，结果作为action_result返回
         action_result = rtn_str

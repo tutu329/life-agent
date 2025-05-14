@@ -37,20 +37,25 @@ class Database_Tool(Base_Tool):
              callback_agent_id
              ):
         print(f'tool_paras_dict: {callback_tool_paras_dict!r}')
-        table_name = callback_tool_paras_dict['table_name']
-        field_names = callback_tool_paras_dict['field_names']
-        print(f'field_names: {field_names!r}')
-        field_names = json5.loads(callback_tool_paras_dict['field_names'])
+        print(f'type of callback_tool_paras_dict: {type(callback_tool_paras_dict)!r}')
+        if isinstance(callback_tool_paras_dict, dict):
+            table_name = callback_tool_paras_dict['table_name']
+            field_names = callback_tool_paras_dict['field_names']
+            print(f'field_names: {field_names!r}')
+            field_names = json5.loads(callback_tool_paras_dict['field_names'])
 
-        # 调用工具
-        print(f'工具"Database_Tool"已被调用，table_name:{table_name!r}, field_names:{field_names!r}')
-        share_data_name = 'shared_database_data'
-        rtn_str = f'工具"Database_Tool"调用成功，数据已成功通过push_to_frontend({callback_agent_id}, {share_data_name})发给了前端。'
-        print(rtn_str)
+            # 调用工具
+            print(f'工具"Database_Tool"已被调用，table_name:{table_name!r}, field_names:{field_names!r}')
+            share_data_name = 'shared_database_data'
+            rtn_str = f'工具"Database_Tool"调用成功，数据已成功通过push_to_frontend({callback_agent_id}, {share_data_name})发给了前端。'
+            print(rtn_str)
 
-        # 调用工具后，结果作为action_result返回
-        action_result = rtn_str
-        return action_result
+            # 调用工具后，结果作为action_result返回
+            action_result = rtn_str
+            return action_result
+        else:
+            # 返回的不是数据dict，而是string，表明发生了error
+            return '返回的不是数据dict，而是string，表明发生了error'
 
 def main_db_tool():
     import config
@@ -66,8 +71,9 @@ def main_db_tool():
         pass
 
     config = Config(
-        base_url='http://powerai.cc:28001/v1',   #qwen3-235b
-        # base_url='http://powerai.cc:28002/v1',   #qwq
+        # base_url='http://powerai.cc:28001/v1',   # qwen3-235b
+        base_url='http://powerai.cc:28001/v1',   # deepseek-r1-671b
+        # base_url='http://powerai.cc:28002/v1',   # qwq
         api_key='empty',
     )
     agent = Tool_Agent(

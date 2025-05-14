@@ -309,34 +309,43 @@ class Tool_Agent(Web_Server_Base):
         in_answer = ''.join(in_answer)
         # print(f'in_answer2: {in_answer}')
         tool_name = Base_Tool.extract_tool_name_from_answer(in_answer)
+        if isinstance(tool_name, str):
+            # 返回是string，正常
 
-        # print(f'=============================thoughts=============================')
-        # print(in_thoughts)
-        # print(f'-----------------------------thoughts-----------------------------')
-        dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
+            # print(f'=============================thoughts=============================')
+            # print(in_thoughts)
+            # print(f'-----------------------------thoughts-----------------------------')
+            dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
 
-        if self.registered_tool_instances_dict.get(tool_name):
-            dict_string = extract_dict_string(in_answer)
-            dict = json5.loads(dict_string)
-            callback_tool_paras_dict = dict['tool_parameters']
-            action_result = self.registered_tool_instances_dict[tool_name].call(
-                callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
-                callback_agent_config=self.agent_config,            # 将agent配置传给tool
-                callback_agent_id=self.agent_id,                    # 将agent_id传给tool
-            )
-        else:
-            self.status_print('未选择任何工具。')
-        # --------------------------- call tool ---------------------------
+            if self.registered_tool_instances_dict.get(tool_name):
+                dict_string = extract_dict_string(in_answer)
+                dict = json5.loads(dict_string)
+                callback_tool_paras_dict = dict['tool_parameters']
+                action_result = self.registered_tool_instances_dict[tool_name].call(
+                    callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
+                    callback_agent_config=self.agent_config,            # 将agent配置传给tool
+                    callback_agent_id=self.agent_id,                    # 将agent_id传给tool
+                )
+            else:
+                self.status_print('未选择任何工具。')
+            # --------------------------- call tool ---------------------------
 
-        self.status_print(f'调用工具的行动结果为: \n{action_result}')
-        self.output_log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
+            self.status_print(f'调用工具的行动结果为: \n{action_result}')
+            self.output_log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
 
-        # dblue(f'action_result(turn {self.turns_num})'.center(80, '='))
-        # dblue(action_result)
-        # dblue(f'/action_result(turn {self.turns_num})'.center(80, '-'))
+            # dblue(f'action_result(turn {self.turns_num})'.center(80, '='))
+            # dblue(action_result)
+            # dblue(f'/action_result(turn {self.turns_num})'.center(80, '-'))
 
-        dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
-        return action_result
+            dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
+            return action_result
+        elif isinstance(tool_name, list):
+            # 返回了list，是['error', 'error info']这样的结构
+            if tool_name[0]=='error':
+                error_info = tool_name[1]
+                dred(error_info)
+                action_result = error_info
+                return action_result
 
     def observation(self, in_action_result=''):
         self.agent_tools_description_and_full_history += f'[观察]{in_action_result}'

@@ -117,6 +117,6 @@ class Base_Tool(ABC):
             print(f'full answer is: "{in_answer}"')
             print('返回tool_name=""', flush=True)
             print(Style.RESET_ALL, flush=True)
-            return ""
-
+            error_result_list = ['error', f'工具调用失败！原因是你输出的工具选择信息解析出现错误，你输出的需解析的全部文本为"{in_answer}", 报错信息为"{e}"']
+            rtn = error_result_list
         return rtn
