@@ -65,10 +65,11 @@ def main_db_tool():
 
     tools=[Database_Tool, Frontend_Chart_Code_Transfer_Tool]
     print(f'os: "{config.get_os()}"')
+
     if config.get_os()=='windows':
         query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
     else:
-        pass
+        query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
 
     config = Config(
         # base_url='http://powerai.cc:28001/v1',   # qwen3-235b

@@ -4,8 +4,9 @@ from agent.base_tool import Base_Tool
 
 class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
     name='Frontend_Chart_Code_Transfer_Tool'
-    description=\
-'''将已生成的前端chart代码发送给前端，并在前端动态执行。
+    description = \
+'''通过将代码传给前端、在前端用javascript完成渲染的工具，该工具的具体要求包括，
+1)输入：通过参数frontend_chart_code输入javascript程序，程序必须从新的一行顶格开始，编写程序时要一步一步想清楚。
 '''
     parameters = [
         {
@@ -13,7 +14,8 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
             'type': 'string',
             'description': \
 '''
-本参数为需要传给前端的chart代码
+1）本参数为输入的javascript代码字符串，必须以"对囊括起来，绝对不能用```或\'\'\'或\"\"\"括起来。
+2）javascript代码字符串内部的引号必须根据嵌套情况用\"对或\'对。
 ''',
             'required': 'True',
         },
