@@ -21,7 +21,7 @@ from uuid import uuid4
 from tools.llm.api_client import LLM_Client
 from agent.base_tool import PROMPT_REACT
 from agent.base_tool import Base_Tool
-from agent.protocol import create_tool_ctx, get_tool_ctx
+from agent.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 
 class Tool_Agent(Web_Server_Base):
     def __init__(self,
@@ -32,6 +32,7 @@ class Tool_Agent(Web_Server_Base):
         self.llm = None
         self.agent_config = agent_config
         self.agent_id = str(uuid4())
+        self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
 
         self.temperature = self.agent_config.temperature
         self.url = self.agent_config.base_url
@@ -325,12 +326,24 @@ class Tool_Agent(Web_Server_Base):
                 dict = json5.loads(dict_string)
                 callback_tool_paras_dict = dict['tool_parameters']
 
+                # 调用工具前，创建tool_ctx(生成tool_task_id，并用于存放后续可能的dataset_info)
+                tool_ctx = create_tool_ctx()
+
+                # 获取上一个工具调用的tool_task_id
+                last_tool_ctx = None
+                if self.last_tool_task_id is not None:
+                    last_tool_ctx = get_tool_ctx(self.last_tool_task_id)
+
                 # 调用工具
-                action_result = self.registered_tool_instances_dict[tool_name].call(
+                rtn_tool_ctx = self.registered_tool_instances_dict[tool_name].call(
                     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                     callback_agent_config=self.agent_config,            # 将agent配置传给tool
                     callback_agent_id=self.agent_id,                    # 将agent_id传给tool
+                    callback_tool_ctx=tool_ctx,
+                    callback_last_tool_ctx=last_tool_ctx,
                 )
+                action_result = rtn_tool_ctx.action_result
+                self.last_tool_task_id = rtn_tool_ctx.tool_info.tool_task_id
             else:
                 self.status_print('未选择任何工具。')
             # --------------------------- call tool ---------------------------

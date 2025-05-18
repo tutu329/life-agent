@@ -1,11 +1,12 @@
 import json
 
 from agent.base_tool import Base_Tool
+from agent.protocol import update_tool_context_info
 
 class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
     name='Frontend_Chart_Code_Transfer_Tool'
     description = \
-'''通过将代码传给前端、在前端用javascript完成渲染的工具，该工具的具体要求包括，
+'''本工具将代码传给前端，系统在前端用javascript完成渲染，本工具不会直接给出最终结果。本工具的具体要求包括，
 1)输入：通过参数frontend_chart_code输入javascript程序，程序必须从新的一行顶格开始，编写程序时要一步一步想清楚。
 '''
     parameters = [
@@ -16,6 +17,7 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
 '''
 1）本参数为输入的javascript代码字符串，必须以"对囊括起来，绝对不能用```或\'\'\'或\"\"\"括起来。
 2）javascript代码字符串内部的引号必须根据嵌套情况用\"对或\'对。
+3）javascript代码字符串内容的回车必须用\\\\n。
 ''',
             'required': 'True',
         },
@@ -35,7 +37,9 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
     def call(self,
              callback_tool_paras_dict,
              callback_agent_config,
-             callback_agent_id
+             callback_agent_id,
+             callback_tool_ctx,
+             callback_last_tool_ctx
              ):
         print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
         frontend_chart_code = callback_tool_paras_dict['frontend_chart_code']
@@ -45,9 +49,14 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
         share_data_name = 'shared_database_data'
         rtn_str = f'工具"Frontend_Chart_Code_Generate_Tool"调用成功，代码已被传给前端，并已成功执行。\n代码为："\n{frontend_chart_code}"'
 
+        update_tool_context_info(callback_tool_ctx, action_result=rtn_str, data_set_info=None)
         # 调用工具后，结果作为action_result返回
-        action_result = rtn_str
-        return action_result
+        # action_result = rtn_str
+        if callback_last_tool_ctx is not None:
+            print(f'==============Frontend_Chart_Code_Transfer_Tool.callback_tool_ctx.data_set_info===============\n{callback_last_tool_ctx.data_set_info}')
+        else:
+            print('----------------wrong: callback_last_tool_ctx is None!---------------------')
+        return callback_tool_ctx
 
 def main_db_tool():
     import config

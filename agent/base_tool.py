@@ -5,6 +5,7 @@ from colorama import Fore, Style
 import json5
 
 from agent.agent_config import Config
+from agent.protocol import Tool_Context, create_tool_ctx, get_tool_ctx, update_tool_context_info
 
 DEBUG = False
 # DEBUG = True
@@ -76,9 +77,11 @@ class Base_Tool(ABC):
     @abstractmethod
     def call(
             self,
-            callback_tool_paras_dict,       # agent调用tool时的输入参数
-            callback_agent_config:Config,   # agent配置参数
-            callback_agent_id,              # agent_id
+            callback_tool_paras_dict,               # agent调用tool时的输入参数
+            callback_agent_config:Config,           # agent配置参数
+            callback_agent_id,                      # agent_id
+            callback_tool_ctx:Tool_Context,         # tool的上下文context(包含tool_task_id和可能的dataset_info)
+            callback_last_tool_ctx:Tool_Context,    # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
     ):
         pass
 
