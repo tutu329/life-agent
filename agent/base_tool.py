@@ -80,7 +80,6 @@ class Base_Tool(ABC):
             callback_tool_paras_dict,               # agent调用tool时的输入参数
             callback_agent_config:Config,           # agent配置参数
             callback_agent_id,                      # agent_id
-            callback_tool_ctx:Tool_Context,         # tool的上下文context(包含tool_task_id和可能的dataset_info)
             callback_last_tool_ctx:Tool_Context,    # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
     ):
         pass

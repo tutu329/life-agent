@@ -1,7 +1,7 @@
 import json, json5
 
 from agent.base_tool import Base_Tool
-from agent.protocol import update_tool_context_info, Data_Set_Info
+from agent.protocol import update_tool_context_info, Data_Set_Info, Action_Result
 
 # from agent.base_tool import Data_Attached_Tool
 
@@ -37,7 +37,6 @@ class Database_Tool(Base_Tool):
              callback_tool_paras_dict,
              callback_agent_config,
              callback_agent_id,
-             callback_tool_ctx,
              callback_last_tool_ctx
              ):
         print(f'tool_paras_dict: {callback_tool_paras_dict!r}')
@@ -49,13 +48,12 @@ class Database_Tool(Base_Tool):
             field_names = json5.loads(callback_tool_paras_dict['field_names'])
 
             # 调用工具
-            print(f'工具"Database_Tool"已被调用，table_name:{table_name!r}, field_names:{field_names!r}')
+            # print(f'工具"Database_Tool"已被调用，table_name:{table_name!r}, field_names:{field_names!r}')
             share_data_name = 'shared_database_data'
             rtn_str = f'工具"Database_Tool"已调用，数据已通过push_to_frontend({callback_agent_id}, {share_data_name})发给了前端，当然任务还未最终完成。'
-            print(rtn_str)
+            # print(rtn_str)
 
 
-            print(f'---------------------callback_tool_ctx------------------\n {callback_tool_ctx}')
             data_set_info = Data_Set_Info(
                 data_set_content_url=None,
                 schema=None,
@@ -67,14 +65,10 @@ class Database_Tool(Base_Tool):
                 ],
                 expires_at=None
             )
-            print(f'------------------action_result-------------------\n{rtn_str}')
-            print(f'------------------/action_result-------------------')
-            updated_tool_ctx = update_tool_context_info(callback_tool_ctx, action_result=rtn_str, data_set_info=data_set_info)
-            # 调用工具后，结果作为action_result返回
-            # action_result = rtn_str
-            print(f'------------------callback_tool_ctx-------------------\n{updated_tool_ctx}')
-            print(f'------------------/callback_tool_ctx-------------------')
-            return updated_tool_ctx
+
+            action_result = Action_Result(result=rtn_str, data_set_info=data_set_info)
+            # updated_tool_ctx = update_tool_context_info(callback_tool_ctx, action_result=rtn_str, data_set_info=data_set_info)
+            return action_result
         else:
             # 返回的不是数据dict，而是string，表明发生了error
             return '返回的不是数据dict，而是string，表明发生了error'

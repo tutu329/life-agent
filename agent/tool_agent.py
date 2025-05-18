@@ -322,6 +322,7 @@ class Tool_Agent(Web_Server_Base):
             dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
 
             if self.registered_tool_instances_dict.get(tool_name):
+                # 解析tool_paras
                 dict_string = extract_dict_string(in_answer)
                 dict = json5.loads(dict_string)
                 callback_tool_paras_dict = dict['tool_parameters']
@@ -335,16 +336,21 @@ class Tool_Agent(Web_Server_Base):
                     last_tool_ctx = get_tool_ctx(self.last_tool_task_id)
 
                 # 调用工具
-                rtn_tool_ctx = self.registered_tool_instances_dict[tool_name].call(
+                rtn = self.registered_tool_instances_dict[tool_name].call(
                     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                     callback_agent_config=self.agent_config,            # 将agent配置传给tool
                     callback_agent_id=self.agent_id,                    # 将agent_id传给tool
-                    callback_tool_ctx=tool_ctx,
                     callback_last_tool_ctx=last_tool_ctx,
                 )
-                action_result = rtn_tool_ctx.action_result
-                dblue(f'action_result: "{action_result}"')
-                self.last_tool_task_id = rtn_tool_ctx.tool_info.tool_task_id
+
+                # 更新tool的上下文context
+                update_tool_context_info(tool_ctx, action_result=rtn.result, data_set_info=rtn.data_set_info)
+
+                # 控制台输出action_result
+                dblue(f'action_result: "{rtn.result}"')
+
+                # 更新last_tool_task_id
+                self.last_tool_task_id = tool_ctx.tool_info.tool_task_id
             else:
                 self.status_print('未选择任何工具。')
             # --------------------------- call tool ---------------------------

@@ -1,4 +1,5 @@
 from agent.base_tool import Base_Tool
+from agent.protocol import Action_Result
 from utils.folder import get_folder_files_info_string, get_folder_all_items_string
 
 class Folder_Tool(Base_Tool):
@@ -22,9 +23,9 @@ class Folder_Tool(Base_Tool):
 
     def call(self,
              callback_tool_paras_dict,
-             # in_thoughts,
              callback_agent_config,
-             callback_agent_id
+             callback_agent_id,
+             callback_last_tool_ctx
              ):
         print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
         dir = callback_tool_paras_dict['dir']
@@ -35,7 +36,8 @@ class Folder_Tool(Base_Tool):
         # files_str = get_folder_files_info_string(directory=dir, mode='basename')
 
         # 调用工具后，结果作为action_result返回
-        action_result = items_str
+        action_result = Action_Result(result=items_str)
+        # action_result = items_str
         return action_result
 
 def main_folder():

@@ -6,8 +6,6 @@ from uuid import uuid4
 from utils.task import Status
 import threading
 
-import asyncio
-
 @dataclass
 class Tool_Info:
     tool_task_id: str                           # 工具所执行任务的id
@@ -32,6 +30,11 @@ class Tool_Context:
     tool_info: Tool_Info                                            # tool的id和所执行任务的status
     action_result: str = ''                                         # tool留给LLM的可读信息(tool_msg_for_llm)
     data_set_info: Optional[Data_Set_Info] = field(default=None)    # 可选：数据集信息（包括url）
+
+@dataclass
+class Action_Result:
+    result:str
+    data_set_info:Data_Set_Info = field(default=None)
 
 _TOOL_CTX_STORE: Dict[str, Tool_Context] = {}
 _TOOL_CTX_STORE_LOCK = threading.Lock()                   # 轻量串行化；高并发可换 Redis 分布式锁
@@ -64,7 +67,6 @@ def update_tool_context_info(tool_ctx:Tool_Context, action_result='', data_set_i
             data_set_info = data_set_info
         )
         _TOOL_CTX_STORE[tool_ctx.tool_info.tool_task_id] = copy.deepcopy(tool_context)
-        return _TOOL_CTX_STORE[tool_ctx.tool_info.tool_task_id]
 
-        print(f'------------------tool_context-------------------\n{tool_context}')
-        print(f'------------------/tool_context-------------------')
+        print(f'------------------updated tool_context-------------------\n{tool_context}')
+        print(f'------------------/updated tool_context-------------------')
