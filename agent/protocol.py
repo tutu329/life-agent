@@ -28,7 +28,7 @@ class Tool_Context:
         name：数据集逻辑名，如 "raw_2024_usage" / "daily_agg"
     """
     tool_info: Tool_Info                                            # tool的id和所执行任务的status
-    action_result: str = ''                                         # tool留给LLM的可读信息(tool_msg_for_llm)
+    # action_result: str = ''                                         # tool留给LLM的可读信息(tool_msg_for_llm)
     data_set_info: Optional[Data_Set_Info] = field(default=None)    # 可选：数据集信息（包括url）
 
 @dataclass
@@ -58,12 +58,16 @@ def get_tool_ctx(tool_task_id:str):
     tool_ctx = _TOOL_CTX_STORE.get(tool_task_id)
     return tool_ctx
 
-def update_tool_context_info(tool_ctx:Tool_Context, action_result='', data_set_info:Data_Set_Info=None):
+def update_tool_context_info(
+        tool_ctx:Tool_Context,
+        # action_result='',
+        data_set_info:Data_Set_Info=None
+):
     # 更新dataset信息，同时status改为completed
     with _TOOL_CTX_STORE_LOCK:
         tool_context = Tool_Context(
             tool_info = Tool_Info(tool_task_id=tool_ctx.tool_info.tool_task_id, tool_task_status=Status.Completed),
-            action_result = action_result,
+            # action_result = action_result,
             data_set_info = data_set_info
         )
         _TOOL_CTX_STORE[tool_ctx.tool_info.tool_task_id] = copy.deepcopy(tool_context)

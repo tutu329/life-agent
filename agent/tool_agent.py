@@ -344,13 +344,19 @@ class Tool_Agent(Web_Server_Base):
                 )
 
                 # 更新tool的上下文context
-                update_tool_context_info(tool_ctx, action_result=rtn.result, data_set_info=rtn.data_set_info)
+                update_tool_context_info(
+                    tool_ctx,
+                    # action_result=rtn.result,
+                    data_set_info=rtn.data_set_info
+                )
 
                 # 控制台输出action_result
                 dblue(f'action_result: "{rtn.result}"')
 
                 # 更新last_tool_task_id
                 self.last_tool_task_id = tool_ctx.tool_info.tool_task_id
+
+                action_result=rtn.result
             else:
                 self.status_print('未选择任何工具。')
             # --------------------------- call tool ---------------------------
