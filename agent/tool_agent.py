@@ -43,6 +43,7 @@ class Tool_Agent(Web_Server_Base):
         self.query=query
         self.tool_descs=''
         self.tool_names=[]
+        self.tool_paras_just_outputed = False
 
         self.tool_classes = tool_classes
         # 创建一个字典，将工具名称映射到其实例
@@ -176,14 +177,18 @@ class Tool_Agent(Web_Server_Base):
         for i in range(in_max_retry):
             # 1、思考
             answer_this_turn = self.thinking()
-            if self.__finished_keyword in answer_this_turn:
+            dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
+            if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
                 self._parse_final_answer(answer_this_turn)
                 return True
 
             # 2、行动
             action_result = self.action(in_answer=answer_this_turn)
+
             # 3、观察
             self.observation(in_action_result=action_result)
+            dyellow(f'-------------tool_just_outputed to "False"----------------------')
+            self.tool_paras_just_outputed = False   # 防止正常[最终答复]环节时，都无法退出(用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。)
 
         self.final_answer = '未能成功答复，请重试。'
         return False
@@ -315,13 +320,21 @@ class Tool_Agent(Web_Server_Base):
         tool_name = Base_Tool.extract_tool_name_from_answer(in_answer)
         if isinstance(tool_name, str):
             # 返回是string，正常
-
             # print(f'=============================thoughts=============================')
             # print(in_thoughts)
             # print(f'-----------------------------thoughts-----------------------------')
             dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
 
             if self.registered_tool_instances_dict.get(tool_name):
+                dyellow(f'-------------tool_just_outputed changed to "True"----------------------')
+                self.tool_paras_just_outputed = True    # 用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
+
+                # # 如果有tool输出，则去掉[最终答复]及后续内容，因为tool还没调用，此时最终输出肯定不对
+                # in_answer = in_answer.split(f'[{self.__finished_keyword}]')
+                # if len(in_answer) > 1:
+                #     in_answer.pop()
+                # in_answer = ''.join(in_answer)
+
                 # 解析tool_paras
                 dict_string = extract_dict_string(in_answer)
                 dict = json5.loads(dict_string)

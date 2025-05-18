@@ -90,8 +90,8 @@ def main_db_tool():
 
     config = Config(
         # base_url='http://powerai.cc:28001/v1',   # qwen3-235b
-        # base_url='http://powerai.cc:28001/v1',   # deepseek-r1-671b
-        base_url='http://powerai.cc:28002/v1',   # qwq
+        base_url='http://powerai.cc:28001/v1',   # deepseek-r1-671b
+        # base_url='http://powerai.cc:28002/v1',   # qwq
         api_key='empty',
     )
     agent = Tool_Agent(
