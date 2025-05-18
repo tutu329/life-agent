@@ -32,8 +32,8 @@ class Tool_Context:
     data_set_info: Optional[Data_Set_Info] = field(default=None)    # 可选：数据集信息（包括url）
 
 
-_STORE: Dict[str, Tool_Context] = {}
-_LOCK = threading.Lock()                   # 轻量串行化；高并发可换 Redis 分布式锁
+_AGENT_TOOL_CTX_STORE: Dict[str, Tool_Context] = {}
+_AGENT_TOOL_CTX_STORE_LOCK = threading.Lock()                   # 轻量串行化；高并发可换 Redis 分布式锁
 
 def create_tool_ctx(data_set_info=None):
     """
@@ -44,14 +44,13 @@ def create_tool_ctx(data_set_info=None):
             tool_info=Tool_Info(tool_task_id=tool_task_id),
             data_set_info=data_set_info
         )
-    with _LOCK:
-        _STORE[tool_task_id] = tool_ctx
+    with _AGENT_TOOL_CTX_STORE_LOCK:
+        _AGENT_TOOL_CTX_STORE[tool_task_id] = tool_ctx
     return tool_ctx
 
 def get_tool_ctx(tool_task_id:str):
     """
     根据tool_task_id，返回tool_ctx（包含dataset等信息）
     """
-    with _LOCK:
-        tool_ctx = _STORE.get(tool_task_id)
+    tool_ctx = _AGENT_TOOL_CTX_STORE.get(tool_task_id)
     return tool_ctx
