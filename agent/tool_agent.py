@@ -163,6 +163,17 @@ class Tool_Agent(Web_Server_Base):
 
         self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
 
+    def save_agent_tools_description_and_full_history_to_file(self, answer_this_turn):
+        dblue()
+        dblue(f'final answer(turn {self.turns_num})'.center(80, '='))
+        dblue(answer_this_turn)
+        dblue(f'/final answer(turn {self.turns_num})'.center(80, '-'))
+
+        print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
+
+        with open("agent_tools_description_and_full_history.txt", "w", encoding="utf-8") as file:
+            file.write(self.agent_tools_description_and_full_history)
+
     def get_final_answer(self):
         return self.final_answer
 
@@ -177,18 +188,27 @@ class Tool_Agent(Web_Server_Base):
         for i in range(in_max_retry):
             # 1、思考
             answer_this_turn = self.thinking()
-            dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
-            if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
-                self._parse_final_answer(answer_this_turn)
-                return True
+            # dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
+            # if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
+            #     self._parse_final_answer(answer_this_turn)
+            #     return True
 
             # 2、行动
             action_result = self.action(in_answer=answer_this_turn)
+
+            # 如输出[最终答复]且无tool，则表明任务完成，正常退出
+            dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
+            if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
+                self.save_agent_tools_description_and_full_history_to_file(answer_this_turn)
+                self._parse_final_answer(answer_this_turn)
+                dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
+                return True
 
             # 3、观察
             self.observation(in_action_result=action_result)
             dyellow(f'-------------tool_just_outputed to "False"----------------------')
             self.tool_paras_just_outputed = False   # 防止正常[最终答复]环节时，都无法退出(用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。)
+
 
         self.final_answer = '未能成功答复，请重试。'
         return False
@@ -286,21 +306,6 @@ class Tool_Agent(Web_Server_Base):
                 file.write(answer_this_turn)
 
         self.agent_tools_description_and_full_history += '\n' + answer_this_turn
-
-        if self.__finished_keyword in answer_this_turn:
-            # '最终答复'出现
-            # print(Fore.GREEN, flush=True)
-            dblue()
-            dblue(f'final answer(turn {self.turns_num})'.center(80, '='))
-            dblue(answer_this_turn)
-            dblue(f'/final answer(turn {self.turns_num})'.center(80, '-'))
-
-            print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
-
-            with open("agent_tools_description_and_full_history.txt", "w", encoding="utf-8") as file:
-                file.write(self.agent_tools_description_and_full_history)
-
-            return answer_this_turn
 
         print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
         return answer_this_turn
