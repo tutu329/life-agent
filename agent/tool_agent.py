@@ -8,9 +8,7 @@
 # 其中“--paths=.”表示将/home/tutu/server/life-agent加入到PyInstaller分析路径中，以便找到tools模块
 # 可执行代码将输出至~/tool_agent/下，包括可执行代码和关联so等文件
 
-from tools.llm.api_client import LLM_Client
-from agent.base_tool import PROMPT_REACT
-from agent.base_tool import Base_Tool
+
 
 import config
 from config import dred, dgreen, dblue, dcyan, dyellow
@@ -19,6 +17,11 @@ from agent.agent_config import Config
 from utils.extract import extract_dict_string
 import json5
 from uuid import uuid4
+
+from tools.llm.api_client import LLM_Client
+from agent.base_tool import PROMPT_REACT
+from agent.base_tool import Base_Tool
+from agent.protocol import create_tool_ctx, get_tool_ctx
 
 class Tool_Agent(Web_Server_Base):
     def __init__(self,
@@ -321,6 +324,8 @@ class Tool_Agent(Web_Server_Base):
                 dict_string = extract_dict_string(in_answer)
                 dict = json5.loads(dict_string)
                 callback_tool_paras_dict = dict['tool_parameters']
+
+                # 调用工具
                 action_result = self.registered_tool_instances_dict[tool_name].call(
                     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                     callback_agent_config=self.agent_config,            # 将agent配置传给tool
