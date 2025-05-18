@@ -343,6 +343,7 @@ class Tool_Agent(Web_Server_Base):
                     callback_last_tool_ctx=last_tool_ctx,
                 )
                 action_result = rtn_tool_ctx.action_result
+                dblue(f'action_result: "{action_result}"')
                 self.last_tool_task_id = rtn_tool_ctx.tool_info.tool_task_id
             else:
                 self.status_print('未选择任何工具。')

@@ -59,8 +59,12 @@ def update_tool_context_info(tool_ctx:Tool_Context, action_result='', data_set_i
     # 更新dataset信息，同时status改为completed
     with _TOOL_CTX_STORE_LOCK:
         tool_context = Tool_Context(
-            tool_info=Tool_Info(tool_task_id=tool_ctx.tool_info.tool_task_id, tool_task_status=Status.Completed),
-            action_result=action_result,
-            data_set_info = copy.deepcopy(data_set_info)
+            tool_info = Tool_Info(tool_task_id=tool_ctx.tool_info.tool_task_id, tool_task_status=Status.Completed),
+            action_result = action_result,
+            data_set_info = data_set_info
         )
-        _TOOL_CTX_STORE[tool_ctx.tool_info.tool_task_id] = tool_context
+        _TOOL_CTX_STORE[tool_ctx.tool_info.tool_task_id] = copy.deepcopy(tool_context)
+        return _TOOL_CTX_STORE[tool_ctx.tool_info.tool_task_id]
+
+        print(f'------------------tool_context-------------------\n{tool_context}')
+        print(f'------------------/tool_context-------------------')

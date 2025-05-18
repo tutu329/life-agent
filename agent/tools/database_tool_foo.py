@@ -67,10 +67,14 @@ class Database_Tool(Base_Tool):
                 ],
                 expires_at=None
             )
-            update_tool_context_info(callback_tool_ctx, action_result=rtn_str, data_set_info=data_set_info)
+            print(f'------------------action_result-------------------\n{rtn_str}')
+            print(f'------------------/action_result-------------------')
+            updated_tool_ctx = update_tool_context_info(callback_tool_ctx, action_result=rtn_str, data_set_info=data_set_info)
             # 调用工具后，结果作为action_result返回
             # action_result = rtn_str
-            return callback_tool_ctx
+            print(f'------------------callback_tool_ctx-------------------\n{updated_tool_ctx}')
+            print(f'------------------/callback_tool_ctx-------------------')
+            return updated_tool_ctx
         else:
             # 返回的不是数据dict，而是string，表明发生了error
             return '返回的不是数据dict，而是string，表明发生了error'
