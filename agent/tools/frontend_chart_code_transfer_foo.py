@@ -58,6 +58,7 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
             print('----------------wrong: callback_last_tool_ctx is None!---------------------')
         return updated_tool_ctx
 
+
 def main_db_tool():
     import config
     from agent.tool_agent import Tool_Agent
