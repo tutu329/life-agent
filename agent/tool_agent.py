@@ -54,8 +54,8 @@ class Tool_Agent(Web_Server_Base):
             self.registered_tool_instances_dict[tool_name] = tool_instance
 
         # self.human = in_human    # 是否和human交互
-        self.action_stop = ['[观察]']
-        self.observation_stop = ['[观察]']
+        # self.action_stop = ['[观察]']
+        # self.observation_stop = ['[观察]']
         self.response_stop = ['[观察]']
         # self.response_stop = ['<结束>']
         # self.response_stop = ['<res_stop>']

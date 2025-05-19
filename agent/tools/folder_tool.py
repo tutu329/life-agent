@@ -49,15 +49,15 @@ def main_folder():
     tools=[Folder_Tool]
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
-        # query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
+        # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
+        query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
     config = Config(
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
-        base_url='http://powerai.cc:28002/v1',   #qwq
-        # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
+        # base_url='http://powerai.cc:28002/v1',   #qwq
+        base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
         # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
         api_key='empty',
     )
