@@ -198,10 +198,10 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
                     self.tool_descs += '\t},'
             else:
-                # 如果tool是folder_agent_as_tool这样的实例，只有1个demand参数
+                # 如果tool是folder_agent_as_tool这样的实例，只有1个command参数
                 self.tool_descs += '\t{'
 
-                self.tool_descs += '\t参数名称: ' + 'demand' + ',\n'
+                self.tool_descs += '\t参数名称: ' + 'command' + ',\n'
                 self.tool_descs += '\t\t参数类型: ' + 'string' + ',\n'
                 self.tool_descs += '\t\t参数描述: ' + tool.description + ',\n'
                 self.tool_descs += '\t\t参数是否必需: ' + 'True' + ',\n'

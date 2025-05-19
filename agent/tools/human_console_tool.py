@@ -51,7 +51,9 @@ def main_agent_as_tool():
     folder_agent_as_tool = Tool_Agent(
         query=query,
         tool_classes=tools1,
-        agent_config=config
+        agent_config=config,
+        as_tool_name='Folder_Agent_As_Tool',
+        as_tool_description='本工具用于获取文件夹中的文件和文件夹信息'
     )
 
     tools2=[Human_Console_Tool, Folder_Tool, folder_agent_as_tool]
@@ -60,8 +62,7 @@ def main_agent_as_tool():
         query=query,
         tool_classes=tools2,
         agent_config=config,
-        as_tool_name='',
-        as_tool_description=''
+
     )
     agent.init()
     success = agent.run()
