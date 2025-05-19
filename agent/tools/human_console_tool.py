@@ -36,6 +36,37 @@ class Human_Console_Tool(Base_Tool):
         action_result = Action_Result(result=res)
         return action_result
 
+def main_agent_as_tool():
+    from agent.tool_agent import Tool_Agent
+    from agent.agent_config import Config
+    from agent.tools.folder_tool import Folder_Tool
+
+    tools1=[Human_Console_Tool, Folder_Tool]
+    query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
+    config = Config(
+        base_url='http://powerai.cc:28001/v1',  # llama-4-400b or qwen3-235b
+        api_key='empty',
+    )
+
+    folder_agent_as_tool = Tool_Agent(
+        query=query,
+        tool_classes=tools1,
+        agent_config=config
+    )
+
+    tools2=[Human_Console_Tool, Folder_Tool, folder_agent_as_tool]
+
+    agent = Tool_Agent(
+        query=query,
+        tool_classes=tools2,
+        agent_config=config,
+        as_tool_name='',
+        as_tool_description=''
+    )
+    agent.init()
+    success = agent.run()
+    print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
+
 def main_human_console_tool():
     import config
     from agent.tool_agent import Tool_Agent
@@ -69,4 +100,5 @@ def main_human_console_tool():
     print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
 
 if __name__ == "__main__":
+    # main_agent_as_tool()
     main_human_console_tool()

@@ -23,15 +23,44 @@ from agent.base_tool import PROMPT_REACT
 from agent.base_tool import Base_Tool
 from agent.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 
-class Tool_Agent(Web_Server_Base):
+class Tool_Agent(Web_Server_Base, Base_Tool):
+    # Base_Tool属性
+        # name = 'Tool_Agent_As_Tool'
+        # description = '本工具通过调用智能体解决问题。'
+        # parameters = None
+
+    # Base_Tool方法
+    def call(
+            self,
+            callback_tool_paras_dict,   # agent调用tool时的输入参数
+            callback_agent_config,      # agent配置参数
+            callback_agent_id,          # agent_id
+            callback_last_tool_ctx,     # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+    ):
+        pass
+        # 1) new agent
+        # 2) agent.run()
+
+    # Tool_Agent方法
     def __init__(self,
                  query,
                  tool_classes,
                  agent_config:Config,
+                 as_tool_name=None,         # As_Tool的name，如取: "Folder_Agent_As_Tool"
+                 as_tool_description=None   # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  ):
+        # 初始化Base_Tool实例
+        # Base_Tool().__init__()
+
+        # As_Tool属性
+        self.name = as_tool_name
+        self.description = as_tool_description
+
+        # agent属性
+        self.agent_id = str(uuid4())
+
         self.llm = None
         self.agent_config = agent_config
-        self.agent_id = str(uuid4())
         self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
 
         self.temperature = self.agent_config.temperature
@@ -49,9 +78,16 @@ class Tool_Agent(Web_Server_Base):
         # 创建一个字典，将工具名称映射到其实例
         self.registered_tool_instances_dict = {}
         for tool_cls in tool_classes:
-            tool_instance = tool_cls()
-            tool_name = tool_cls.__name__
-            self.registered_tool_instances_dict[tool_name] = tool_instance
+            if isinstance(tool_cls, type):
+                # 如果tool_cls是一个class
+                tool_instance = tool_cls()
+                tool_name = tool_cls.__name__
+                self.registered_tool_instances_dict[tool_name] = tool_instance
+            else:
+                # 如果tool_cls是一个class的实例
+                tool_instance = tool_cls
+                tool_name = tool_instance.as_tool_name
+                self.registered_tool_instances_dict[tool_name] = tool_instance
 
         # self.human = in_human    # 是否和human交互
         # self.action_stop = ['[观察]']
@@ -144,19 +180,34 @@ class Tool_Agent(Web_Server_Base):
 
         # 将所有工具转换为{tool_descs}和{tool_names}
         for tool in self.tool_classes:
+            # 不论tool是Folder_Tool还是folder_agent_as_tool，都有name和description
             self.tool_names.append(f"'{tool.name}'")
             self.tool_descs += '工具名称: ' + tool.name + '\n'
             self.tool_descs += '工具描述: ' + tool.description + '\n'
             self.tool_descs += '工具参数: [\n'
-            for para in tool.parameters:
+
+            if isinstance(tool, type):
+                # 如果tool是Folder_Tool这样的class，有多个参数
+                for para in tool.parameters:
+                    self.tool_descs += '\t{'
+
+                    self.tool_descs += '\t参数名称: ' + para['name'] + ',\n'
+                    self.tool_descs += '\t\t参数类型: ' + para['type'] + ',\n'
+                    self.tool_descs += '\t\t参数描述: ' + para['description'] + ',\n'
+                    self.tool_descs += '\t\t参数是否必需: ' + para['required'] + ',\n'
+
+                    self.tool_descs += '\t},'
+            else:
+                # 如果tool是folder_agent_as_tool这样的实例，只有1个demand参数
                 self.tool_descs += '\t{'
 
-                self.tool_descs += '\t参数名称: ' + para['name'] + ',\n'
-                self.tool_descs += '\t\t参数类型: ' + para['type'] + ',\n'
-                self.tool_descs += '\t\t参数描述: ' + para['description'] + ',\n'
-                self.tool_descs += '\t\t参数是否必需: ' + para['required'] + ',\n'
+                self.tool_descs += '\t参数名称: ' + 'demand' + ',\n'
+                self.tool_descs += '\t\t参数类型: ' + 'string' + ',\n'
+                self.tool_descs += '\t\t参数描述: ' + tool.description + ',\n'
+                self.tool_descs += '\t\t参数是否必需: ' + 'True' + ',\n'
 
                 self.tool_descs += '\t},'
+
             self.tool_descs += '\n]\n\n'
 
         self.tool_names = ','.join(self.tool_names)
