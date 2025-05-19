@@ -22,6 +22,7 @@ from tools.llm.api_client import LLM_Client
 from agent.base_tool import PROMPT_REACT
 from agent.base_tool import Base_Tool
 from agent.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
+from agent.protocol import Action_Result
 
 class Tool_Agent(Web_Server_Base, Base_Tool):
     # Base_Tool属性
@@ -37,9 +38,10 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             callback_agent_id,          # agent_id
             callback_last_tool_ctx,     # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
     ):
-        pass
-        # 1) new agent
-        # 2) agent.run()
+        # 本agent实例被用作tool调用
+        self.run()
+        action_result = Action_Result(result=self.get_final_answer())
+        return action_result
 
     # Tool_Agent方法
     def __init__(self,
@@ -86,7 +88,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             else:
                 # 如果tool_cls是一个class的实例
                 tool_instance = tool_cls
-                tool_name = tool_instance.as_tool_name
+                tool_name = tool_instance.name
                 self.registered_tool_instances_dict[tool_name] = tool_instance
 
         # self.human = in_human    # 是否和human交互
@@ -198,12 +200,12 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
                     self.tool_descs += '\t},'
             else:
-                # 如果tool是folder_agent_as_tool这样的实例，只有1个command参数
+                # 如果tool是folder_agent_as_tool这样的实例，只有1个"自然语言指令"参数
                 self.tool_descs += '\t{'
 
-                self.tool_descs += '\t参数名称: ' + 'command' + ',\n'
+                self.tool_descs += '\t参数名称: ' + '自然语言指令' + ',\n'
                 self.tool_descs += '\t\t参数类型: ' + 'string' + ',\n'
-                self.tool_descs += '\t\t参数描述: ' + tool.description + ',\n'
+                self.tool_descs += '\t\t参数描述: ' + '本参数即为交给本工具的指令，由于是将agent当做tool用，因此输入自然语言指令即可' + ',\n'
                 self.tool_descs += '\t\t参数是否必需: ' + 'True' + ',\n'
 
                 self.tool_descs += '\t},'

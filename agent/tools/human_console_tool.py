@@ -55,8 +55,9 @@ def main_agent_as_tool():
         as_tool_name='Folder_Agent_As_Tool',
         as_tool_description='本工具用于获取文件夹中的文件和文件夹信息'
     )
+    folder_agent_as_tool.init()
 
-    tools2=[Human_Console_Tool, Folder_Tool, folder_agent_as_tool]
+    tools2=[Human_Console_Tool, folder_agent_as_tool]
 
     agent = Tool_Agent(
         query=query,
@@ -101,5 +102,5 @@ def main_human_console_tool():
     print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
 
 if __name__ == "__main__":
-    # main_agent_as_tool()
-    main_human_console_tool()
+    main_agent_as_tool()
+    # main_human_console_tool()
