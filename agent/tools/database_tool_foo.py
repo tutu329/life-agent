@@ -83,10 +83,11 @@ def main_db_tool():
     print(f'os: "{config.get_os()}"')
 
     if config.get_os()=='windows':
-        query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。先推送数据到数据，再写前端代码发给前端，然后等待前端渲染反馈。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
+        # query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。先推送数据到数据，再写前端代码发给前端，然后等待前端渲染反馈。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
+        query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
     else:
-        query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。先推送数据到数据，再写前端代码发给前端，然后等待前端渲染反馈。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
-        # query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
+        # query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。先推送数据到数据，再写前端代码发给前端，然后等待前端渲染反馈。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
+        query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
 
     config = Config(
         # base_url='http://powerai.cc:28001/v1',   # qwen3-235b
@@ -101,6 +102,7 @@ def main_db_tool():
     )
     agent.init()
     success = agent.run()
+    print(f'agent执行完毕，最终回复是: \n"{agent.get_final_answer()}"')
 
 if __name__ == "__main__":
     main_db_tool()
