@@ -348,7 +348,7 @@ class Tool_Agent(Web_Server_Base):
                 # 调用工具前，创建tool_ctx(生成tool_task_id，并用于存放后续可能的dataset_info)
                 tool_ctx = create_tool_ctx()
 
-                # 获取上一个工具调用的tool_task_id
+                # 获取上一个工具的调用结果tool_context
                 last_tool_ctx = None
                 if self.last_tool_task_id is not None:
                     last_tool_ctx = get_tool_ctx(self.last_tool_task_id)

@@ -17,7 +17,7 @@ class Data_Set_Info:
     schema: str                 # 如"user_id:int, date:date, kWh:float"
     rows: int                   # 数据集的总行数
     cols: int                   # 数据集的总列数
-    sample: Optional[list] = field(default=None)            # 可选：样例数据，20行以内
+    sample: Optional[list] = field(default=None)            # 可选：样例数据，如20行以内的head或tail
     expires_at: Optional[datetime] = field(default=None)    # 可选：指向文件的过期时间，用于前端提示刷新 URL
 
 @dataclass
