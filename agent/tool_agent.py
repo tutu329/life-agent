@@ -216,6 +216,8 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
         self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
 
+        return self
+
     def save_agent_tools_description_and_full_history_to_file(self, answer_this_turn):
         dblue()
         dblue(f'final answer(turn {self.turns_num})'.center(80, '='))
