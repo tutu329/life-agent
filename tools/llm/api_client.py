@@ -1891,12 +1891,14 @@ def base_main():
         # url='http://powerai.cc:28001/v1',
         # url='http://powerai.cc:38001/v1',
         # url='https://powerai.cc:8001/v1'
-        url='http://powerai.cc:8001/v1'
+        # url='http://powerai.cc:8001/v1'
 
-        # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
-        # url='https://api.deepseek.com/v1',
+        api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',  # deepseek官网
+        url = 'https://api.deepseek.com/v1',
+        model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
 
-        # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
+    # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
         # url='https://ark.cn-beijing.volces.com/api/v3/',
         # model_id='deepseek-r1-250120',
         # model_id='deepseek-v3-241226',
