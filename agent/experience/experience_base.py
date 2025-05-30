@@ -13,7 +13,7 @@ from __future__ import annotations
 * :meth:`Experience.get_node_by_path`       —— **按 *title* 路径** 查找节点（支持绝对/相对）
 * :meth:`Experience.del_node_tree_by_path`  —— 字符串专用删除接口（向后兼容）
 * :meth:`export_to_json_file`               —— 导出json文件
-* :meth:`Eimport_from_json_file`            —— 导入json文件
+* :meth:`import_from_json_file`             —— 导入json文件
 
 路径解析规则
 ------------
