@@ -38,8 +38,8 @@ class Experience_Summarizer:
     1. 在初始化时优先尝试从当前目录加载 experience.json；
     2. 若文件不存在则写入一棵默认经验树。
     """
-    def __init__(self):
-        self.exp_file_path = "experience.json"
+    def __init__(self, exp_json_file_path):
+        self.exp_file_path = exp_json_file_path
 
         # 根节点固定叫 root，内容留空
         self.exp_root = Experience("root", "")
@@ -237,7 +237,7 @@ def main_test_re():
     print(exp_root.get_tree_all_string())
 
 def main():
-    exp = Experience_Summarizer()
+    exp = Experience_Summarizer(exp_json_file_path='experience.json')
     exp.summarize(
 #         rendered_experience_tree_string = \
 # '''咨询报告编制经验 — 咨询报告编制的相关经验
