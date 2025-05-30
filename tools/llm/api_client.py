@@ -1889,8 +1889,9 @@ def base_main():
     llm = LLM_Client(
         # temperature=0.6,
         # url='http://powerai.cc:28001/v1',
-        url='http://powerai.cc:38001/v1',
+        # url='http://powerai.cc:38001/v1',
         # url='https://powerai.cc:8001/v1'
+        url='http://powerai.cc:8001/v1'
 
         # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
         # url='https://api.deepseek.com/v1',
