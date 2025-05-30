@@ -4,7 +4,7 @@ from config import dred,dgreen,dyellow,dblue,dcyan
 from tools.llm.api_client import LLM_Client
 from agent.experience.experience_base import Experience
 
-PROMPT_AGENT_SUMMARIZER = '''<总体要求>
+PROMPT_AGENT_EXP_SUMMARIZE = '''<总体要求>
 请严格根据【agent解决问题详细过程】和【经验获取要求】，分析agent在本次问题解决过程中的经验并返回。
 </总体要求>
 
@@ -31,23 +31,45 @@ PROMPT_AGENT_SUMMARIZER = '''<总体要求>
 {agent_history_string}
 </agent解决问题详细过程>'''
 
-class Experience_Summarizer:
+PROMPT_GET_AGENT_EXP ='''<总体要求>
+请严格根据【agent已有经验】内容和【agent将执行任务情况】，返回适用的经验。
+</总体要求>
+
+<经验返回要求>
+1、根据【agent已有经验】返回的经验，一定要和【agent将执行任务情况】相关。
+2、经验返回格式
+    1）若无对应【agent将执行任务情况】的经验需要返回，则直接返回：[]
+    2）有对应【agent将执行任务情况】的经验需要返回，则返回：[{{"exp_summary":"经验总结xxx..."}}, {{"exp_summary":"经验总结xxx..."}}, ...]
+</经验返回要求>
+
+<agent已有经验>
+{rendered_agent_experience_tree_string}
+</agent已有经验>
+
+<agent将执行任务情况>
+{agent_task_info_string}
+</agent将执行任务情况>
+'''
+
+class Agent_Experience:
     """
     将运行日志提炼为可写入 Experience 树的数据结构。
     — 新增功能 —
     1. 在初始化时优先尝试从当前目录加载 experience.json；
     2. 若文件不存在则写入一棵默认经验树。
     """
-    def __init__(self, exp_json_file_path):
+    def __init__(self, exp_json_file_path, llm:LLM_Client):
         self.exp_file_path = exp_json_file_path
 
         # 根节点固定叫 root，内容留空
         self.exp_root = Experience("root", "")
         # 先尝试加载/创建经验库
-        self.init_exp_from_file(self.exp_file_path)
+        self._init_exp_from_file(self.exp_file_path)
+
+        self.llm = llm
 
     # ---------- 新增：初始化经验树 ----------
-    def init_exp_from_file(self, fp: str) -> None:
+    def _init_exp_from_file(self, fp: str) -> None:
         """
         若 fp 存在，则按 JSON 内容恢复经验树。
         JSON 结构示例：
@@ -64,7 +86,7 @@ class Experience_Summarizer:
                 self.exp_root = Experience.import_from_json_file(fp)
                 dgreen(f"已从 {fp!r} 成功读取经验。")
             except Exception as e:
-                dred(f"加载 {fp} 失败：{e!r}，改用默认经验树。")
+                dred(f"Agent_Experience._init_exp_from_file()报错：加载 {fp} 失败：{e!r}，改用默认经验树。")
                 self._populate_default_experiences()
         else:
             # 文件不存在，写默认值
@@ -88,37 +110,22 @@ class Experience_Summarizer:
             self.exp_root.add_node_by_path(path=path, summary=summary)
         dblue("已载入默认经验树。")
 
-    def summarize(self,
-            # rendered_experience_tree_string,    # 已有经验树的render后树状string
-            agent_history_string,               # agent的历史string
-    ):
-        question = PROMPT_AGENT_SUMMARIZER.format(rendered_experience_tree_string=self.exp_root.get_tree_all_string(), agent_history_string=agent_history_string)
-        # question = PROMPT_AGENT_SUMMARIZER.format(rendered_experience_tree_string=rendered_experience_tree_string, agent_history_string=agent_history_string)
+    def summarize_agent_history(self,
+                                # rendered_experience_tree_string,    # 已有经验树的render后树状string
+                                agent_history_string,  # agent的历史string
+                                ):
+        question = PROMPT_AGENT_EXP_SUMMARIZE.format(
+            rendered_experience_tree_string=self.exp_root.get_tree_all_string(),
+            agent_history_string=agent_history_string
+        )
 
         try:
-            llm = LLM_Client(
-                max_new_tokens=32768,
-                # url='http://powerai.cc:28001/v1',
-                # url='http://powerai.cc:38001/v1',
-                # url='https://powerai.cc:8001/v1'
-                # url='http://powerai.cc:8001/v1'
-
-                api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  #deepseek官网
-                url='https://api.deepseek.com/v1',
-                model_id='deepseek-reasoner', # 模型指向 DeepSeek-R1-0528
-                # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
-
-                # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
-                # url='https://ark.cn-beijing.volces.com/api/v3/',
-                # model_id='deepseek-r1-250120',
-                # model_id='deepseek-v3-241226',
-            )
-
             print(f'question: {question!r}')
-            answer = llm.ask_prepare(question=question).get_answer_and_sync_print()
-            print(f'answer: {answer!r}')
+            answer = self.llm.ask_prepare(question=question).get_answer_and_sync_print()
+            print(f'summarize_agent_history() answer: {answer!r}')
         except Exception as e:
-            dred(f'Experience_Summarizer.summarize()调用LLM报错：{e!r}')
+            dred(f'Experience_Summarizer.summarize_agent_history()调用LLM报错：{e!r}')
+            return
 
         # 将经验一条一条进行存储
         try:
@@ -133,12 +140,42 @@ class Experience_Summarizer:
 
                 dblue(f'【经验提交成功】{exp_path!r}: {exp_summary!r}')
         except Exception as e:
-            dred(f'Experience_Summarizer.summarize()增加经验时报错：{e!r}')
+            dred(f'Experience_Summarizer.summarize_agent_history()增加经验时报错：{e!r}')
+            return
 
         dyellow(f'----------------------目前的经验数据为----------------------\n{self.exp_root.get_tree_all_string()}')
         dyellow(f'---------------------/目前的经验数据为----------------------')
         self.exp_root.export_to_json_file(self.exp_file_path)
         dblue(f'【经验持久化成功】{self.exp_file_path!r}')
+
+    # LLM根据agent_task_info_string，返回对应经验
+    def get_agent_experience(self, agent_task_info_string):
+        question = PROMPT_GET_AGENT_EXP.format(
+            rendered_agent_experience_tree_string=self.exp_root.get_tree_all_string(),
+            agent_task_info_string=agent_task_info_string,
+        )
+        try:
+            print(f'agent_task_info_string: {agent_task_info_string!r}')
+            answer = self.llm.ask_prepare(question=question).get_answer_and_sync_print()
+            print(f'get_agent_experience() answer: {answer!r}')
+        except Exception as e:
+            dred(f'Experience_Summarizer.get_agent_experience()调用LLM报错：{e!r}')
+            return ''
+
+        # 组织返回经验
+        exps = []
+        i = 1
+        try:
+            exp_list = self._extract_first_json_list(answer)
+            for exp in exp_list:
+                exp_summary = exp['exp_summary']
+                exps.append(f'{i}、{exp_summary}')
+                i += 1
+        except Exception as e:
+            dred(f'Experience_Summarizer.get_agent_experience()增加经验时报错：{e!r}')
+            return ''
+
+        return '\n'.join(exps)
 
     def _extract_first_json_list(self, text: str):
         """
@@ -219,7 +256,7 @@ def main_test_re():
       - 经验3解决"指令重复确认"痛点，与工程可研"投资估算"等需求确认场景形成互补
       > 注：新建分支因原经验树无直接匹配类别，但符合"咨询报告编制"中工具使用和用户沟通的支撑场景定位。
 """
-    exp = Experience_Summarizer()
+    exp = Agent_Experience()
     data = exp._extract_first_json_list(txt)
     print(type(data))  # <class 'list'>
     print(f'obj: {data!r}')
@@ -237,8 +274,32 @@ def main_test_re():
     print(exp_root.get_tree_all_string())
 
 def main():
-    exp = Experience_Summarizer(exp_json_file_path='experience.json')
-    exp.summarize(
+    llm = LLM_Client(
+        history=False,  # 同时用于summarize和get，不能有历史记忆
+        max_new_tokens=32768,
+        # url='http://powerai.cc:28001/v1',
+        # url='http://powerai.cc:38001/v1',
+        # url='https://powerai.cc:8001/v1'
+        # url='http://powerai.cc:8001/v1'
+
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  # deepseek官网
+        url='https://api.deepseek.com/v1',
+        model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+
+        # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
+        # url='https://ark.cn-beijing.volces.com/api/v3/',
+        # model_id='deepseek-r1-250120',
+        # model_id='deepseek-v3-241226',
+    )
+    exp = Agent_Experience(
+        exp_json_file_path='experience.json',
+        llm = llm
+    )
+    my_exp = exp.get_agent_experience(agent_task_info_string='现在请查找"my_file.json"这个文件在哪里')
+    dblue(f'【my_exp】\n{my_exp!r}')
+
+    exp.summarize_agent_history(
 #         rendered_experience_tree_string = \
 # '''咨询报告编制经验 — 咨询报告编制的相关经验
 # ├── 工程可研 — 工程可研报告编制的经验
@@ -333,6 +394,7 @@ r'''
 [最终答复] 经过精确递归搜索，在路径"y:\demo\依据\3\3.4\"中成功定位到完全匹配的"file_to_find.txt"文件。完整路径为：y:\demo\依据\3\3.4\file_to_find.txt。
 ''',
     )
+
 
 if __name__ == "__main__" :
     # main_test_re()
