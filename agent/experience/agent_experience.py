@@ -11,7 +11,7 @@ PROMPT_AGENT_EXP_SUMMARIZE = '''<总体要求>
 <经验获取要求>
 1、经验获取重点：
     1）要注意用户中断agent后输入的指令。通常当agent处理问题可能出错时，用户会中断其过程，从而及时纠正agent的错误这些指令，这时输入的指令一般包含了关键经验信息，一定要重视。
-    2）要注意human_console_tool的调用结果（即agent获取的用户反馈信息），这些反馈信息应该转换为经验，为的就是下一次就不用再通过human_console_tool询问用户了。
+    2）要注意human_console_tool的调用结果（即agent获取的用户反馈信息）或者是<用户经验></用户经验>中的内容，这些反馈信息应该转换为经验，为的就是下一次就不用再通过human_console_tool询问用户了。
 2、经验获取目的：将获取的经验存储在【已有经验树】中，供agent后续解决问题时少走弯路。
 3、经验返回要求：根据【已有经验树】的结构，返回所总结的经验。
 4、经验获取注意事项：
@@ -120,9 +120,9 @@ class Agent_Experience:
         )
 
         try:
-            print(f'question: {question!r}')
+            print(f'question: \n{question}')
             answer = self.llm.ask_prepare(question=question).get_answer_and_sync_print()
-            print(f'summarize_agent_history() answer: {answer!r}')
+            print(f'summarize_agent_history() answer: \n{answer}')
         except Exception as e:
             dred(f'Experience_Summarizer.summarize_agent_history()调用LLM报错：{e!r}')
             return
@@ -148,16 +148,20 @@ class Agent_Experience:
         self.exp_root.export_to_json_file(self.exp_file_path)
         dblue(f'【经验持久化成功】{self.exp_file_path!r}')
 
+    # 获取目前的所有经验string
+    def get_all_exp_string(self):
+        return self.exp_root.get_tree_all_string()
+
     # LLM根据agent_task_info_string，返回对应经验
-    def get_agent_experience(self, agent_task_info_string):
+    def query_agent_experience_by_task_info(self, agent_task_info_string):
         question = PROMPT_GET_AGENT_EXP.format(
             rendered_agent_experience_tree_string=self.exp_root.get_tree_all_string(),
             agent_task_info_string=agent_task_info_string,
         )
         try:
-            print(f'agent_task_info_string: {agent_task_info_string!r}')
+            print(f'agent_task_info_string: \n{agent_task_info_string}')
             answer = self.llm.ask_prepare(question=question).get_answer_and_sync_print()
-            print(f'get_agent_experience() answer: {answer!r}')
+            print(f'get_agent_experience() answer: \n{answer}')
         except Exception as e:
             dred(f'Experience_Summarizer.get_agent_experience()调用LLM报错：{e!r}')
             return ''
@@ -296,7 +300,7 @@ def main():
         exp_json_file_path='experience.json',
         llm = llm
     )
-    my_exp = exp.get_agent_experience(agent_task_info_string='现在请查找"my_file.json"这个文件在哪里')
+    my_exp = exp.query_agent_experience_by_task_info(agent_task_info_string='现在请查找"my_file.json"这个文件在哪里')
     dblue(f'【my_exp】\n{my_exp!r}')
 
     exp.summarize_agent_history(

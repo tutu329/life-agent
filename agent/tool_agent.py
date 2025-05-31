@@ -24,6 +24,8 @@ from agent.base_tool import Base_Tool
 from agent.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 from agent.protocol import Action_Result
 
+from agent.experience.agent_experience import Agent_Experience
+
 class Tool_Agent(Web_Server_Base, Base_Tool):
     # Base_Tool属性
         # name = 'Tool_Agent_As_Tool'
@@ -78,6 +80,8 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         self.first_query=True
 
         self.query_as_tool = query_as_tool
+
+        self.exp = None
 
         self.tool_descs=''
         self.tool_names=[]
@@ -185,7 +189,15 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             print_input=False,
             max_new_tokens=config.LLM_Default.max_new_tokens
         )
-        self.agent_tools_description_and_full_history = PROMPT_REACT
+        # self.agent_tools_description_and_full_history = PROMPT_REACT
+
+        # 初始化experience
+        exp_file_path = 'tool_agent_experience.json'
+        self.exp = Agent_Experience(
+            exp_json_file_path=exp_file_path,
+            llm = self.llm
+        )
+        dblue(f'【经验初始化完成】{exp_file_path!r}')
 
         # 将所有工具转换为{tool_descs}和{tool_names}
         for tool in self.tool_classes:
@@ -255,12 +267,19 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             ):
         self.current_query = query
 
+        # -----------------------根据query获取experience-------------------------
+        exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
+        dyellow(f'task_info is : {self.current_query!r}')
+        dyellow(f'query_agent_experience_by_task_info is : {exp_str!r}')
+        # ----------------------/根据query获取experience-------------------------
+
         if self.first_query or (not self.has_history):
             # 第一次query 或者 没有history
             self.agent_tools_description_and_full_history = PROMPT_REACT.format(
                 tool_descs=self.tool_descs,
                 tool_names=self.tool_names,
-                query=query
+                query=query,
+                user_experience=exp_str,
             )
             self.first_query = False
         else:
@@ -284,6 +303,13 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
                 self.save_agent_tools_description_and_full_history_to_file(answer_this_turn)
                 self._parse_final_answer(answer_this_turn)
+
+                # --------------总结经验--------------
+                dyellow(f'总结agent经验中...')
+                self.exp.summarize_agent_history(agent_history_string=self.agent_tools_description_and_full_history)
+                dyellow(f'经验为：\n{self.exp.get_all_exp_string()}')
+                dyellow(f'总结agent经验完毕.')
+                # -------------/总结经验--------------
                 dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
                 return True
 
@@ -569,8 +595,8 @@ def main_folder():
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         # api_key='empty',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        # model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
 
     agent = Tool_Agent(
@@ -581,7 +607,7 @@ def main_folder():
     agent.init()
     success = agent.run(query=query)
     print(f'最终输出：\n{agent.final_answer}')
-    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"./"下有哪些文件夹')
+    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"./"下有哪些文件夹。注意，通常这种测试要输出格式要是markdown格式')
     print(f'最终输出：\n{agent.final_answer}')
 
     agent.clear_history()
