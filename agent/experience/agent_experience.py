@@ -4,6 +4,12 @@ from config import dred,dgreen,dyellow,dblue,dcyan
 from tools.llm.api_client import LLM_Client
 from agent.experience.experience_base import Experience
 
+AGENT_EXP_DEBUG = False
+
+def dprint(*args, **kwargs):
+    if AGENT_EXP_DEBUG:
+        print(*args, **kwargs)
+
 PROMPT_AGENT_EXP_SUMMARIZE = '''<总体要求>
 请严格根据【agent解决问题详细过程】和【经验获取要求】，分析agent在本次问题解决过程中的经验并返回。
 </总体要求>
@@ -120,9 +126,9 @@ class Agent_Experience:
         )
 
         try:
-            print(f'question: \n{question}')
+            dprint(f'question: \n{question}')
             answer = self.llm.ask_prepare(question=question).get_answer_and_sync_print()
-            print(f'summarize_agent_history() answer: \n{answer}')
+            dprint(f'summarize_agent_history() answer: \n{answer}')
         except Exception as e:
             dred(f'Experience_Summarizer.summarize_agent_history()调用LLM报错：{e!r}')
             return
@@ -159,9 +165,9 @@ class Agent_Experience:
             agent_task_info_string=agent_task_info_string,
         )
         try:
-            print(f'agent_task_info_string: \n{agent_task_info_string}')
+            dprint(f'agent_task_info_string: \n{agent_task_info_string}')
             answer = self.llm.ask_prepare(question=question).get_answer_and_sync_print()
-            print(f'get_agent_experience() answer: \n{answer}')
+            dprint(f'get_agent_experience() answer: \n{answer}')
         except Exception as e:
             dred(f'Experience_Summarizer.get_agent_experience()调用LLM报错：{e!r}')
             return ''

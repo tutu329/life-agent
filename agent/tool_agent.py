@@ -53,11 +53,12 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
     def __init__(self,
                  tool_classes,
                  agent_config:Config,
-                 query=None,            # 用于as_tool(tool仅query一次)
-                 as_tool_name=None,         # As_Tool的name，如取: "Folder_Agent_As_Tool"
+                 query=None,  # 用于as_tool(tool仅query一次)
+                 as_tool_name=None,  # As_Tool的name，如取: "Folder_Agent_As_Tool"
                  as_tool_description=None,  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  has_history = False,
-    ):
+                 tool_agent_experience_json_path='',  # 经验json文件
+                 ):
         # 初始化Base_Tool实例
         # Base_Tool().__init__()
 
@@ -71,6 +72,8 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         self.llm = None
         self.agent_config = agent_config
         self.has_history = has_history
+        self.tool_agent_experience_json_path = tool_agent_experience_json_path
+
         self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
 
         self.temperature = self.agent_config.temperature
@@ -196,12 +199,12 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         # self.agent_tools_description_and_full_history = PROMPT_REACT
 
         # 初始化experience
-        exp_file_path = 'tool_agent_experience.json'
-        self.exp = Agent_Experience(
-            exp_json_file_path=exp_file_path,
-            llm = self.llm
-        )
-        dblue(f'【经验初始化完成】{exp_file_path!r}')
+        if self.tool_agent_experience_json_path:
+            self.exp = Agent_Experience(
+                exp_json_file_path=self.tool_agent_experience_json_path,
+                llm = self.llm
+            )
+            dblue(f'【经验初始化完成】{self.tool_agent_experience_json_path!r}')
 
         # 将所有工具转换为{tool_descs}和{tool_names}
         for tool in self.tool_classes:
@@ -271,21 +274,25 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             ):
         self.current_query = query or self.query
 
-        # -----------------------根据query获取experience-------------------------
-        exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
-        dyellow(f'task_info is : {self.current_query!r}')
-        dyellow(f'query_agent_experience_by_task_info is : {exp_str!r}')
-        # ----------------------/根据query获取experience-------------------------
 
         if self.first_query or (not self.has_history):
             # 第一次query 或者 没有history
+            self.first_query = False
+
+            # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
+            exp_str = ''
+            if self.description is None and self.exp:
+                exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
+                dyellow(f'task_info is : {self.current_query!r}')
+                dyellow(f'query_agent_experience_by_task_info is : {exp_str!r}')
+            # ----------------------/根据query获取experience-------------------------------------------------
+
             self.agent_tools_description_and_full_history = PROMPT_REACT.format(
                 tool_descs=self.tool_descs,
                 tool_names=self.tool_names,
                 query=query,
                 user_experience=exp_str,
             )
-            self.first_query = False
         else:
             # 有history，且不是first query
             self.agent_tools_description_and_full_history += f'\n<用户问题>\n{self.current_query}\n</用户问题>\n'
@@ -308,12 +315,13 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
                 self.save_agent_tools_description_and_full_history_to_file(answer_this_turn)
                 self._parse_final_answer(answer_this_turn)
 
-                # --------------总结经验--------------
-                dyellow(f'总结agent经验中...')
-                self.exp.summarize_agent_history(agent_history_string=self.agent_tools_description_and_full_history)
-                dyellow(f'经验为：\n{self.exp.get_all_exp_string()}')
-                dyellow(f'总结agent经验完毕.')
-                # -------------/总结经验--------------
+                # --------------总结经验(agent_as_tool时不总结经验)--------------
+                if self.description is None and self.exp:
+                    dyellow(f'总结agent经验中...')
+                    self.exp.summarize_agent_history(agent_history_string=self.agent_tools_description_and_full_history)
+                    dyellow(f'经验为：\n{self.exp.get_all_exp_string()}')
+                    dyellow(f'总结agent经验完毕.')
+                # -------------/总结经验------------------------------------------
                 dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
                 return True
 

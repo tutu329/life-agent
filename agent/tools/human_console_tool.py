@@ -60,7 +60,7 @@ def main_agent_as_tool():
         tool_classes=tools1,
         agent_config=config,
         as_tool_name='Folder_Agent_As_Tool',
-        as_tool_description='本工具用于获取文件夹中的文件和文件夹信息'
+        as_tool_description='本工具用于获取文件夹中的文件和文件夹信息',
     ).init()
 
     tools2=[Human_Console_Tool, folder_agent_as_tool]
@@ -69,12 +69,13 @@ def main_agent_as_tool():
         tool_classes=tools2,
         agent_config=config,
         has_history=True,
+        tool_agent_experience_json_path='my_1st_example_of_agent_as_tool',
     )
     agent.init()
     success = agent.run(query=query)
     print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
-    success = agent.run(query='再告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中')
-    print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
+    # success = agent.run(query=r'再告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中')
+    # print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
 
 def main_human_console_tool():
     import config
