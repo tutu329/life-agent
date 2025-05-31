@@ -30,10 +30,13 @@ class Folder_Tool(Base_Tool):
         print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
         dir = callback_tool_paras_dict['dir']
 
-        # 调用工具
-        # files_str = get_folder_files_info_string(directory=dir, mode='name')
-        items_str = get_folder_all_items_string(directory=dir)
-        # files_str = get_folder_files_info_string(directory=dir, mode='basename')
+        try:
+            # 调用工具
+            # files_str = get_folder_files_info_string(directory=dir, mode='name')
+            items_str = get_folder_all_items_string(directory=dir)
+            # files_str = get_folder_files_info_string(directory=dir, mode='basename')
+        except Exception as e:
+            items_str = f'报错: {e!r}'
 
         # 调用工具后，结果作为action_result返回
         action_result = Action_Result(result=items_str)

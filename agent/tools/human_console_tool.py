@@ -57,7 +57,6 @@ def main_agent_as_tool():
     )
 
     folder_agent_as_tool = Tool_Agent(
-        query_as_tool=query,
         tool_classes=tools1,
         agent_config=config,
         as_tool_name='Folder_Agent_As_Tool',

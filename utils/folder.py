@@ -15,10 +15,12 @@ def get_folder_all_items_string(directory):
 
     if not p.exists():
         print(f"错误：路径 '{directory}' 不存在。")
-        sys.exit(1)
+        raise Exception(f"错误：路径 '{directory}' 不存在。")
+        # sys.exit(1)
     if not p.is_dir():
         print(f"错误：路径 '{directory}' 不是一个文件夹。")
-        sys.exit(1)
+        raise Exception(f"错误：路径 '{directory}' 不是一个文件夹。")
+        # sys.exit(1)
 
     items_name_list = []
     # 扫描目录，并区分文件夹和文件
