@@ -39,15 +39,15 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             callback_last_tool_ctx,     # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
     ):
         # 本agent实例被用作tool调用
-        self.run()
+        self.run(query=self.query_as_tool)
         action_result = Action_Result(result=self.get_final_answer())
         return action_result
 
     # Tool_Agent方法
     def __init__(self,
-                 # query,
                  tool_classes,
                  agent_config:Config,
+                 query_as_tool=None,            # 用于as_tool(tool仅query一次)
                  as_tool_name=None,         # As_Tool的name，如取: "Folder_Agent_As_Tool"
                  as_tool_description=None,  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  has_history = False,
@@ -76,6 +76,8 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
         self.current_query=None
         self.first_query=True
+
+        self.query_as_tool = query_as_tool
 
         self.tool_descs=''
         self.tool_names=[]
