@@ -362,7 +362,7 @@ current_file = ''
 def bot_on_upload(history, file):
     global current_file
     current_file = file.name
-    history = history + [((file.name,'上传文件'), None)]
+    history = history + [((file.name, '上传文件'), None)]
     print('bot_on_upload, history: ', history)
     return history
 

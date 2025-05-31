@@ -1174,11 +1174,11 @@ def main_toc():
     import docx
     doc = docx.Document(file)
     for para in doc.paragraphs:
-        if para.style.name=="Heading 1":
+        if para.style.name== "Heading 1":
             print(para.text)
-        if para.style.name=="Heading 2":
+        if para.style.name== "Heading 2":
             print('\t'+para.text)
-        if para.style.name=="Heading 3":
+        if para.style.name== "Heading 3":
             print('\t\t'+para.text)
         # if para.style.name=="Heading 4":
         #     print('\t\t\t'+para.text)

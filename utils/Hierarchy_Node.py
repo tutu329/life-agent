@@ -190,7 +190,7 @@ class Hierarchy_Node:
                 # 标题为"建设规模"
                 inout_toc_md_list.append(
                     # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
-                    md_index_head + color_string + blank_str*(node.node_data.level-1) +        # 注意md_index_head的那个空格' '必须有。'&emsp;'用于写入硬的空格
+                    md_index_head + color_string + blank_str * (node.node_data.level-1) +  # 注意md_index_head的那个空格' '必须有。'&emsp;'用于写入硬的空格
                     node.node_data.name.strip() + ' ' +
                     node.node_data.heading.strip() + color_string_end
                     # node.node_data.heading.strip() + '</font>'

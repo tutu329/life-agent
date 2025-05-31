@@ -534,9 +534,15 @@ def main_folder():
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
     config = Config(
-        base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
+        # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
+        # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
+        base_url='https://api.deepseek.com/v1',
         # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
-        api_key='empty',
+        # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
+        # api_key='empty',
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
 
     agent = Tool_Agent(
@@ -566,10 +572,14 @@ def main_table():
 
     config = Config(
         # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
-        base_url='http://powerai.cc:28002/v1',  # qwen3-235b
+        # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
+        base_url='https://api.deepseek.com/v1',
         # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
-        api_key='empty',
+        # api_key='empty',
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
     agent = Tool_Agent(
         query=query,
@@ -584,5 +594,5 @@ if __name__ == "__main__":
     # main2()
     # table_main()
 
-    # main_folder()
-    main_table()
+    main_folder()
+    # main_table()
