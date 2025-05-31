@@ -73,7 +73,10 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         self.model_id = self.agent_config.model_id
         self.agent_tools_description_and_full_history = ''
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
-        self.query=None
+
+        self.current_query=None
+        self.first_query=True
+
         self.tool_descs=''
         self.tool_names=[]
         self.tool_paras_just_outputed = False
@@ -244,14 +247,19 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             query,
             in_max_retry=config.Agent.MAX_TRIES
             ):
-        self.query = query
+        self.current_query = query
 
-        if not self.has_history:
-            # agent无多轮run的历史记录
-            self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+        if self.first_query or (not self.has_history):
+            # 第一次query 或者 没有history
+            self.agent_tools_description_and_full_history = self.agent_tools_description_and_full_history.format(
+                tool_descs=self.tool_descs,
+                tool_names=self.tool_names,
+                query=query
+            )
+            self.first_query = False
         else:
-            # agent有多轮run的历史记录
-            self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+            # 有history，且不是first query
+            self.agent_tools_description_and_full_history += f'\n<用户问题>\n{self.current_query}\n</用户问题>\n'
 
         dblue(f'config.Agent.MAX_TRIES = {in_max_retry}')
         for i in range(in_max_retry):
@@ -545,7 +553,7 @@ def main_folder():
         # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
         query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
-        query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        query = r'我叫土土，请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
     config = Config(
         # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
@@ -555,17 +563,20 @@ def main_folder():
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         # api_key='empty',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        # model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
 
     agent = Tool_Agent(
-        # query=query,
+        has_history=True,
         tool_classes=tools,
         agent_config=config
     )
     agent.init()
     success = agent.run(query=query)
+    print(f'最终输出：\n{agent.final_answer}')
+    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"./"下有哪些文件夹')
+    print(f'最终输出：\n{agent.final_answer}')
 
 def main_table():
     import config
@@ -592,8 +603,8 @@ def main_table():
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         # api_key='empty',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        # model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
     agent = Tool_Agent(
         query=query,
