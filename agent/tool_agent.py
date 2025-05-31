@@ -243,6 +243,10 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         self.final_answer = answer.split(f'[{self.__finished_keyword}]')[-1]
         # print(f'self.final_answer已解析，final answer关键字"{self.__finished_keyword}"已去除.')
 
+    def clear_history(self):
+        # 设置为第一次query，相当于清楚历史
+        self.first_query = True
+
     def run(self,
             query,
             in_max_retry=config.Agent.MAX_TRIES
@@ -251,7 +255,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
         if self.first_query or (not self.has_history):
             # 第一次query 或者 没有history
-            self.agent_tools_description_and_full_history = self.agent_tools_description_and_full_history.format(
+            self.agent_tools_description_and_full_history = PROMPT_REACT.format(
                 tool_descs=self.tool_descs,
                 tool_names=self.tool_names,
                 query=query
@@ -575,6 +579,10 @@ def main_folder():
     agent.init()
     success = agent.run(query=query)
     print(f'最终输出：\n{agent.final_answer}')
+    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"./"下有哪些文件夹')
+    print(f'最终输出：\n{agent.final_answer}')
+
+    agent.clear_history()
     success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"./"下有哪些文件夹')
     print(f'最终输出：\n{agent.final_answer}')
 
