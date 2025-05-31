@@ -69,10 +69,12 @@ def main_agent_as_tool():
     agent = Tool_Agent(
         tool_classes=tools2,
         agent_config=config,
-
+        has_history=True,
     )
     agent.init()
     success = agent.run(query=query)
+    print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
+    success = agent.run(query='再告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中')
     print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
 
 def main_human_console_tool():
