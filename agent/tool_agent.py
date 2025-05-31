@@ -45,12 +45,13 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
     # Tool_Agent方法
     def __init__(self,
-                 query,
+                 # query,
                  tool_classes,
                  agent_config:Config,
                  as_tool_name=None,         # As_Tool的name，如取: "Folder_Agent_As_Tool"
-                 as_tool_description=None   # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
-                 ):
+                 as_tool_description=None,  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
+                 has_history = False,
+    ):
         # 初始化Base_Tool实例
         # Base_Tool().__init__()
 
@@ -63,6 +64,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
         self.llm = None
         self.agent_config = agent_config
+        self.has_history = has_history
         self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
 
         self.temperature = self.agent_config.temperature
@@ -71,7 +73,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         self.model_id = self.agent_config.model_id
         self.agent_tools_description_and_full_history = ''
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
-        self.query=query
+        self.query=None
         self.tool_descs=''
         self.tool_names=[]
         self.tool_paras_just_outputed = False
@@ -214,7 +216,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
         self.tool_names = ','.join(self.tool_names)
 
-        self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+        # self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
 
         return self
 
@@ -238,7 +240,19 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         self.final_answer = answer.split(f'[{self.__finished_keyword}]')[-1]
         # print(f'self.final_answer已解析，final answer关键字"{self.__finished_keyword}"已去除.')
 
-    def run(self, in_max_retry=config.Agent.MAX_TRIES):
+    def run(self,
+            query,
+            in_max_retry=config.Agent.MAX_TRIES
+            ):
+        self.query = query
+
+        if not self.has_history:
+            # agent无多轮run的历史记录
+            self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+        else:
+            # agent有多轮run的历史记录
+            self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+
         dblue(f'config.Agent.MAX_TRIES = {in_max_retry}')
         for i in range(in_max_retry):
             # 1、思考
@@ -452,7 +466,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
                 return action_result
 
     def observation(self, in_action_result=''):
-        self.agent_tools_description_and_full_history += f'[观察]{in_action_result}'
+        self.agent_tools_description_and_full_history += '\n' + f'[观察]{in_action_result}'
 
         # dcyan(f'==============================full_history(turn {self.turns_num})=======================')
         # dcyan(self.agent_tools_description_and_full_history)
@@ -546,12 +560,12 @@ def main_folder():
     )
 
     agent = Tool_Agent(
-        query=query,
+        # query=query,
         tool_classes=tools,
         agent_config=config
     )
     agent.init()
-    success = agent.run()
+    success = agent.run(query=query)
 
 def main_table():
     import config
