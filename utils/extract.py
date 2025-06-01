@@ -38,9 +38,9 @@ def extract_tool_dict(raw: str) -> dict:
     'tool_invoke' / 'tool_name' / 'tool_parameters' 的 dict。
     """
 
-    print(f'-----------------------extract_tool_dict----------------------------------')
-    print(raw)
-    print(f'----------------------/extract_tool_dict----------------------------------')
+    # print(f'-----------------------extract_tool_dict----------------------------------')
+    # print(raw)
+    # print(f'----------------------/extract_tool_dict----------------------------------')
 
     # —— ① 找到 'tool_invoke' 所在位置 ——
     key_pos = raw.find("'tool_invoke'")

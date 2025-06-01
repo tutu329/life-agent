@@ -39,11 +39,21 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             callback_agent_config,      # agent配置参数
             callback_agent_id,          # agent_id
             callback_last_tool_ctx,     # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+            callback_father_agent_exp,  # agent_as_tool时，上级agent提供的经验exp
     ):
         # 本agent实例被用作tool调用
         tool_query = callback_tool_paras_dict['自然语言指令']
         dblue(f'agent_as_tool收到指令: "{tool_query}"')
         dblue(f'agent_as_tool收到para: \n"{callback_tool_paras_dict}"')
+        dyellow(f'agent_as_tool收到father exp: \n"{callback_father_agent_exp}"')
+
+        # 将query和exp组合
+        dyellow('---------------------agent_as_tool的query------------------------------')
+        if callback_father_agent_exp.strip():
+            tool_query += tool_query + f'\n(获得了已有经验：{callback_father_agent_exp})'
+        dyellow(f'{tool_query}')
+        dyellow('--------------------/agent_as_tool的query------------------------------')
+
         self.run(query=tool_query)
         # self.run(query=self.query_as_tool)
         action_result = Action_Result(result=self.get_final_answer())
@@ -89,6 +99,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         self.query = query
 
         self.exp = None
+        self.current_exp_str = ''
 
         self.tool_descs=''
         self.tool_names=[]
@@ -274,24 +285,22 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             ):
         self.current_query = query or self.query
 
+        # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
+        if self.description is None and self.exp:
+            self.current_exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
+            dyellow(f'task_info is : {self.current_query!r}')
+            dyellow(f'query_agent_experience_by_task_info is : {self.current_exp_str!r}')
+        # ----------------------/根据query获取experience-------------------------------------------------
 
         if self.first_query or (not self.has_history):
             # 第一次query 或者 没有history
             self.first_query = False
 
-            # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
-            exp_str = ''
-            if self.description is None and self.exp:
-                exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
-                dyellow(f'task_info is : {self.current_query!r}')
-                dyellow(f'query_agent_experience_by_task_info is : {exp_str!r}')
-            # ----------------------/根据query获取experience-------------------------------------------------
-
             self.agent_tools_description_and_full_history = PROMPT_REACT.format(
                 tool_descs=self.tool_descs,
                 tool_names=self.tool_names,
                 query=query,
-                user_experience=exp_str,
+                user_experience=self.current_exp_str,
             )
         else:
             # 有history，且不是first query
@@ -327,7 +336,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
 
             # 3、观察
             self.observation(in_action_result=action_result)
-            dyellow(f'-------------tool_just_outputed to "False"----------------------')
+            dred(f'-------------tool_just_outputed to "False"----------------------')
             self.tool_paras_just_outputed = False   # 防止正常[最终答复]环节时，都无法退出(用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。)
 
 
@@ -456,7 +465,13 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         in_answer = ''.join(in_answer)
         # print(f'in_answer2: {in_answer}')
         tool_name = Base_Tool.extract_tool_name_from_answer(in_answer)
-        if isinstance(tool_name, str):
+        if isinstance(tool_name, list) and (self.__finished_keyword in in_answer):
+            # 注意：LLM有时候输出[最终答复]时，仍会调用工具，此时调用工具是正确做法。
+            # 因此这里，要解决有[最终答复]、没有工具(即工具调用报错)的问题
+            action_result = in_answer
+            dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
+            return action_result
+        elif isinstance(tool_name, str):
             # 返回是string，正常
             # print(f'=============================thoughts=============================')
             # print(in_thoughts)
@@ -464,7 +479,7 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
             dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
 
             if self.registered_tool_instances_dict.get(tool_name):
-                dyellow(f'-------------tool_just_outputed changed to "True"----------------------')
+                dred(f'-------------tool_just_outputed changed to "True"----------------------')
                 self.tool_paras_just_outputed = True    # 用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
 
                 # # 如果有tool输出，则去掉[最终答复]及后续内容，因为tool还没调用，此时最终输出肯定不对
@@ -492,7 +507,8 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
                     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                     callback_agent_config=self.agent_config,            # 将agent配置传给tool
                     callback_agent_id=self.agent_id,                    # 将agent_id传给tool
-                    callback_last_tool_ctx=last_tool_ctx,
+                    callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+                    callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
                 )
 
                 # 更新tool的上下文context

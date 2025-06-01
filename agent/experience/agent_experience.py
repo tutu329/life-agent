@@ -90,7 +90,7 @@ class Agent_Experience:
                 with open(fp, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 self.exp_root = Experience.import_from_json_file(fp)
-                dgreen(f"已从 {fp!r} 成功读取经验。")
+                dyellow(f"已从 {fp!r} 成功读取经验。")
             except Exception as e:
                 dred(f"Agent_Experience._init_exp_from_file()报错：加载 {fp} 失败：{e!r}，改用默认经验树。")
                 self._populate_default_experiences()

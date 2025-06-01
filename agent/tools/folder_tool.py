@@ -25,7 +25,8 @@ class Folder_Tool(Base_Tool):
              callback_tool_paras_dict,
              callback_agent_config,
              callback_agent_id,
-             callback_last_tool_ctx
+             callback_last_tool_ctx,
+             callback_father_agent_exp,
              ):
         print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
         dir = callback_tool_paras_dict['dir']
