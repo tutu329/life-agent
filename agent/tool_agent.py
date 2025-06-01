@@ -408,6 +408,9 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         return thoughts
 
     def thinking(self):
+        # dyellow('-----------------------------------thinking------------------------------------')
+        # dyellow(self.agent_tools_description_and_full_history)
+        # dyellow('----------------------------------/thinking------------------------------------')
         self.turns_num += 1
         print(f'thinking(turn {self.turns_num})'.center(80, '='))
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
@@ -421,6 +424,15 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
         # thoughts = ''
 
         answer_this_turn = self._thoughts_stream_output(gen)
+        # dyellow('-----------------------------------thinking answer------------------------------------')
+        # dyellow(answer_this_turn)
+        # dyellow('----------------------------------/thinking answer------------------------------------')
+        if not answer_this_turn.strip():
+            import sys
+            dyellow('-----------------------------------thinking answer-------------------------------------------')
+            dyellow('answer_this_turn完全为空，请检查大模型的api是否有问题（如deepseek r1模型会出现回复为空的情况）。程序退出！')
+            dyellow('-----------------------------------thinking answer-------------------------------------------')
+            sys.exit(1)
 
         if self.turns_num == 1:
             with open("answer(turn 1).txt", "w", encoding="utf-8") as file:

@@ -37,6 +37,11 @@ def extract_tool_dict(raw: str) -> dict:
     从原始字符串中提取并返回包含
     'tool_invoke' / 'tool_name' / 'tool_parameters' 的 dict。
     """
+
+    print(f'-----------------------extract_tool_dict----------------------------------')
+    print(raw)
+    print(f'----------------------/extract_tool_dict----------------------------------')
+
     # —— ① 找到 'tool_invoke' 所在位置 ——
     key_pos = raw.find("'tool_invoke'")
     if key_pos == -1:
