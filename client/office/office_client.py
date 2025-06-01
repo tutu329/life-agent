@@ -30,7 +30,7 @@ from agent.tools.search_tool import Search_Tool
 from agent.tools.table_tool import Table_Tool
 
 from config import dred, dgreen, dblue, dcyan, dyellow
-from server_manager.web_server_base import Web_Server_Base
+from server_manager.legacy_web_server_base import legacy_Web_Server_Base
 from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Data, Web_Client_Table_Data, Web_Client_Text_Data, Web_Client_Image_Data
 
 @singleton
@@ -283,7 +283,7 @@ def _ask_agent(
 
     return result
 
-class Web_Office_Write(Web_Server_Base):
+class Web_Office_Write(legacy_Web_Server_Base):
     def __init__(self,
                  scheme_file_path,
                  base_url=config.LLM_Default.url,

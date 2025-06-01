@@ -12,7 +12,8 @@
 
 import config
 from config import dred, dgreen, dblue, dcyan, dyellow
-from server_manager.web_server_base import Web_Server_Base
+from agent.agent_base import Agent_Base
+# from server_manager.web_server_base import Web_Server_Base
 from agent.agent_config import Config
 from utils.extract import legacy_extract_dict_string, extract_tool_dict
 import json5
@@ -26,7 +27,8 @@ from agent.protocol import Action_Result
 
 from agent.experience.agent_experience import Agent_Experience
 
-class Tool_Agent(Web_Server_Base, Base_Tool):
+class Tool_Agent(Agent_Base, Base_Tool):
+# class Tool_Agent(Web_Server_Base, Base_Tool):
     # Base_Tool属性
         # name = 'Tool_Agent_As_Tool'
         # description = '本工具通过调用智能体解决问题。'
@@ -69,6 +71,8 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
                  has_history = False,
                  tool_agent_experience_json_path='',  # 经验json文件
                  ):
+        Agent_Base.__init__(self)
+
         # 初始化Base_Tool实例
         # Base_Tool().__init__()
 

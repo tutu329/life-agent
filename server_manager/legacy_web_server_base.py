@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 
-class Web_Server_Base(ABC):
+class legacy_Web_Server_Base(ABC):
     def __init__(self):
         super().__init__()
+        print('-------------Web_Server_Base.__init__()-----------------')
 
     @abstractmethod
     def init(self):
