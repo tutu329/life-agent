@@ -42,7 +42,6 @@ def test_agent_sync():
 
 if __name__ == "__main__":
     print("=== Agent Server SSE 测试 ===")
-
     # 检查依赖
     try:
         import sseclient
