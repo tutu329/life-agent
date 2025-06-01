@@ -1,21 +1,10 @@
+
 # 如果报错：Failed to parse the request body as JSON: messages[1].content: lone leading surrogate in hex escape at line 1 column 10594
 # 或者报错：'utf-8' codec can't encode characters in position 3186-3199: surrogates not allowed
 # 原因是出现了这种名字的文件：110kV��������������ͼ.jpg
-# 这时要用safe_encode()才行
-def safe_encode(text):
-    """安全编码文本，处理特殊字符(如：110kV��������������ͼ.jpg)"""
-    # 用于解决报错：UnicodeEncodeError: 'utf-8' codec can't encode characters in position 71-78: surrogates not allowed
-    if isinstance(text, str):
-        # 移除或替换代理对字符
-        try:
-            # 尝试编码为UTF-8并解码，清理无效字符
-            text = text.encode('utf-8', 'ignore').decode('utf-8')
-            # 替换代理对字符
-            text = text.encode('utf-8', 'replace').decode('utf-8')
-        except Exception:
-            text = repr(text)  # 如果还有问题，转为字符串表示
-    return text
+# 这时要用utils/encode.py的safe_encode()才行
 
+from utils.encode import safe_encode
 from agent.base_tool import Base_Tool
 from agent.protocol import Action_Result
 from utils.folder import get_folder_files_info_string, get_folder_all_items_string
