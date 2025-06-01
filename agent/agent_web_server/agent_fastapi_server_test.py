@@ -4,7 +4,6 @@ import sseclient  # 需要安装: pip install sseclient-py
 import threading
 import time
 
-
 def test_agent_sync():
     """Python测试Agent服务器"""
     # url = "http://localhost:5120/run_agent_sync"
