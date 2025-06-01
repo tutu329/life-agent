@@ -156,41 +156,55 @@ class Agent:
 
 @dataclass
 class Port():
+    # frp的port范围
+    # 5100-5120
+    # 7860-7879
+    # 8012-8020
+    # 8001-8011
+
+    # agent
+
+    comfy:int                   = 5100  # ComfyUI
+    agent_fastapi_server:int    = 5120
+
     # 顶层应用
     flowise:int         = 7860
     llm_ui: int         = 7861
-    fastgpt: int        = 7863
-    dify: int           = 7866
-    sovit: int          = 7867
-    openwebui: int      = 7870
-    ragflow: int        = 7871
-
-    # api转发层
-    one_api:int = 8002  # flowise等顶层应用可以直接调用:8002/v1的llm_api和m3e_api
-
-    # api底层服务
-    m3e_api:int = 7870  # 由xinference发布的
-    qdrant1:int = 7872  # qdrant
-    qdrant2:int = 7873  # qdrant
-
-    llm_api0:int = 8000  # vllm
-    llm_api1:int = 8001  # vllm
-    llm_api2:int = 8002  # vllm
-
-    milvus_api:int=8003 # milvus单独的api
-    chroma_api:int=8004 # chroma单独的api
-
-    redis_monitor:int=8009      # redis monitor
-    redis_client:int=8010              # redis消息服务
 
     # 工作环境
     jupyter:int         = 7862
-    open_webui:int      = 7864  # open-webui
-    jupyter_temp:int    = 7865  # 自定义jupyter的docker容器
+    fastgpt: int        = 7863
+    open_webui:int      = 7864 # open-webui
+    jupyter_temp:int    = 7865 # 自定义jupyter的docker容器
+
+    dify: int           = 7866
+    sovit: int          = 7867
+    llm_viz:int         = 7869  # 三维演示gpt结构
+
+    openwebui: int      = 7870
+    m3e_api:int         = 7870 # 由xinference发布的
+
+    ragflow: int        = 7871
+
+    # api底层服务
+    qdrant1:int         = 7872 # qdrant
+    qdrant2:int         = 7873 # qdrant
+
+    llm_api0:int        = 8000 # vllm
+    llm_api1:int        = 8001 # vllm
+    llm_api2:int        = 8002 # vllm
+
+    # api转发层
+    one_api:int         = 8002 # flowise等顶层应用可以直接调用:8002/v1的llm_api和m3e_api
+
+    milvus_api:int      = 8003 # milvus单独的api
+    chroma_api:int      = 8004 # chroma单独的api
+
+    redis_monitor:int   = 8009 # redis monitor
+    redis_client:int    = 8010 # redis消息服务
+
     # sd:int              = 7868  # stable diffusion
     # comfy:int           = 7869  # ComfyUI
-    llm_viz:int         = 7869  # 三维演示gpt结构
-    comfy:int           = 5100  # ComfyUI
 
 @dataclass
 class Domain():
