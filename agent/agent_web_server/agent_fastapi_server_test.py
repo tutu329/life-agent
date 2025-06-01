@@ -13,8 +13,8 @@ def test_agent_sync():
     # 测试数据
     data = {
         # "query": '请告诉我当前文件夹下有哪些文件',
-        # "query": '请告诉我"agent"下有哪些文件',
-        "query": '请告诉我"./"下有哪些文件',
+        "query": '请告诉我"agent"下有哪些文件',
+        # "query": '请告诉我"./"下有哪些文件',
         # "query": '请告诉我"file_to_find.txt"在"d:\\demo\\"文件夹的哪个具体文件夹中',
         "base_url": 'https://api.deepseek.com/v1',
         "api_key": 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',
