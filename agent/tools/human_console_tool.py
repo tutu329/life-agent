@@ -75,8 +75,8 @@ def main_agent_as_tool():
     agent.init()
     success = agent.run(query=query)
     print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
-    # success = agent.run(query=r'再告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中')
-    # print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
+    success = agent.run(query=r'再告诉我一下"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中，忘记了')
+    print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
 
 def main_human_console_tool():
     import config
