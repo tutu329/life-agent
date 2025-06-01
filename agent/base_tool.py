@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
-from utils.extract import extract_code, extract_dict_string
+from utils.extract import extract_code, legacy_extract_dict_string, extract_tool_dict
 from colorama import Fore, Style
 import json5
 
@@ -138,31 +138,33 @@ class Base_Tool(ABC):
     @classmethod
     def extract_tool_name_from_answer(cls, in_answer):
         try:
-            # print(f'+++++++++++++++++++++thoughts in extract_tool_name() is : \n{in_answer}+++++++++++++++++++++')
-            dict_string = extract_dict_string(in_answer)
-            # print(f'+++++++++++++++++++++dict_string in extract_tool_name() is : \n{dict_string}+++++++++++++++++++++')
-            if not dict_string:
-                print(Fore.RED, flush=True)
-                print(f'dict_string为空', flush=True)
-                print('返回tool_name=""', flush=True)
-                print(Style.RESET_ALL, flush=True)
-                return ''
-
-            # 过滤掉可能存在的代码
-            code = extract_code(dict_string)
-            dict_string__ = dict_string.replace(code, "")
-            dict_string__ = dict_string__.replace('""""""', "''")
-
-            # 去掉'[观察]'及后续内容
-            # dict_string__ = dict_string__.split('[观察]')
-            # dict_string__.pop()
-            # dict_string__ = ''.join(dict_string__)
-
-            dprint('-----------dict string to get tool_name is:----------')
-            dprint(dict_string__)
-            dprint('-----------------------------------------------------')
-
-            dict = json5.loads(dict_string__)
+            # # print(f'+++++++++++++++++++++thoughts in extract_tool_name() is : \n{in_answer}+++++++++++++++++++++')
+            # dict_string = legacy_extract_dict_string(in_answer)
+            # # dict_string = legacy_extract_dict_string(in_answer)
+            # # print(f'+++++++++++++++++++++dict_string in extract_tool_name() is : \n{dict_string}+++++++++++++++++++++')
+            # if not dict_string:
+            #     print(Fore.RED, flush=True)
+            #     print(f'dict_string为空', flush=True)
+            #     print('返回tool_name=""', flush=True)
+            #     print(Style.RESET_ALL, flush=True)
+            #     return ''
+            #
+            # # 过滤掉可能存在的代码
+            # code = extract_code(dict_string)
+            # dict_string__ = dict_string.replace(code, "")
+            # dict_string__ = dict_string__.replace('""""""', "''")
+            #
+            # # 去掉'[观察]'及后续内容
+            # # dict_string__ = dict_string__.split('[观察]')
+            # # dict_string__.pop()
+            # # dict_string__ = ''.join(dict_string__)
+            #
+            # dprint('-----------dict string to get tool_name is:----------')
+            # dprint(dict_string__)
+            # dprint('-----------------------------------------------------')
+            #
+            # dict = json5.loads(dict_string__)
+            dict = extract_tool_dict(in_answer)
 
             # print(f'+++++++++++++++++++++dict in extract_tool_name() is : \n{dict}+++++++++++++++++++++')
             rtn = dict['tool_name']

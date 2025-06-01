@@ -52,8 +52,8 @@ def main_agent_as_tool():
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         # api_key='empty',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        # model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
 
     folder_agent_as_tool = Tool_Agent(

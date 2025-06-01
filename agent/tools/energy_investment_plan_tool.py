@@ -1,5 +1,5 @@
 from agent.base_tool import Base_Tool
-from utils.extract import extract_dict_string
+from utils.extract import legacy_extract_dict_string
 from utils.folder import get_folder_files_info_string
 import json5
 
@@ -105,7 +105,7 @@ class Energy_Investment_Plan_Tool(Base_Tool):
         pass
 
     def call(self, in_thoughts):
-        dict_string = extract_dict_string(in_thoughts)
+        dict_string = legacy_extract_dict_string(in_thoughts)
         dict = json5.loads(dict_string)
         print(Global.line)
         print(f'Energy_Investment_Plan_Tool的输入参数dict为: {dict}')

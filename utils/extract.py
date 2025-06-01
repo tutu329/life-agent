@@ -1,4 +1,4 @@
-import re, json5
+import re, ast, json5
 
 DEBUG = False
 # DEBUG = True
@@ -32,8 +32,43 @@ def extract_code(text):
 
     return text
 
+def extract_tool_dict(raw: str) -> dict:
+    """
+    从原始字符串中提取并返回包含
+    'tool_invoke' / 'tool_name' / 'tool_parameters' 的 dict。
+    """
+    # —— ① 找到 'tool_invoke' 所在位置 ——
+    key_pos = raw.find("'tool_invoke'")
+    if key_pos == -1:
+        raise ValueError("文本里没有出现 'tool_invoke'！")
+
+    # —— ② 向前回溯，定位包围它的最左侧 '{' ——
+    start = raw.rfind('{', 0, key_pos)
+    if start == -1:
+        raise ValueError("没找到对应的 '{' ！")
+
+    # —— ③ 从 start 开始，遍历并做大括号计数，找到匹配的 '}' ——
+    depth = 0
+    for i in range(start, len(raw)):
+        if raw[i] == '{':
+            depth += 1
+        elif raw[i] == '}':
+            depth -= 1
+            if depth == 0:          # 成功闭合
+                end = i + 1
+                snippet = raw[start:end]
+                break
+    else:
+        raise ValueError("大括号没有成功闭合！")
+
+    # —— ④ 去掉所有 “, }” 这种 Python 不允许的拖尾逗号写法 ——
+    snippet = re.sub(r",\s*}", "}", snippet)
+
+    # —— ⑤ 字面量安全解析 ——
+    return ast.literal_eval(snippet)
+
 # 用re把字符串中的最外层{}里的内容抠出来，包含{}
-def extract_dict_string(text):
+def legacy_extract_dict_string(text):
     dprint(f'extract_dict_string(): text = \n"{text}"')
     match = re.search(r'\{.*\}', text, re.DOTALL)
     result = match.group(0) if match else None

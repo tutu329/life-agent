@@ -5,7 +5,7 @@ import re
 
 from server_manager.web_server_task_manager import Web_Client_Data, Web_Client_Data_Type, Web_Client_Table_Data
 from agent.base_tool import Base_Tool
-from utils.extract import extract_dict_string
+from utils.extract import legacy_extract_dict_string
 from utils.folder import get_folder_files_info_string
 import json5
 import json

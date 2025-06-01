@@ -1,5 +1,5 @@
 from agent.base_tool import Base_Tool
-from utils.extract import extract_dict_string, extract_code
+from utils.extract import legacy_extract_dict_string, extract_code
 import json5
 
 from config import dred, dgreen, dblue
@@ -31,7 +31,7 @@ print({
         pass
 
     def call(self, in_thoughts):
-        dict_string = extract_dict_string(in_thoughts)
+        dict_string = legacy_extract_dict_string(in_thoughts)
         code = extract_code(dict_string)
         action_result = execute_python_code_in_docker(code)
         return action_result

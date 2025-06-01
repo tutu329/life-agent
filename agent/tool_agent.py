@@ -14,7 +14,7 @@ import config
 from config import dred, dgreen, dblue, dcyan, dyellow
 from server_manager.web_server_base import Web_Server_Base
 from agent.agent_config import Config
-from utils.extract import extract_dict_string
+from utils.extract import legacy_extract_dict_string, extract_tool_dict
 import json5
 from uuid import uuid4
 
@@ -462,8 +462,9 @@ class Tool_Agent(Web_Server_Base, Base_Tool):
                 # in_answer = ''.join(in_answer)
 
                 # 解析tool_paras
-                dict_string = extract_dict_string(in_answer)
-                dict = json5.loads(dict_string)
+                # dict_string = legacy_extract_dict_string(in_answer)
+                # dict = json5.loads(dict_string)
+                dict = extract_tool_dict(in_answer)
                 callback_tool_paras_dict = dict['tool_parameters']
 
                 # 调用工具前，创建tool_ctx(生成tool_task_id，并用于存放后续可能的dataset_info)

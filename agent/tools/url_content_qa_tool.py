@@ -1,5 +1,5 @@
 from agent.base_tool import Base_Tool
-from utils.extract import extract_dict_string
+from utils.extract import legacy_extract_dict_string
 from utils.folder import get_folder_files_info_string
 import json5
 
@@ -29,7 +29,7 @@ class Url_Content_QA_Tool(Base_Tool):
         pass
 
     def call(self, in_thoughts):
-        dict_string = extract_dict_string(in_thoughts)
+        dict_string = legacy_extract_dict_string(in_thoughts)
         dict = json5.loads(dict_string)
         url = dict['tool_parameters']['url']
         question = dict['tool_parameters']['question']

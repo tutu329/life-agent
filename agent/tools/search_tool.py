@@ -1,5 +1,5 @@
 from agent.base_tool import Base_Tool
-from utils.extract import extract_dict_string
+from utils.extract import legacy_extract_dict_string
 from utils.folder import get_folder_files_info_string
 import json5
 
@@ -32,7 +32,7 @@ class Search_Tool(Base_Tool):
         searcher = Bing_Searcher.create_searcher_and_loop(in_search_num=3)
 
     def call(self, in_thoughts):
-        dict_string = extract_dict_string(in_thoughts)
+        dict_string = legacy_extract_dict_string(in_thoughts)
 
         # print(Fore.RED, flush=True)
         # print('-----------Search_Tool: dict string to get tool_name is:----------')
