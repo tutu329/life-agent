@@ -94,5 +94,33 @@ def run_agent_sync(request: Agent_Request):
             "error": safe_encode(str(e))
         }
 
+async def event_generator(name: str):
+    """
+    按秒推送计数器和用户名字。
+    """
+    counter = 0
+    while True:
+        counter += 1
+        message = {"name": name, "counter": counter}
+        yield f"data: {json.dumps(message)}\n\n"
+        await asyncio.sleep(1)
+
+@app.post("/run_agent_stream")
+async def run_agent_stream(request: Agent_Request):
+    """
+    用 POST 建立 SSE。请求体可选，示例里接收 {"name": "..."}。
+    EventSource 只支持 GET，因此该端点主要供后端或 CLI 客户端消费。
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    name = body.get("name", "anonymous")
+
+    return StreamingResponse(
+        event_generator(name),
+        media_type="text/event-stream"
+    )
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=Port.agent_fastapi_server)

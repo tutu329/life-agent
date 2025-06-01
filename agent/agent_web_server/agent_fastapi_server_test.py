@@ -1,6 +1,6 @@
 import requests
 import json
-import sseclient  # 需要安装: pip install sseclient-py
+from sseclient import SSEClient  # 需要安装: pip install sseclient-py
 import threading
 import time
 
@@ -39,6 +39,26 @@ def test_agent_sync():
     except Exception as e:
         print(f"❌ 发生错误: {e}")
 
+def test_agent_stream():
+    url = "http://powerai.cc:5120/run_agent_stream"
+
+    # 测试数据
+    data = {
+        # "query": '请告诉我当前文件夹下有哪些文件',
+        "query": '请告诉我"agent"下有哪些文件',
+        # "query": '请告诉我"./"下有哪些文件',
+        # "query": '请告诉我"file_to_find.txt"在"d:\\demo\\"文件夹的哪个具体文件夹中',
+        "base_url": 'https://api.deepseek.com/v1',
+        "api_key": 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        "model_id": 'deepseek-chat'
+    }
+
+    with requests.post(url, json=data, stream=True, timeout=None) as resp:
+        resp.raise_for_status()
+        for event in SSEClient(resp).events():  # ← 关键改动
+            data = json.loads(event.data)
+            print(f"收到 {data['name']} 的计数器：", data["counter"])
+
 if __name__ == "__main__":
     print("=== Agent Server SSE 测试 ===")
     # 检查依赖
@@ -49,10 +69,10 @@ if __name__ == "__main__":
         exit(1)
 
     # 1. 测试同步调用
-    test_agent_sync()
+    # test_agent_sync()
 
     # 2. 测试流式调用
-    # test_agent_stream()
+    test_agent_stream()
 
     # 3. 测试超时处理
     # test_agent_stream_timeout()
