@@ -1,3 +1,8 @@
+# 如果报错：Failed to parse the request body as JSON: messages[1].content: lone leading surrogate in hex escape at line 1 column 10594
+# 或者报错：'utf-8' codec can't encode characters in position 3186-3199: surrogates not allowed
+# 原因是出现了这种名字的文件：110kV��������������ͼ.jpg
+
+
 from agent.base_tool import Base_Tool
 from agent.protocol import Action_Result
 from utils.folder import get_folder_files_info_string, get_folder_all_items_string

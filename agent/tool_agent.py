@@ -303,7 +303,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
             self.agent_tools_description_and_full_history = PROMPT_REACT.format(
                 tool_descs=self.tool_descs,
                 tool_names=self.tool_names,
-                query=query,
+                query=self.current_query,
                 user_experience=self.current_exp_str,
             )
         else:
@@ -443,7 +443,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         if not answer_this_turn.strip():
             import sys
             dyellow('-----------------------------------thinking answer-------------------------------------------')
-            dyellow('answer_this_turn完全为空，请检查大模型的api是否有问题（如deepseek r1模型会出现回复为空的情况）。程序退出！')
+            dyellow('answer_this_turn完全为空，请检查大模型的api是否有问题（如官网deepseek r1模型会出现回复为空的情况）。程序退出！')
             dyellow('-----------------------------------thinking answer-------------------------------------------')
             sys.exit(1)
 
@@ -523,6 +523,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 )
 
                 # 控制台输出action_result
+                dblue(f'rtn: "{rtn}"')
                 dblue(f'action_result: "{rtn.result}"')
 
                 # 更新last_tool_task_id
