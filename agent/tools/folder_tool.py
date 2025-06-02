@@ -5,9 +5,9 @@
 # 这时要用utils/encode.py的safe_encode()才行
 
 from utils.encode import safe_encode
-from agent.base_tool import Base_Tool
-from agent.protocol import Action_Result
-from utils.folder import get_folder_files_info_string, get_folder_all_items_string
+from agent.core.base_tool import Base_Tool
+from agent.core.protocol import Action_Result
+from utils.folder import get_folder_all_items_string
 
 class Folder_Tool(Base_Tool):
     name='Folder_Tool'
@@ -53,9 +53,9 @@ class Folder_Tool(Base_Tool):
 
 def main_folder():
     import config
-    from agent.tool_agent import Tool_Agent
+    from agent.core.tool_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
-    from agent.agent_config import Config
+    from agent.core.agent_config import Config
 
     tools=[Folder_Tool]
     print(f'os: "{config.get_os()}"')

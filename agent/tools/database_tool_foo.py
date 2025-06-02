@@ -1,7 +1,7 @@
-import json, json5
+import json5
 
-from agent.base_tool import Base_Tool
-from agent.protocol import update_tool_context_info, Data_Set_Info, Action_Result
+from agent.core.base_tool import Base_Tool
+from agent.core.protocol import Data_Set_Info, Action_Result
 
 # from agent.base_tool import Data_Attached_Tool
 
@@ -75,9 +75,9 @@ class Database_Tool(Base_Tool):
 
 def main_db_tool():
     import config
-    from agent.tool_agent import Tool_Agent
+    from agent.core.tool_agent import Tool_Agent
     from agent.tools.frontend_chart_code_transfer_foo import Frontend_Chart_Code_Transfer_Tool
-    from agent.agent_config import Config
+    from agent.core.agent_config import Config
 
     tools=[Database_Tool, Frontend_Chart_Code_Transfer_Tool]
     print(f'os: "{config.get_os()}"')

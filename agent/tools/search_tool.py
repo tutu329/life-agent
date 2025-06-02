@@ -1,10 +1,8 @@
-from agent.base_tool import Base_Tool
+from agent.core.base_tool import Base_Tool
 from utils.extract import legacy_extract_dict_string
-from utils.folder import get_folder_files_info_string
 import json5
 
-from config import dred, dgreen, dblue
-from tools.retriever.search_and_urls import concurrent_search_and_summary_with_final_qa_gen, concurrent_search_and_summary_without_final_qa
+from tools.retriever.search_and_urls import concurrent_search_and_summary_with_final_qa_gen
 from tools.retriever.legacy_search import Bing_Searcher
 
 class Search_Tool(Base_Tool):

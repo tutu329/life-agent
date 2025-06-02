@@ -1,11 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
-from utils.extract import extract_code, legacy_extract_dict_string, extract_tool_dict
-from colorama import Fore, Style
-import json5
+from utils.extract import extract_tool_dict
 
-from agent.agent_config import Config
-from agent.protocol import Tool_Context, create_tool_ctx, get_tool_ctx, update_tool_context_info
+from agent.core.agent_config import Config
+from agent.core.protocol import Tool_Context
 
 DEBUG = False
 # DEBUG = True

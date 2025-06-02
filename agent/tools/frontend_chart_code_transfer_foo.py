@@ -1,7 +1,5 @@
-import json
-
-from agent.base_tool import Base_Tool
-from agent.protocol import update_tool_context_info, Action_Result
+from agent.core.base_tool import Base_Tool
+from agent.core.protocol import Action_Result
 
 class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
     name='Frontend_Chart_Code_Transfer_Tool'
@@ -61,8 +59,8 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
 
 def main_db_tool():
     import config
-    from agent.tool_agent import Tool_Agent
-    from agent.agent_config import Config
+    from agent.core.tool_agent import Tool_Agent
+    from agent.core.agent_config import Config
 
     tools=[Frontend_Chart_Code_Transfer_Tool]
     print(f'os: "{config.get_os()}"')

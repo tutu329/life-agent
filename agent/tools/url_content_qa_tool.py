@@ -1,9 +1,7 @@
-from agent.base_tool import Base_Tool
+from agent.core.base_tool import Base_Tool
 from utils.extract import legacy_extract_dict_string
-from utils.folder import get_folder_files_info_string
 import json5
 
-from config import dred, dgreen, dblue
 from tools.llm.api_client import LLM_Client
 from tools.retriever.legacy_search import Bing_Searcher
 from tools.qa.long_content_qa import long_content_qa_concurrently

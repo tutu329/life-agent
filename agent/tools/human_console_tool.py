@@ -1,5 +1,5 @@
-from agent.base_tool import Base_Tool
-from agent.protocol import Action_Result
+from agent.core.base_tool import Base_Tool
+from agent.core.protocol import Action_Result
 
 class Human_Console_Tool(Base_Tool):
     name='Human_Console_Tool'
@@ -38,8 +38,8 @@ class Human_Console_Tool(Base_Tool):
         return action_result
 
 def main_agent_as_tool():
-    from agent.tool_agent import Tool_Agent
-    from agent.agent_config import Config
+    from agent.core.tool_agent import Tool_Agent
+    from agent.core.agent_config import Config
     from agent.tools.folder_tool import Folder_Tool
 
     tools1=[Human_Console_Tool, Folder_Tool]
@@ -80,8 +80,8 @@ def main_agent_as_tool():
 
 def main_human_console_tool():
     import config
-    from agent.tool_agent import Tool_Agent
-    from agent.agent_config import Config
+    from agent.core.tool_agent import Tool_Agent
+    from agent.core.agent_config import Config
     from agent.tools.folder_tool import Folder_Tool
 
     tools=[Human_Console_Tool, Folder_Tool]

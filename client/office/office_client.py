@@ -12,26 +12,26 @@ import config
 # 目前报告自动编制.docm中的运行宏的快捷键定义为"Ctrl+9"
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 
 from singleton import singleton
 
 import win32com.client as win32
 # import win32com
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
 
 from tools.llm.api_client import LLM_Client
 from client.office.parse_scheme import get_scheme_list
 
-from agent.tool_agent import Tool_Agent
+from agent.core.tool_agent import Tool_Agent
 from agent.tools.folder_tool import Folder_Tool
 from agent.tools.search_tool import Search_Tool
 from agent.tools.table_tool import Table_Tool
 
-from config import dred, dgreen, dblue, dcyan, dyellow
+from config import dred, dblue, dyellow
 from server_manager.legacy_web_server_base import legacy_Web_Server_Base
-from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Data, Web_Client_Table_Data, Web_Client_Text_Data, Web_Client_Image_Data
+from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Data, Web_Client_Text_Data
+
 
 @singleton
 class Office_Client():

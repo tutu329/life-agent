@@ -1,16 +1,10 @@
 from flask import Flask, request, jsonify, Response, session
 from flask_cors import CORS
-import json
-import time
-import threading
 import uuid
-from dataclasses import dataclass, field
 
 # Import your existing modules
-from config import dred, dgreen, dblue, dcyan, dyellow
-from agent.base_tool import PROMPT_REACT
-from agent.base_tool import Base_Tool
-from agent.tool_agent import Tool_Agent
+from config import dblue
+from agent.core.tool_agent import Tool_Agent
 from agent.tools.folder_tool import Folder_Tool
 from server_manager.web_server_task_manager import Web_Server_Task_Manager
 

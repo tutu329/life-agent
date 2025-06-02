@@ -3,28 +3,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
 
-import sys
 from pydantic import BaseModel
 import uvicorn
 
 import asyncio
 import json
-import uuid
-from typing import Dict
-import queue
-import threading
 
 from config import Port
 
 # agent
-from agent.agent_config import Config
-from agent.tool_agent import Tool_Agent
+from agent.core.agent_config import Config
+from agent.core.tool_agent import Tool_Agent
 
 # tools
 from agent.tools.folder_tool import Folder_Tool
 from agent.tools.human_console_tool import Human_Console_Tool
 
-from config import dred,dgreen,dyellow,dblue,dcyan
+from config import dyellow
 
 app = FastAPI(title="Agent FastAPI Server")
 
@@ -112,7 +107,7 @@ async def run_agent_stream(request: Agent_Request):
     EventSource 只支持 GET，因此该端点主要供后端或 CLI 客户端消费。
     """
     try:
-        body = await request.json()
+        body = await request.model_dump_json()
     except Exception:
         body = {}
     name = body.get("name", "anonymous")

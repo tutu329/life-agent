@@ -1,8 +1,6 @@
-from agent.base_tool import Base_Tool
+from agent.core.base_tool import Base_Tool
 from utils.extract import legacy_extract_dict_string, extract_code
-import json5
 
-from config import dred, dgreen, dblue
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 
 class Code_Tool(Base_Tool):

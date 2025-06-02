@@ -11,19 +11,18 @@
 
 
 import config
-from config import dred, dgreen, dblue, dcyan, dyellow
-from agent.agent_base import Agent_Base
+from config import dred, dgreen, dblue, dyellow
+from agent.core.agent_base import Agent_Base
 # from server_manager.web_server_base import Web_Server_Base
-from agent.agent_config import Config
-from utils.extract import legacy_extract_dict_string, extract_tool_dict
-import json5
+from agent.core.agent_config import Config
+from utils.extract import extract_tool_dict
 from uuid import uuid4
 
 from tools.llm.api_client import LLM_Client
-from agent.base_tool import PROMPT_REACT
-from agent.base_tool import Base_Tool
-from agent.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
-from agent.protocol import Action_Result
+from agent.core.base_tool import PROMPT_REACT
+from agent.core.base_tool import Base_Tool
+from agent.core.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
+from agent.core.protocol import Action_Result
 
 from agent.experience.agent_experience import Agent_Experience
 
@@ -448,7 +447,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
             sys.exit(1)
 
         if self.turns_num == 1:
-            with open("answer(turn 1).txt", "w", encoding="utf-8") as file:
+            with open("../answer(turn 1).txt", "w", encoding="utf-8") as file:
                 file.write(answer_this_turn)
 
         self.agent_tools_description_and_full_history += '\n' + answer_this_turn
@@ -621,9 +620,9 @@ def main2():
 
 def main_folder():
     import config
-    from agent.tool_agent import Tool_Agent
+    from agent.core.tool_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
-    from agent.agent_config import Config
+    from agent.core.agent_config import Config
 
     tools=[Folder_Tool]
     print(f'os: "{config.get_os()}"')
@@ -662,9 +661,9 @@ def main_folder():
 
 def main_table():
     import config
-    from agent.tool_agent import Tool_Agent
+    from agent.core.tool_agent import Tool_Agent
     from agent.tools.table_tool import Table_Tool
-    from agent.agent_config import Config
+    from agent.core.agent_config import Config
 
     tools=[Table_Tool]
     # tools=[Folder_Tool, Search_Tool]

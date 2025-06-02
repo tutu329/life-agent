@@ -4,14 +4,11 @@ import os
 import re
 
 from server_manager.web_server_task_manager import Web_Client_Data, Web_Client_Data_Type, Web_Client_Table_Data
-from agent.base_tool import Base_Tool
-from utils.extract import legacy_extract_dict_string
-from utils.folder import get_folder_files_info_string
-import json5
+from agent.core.base_tool import Base_Tool
 import json
 
-from config import dred, dgreen, dblue, dcyan, dyellow
-from dataclasses import dataclass, asdict
+from config import dred, dyellow
+from dataclasses import asdict
 
 def _draw_table_on_web_page(table_data):
     dred(f'_draw_table_on_web_page() starts to draw table on web page...')
@@ -365,8 +362,8 @@ def main_word():
 
 def main_client():
     import config
-    from agent.tool_agent import Tool_Agent
-    from agent.agent_config import Config
+    from agent.core.tool_agent import Tool_Agent
+    from agent.core.agent_config import Config
 
     tools=[Table_Tool]
     # tools=[Folder_Tool, Search_Tool]

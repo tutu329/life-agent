@@ -69,10 +69,10 @@ if __name__ == "__main__":
         exit(1)
 
     # 1. 测试同步调用
-    # test_agent_sync()
+    test_agent_sync()
 
     # 2. 测试流式调用
-    test_agent_stream()
+    # test_agent_stream()
 
     # 3. 测试超时处理
     # test_agent_stream_timeout()
