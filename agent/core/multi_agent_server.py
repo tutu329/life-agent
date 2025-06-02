@@ -43,6 +43,7 @@ def server_start_and_register_agent(
     # 初始化tool_agent
     class_list = get_tools_class(tool_names)
     agent = Tool_Agent(
+        has_history=True,
         tool_classes=class_list,
         agent_config=agent_config,
         agent_status_ref=agent_status,
@@ -81,8 +82,13 @@ def server_continue_agent(agent_id, query):
 
     def _run_agent_thread():
         agent.unset_cancel()
+        # dred(f'-----------------------history1----------------------------')
+        # print(agent.agent_tools_description_and_full_history)
+        # dred(f'----------------------/history1----------------------------')
         success = agent.run(query=query)
-
+        # dred(f'-----------------------history2----------------------------')
+        # print(agent.agent_tools_description_and_full_history)
+        # dred(f'----------------------/history2----------------------------')
     future = g_thread_pool_executor.submit(_run_agent_thread)
 
     # 更新线程的future
@@ -136,9 +142,9 @@ def server_wait_registered_agent(agent_id):
         # print("还没好，再等⏳")
         time.sleep(0.5)
         i += 1
-        if i>5:
+        if i>10:
             server_cancel_agent(agent_id)
-            break
+            # break
 
     dblue(f'agent任务执行完毕(agent_id="{agent_id}").')
 

@@ -127,6 +127,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         # agent属性
         self.agent_id = str(uuid4())
+        if not has_history:
+            dred('--------------------------------------------------------------------------------------------')
+            dred(f'Warning: agent没有设置history!(agent_id:"{self.agent_id}")')
+            dred('--------------------------------------------------------------------------------------------')
 
         self.llm = None
         self.agent_config = agent_config
