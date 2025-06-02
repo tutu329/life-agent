@@ -16,7 +16,7 @@ class Registered_Tool_Data(BaseModel):
     parameters: List[Dict[str, str]]
     tool_class: Type     # tool类对象（非实例）
 
-# 全局存储tools的注册( tool_id <--> Tool_Data )
+# 全局存储tools的注册( tool_id <--> Registered_Tool_Data )
 g_registered_tools_dict: Dict[str, Registered_Tool_Data] = {}
 
 # server用的tool注册管理，tool_name相当于id(server启动时调用)
