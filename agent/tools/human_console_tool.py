@@ -1,5 +1,5 @@
 from agent.core.base_tool import Base_Tool
-from agent.core.protocol import Action_Result
+from agent.core.legacy_protocol import Action_Result
 
 class Human_Console_Tool(Base_Tool):
     name='Human_Console_Tool'

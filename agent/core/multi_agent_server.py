@@ -1,8 +1,6 @@
 from typing import List, Dict, Any, Type
 from pydantic import BaseModel, Field, ConfigDict
-from queue import Queue
 from uuid import uuid4
-from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from concurrent.futures import Future
 import time
@@ -10,21 +8,9 @@ import time
 from agent.core.tool_agent import Tool_Agent
 from agent.core.agent_config import Config
 from agent.core.tool_manager import get_tools_class
+from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
-class Agent_Status(BaseModel):
-    started:bool    = False
-    canceling:bool  = False
-    canceled:bool   = False
-    finished:bool   = False
-
-class Agent_Stream_Queue(BaseModel):
-    output          :Queue= Field(default_factory=Queue)
-    thinking        :Queue= Field(default_factory=Queue)
-    log             :Queue= Field(default_factory=Queue)
-    tool_rtn_data   :Queue= Field(default_factory=Queue)
-
-    # 开启“任意类型”支持
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+from config import dred,dgreen,dblue,dcyan,dyellow
 
 class Registered_Agent_Data(BaseModel):
     agent_id            :str
@@ -50,11 +36,18 @@ def server_start_and_register_agent(
 )->str:     # 返回agent_id
     agent_id = str(uuid4())
 
+    # multi_agent_server和tool_agent同步管理的信息
+    agent_status = Agent_Status()
+    agent_stream_queue = Agent_Stream_Queue()
+
+    # 初始化tool_agent
     class_list = get_tools_class(tool_names)
     agent = Tool_Agent(
         query='当前目录下有哪些文件',
         tool_classes=class_list,
-        agent_config=agent_config
+        agent_config=agent_config,
+        agent_status_ref=agent_status,
+        agent_stream_queue_ref=agent_stream_queue
     )
 
     def _run_agent_thread():
@@ -68,9 +61,7 @@ def server_start_and_register_agent(
     # 而shutdown(wait=True) 会 阻塞直到所有提交的任务执行完毕，因此退出上下文时，thread已经完成，即获得的future实际上已经变成了done()
     future = g_thread_pool_executor.submit(_run_agent_thread)
 
-    # 初始化需注册的agent数据
-    agent_status = Agent_Status()
-    agent_stream_queue = Agent_Stream_Queue()
+    # 初始化agent的注册数据
     agent_data = Registered_Agent_Data(
         agent_id=agent_id,
         agent_obj=agent,
@@ -84,7 +75,20 @@ def server_start_and_register_agent(
 
     return agent_id
 
-# server等待一个agent线程
+def print_agent_status(agent_id):
+    if g_registered_agents_dict.get(agent_id):
+        agent_status = g_registered_agents_dict[agent_id].agent_status
+        agent_stream_queue = g_registered_agents_dict[agent_id].agent_stream_queue
+
+        dblue(f'-------------------------agent started(agent_id="{agent_id}")-------------------------------')
+        dyellow(f'{"agent status:":<30}({agent_status})')
+        dyellow(f'{"agent stream output:":<30}({agent_stream_queue.output})')
+        dyellow(f'{"agent stream thinking:":<30}({agent_stream_queue.thinking})')
+        dyellow(f'{"agent stream log:":<30}({agent_stream_queue.log})')
+        dyellow(f'{"agent stream tool_rtn_data:":<30}({agent_stream_queue.tool_rtn_data})')
+        dblue(f'------------------------/agent started(agent_id="{agent_id}")-------------------------------')
+
+# server等待一个agent的future到done
 def server_wait_registered_agent(agent_id):
     agent_data = g_registered_agents_dict[agent_id]
     future = agent_data.agent_future
@@ -96,8 +100,14 @@ def server_wait_registered_agent(agent_id):
 
     # future.result(timeout=5)
     while not future.done():
-        print("还没好，再等⏳")
+        # print("还没好，再等⏳")
         time.sleep(0.5)
+
+    dblue(f'agent任务执行完毕(agent_id="{agent_id}").')
+
+    # 此时可以考虑删除agent_id对应的注册数据
+    del g_registered_agents_dict[agent_id]
+    dblue(f'agent实例已经删除(agent_id="{agent_id}").')
 
 # server返回一个agent的数据
 def server_get_registered_agent_data(agent_id):
@@ -113,7 +123,11 @@ def main_test_server_start_agent():
     query='当前目录下有哪些文件'
 
     agent_id = server_start_and_register_agent(query=query, agent_config=config, tool_names=tool_names)
+
+    time.sleep(0.5)
+    print_agent_status(agent_id)
     server_wait_registered_agent(agent_id)
+    print_agent_status(agent_id)
 
 if __name__ == "__main__":
     main_test_server_start_agent()

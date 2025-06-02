@@ -24,9 +24,11 @@ from typing import List, Dict, Any, Type
 from tools.llm.api_client import LLM_Client
 from agent.core.base_tool import PROMPT_REACT
 from agent.core.base_tool import Base_Tool
-from agent.core.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
-from agent.core.protocol import Action_Result
+from agent.core.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
+from agent.core.legacy_protocol import Action_Result
 from agent.core.tool_manager import get_tools_class
+
+from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
 from agent.experience.agent_experience import Agent_Experience
 
@@ -64,15 +66,21 @@ class Tool_Agent(Agent_Base, Base_Tool):
         action_result = Action_Result(result=self.get_final_answer())
         return action_result
 
+    def _init_agent_data_in_server(self):
+        self.agent_status_ref.started = True
+        self.agent_stream_queue_ref.output = dyellow
+
     # Tool_Agent方法
     def __init__(self,
                  tool_classes,
                  agent_config:Config,
-                 query=None,  # 用于as_tool(tool仅query一次)
-                 as_tool_name=None,  # As_Tool的name，如取: "Folder_Agent_As_Tool"
-                 as_tool_description=None,  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
+                 query=None,                            # 用于as_tool(tool仅query一次)
+                 as_tool_name=None,                     # As_Tool的name，如取: "Folder_Agent_As_Tool"
+                 as_tool_description=None,              # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  has_history = False,
-                 tool_agent_experience_json_path='',  # 经验json文件
+                 tool_agent_experience_json_path='',    # 经验json文件
+                 agent_status_ref:Agent_Status=None,                # agent状态，由multi_agent_server管理
+                 agent_stream_queue_ref:Agent_Stream_Queue=None,    # agent的stream queue，，由multi_agent_server管理
                  ):
         Agent_Base.__init__(self)
 
@@ -82,6 +90,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # As_Tool属性
         self.name = as_tool_name
         self.description = as_tool_description
+
+        # multi_agent_server管理的状态
+        self.agent_status_ref = agent_status_ref
+        self.agent_stream_queue_ref = agent_stream_queue_ref
 
         # agent属性
         self.agent_id = str(uuid4())
@@ -205,6 +217,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
             # print(in_chunk, end='', flush=True)
 
     def init(self):
+        self._init_agent_data_in_server()
+
         self.llm = LLM_Client(
             url=self.url,
             api_key=self.api_key,

@@ -3,7 +3,7 @@ from typing import Dict, List
 from utils.extract import extract_tool_dict
 
 from agent.core.agent_config import Config
-from agent.core.protocol import Tool_Context
+from agent.core.legacy_protocol import Tool_Context
 
 DEBUG = False
 # DEBUG = True
