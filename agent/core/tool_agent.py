@@ -67,8 +67,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
         return action_result
 
     def _init_agent_data_in_server(self):
-        self.agent_status_ref.started = True
-        self.agent_stream_queue_ref.output = dyellow
+        if self.agent_status_ref and self.agent_stream_queue_ref:
+            self.agent_status_ref.started = True
+            self.agent_stream_queue_ref.output = dyellow
 
     # def set_pause(self):
     #     self.agent_status_ref.paused = True
@@ -80,18 +81,24 @@ class Tool_Agent(Agent_Base, Base_Tool):
     #     return self.agent_status_ref.paused
 
     def set_cancel(self):
-        self.agent_status_ref.canceling = True
+        if self.agent_status_ref:
+            self.agent_status_ref.canceling = True
 
     def unset_cancel(self):
-        self.agent_status_ref.canceling = False
-        self.agent_status_ref.canceled = False
+        if self.agent_status_ref:
+            self.agent_status_ref.canceling = False
+            self.agent_status_ref.canceled = False
 
     def set_canceled(self):
-        self.agent_status_ref.canceled = True
-        dyellow(f'agent已经完成cancel.(agent_id: "{self.agent_id}")')
+        if self.agent_status_ref:
+            self.agent_status_ref.canceled = True
+            dyellow(f'agent已经完成cancel.(agent_id: "{self.agent_id}")')
 
     def is_canceling(self):
-        return self.agent_status_ref.canceling
+        if self.agent_status_ref:
+            return self.agent_status_ref.canceling
+        else:
+            return False
 
     # Tool_Agent方法
     def __init__(self,

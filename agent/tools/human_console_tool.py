@@ -43,7 +43,8 @@ def main_agent_as_tool():
     from agent.tools.folder_tool import Folder_Tool
 
     tools1=[Human_Console_Tool, Folder_Tool]
-    query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
+    query = r'请告诉我当前文件夹下有哪些文件'
+    # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
     # query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     config = Config(
         # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
@@ -75,7 +76,8 @@ def main_agent_as_tool():
     agent.init()
     success = agent.run(query=query)
     print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
-    success = agent.run(query=r'再告诉我一下"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中，忘记了')
+    success = agent.run(query=r'再告诉我一下当前文件夹下有哪些文件，忘记了')
+    # success = agent.run(query=r'再告诉我一下"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中，忘记了')
     print(f'\nagent最终答复: \n"{agent.get_final_answer()}"')
 
 def main_human_console_tool():
