@@ -7,7 +7,7 @@ import time
 
 from agent.core.tool_agent import Tool_Agent
 from agent.core.agent_config import Config
-from agent.core.tool_manager import get_tools_class, server_register_tool
+from agent.core.tool_manager import get_tools_class, server_register_tool, server_get_tool_data_by_id
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
 from config import dred,dgreen,dblue,dcyan,dyellow
@@ -28,7 +28,7 @@ g_registered_agents_dict: Dict[str, Registered_Agent_Data] = {}
 # 全局线程池，真正业务里可以按需设置 max_workers
 g_thread_pool_executor = ThreadPoolExecutor()
 
-# server启动一个agent，返回对应的唯一agent_id
+# server启动一个agent的query，并注册
 def server_start_and_register_agent(
     query:str,
     agent_config:Config,
@@ -76,6 +76,7 @@ def server_start_and_register_agent(
 
     return agent_id
 
+# agent后续轮的query
 def server_continue_agent(agent_id, query):
     agent_data = g_registered_agents_dict[agent_id]
     agent = agent_data.agent_obj
@@ -99,13 +100,13 @@ def print_agent_status(agent_id):
         agent_status = g_registered_agents_dict[agent_id].agent_status
         agent_stream_queue = g_registered_agents_dict[agent_id].agent_stream_queue
 
-        dblue(f'-------------------------agent started(agent_id="{agent_id}")-------------------------------')
+        dblue(f'-------------------------agent status(agent_id="{agent_id}")-------------------------------')
         dyellow(f'{"agent status:":<30}({agent_status})')
         dyellow(f'{"agent stream output:":<30}({agent_stream_queue.output})')
         dyellow(f'{"agent stream thinking:":<30}({agent_stream_queue.thinking})')
         dyellow(f'{"agent stream log:":<30}({agent_stream_queue.log})')
         dyellow(f'{"agent stream tool_rtn_data:":<30}({agent_stream_queue.tool_rtn_data})')
-        dblue(f'------------------------/agent started(agent_id="{agent_id}")-------------------------------')
+        dblue(f'------------------------/agent status(agent_id="{agent_id}")-------------------------------')
 
 # 对agent进行cancel操作
 def server_cancel_agent(agent_id):
@@ -185,9 +186,77 @@ def _server_create_and_registered_agent_as_tool(
     return tool_id
 
 # 多层agent体系的关键(前后端系统)
-# server创建多层agent
-def server_start_and_register_multi_agents_system():
-    pass
+# server启动一个2层agent系统的query，并注册
+def server_start_register_2_levels_agents_system(
+    query                           :str,
+    upper_agent_dict                :Dict[str, Any],        # {'tool_names':tool_names, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
+    lower_agents_as_tool_dict_list  :List[Dict[str, Any]],  # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
+):
+    # ----------------构建lower的agents_as_tool----------------
+    # 所有将创建的agent_as_tool对应的tool_id_list
+    agents_as_tool_id_list = []
+
+    # 创建所有agent_as_tool
+    for agents_as_tool_dict in lower_agents_as_tool_dict_list:
+        tool_id = _server_create_and_registered_agent_as_tool(**agents_as_tool_dict)
+        agents_as_tool_id_list.append(tool_id)
+    # ---------------/构建lower的agents_as_tool----------------
+
+    # ----------------构建upper的agent----------------
+    # multi_agent_server和tool_agent同步管理的信息
+    upper_agent_status = Agent_Status()
+    upper_agent_stream_queue = Agent_Stream_Queue()
+
+    # upper_agent需要将所有agent_as_tool和常规tools的融合
+    agents_as_tool_instance_list = []
+    for agents_as_tool_id in agents_as_tool_id_list:
+        instance = server_get_tool_data_by_id(agents_as_tool_id)
+        agents_as_tool_instance_list.append(instance)
+
+    upper_agent_tools_class_list = get_tools_class(upper_agent_dict['tool_names'])
+    tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
+
+    # ---------------/构建upper的agent----------------
+    upper_agent = Tool_Agent(
+        has_history=True,
+        tool_classes=tool_class_and_tool_instance_list,     # 这里是[Tool_Class1, Tool_Class2, ... , agent_as_tool1, agent_as_tool2, ...]
+        agent_config=upper_agent_dict['agent_config'],
+        agent_status_ref=upper_agent_status,
+        agent_stream_queue_ref=upper_agent_stream_queue
+    )
+    upper_agent_id = upper_agent.agent_id
+
+    def _run_agent_thread():
+        success = upper_agent.run(query=query)
+
+    future = g_thread_pool_executor.submit(_run_agent_thread)
+
+    # 初始化agent的注册数据
+    agent_data = Registered_Agent_Data(
+        agent_id=upper_agent_id,
+        agent_obj=upper_agent,
+        agent_future=future,
+        agent_status=upper_agent_status,
+        agent_stream_queue=upper_agent_stream_queue
+    )
+
+    # 注册agent的数据
+    g_registered_agents_dict[upper_agent_id] = agent_data
+
+    return upper_agent_id
+
+# 2层agent系统的后续轮的query
+def server_continue_2_levels_agents_system(agent_id, query):
+    upper_agent_data = g_registered_agents_dict[agent_id]
+    upper_agent = upper_agent_data.agent_obj
+
+    def _run_agent_thread():
+        upper_agent.unset_cancel()
+        success = upper_agent.run(query=query)
+    future = g_thread_pool_executor.submit(_run_agent_thread)
+
+    # 更新线程的future
+    upper_agent_data.agent_future = future
 
 def main_test_server_start_agent():
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
@@ -208,5 +277,46 @@ def main_test_server_start_agent():
 
     print_agent_status(agent_id)
 
+def main_test_2_level2_agents_system():
+    # query: str,
+    # upper_agent_dict: Dict[str, Any],
+    # # {'tool_names':tool_names, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
+    # lower_agents_as_tool_dict_list: List[Dict[str, Any]],
+    # # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
+
+    query = r'我叫土土，请告诉我当前文件夹下有哪些文件'
+    config = Config(
+        base_url='https://api.deepseek.com/v1',
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+    )
+    upper_agent_dict = {
+        'tool_names':['Human_Console_Tool'],
+        'agent_config':config,
+        'tool_agent_experience_json_path':'my_2_levels_mas_exp'
+    }
+    lower_agents_as_tool_dict_list = [
+        {
+            'tool_names':['Human_Console_Tool', 'Folder_Tool'],
+            'agent_config':config,
+            'as_tool_name':'Folder_Agent_As_Tool',
+            'as_tool_description':'本工具用于获取文件夹中的文件和文件夹信息'
+        }
+    ]
+    agent_id = server_start_register_2_levels_agents_system(
+        query=query,
+        upper_agent_dict=upper_agent_dict,
+        lower_agents_as_tool_dict_list=lower_agents_as_tool_dict_list
+    )
+
+    time.sleep(0.5)
+    print_agent_status(agent_id)
+    server_wait_registered_agent(agent_id)
+
+    server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
+
+    print_agent_status(agent_id)
+
 if __name__ == "__main__":
-    main_test_server_start_agent()
+    # main_test_server_start_agent()
+    main_test_2_level2_agents_system()

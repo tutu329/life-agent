@@ -14,7 +14,8 @@ class Registered_Tool_Data(BaseModel):
     name: str
     description: str
     parameters: List[Dict[str, str]]
-    tool_class: Type     # tool类对象（非实例）
+    tool_class: Any     # tool类对象（非实例）
+    # tool_class: Type     # tool类对象（非实例）
 
 # 全局存储tools的注册( tool_id <--> Registered_Tool_Data )
 g_registered_tools_dict: Dict[str, Registered_Tool_Data] = {}
@@ -87,15 +88,15 @@ def server_register_tool(
 
     return tool_id
 
-def server_register_tool(
-    name,           # tool的name
-    description,    # tool的description
-    parameters,     # tool的parameters
-    fastapi_url,    # tool的fastapi的url地址
-) -> str:  # 返回：str(uuid4())
-    tool_id = str(uuid4())
-
-    return tool_id
+# def server_register_tool(
+#     name,           # tool的name
+#     description,    # tool的description
+#     parameters,     # tool的parameters
+#     fastapi_url,    # tool的fastapi的url地址
+# ) -> str:  # 返回：str(uuid4())
+#     tool_id = str(uuid4())
+#
+#     return tool_id
 
 # client用的tool注册管理，必须通过server生成的tool_id唯一化
 def server_register_agent_as_tool(
