@@ -157,7 +157,7 @@ def server_get_registered_agent_data(agent_id):
 
 # 多层agent体系的关键(前后端系统)
 # server创建agent_as_tool
-def server_create_and_registered_agent_as_tool(
+def _server_create_and_registered_agent_as_tool(
     tool_names:List[str],       # 该agent所需调用tools的name list
     agent_config:Config,        # agent的config
     as_tool_name:str,           # name as tool
@@ -183,6 +183,11 @@ def server_create_and_registered_agent_as_tool(
     )
 
     return tool_id
+
+# 多层agent体系的关键(前后端系统)
+# server创建多层agent
+def server_start_and_register_agent():
+    pass
 
 def main_test_server_start_agent():
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
