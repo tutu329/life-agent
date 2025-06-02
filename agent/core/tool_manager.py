@@ -60,25 +60,45 @@ def server_get_tool_data_by_id(tool_id):
     return g_registered_tools_dict[tool_id]
 
 # client第一步：获取所有已注册tool
-def client_get_all_registered_tool_data_list():
+def server_get_all_registered_tool_data_list():
     data_list = []
     for k,v in g_registered_tools_dict.items():
         data_list.append(v)
     return data_list
 
 # client用的tool注册管理，必须通过server生成的tool_id唯一化
-def client_register_fastapi_tool(
+def server_register_tool(
+    name,                       # tool的name
+    description,                # tool的description
+    parameters,                 # tool的parameters
+    tool_class_or_instance,     # tool的class 或者 instance(针对agent_as_tool)
+)->str:                         # 返回：tool_id = str(uuid4())
+    tool_id = str(uuid4())
+
+    tool_data = Registered_Tool_Data(
+        tool_id=tool_id,
+        name=name,
+        description=description,
+        parameters=parameters,
+        tool_class=tool_class_or_instance,
+    )
+
+    g_registered_tools_dict[tool_id] = tool_data
+
+    return tool_id
+
+def server_register_tool(
     name,           # tool的name
     description,    # tool的description
     parameters,     # tool的parameters
     fastapi_url,    # tool的fastapi的url地址
-)->str:                     # 返回：str(uuid4())
+) -> str:  # 返回：str(uuid4())
     tool_id = str(uuid4())
 
     return tool_id
 
 # client用的tool注册管理，必须通过server生成的tool_id唯一化
-def client_register_agent_as_tool(
+def server_register_agent_as_tool(
     agent_config:Config,    # 该agent的base_url, api_key, model_id等信息
     tools_name_list,        # 该agent所需tool的name_list
     as_tool_name,           # 该agent作为tool的name
@@ -273,7 +293,7 @@ def main_test_server_start():
     from agent.core.tool_agent import client_run_agent
     server_register_all_tool()
 
-    tool_data_list = client_get_all_registered_tool_data_list()
+    tool_data_list = server_get_all_registered_tool_data_list()
 
     pprint(tool_data_list)
 

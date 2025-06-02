@@ -7,7 +7,7 @@ import time
 
 from agent.core.tool_agent import Tool_Agent
 from agent.core.agent_config import Config
-from agent.core.tool_manager import get_tools_class
+from agent.core.tool_manager import get_tools_class, server_register_tool
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
 from config import dred,dgreen,dblue,dcyan,dyellow
@@ -154,6 +154,35 @@ def server_wait_registered_agent(agent_id):
 # server返回一个agent的数据
 def server_get_registered_agent_data(agent_id):
     return g_registered_agents_dict[agent_id]
+
+# 多层agent体系的关键(前后端系统)
+# server创建agent_as_tool
+def server_create_and_registered_agent_as_tool(
+    tool_names:List[str],       # 该agent所需调用tools的name list
+    agent_config:Config,        # agent的config
+    as_tool_name:str,           # name as tool
+    as_tool_description:str,    # description as tool
+):
+    # 获取该agent需要使用的tools_class_list
+    tools_class_list = get_tools_class(tool_names)
+
+    # 生成agent(继承自Base_Tool)的实例
+    agent_as_tool = Tool_Agent(
+        tool_classes=tools_class_list,
+        agent_config=agent_config,
+        as_tool_name=as_tool_name,
+        as_tool_description=as_tool_description,
+    ).init()
+
+    # 注册agent_as_tool
+    tool_id = server_register_tool(
+        name=as_tool_name,
+        description=as_tool_description,
+        parameters=[],                          # 这里不需要具体信息，Tool_Agent会自动注入agent_as_tool的固定的'自然语言指令'para
+        tool_class_or_instance=agent_as_tool,   # 这里因为是agent_as_tool，所以将instance而非class传入
+    )
+
+    return tool_id
 
 def main_test_server_start_agent():
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
