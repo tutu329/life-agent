@@ -572,6 +572,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     last_tool_ctx = get_tool_ctx(self.last_tool_task_id)
 
                 # 调用工具
+                from pprint import pprint
+                print('---------------------------------agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
+                pprint(self.registered_tool_instances_dict)
+                print('--------------------------------/agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
                 rtn = self.registered_tool_instances_dict[tool_name].call(
                     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                     callback_agent_config=self.agent_config,            # 将agent配置传给tool

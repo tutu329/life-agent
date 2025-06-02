@@ -127,7 +127,7 @@ def server_cancel_agent(agent_id):
 #     dyellow(f'agent已经取消paused...(agent_id: "{agent_id}")')
 
 # server等待一个agent的future到done
-def server_wait_registered_agent(agent_id):
+def server_wait_registered_agent(agent_id, timeout_second=10):
     agent_data = g_registered_agents_dict[agent_id]
     future = agent_data.agent_future
 
@@ -142,7 +142,8 @@ def server_wait_registered_agent(agent_id):
         # print("还没好，再等⏳")
         time.sleep(0.5)
         i += 1
-        if i>10:
+        # if i>10:
+        if i>timeout_second/0.5:
             server_cancel_agent(agent_id)
             # break
 
@@ -210,11 +211,24 @@ def server_start_register_2_levels_agents_system(
     # upper_agent需要将所有agent_as_tool和常规tools的融合
     agents_as_tool_instance_list = []
     for agents_as_tool_id in agents_as_tool_id_list:
-        instance = server_get_tool_data_by_id(agents_as_tool_id)
+        instance = server_get_tool_data_by_id(agents_as_tool_id).tool_class
         agents_as_tool_instance_list.append(instance)
 
     upper_agent_tools_class_list = get_tools_class(upper_agent_dict['tool_names'])
     tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
+
+    # dred('---------------------upper_agent_tools_class_list-------------------------')
+    # print(upper_agent_tools_class_list)
+    # dred('--------------------/upper_agent_tools_class_list-------------------------')
+    #
+    # dred('---------------------agents_as_tool_instance_list-------------------------')
+    # print(agents_as_tool_instance_list)
+    # dred('--------------------/agents_as_tool_instance_list-------------------------')
+    #
+    #
+    # dred('---------------------tool_class_and_tool_instance_list--------------------')
+    # print(tool_class_and_tool_instance_list)
+    # dred('--------------------/tool_class_and_tool_instance_list--------------------')
 
     # ---------------/构建upper的agent----------------
     upper_agent = Tool_Agent(
@@ -227,6 +241,7 @@ def server_start_register_2_levels_agents_system(
     upper_agent_id = upper_agent.agent_id
 
     def _run_agent_thread():
+        upper_agent.init()
         success = upper_agent.run(query=query)
 
     future = g_thread_pool_executor.submit(_run_agent_thread)
@@ -245,18 +260,18 @@ def server_start_register_2_levels_agents_system(
 
     return upper_agent_id
 
-# 2层agent系统的后续轮的query
-def server_continue_2_levels_agents_system(agent_id, query):
-    upper_agent_data = g_registered_agents_dict[agent_id]
-    upper_agent = upper_agent_data.agent_obj
-
-    def _run_agent_thread():
-        upper_agent.unset_cancel()
-        success = upper_agent.run(query=query)
-    future = g_thread_pool_executor.submit(_run_agent_thread)
-
-    # 更新线程的future
-    upper_agent_data.agent_future = future
+# # 2层agent系统的后续轮的query
+# def server_continue_2_levels_agents_system(agent_id, query):
+#     upper_agent_data = g_registered_agents_dict[agent_id]
+#     upper_agent = upper_agent_data.agent_obj
+#
+#     def _run_agent_thread():
+#         upper_agent.unset_cancel()
+#         success = upper_agent.run(query=query)
+#     future = g_thread_pool_executor.submit(_run_agent_thread)
+#
+#     # 更新线程的future
+#     upper_agent_data.agent_future = future
 
 def main_test_server_start_agent():
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
@@ -271,7 +286,7 @@ def main_test_server_start_agent():
 
     time.sleep(0.5)
     print_agent_status(agent_id)
-    server_wait_registered_agent(agent_id)
+    server_wait_registered_agent(agent_id, timeout_second=10)
 
     server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 
@@ -311,11 +326,12 @@ def main_test_2_level2_agents_system():
 
     time.sleep(0.5)
     print_agent_status(agent_id)
-    server_wait_registered_agent(agent_id)
+    server_wait_registered_agent(agent_id, timeout_second=100)
+    # server_wait_registered_agent(agent_id, timeout_second=100)
 
     server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 
-    print_agent_status(agent_id)
+    # print_agent_status(agent_id)
 
 if __name__ == "__main__":
     # main_test_server_start_agent()
