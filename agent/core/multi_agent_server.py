@@ -34,7 +34,7 @@ def server_start_and_register_agent(
     agent_config:Config,
     tool_names:List[str]
 )->str:     # 返回agent_id
-    agent_id = str(uuid4())
+    # agent_id = str(uuid4())
 
     # multi_agent_server和tool_agent同步管理的信息
     agent_status = Agent_Status()
@@ -49,6 +49,7 @@ def server_start_and_register_agent(
         agent_status_ref=agent_status,
         agent_stream_queue_ref=agent_stream_queue
     )
+    agent_id = agent.agent_id
 
     def _run_agent_thread():
         agent.init()
@@ -88,6 +89,12 @@ def print_agent_status(agent_id):
         dyellow(f'{"agent stream tool_rtn_data:":<30}({agent_stream_queue.tool_rtn_data})')
         dblue(f'------------------------/agent started(agent_id="{agent_id}")-------------------------------')
 
+# 对agent进行cancel操作
+def server_cancel_agent(agent_id):
+    agent_data = g_registered_agents_dict[agent_id]
+    agent_data.agent_obj.set_cancel()
+    dyellow(f'agent正在cancel中...(agent_id: "{agent_id}")')
+
 # server等待一个agent的future到done
 def server_wait_registered_agent(agent_id):
     agent_data = g_registered_agents_dict[agent_id]
@@ -99,9 +106,14 @@ def server_wait_registered_agent(agent_id):
     #     print("任务超时，Future 继续跑，但我不等了")
 
     # future.result(timeout=5)
+    i=0
     while not future.done():
         # print("还没好，再等⏳")
         time.sleep(0.5)
+        i += 1
+        if i>5:
+            server_cancel_agent(agent_id)
+            break
 
     dblue(f'agent任务执行完毕(agent_id="{agent_id}").')
 
@@ -127,6 +139,7 @@ def main_test_server_start_agent():
     time.sleep(0.5)
     print_agent_status(agent_id)
     server_wait_registered_agent(agent_id)
+
     print_agent_status(agent_id)
 
 if __name__ == "__main__":

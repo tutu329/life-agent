@@ -70,6 +70,16 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.agent_status_ref.started = True
         self.agent_stream_queue_ref.output = dyellow
 
+    def set_cancel(self):
+        self.agent_status_ref.canceling = True
+
+    def set_canceled(self):
+        self.agent_status_ref.canceled = True
+        dyellow(f'agent已经完成cancel.(agent_id: "{self.agent_id}")')
+
+    def is_canceling(self):
+        return self.agent_status_ref.canceling
+
     # Tool_Agent方法
     def __init__(self,
                  tool_classes,
@@ -329,15 +339,19 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         dblue(f'config.Agent.MAX_TRIES = {in_max_retry}')
         for i in range(in_max_retry):
+            if self.is_canceling(): break
+
             # 1、思考
             answer_this_turn = self.thinking()
             # dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
             # if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
             #     self._parse_final_answer(answer_this_turn)
             #     return True
+            if self.is_canceling(): break
 
             # 2、行动
             action_result = self.action(in_answer=answer_this_turn)
+            if self.is_canceling(): break
 
             # 如输出[最终答复]且无tool，则表明任务完成，正常退出
             dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
@@ -357,9 +371,13 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
             # 3、观察
             self.observation(in_action_result=action_result)
+            if self.is_canceling(): break
+
             dred(f'-------------tool_just_outputed to "False"----------------------')
             self.tool_paras_just_outputed = False   # 防止正常[最终答复]环节时，都无法退出(用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。)
 
+        if self.is_canceling():
+            self.set_canceled()
 
         self.final_answer = '未能成功答复，请重试。'
         return False
@@ -371,6 +389,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # stream输出
         str_last_turn = ''
         for chunk in gen:
+            if self.is_canceling(): break
+
             chunk = chunk[2]
 
             thoughts +=chunk
@@ -454,6 +474,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # thoughts = ''
 
         answer_this_turn = self._thoughts_stream_output(gen)
+        if self.is_canceling():
+            self.agent_tools_description_and_full_history += '\n<用户中断>用户中断了执行。</用户中断>'
+            return '<用户中断>用户中断了执行。</用户中断>'
+
         # dyellow('-----------------------------------thinking answer------------------------------------')
         # dyellow(answer_this_turn)
         # dyellow('----------------------------------/thinking answer------------------------------------')
