@@ -94,7 +94,6 @@ def server_continue_agent(agent_id, query):
     # 更新线程的future
     agent_data.agent_future = future
 
-
 def print_agent_status(agent_id):
     if g_registered_agents_dict.get(agent_id):
         agent_status = g_registered_agents_dict[agent_id].agent_status
