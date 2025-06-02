@@ -43,7 +43,6 @@ def server_start_and_register_agent(
     # 初始化tool_agent
     class_list = get_tools_class(tool_names)
     agent = Tool_Agent(
-        query='当前目录下有哪些文件',
         tool_classes=class_list,
         agent_config=agent_config,
         agent_status_ref=agent_status,
@@ -53,7 +52,7 @@ def server_start_and_register_agent(
 
     def _run_agent_thread():
         agent.init()
-        success = agent.run()
+        success = agent.run(query=query)
 
     # thread = Thread(target=_run_agent_thread)
     # thread.start()
@@ -76,6 +75,20 @@ def server_start_and_register_agent(
 
     return agent_id
 
+def server_continue_agent(agent_id, query):
+    agent_data = g_registered_agents_dict[agent_id]
+    agent = agent_data.agent_obj
+
+    def _run_agent_thread():
+        agent.unset_cancel()
+        success = agent.run(query=query)
+
+    future = g_thread_pool_executor.submit(_run_agent_thread)
+
+    # 更新线程的future
+    agent_data.agent_future = future
+
+
 def print_agent_status(agent_id):
     if g_registered_agents_dict.get(agent_id):
         agent_status = g_registered_agents_dict[agent_id].agent_status
@@ -94,6 +107,18 @@ def server_cancel_agent(agent_id):
     agent_data = g_registered_agents_dict[agent_id]
     agent_data.agent_obj.set_cancel()
     dyellow(f'agent正在cancel中...(agent_id: "{agent_id}")')
+
+# # 对agent进行pause操作
+# def server_pause_agent(agent_id):
+#     agent_data = g_registered_agents_dict[agent_id]
+#     agent_data.agent_obj.set_pause()
+#     dyellow(f'agent已经paused...(agent_id: "{agent_id}")')
+#
+# # 对agent进行un-pause操作
+# def server_unpause_agent(agent_id):
+#     agent_data = g_registered_agents_dict[agent_id]
+#     agent_data.agent_obj.unset_pause()
+#     dyellow(f'agent已经取消paused...(agent_id: "{agent_id}")')
 
 # server等待一个agent的future到done
 def server_wait_registered_agent(agent_id):
@@ -118,8 +143,8 @@ def server_wait_registered_agent(agent_id):
     dblue(f'agent任务执行完毕(agent_id="{agent_id}").')
 
     # 此时可以考虑删除agent_id对应的注册数据
-    del g_registered_agents_dict[agent_id]
-    dblue(f'agent实例已经删除(agent_id="{agent_id}").')
+    # del g_registered_agents_dict[agent_id]
+    # dblue(f'agent实例已经删除(agent_id="{agent_id}").')
 
 # server返回一个agent的数据
 def server_get_registered_agent_data(agent_id):
@@ -132,13 +157,15 @@ def main_test_server_start_agent():
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         model_id='deepseek-chat'
     )
-    query='当前目录下有哪些文件'
+    query='我叫土土，当前目录下有哪些文件'
 
     agent_id = server_start_and_register_agent(query=query, agent_config=config, tool_names=tool_names)
 
     time.sleep(0.5)
     print_agent_status(agent_id)
     server_wait_registered_agent(agent_id)
+
+    server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 
     print_agent_status(agent_id)
 

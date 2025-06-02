@@ -70,8 +70,21 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.agent_status_ref.started = True
         self.agent_stream_queue_ref.output = dyellow
 
+    # def set_pause(self):
+    #     self.agent_status_ref.paused = True
+    #
+    # def unset_pause(self):
+    #     self.agent_status_ref.paused = False
+    #
+    # def is_paused(self):
+    #     return self.agent_status_ref.paused
+
     def set_cancel(self):
         self.agent_status_ref.canceling = True
+
+    def unset_cancel(self):
+        self.agent_status_ref.canceling = False
+        self.agent_status_ref.canceled = False
 
     def set_canceled(self):
         self.agent_status_ref.canceled = True

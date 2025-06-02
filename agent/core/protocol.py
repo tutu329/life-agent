@@ -3,10 +3,14 @@ from pydantic import BaseModel, Field, ConfigDict
 from queue import Queue
 
 class Agent_Status(BaseModel):
-    started:bool    = False
-    canceling:bool  = False
-    canceled:bool   = False
-    finished:bool   = False
+    started     :bool = False
+
+    canceling   :bool = False
+    canceled    :bool = False
+
+    # paused      :bool = False     # pause似乎不需要，cancel机制即可
+
+    finished    :bool = False
 
 class Agent_Stream_Queue(BaseModel):
     output          :Queue= Field(default_factory=Queue)
