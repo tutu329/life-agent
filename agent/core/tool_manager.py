@@ -19,7 +19,7 @@ class Registered_Tool_Data(BaseModel):
 # 全局存储tools的注册( tool_id <--> Tool_Data )
 g_registered_tools_dict: Dict[str, Registered_Tool_Data] = {}
 
-# server用的tool注册管理，tool_name相当于id
+# server用的tool注册管理，tool_name相当于id(server启动时调用)
 def server_register_all_tool():
     all_tools_data_list = _get_all_tools_data()
 
@@ -58,6 +58,13 @@ def print_all_registered_tools():
 
 def server_get_tool_data_by_id(tool_id):
     return g_registered_tools_dict[tool_id]
+
+# client第一步：获取所有已注册tool
+def client_get_all_registered_tool_data_list():
+    data_list = []
+    for k,v in g_registered_tools_dict.items():
+        data_list.append(v)
+    return data_list
 
 # client用的tool注册管理，必须通过server生成的tool_id唯一化
 def client_register_fastapi_tool(
@@ -200,7 +207,7 @@ def _extract_tool_info_from_file(file_path: str, module_name: str) -> Dict[str, 
 
     return None
 
-def _get_tools_class(tool_names):
+def get_tools_class(tool_names):
     all_tools = _get_all_tools_data()
 
     tools_class_list = []
@@ -240,7 +247,7 @@ def main_test_agent():
     from agent.core.tool_agent import Tool_Agent
     # tool_names = ['Folder_Tool']
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
-    class_list = _get_tools_class(tool_names)
+    class_list = get_tools_class(tool_names)
     print(class_list)
 
     tools = class_list
@@ -263,10 +270,22 @@ def main_test_agent():
 
 def main_test_server_start():
     from pprint import pprint
+    from agent.core.tool_agent import client_run_agent
     server_register_all_tool()
-    print('---------------------g_registered_tools_dict-----------------------')
-    pprint(g_registered_tools_dict)
-    print('--------------------/g_registered_tools_dict-----------------------')
+
+    tool_data_list = client_get_all_registered_tool_data_list()
+
+    pprint(tool_data_list)
+
+    tool_names = ['Human_Console_Tool', 'Folder_Tool']
+    config = Config(
+        base_url='https://api.deepseek.com/v1',
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        model_id='deepseek-chat'
+    )
+    query='当前目录下有哪些文件'
+    client_run_agent(query=query, agent_config=config, tool_names=tool_names)
+
 
 # 使用示例
 if __name__ == "__main__":

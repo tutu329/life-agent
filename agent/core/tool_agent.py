@@ -18,11 +18,15 @@ from agent.core.agent_config import Config
 from utils.extract import extract_tool_dict
 from uuid import uuid4
 
+from typing import List, Dict, Any, Type
+
+
 from tools.llm.api_client import LLM_Client
 from agent.core.base_tool import PROMPT_REACT
 from agent.core.base_tool import Base_Tool
 from agent.core.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 from agent.core.protocol import Action_Result
+from agent.core.tool_manager import get_tools_class
 
 from agent.experience.agent_experience import Agent_Experience
 
@@ -562,6 +566,17 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         # print(f'============================prompt start============================\n')
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
+
+# client第二步：调用某些tool组合的agent
+def client_run_agent(query:str, agent_config:Config, tool_names:List[str]):
+    class_list = get_tools_class(tool_names)
+    agent = Tool_Agent(
+        query='当前目录下有哪些文件',
+        tool_classes=class_list,
+        agent_config=agent_config
+    )
+    agent.init()
+    success = agent.run()
 
 def main():
     from agent.tools.search_tool import Search_Tool
