@@ -2,31 +2,87 @@ import os
 import importlib.util
 import inspect
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Type
 from pydantic import BaseModel
 from uuid import uuid4
 
+from agent.core.agent_config import Config
 from config import dred,dgreen,dblue,dcyan,dyellow
 
-class Tool_Data(BaseModel):
+class Registered_Tool_Data(BaseModel):
+    tool_id: str
     name: str
     description: str
+    parameters: List[Dict[str, str]]
+    tool_class: Type     # tool类对象（非实例）
 
 # 全局存储tools的注册( tool_id <--> Tool_Data )
-g_tools_dict: Dict[str, Tool_Data] = {}
+g_registered_tools_dict: Dict[str, Registered_Tool_Data] = {}
 
-# tool注册管理
-def register_tool(tool_name):
+# server用的tool注册管理，tool_name相当于id
+def server_register_all_tool():
+    all_tools_data_list = _get_all_tools_data()
+
+    for tool_data in all_tools_data_list:
+        tool_class = tool_data['tool_class']
+        if isinstance(tool_class, type):
+            # 如果tool_class是一个class
+            tool_instance = tool_class()
+
+            # 生成全局唯一的tool_id
+            tool_id = str(uuid4())
+
+            # 查找tool
+            tool_data = Registered_Tool_Data(
+                tool_id=tool_id,
+                name=tool_data['name'],
+                description=tool_data['description'],
+                parameters=tool_data['parameters'],
+                tool_class=tool_class,
+            )
+
+            # server端注册tool
+            g_registered_tools_dict[tool_id] = tool_data
+
+    print_all_registered_tools()
+    return g_registered_tools_dict
+
+def print_all_registered_tools():
+    print('---------------------g_registered_tools_dict-----------------------')
+    for k,v in g_registered_tools_dict.items():
+        print(f'tool_id: {v.tool_id}', end=' ')
+        print(f'name: {v.name}')
+        # print(f'description: {v.description}', end=' \t')
+        # print(f'tool_class: {v.tool_class}')
+    print('--------------------/g_registered_tools_dict-----------------------')
+
+def server_get_tool_data_by_id(tool_id):
+    return g_registered_tools_dict[tool_id]
+
+# client用的tool注册管理，必须通过server生成的tool_id唯一化
+def client_register_fastapi_tool(
+    name,           # tool的name
+    description,    # tool的description
+    parameters,     # tool的parameters
+    fastapi_url,    # tool的fastapi的url地址
+)->str:                     # 返回：str(uuid4())
     tool_id = str(uuid4())
 
-    # 查找tool
-    tool_data = Tool_Data()
+    return tool_id
 
-    #
-    g_tools_dict[tool_id] = tool_data
+# client用的tool注册管理，必须通过server生成的tool_id唯一化
+def client_register_agent_as_tool(
+    agent_config:Config,    # 该agent的base_url, api_key, model_id等信息
+    tools_name_list,        # 该agent所需tool的name_list
+    as_tool_name,           # 该agent作为tool的name
+    as_tool_description,    # 该agent作为tool的description
+)->str:                     # 返回：str(uuid4())
+    tool_id = str(uuid4())
 
+    return tool_id
 
-def get_all_tools() -> List[Dict[str, Any]]:
+# server启动后的第一步：从tools文件夹获取所有可用的tools（后续第二步，才是将所有tool注册，并获取对应tool_id）
+def _get_all_tools_data() -> List[Dict[str, Any]]:
     """
     获取 tools 文件夹下所有 py 文件里的 tool 信息
 
@@ -144,8 +200,8 @@ def _extract_tool_info_from_file(file_path: str, module_name: str) -> Dict[str, 
 
     return None
 
-def get_tools_class(tool_names):
-    all_tools = get_all_tools()
+def _get_tools_class(tool_names):
+    all_tools = _get_all_tools_data()
 
     tools_class_list = []
     for tool_name in tool_names:
@@ -163,7 +219,7 @@ def get_tools_class(tool_names):
 def main_test_get_all_tools():
     from pprint import pprint
     # 获取所有工具信息
-    all_tools = get_all_tools()
+    all_tools = _get_all_tools_data()
 
     print(f"找到 {len(all_tools)} 个工具:")
     print(f'----------------------------all_tools info----------------------------\n')
@@ -184,7 +240,7 @@ def main_test_agent():
     from agent.core.tool_agent import Tool_Agent
     # tool_names = ['Folder_Tool']
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
-    class_list = get_tools_class(tool_names)
+    class_list = _get_tools_class(tool_names)
     print(class_list)
 
     tools = class_list
@@ -205,8 +261,15 @@ def main_test_agent():
     agent.init()
     success = agent.run()
 
+def main_test_server_start():
+    from pprint import pprint
+    server_register_all_tool()
+    print('---------------------g_registered_tools_dict-----------------------')
+    pprint(g_registered_tools_dict)
+    print('--------------------/g_registered_tools_dict-----------------------')
 
 # 使用示例
 if __name__ == "__main__":
     # main_test_get_all_tools()
-    main_test_agent()
+    # main_test_agent()
+    main_test_server_start()
