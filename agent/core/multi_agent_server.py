@@ -186,7 +186,7 @@ def _server_create_and_registered_agent_as_tool(
 
 # 多层agent体系的关键(前后端系统)
 # server创建多层agent
-def server_start_and_register_agent():
+def server_start_and_register_multi_agents_system():
     pass
 
 def main_test_server_start_agent():
