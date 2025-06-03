@@ -311,6 +311,11 @@ class Tool_Agent(Agent_Base, Base_Tool):
             self.tool_descs += '工具描述: ' + tool.description + '\n'
             self.tool_descs += '工具参数: [\n'
 
+            dred(f'-----------------------tool.parameters(tool.name="{tool.name}")---------------------------')
+            dblue(f'tool obj: "{tool}"')
+            if hasattr(tool, 'parameters'):
+                dred(tool.parameters)
+            dred(f'----------------------/tool.parameters(tool.name="{tool.name}")---------------------------')
             if isinstance(tool, type):
                 # 如果tool是Folder_Tool这样的class，有多个参数
                 for para in tool.parameters:
@@ -369,75 +374,81 @@ class Tool_Agent(Agent_Base, Base_Tool):
             query=None,
             in_max_retry=config.Agent.MAX_TRIES
             ):
-        self.current_query = query or self.query
+        try:
+            self.current_query = query or self.query
 
-        # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
-        if self.description is None and self.exp:
-            self.current_exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
-            dyellow(f'----------------------agent查询经验(agent_id="{self.agent_id}")--------------------------------')
-            dyellow(f'用户query: {self.current_query!r}')
-            dyellow(f'根据query查询到的关联经验: {self.current_exp_str!r}')
-            dyellow(f'---------------------/agent查询经验(agent_id="{self.agent_id}")--------------------------------')
-        # ----------------------/根据query获取experience-------------------------------------------------
+            # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
+            if self.description is None and self.exp:
+                self.current_exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
+                dyellow(f'----------------------agent查询经验(agent_id="{self.agent_id}")--------------------------------')
+                dyellow(f'用户query: {self.current_query!r}')
+                dyellow(f'根据query查询到的关联经验: {self.current_exp_str!r}')
+                dyellow(f'---------------------/agent查询经验(agent_id="{self.agent_id}")--------------------------------')
+            # ----------------------/根据query获取experience-------------------------------------------------
 
-        if self.first_query or (not self.has_history):
-            # 第一次query 或者 没有history
-            self.first_query = False
+            if self.first_query or (not self.has_history):
+                # 第一次query 或者 没有history
+                self.first_query = False
 
-            self.agent_tools_description_and_full_history = PROMPT_REACT.format(
-                tool_descs=self.tool_descs,
-                tool_names=self.tool_names,
-                query=self.current_query,
-                user_experience=self.current_exp_str,
-            )
-        else:
-            # 有history，且不是first query
-            self.agent_tools_description_and_full_history += f'\n<用户问题>\n{self.current_query}\n</用户问题>\n'
+                self.agent_tools_description_and_full_history = PROMPT_REACT.format(
+                    tool_descs=self.tool_descs,
+                    tool_names=self.tool_names,
+                    query=self.current_query,
+                    user_experience=self.current_exp_str,
+                )
+            else:
+                # 有history，且不是first query
+                self.agent_tools_description_and_full_history += f'\n<用户问题>\n{self.current_query}\n</用户问题>\n'
 
-        dblue(f'config.Agent.MAX_TRIES = {in_max_retry}')
-        for i in range(in_max_retry):
-            if self.is_canceling(): break
+            dblue(f'config.Agent.MAX_TRIES = {in_max_retry}')
+            for i in range(in_max_retry):
+                if self.is_canceling(): break
 
-            # 1、思考
-            answer_this_turn = self.thinking()
-            # dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
-            # if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
-            #     self._parse_final_answer(answer_this_turn)
-            #     return True
-            if self.is_canceling(): break
+                # 1、思考
+                answer_this_turn = self.thinking()
+                # dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
+                # if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
+                #     self._parse_final_answer(answer_this_turn)
+                #     return True
+                if self.is_canceling(): break
 
-            # 2、行动
-            action_result = self.action(in_answer=answer_this_turn)
-            if self.is_canceling(): break
+                # 2、行动
+                action_result = self.action(in_answer=answer_this_turn)
+                if self.is_canceling(): break
 
-            # 如输出[最终答复]且无tool，则表明任务完成，正常退出
-            dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
-            if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
-                self.save_agent_tools_description_and_full_history_to_file(answer_this_turn)
-                self._parse_final_answer(answer_this_turn)
+                # 如输出[最终答复]且无tool，则表明任务完成，正常退出
+                dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
+                if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
+                    self.save_agent_tools_description_and_full_history_to_file(answer_this_turn)
+                    self._parse_final_answer(answer_this_turn)
 
-                # --------------总结经验(agent_as_tool时不总结经验)--------------
-                if self.description is None and self.exp:
-                    dyellow(f'----------------------本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
-                    self.exp.summarize_agent_history(agent_history_string=self.agent_tools_description_and_full_history)
-                    dyellow(f'"{self.exp.get_all_exp_string()}"')
-                    dyellow(f'---------------------/本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
-                # -------------/总结经验------------------------------------------
-                dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
-                return True
+                    # --------------总结经验(agent_as_tool时不总结经验)--------------
+                    if self.description is None and self.exp:
+                        dyellow(f'----------------------本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
+                        self.exp.summarize_agent_history(agent_history_string=self.agent_tools_description_and_full_history)
+                        dyellow(f'"{self.exp.get_all_exp_string()}"')
+                        dyellow(f'---------------------/本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
+                    # -------------/总结经验------------------------------------------
+                    dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
+                    return True
 
-            # 3、观察
-            self.observation(in_action_result=action_result)
-            if self.is_canceling(): break
+                # 3、观察
+                self.observation(in_action_result=action_result)
+                if self.is_canceling(): break
 
-            dred(f'-------------tool_just_outputed to "False"----------------------')
-            self.tool_paras_just_outputed = False   # 防止正常[最终答复]环节时，都无法退出(用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。)
+                dred(f'-------------tool_just_outputed to "False"----------------------')
+                self.tool_paras_just_outputed = False   # 防止正常[最终答复]环节时，都无法退出(用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。)
 
-        if self.is_canceling():
-            self.set_canceled()
+            if self.is_canceling():
+                self.set_canceled()
 
-        self.final_answer = '未能成功答复，请重试。'
-        return False
+            self.final_answer = '未能成功答复，请重试。'
+            return False
+        except Exception as e:
+            dred('-------------------------------Tool_Agent.run()报错------------------------------------')
+            dred(f'{e!r}')
+            dred('------------------------------/Tool_Agent.run()报错------------------------------------')
+            return False
 
     def _thoughts_stream_output(self, gen):
         thoughts = ''
@@ -555,164 +566,176 @@ class Tool_Agent(Agent_Base, Base_Tool):
         return answer_this_turn
 
     def action(self, in_answer):
-        dgreen(f'action(turn {self.turns_num})'.center(80, '='))
-        # --------------------------- call tool ---------------------------
-        action_result = ''
-
-        # print(f'in_answer1: {in_answer}')
-        # 去掉'[观察]'及后续内容
-        in_answer = in_answer.split('[观察]')
-        if len(in_answer)>1:
-            in_answer.pop()
-        in_answer = ''.join(in_answer)
-        # print(f'in_answer2: {in_answer}')
-        tool_name = Base_Tool.extract_tool_name_from_answer(in_answer)
-        if isinstance(tool_name, list) and (self.__finished_keyword in in_answer):
-            # 注意：LLM有时候输出[最终答复]时，仍会调用工具，此时调用工具是正确做法。
-            # 因此这里，要解决有[最终答复]、没有工具(即工具调用报错)的问题
-            action_result = in_answer
-            dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
-            return action_result
-        elif isinstance(tool_name, str):
-            # 返回是string，正常
-            # print(f'=============================thoughts=============================')
-            # print(in_thoughts)
-            # print(f'-----------------------------thoughts-----------------------------')
-            dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
-
-            if self.registered_tool_instances_dict.get(tool_name):
-                dred(f'-------------tool_just_outputed changed to "True"----------------------')
-                self.tool_paras_just_outputed = True    # 用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
-
-                # # 如果有tool输出，则去掉[最终答复]及后续内容，因为tool还没调用，此时最终输出肯定不对
-                # in_answer = in_answer.split(f'[{self.__finished_keyword}]')
-                # if len(in_answer) > 1:
-                #     in_answer.pop()
-                # in_answer = ''.join(in_answer)
-
-                # 解析tool_paras
-                # dict_string = legacy_extract_dict_string(in_answer)
-                # dict = json5.loads(dict_string)
-                dict = extract_tool_dict(in_answer)
-                callback_tool_paras_dict = dict['tool_parameters']
-
-                # 调用工具前，创建tool_ctx(生成tool_task_id，并用于存放后续可能的dataset_info)
-                tool_ctx = create_tool_ctx()
-
-                # 获取上一个工具的调用结果tool_context
-                last_tool_ctx = None
-                if self.last_tool_task_id is not None:
-                    last_tool_ctx = get_tool_ctx(self.last_tool_task_id)
-
-                # 调用工具
-                from pprint import pprint
-                print('---------------------------------agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
-                pprint(self.registered_tool_instances_dict)
-                print('--------------------------------/agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
-                # rtn = self.registered_tool_instances_dict[tool_name].call(
-                #     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
-                #     callback_agent_config=self.agent_config,            # 将agent配置传给tool
-                #     callback_agent_id=self.agent_id,                    # 将agent_id传给tool
-                #     callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
-                #     callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
-                # )
-
-                # ---------------------线程化、可cancel，主要针对agent_as_tool、复杂tool等长过程---------------------
-                rtn = None
-                tool_class_or_agent = self.registered_tool_instances_dict[tool_name]
-                def _run_tool_call_thread():
-                    dred(f'-------------------------tool线程启动(agent_id="{self.agent_id}")------------------------------')
-                    dred(f'tool_name: {tool_name!r}')
-                    dred(f'callback_tool_paras_dict: {callback_tool_paras_dict!r}')
-                    dred(f'self.agent_config: {self.agent_config!r}')
-                    dred(f'self.agent_id: {self.agent_id!r}')
-                    dred(f'last_tool_ctx: {last_tool_ctx!r}')
-                    dred(f'self.current_exp_str: {self.current_exp_str!r}')
-                    dred(f'------------------------/tool线程启动(agent_id="{self.agent_id}")------------------------------')
-                    # nonlocal rtn
-                    rtn = tool_class_or_agent.call(
-                        callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
-                        callback_agent_config=self.agent_config,            # 将agent配置传给tool
-                        callback_agent_id=self.agent_id,                    # 将agent_id传给tool
-                        callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
-                        callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
-                    )
-                    # dred(f'--------------------------tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
-                    # dred(f'rtn: {rtn!r}')
-                    # dred(f'-------------------------/tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
-
-                    # 这里返回rtn很关键，不然就要用nonlocal rtn才行，局域内的rtn变量并不是外层rtn，这个一定要注意
-                    # 然后后续用rtn = future.result()获取结果
-                    return rtn
-
-                future = g_thread_pool_executor.submit(_run_tool_call_thread)
-
-                # wait线程，直到结束或cancel信息
-                while not future.done():
-                    if self.is_canceling():
-                        dyellow('--------------------------工具调用成功cancel----------------------------------')
-                        # upper agent
-                        dyellow(f'upper agent_id="{self.agent_id}"')
-
-                        #lower agent
-                        if not isinstance(tool_class_or_agent, type):
-                            # 如果是agent instance，而不是Tool Class
-                            # dred(f'self obj: "{self}", agent_id="{self.agent_id}"')
-                            # dred(f'tool_class_or_agent obj: "{tool_class_or_agent}", agent_id="{tool_class_or_agent.agent_id}"')
-                            tool_class_or_agent.set_cancel()
-                            dyellow(f'lower agent_as_tool agent_id="{tool_class_or_agent.agent_id}"')
-
-                        dyellow('-------------------------/工具调用成功cancel----------------------------------')
-                        break
-
-                    time.sleep(0.5)
-                # --------------------/线程化、可cancel，主要针对agent_as_tool、复杂tool等长过程---------------------
-                # dred(f'--------------------------tool线程运行完毕1(agent_id="{self.agent_id}")------------------------------')
-                rtn = future.result()
-                # dred(f'--------------------------tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
-                # dred(f'rtn = {rtn!r}')
-                # dred(f'-------------------------/tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
-
-
-                # 更新tool的上下文context
-                update_tool_context_info(
-                    tool_ctx,
-                    # action_result=rtn.result,
-                    data_set_info=rtn.data_set_info
-                )
-
-                # dred(f'--------------------------tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
-
-                # 控制台输出action_result
-                dblue(f'rtn: "{rtn}"')
-                dblue(f'action_result: "{rtn.result}"')
-
-                # dred(f'--------------------------tool线程运行完毕3(agent_id="{self.agent_id}")------------------------------')
-
-                # 更新last_tool_task_id
-                self.last_tool_task_id = tool_ctx.tool_info.tool_task_id
-
-                action_result=rtn.result
-            else:
-                self.status_print('未选择任何工具。')
+        try:
+            dgreen(f'action(turn {self.turns_num})'.center(80, '='))
             # --------------------------- call tool ---------------------------
+            action_result = ''
 
-            self.status_print(f'调用工具的行动结果为: \n{action_result}')
-            self.output_log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
-
-            # dblue(f'action_result(turn {self.turns_num})'.center(80, '='))
-            # dblue(action_result)
-            # dblue(f'/action_result(turn {self.turns_num})'.center(80, '-'))
-
-            dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
-            return action_result
-        elif isinstance(tool_name, list):
-            # 返回了list，是['error', 'error info']这样的结构
-            if tool_name[0]=='error':
-                error_info = tool_name[1]
-                dred(error_info)
-                action_result = error_info
+            # print(f'in_answer1: {in_answer}')
+            # 去掉'[观察]'及后续内容
+            in_answer = in_answer.split('[观察]')
+            if len(in_answer)>1:
+                in_answer.pop()
+            in_answer = ''.join(in_answer)
+            # print(f'in_answer2: {in_answer}')
+            tool_name = Base_Tool.extract_tool_name_from_answer(in_answer)
+            if isinstance(tool_name, list) and (self.__finished_keyword in in_answer):
+                # 注意：LLM有时候输出[最终答复]时，仍会调用工具，此时调用工具是正确做法。
+                # 因此这里，要解决有[最终答复]、没有工具(即工具调用报错)的问题
+                action_result = in_answer
+                dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
                 return action_result
+            elif isinstance(tool_name, str):
+                # 返回是string，正常
+                # print(f'=============================thoughts=============================')
+                # print(in_thoughts)
+                # print(f'-----------------------------thoughts-----------------------------')
+                dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
+
+                if self.registered_tool_instances_dict.get(tool_name):
+                    dred(f'-------------tool_just_outputed changed to "True"----------------------')
+                    self.tool_paras_just_outputed = True    # 用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
+
+                    # # 如果有tool输出，则去掉[最终答复]及后续内容，因为tool还没调用，此时最终输出肯定不对
+                    # in_answer = in_answer.split(f'[{self.__finished_keyword}]')
+                    # if len(in_answer) > 1:
+                    #     in_answer.pop()
+                    # in_answer = ''.join(in_answer)
+
+                    # 解析tool_paras
+                    # dict_string = legacy_extract_dict_string(in_answer)
+                    # dict = json5.loads(dict_string)
+                    dict = extract_tool_dict(in_answer)
+                    callback_tool_paras_dict = dict['tool_parameters']
+
+                    # 调用工具前，创建tool_ctx(生成tool_task_id，并用于存放后续可能的dataset_info)
+                    tool_ctx = create_tool_ctx()
+
+                    # 获取上一个工具的调用结果tool_context
+                    last_tool_ctx = None
+                    if self.last_tool_task_id is not None:
+                        last_tool_ctx = get_tool_ctx(self.last_tool_task_id)
+
+                    # 调用工具
+                    from pprint import pprint
+                    print('---------------------------------agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
+                    pprint(self.registered_tool_instances_dict)
+                    print('--------------------------------/agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
+                    # rtn = self.registered_tool_instances_dict[tool_name].call(
+                    #     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
+                    #     callback_agent_config=self.agent_config,            # 将agent配置传给tool
+                    #     callback_agent_id=self.agent_id,                    # 将agent_id传给tool
+                    #     callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+                    #     callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
+                    # )
+
+                    # ---------------------线程化、可cancel，主要针对agent_as_tool、复杂tool等长过程---------------------
+                    rtn = None
+                    tool_class_or_agent = self.registered_tool_instances_dict[tool_name]
+                    def _run_tool_call_thread():
+                        dred(f'-------------------------tool线程启动(agent_id="{self.agent_id}")------------------------------')
+                        dred(f'tool_name: {tool_name!r}')
+                        dred(f'callback_tool_paras_dict: {callback_tool_paras_dict!r}')
+                        dred(f'self.agent_config: {self.agent_config!r}')
+                        dred(f'self.agent_id: {self.agent_id!r}')
+                        dred(f'last_tool_ctx: {last_tool_ctx!r}')
+                        dred(f'self.current_exp_str: {self.current_exp_str!r}')
+                        dred(f'------------------------/tool线程启动(agent_id="{self.agent_id}")------------------------------')
+                        # nonlocal rtn
+                        rtn = tool_class_or_agent.call(
+                            callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
+                            callback_agent_config=self.agent_config,            # 将agent配置传给tool
+                            callback_agent_id=self.agent_id,                    # 将agent_id传给tool
+                            callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+                            callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
+                        )
+                        dred(f'--------------------------tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
+                        dred(f'rtn: {rtn!r}')
+                        dred(f'-------------------------/tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
+
+                        # 这里返回rtn很关键，不然就要用nonlocal rtn才行，局域内的rtn变量并不是外层rtn，这个一定要注意
+                        # 然后后续用rtn = future.result()获取结果
+                        return rtn
+
+                    future = g_thread_pool_executor.submit(_run_tool_call_thread)
+
+                    # wait线程，直到结束或cancel信息
+                    while not future.done():
+                        if self.is_canceling():
+                            dyellow('--------------------------工具调用成功cancel----------------------------------')
+                            # upper agent
+                            dyellow(f'upper agent_id="{self.agent_id}"')
+
+                            #lower agent
+                            if not isinstance(tool_class_or_agent, type):
+                                # 如果是agent instance，而不是Tool Class
+                                # dred(f'self obj: "{self}", agent_id="{self.agent_id}"')
+                                # dred(f'tool_class_or_agent obj: "{tool_class_or_agent}", agent_id="{tool_class_or_agent.agent_id}"')
+                                tool_class_or_agent.set_cancel()
+                                dyellow(f'lower agent_as_tool agent_id="{tool_class_or_agent.agent_id}"')
+
+                            dyellow('-------------------------/工具调用成功cancel----------------------------------')
+                            break
+
+                        time.sleep(0.5)
+                    # --------------------/线程化、可cancel，主要针对agent_as_tool、复杂tool等长过程---------------------
+                    dred(f'--------------------------tool线程运行完毕1(agent_id="{self.agent_id}")------------------------------')
+                    rtn = future.result()
+                    dred(f'--------------------------tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
+                    dred(f'rtn = {rtn!r}')
+                    dred(f'-------------------------/tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
+
+                    if isinstance(rtn, Action_Result):
+                        # local返回的是Action_Result对象
+                        pass
+                    else:
+                        # remote返回的是Action_Result对象对应的dict
+                        rtn = Action_Result(**rtn)
+
+                    # 更新tool的上下文context
+                    update_tool_context_info(
+                        tool_ctx,
+                        # action_result=rtn.result,
+                        data_set_info=rtn.data_set_info
+                    )
+
+                    # dred(f'--------------------------tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
+
+                    # 控制台输出action_result
+                    dblue(f'rtn: "{rtn}"')
+                    dblue(f'action_result: "{rtn.result}"')
+
+                    # dred(f'--------------------------tool线程运行完毕3(agent_id="{self.agent_id}")------------------------------')
+
+                    # 更新last_tool_task_id
+                    self.last_tool_task_id = tool_ctx.tool_info.tool_task_id
+
+                    action_result=rtn.result
+                else:
+                    self.status_print('未选择任何工具。')
+                # --------------------------- call tool ---------------------------
+
+                self.status_print(f'调用工具的行动结果为: \n{action_result}')
+                self.output_log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
+
+                # dblue(f'action_result(turn {self.turns_num})'.center(80, '='))
+                # dblue(action_result)
+                # dblue(f'/action_result(turn {self.turns_num})'.center(80, '-'))
+
+                dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
+                return action_result
+            elif isinstance(tool_name, list):
+                # 返回了list，是['error', 'error info']这样的结构
+                if tool_name[0]=='error':
+                    error_info = tool_name[1]
+                    dred(error_info)
+                    action_result = error_info
+                    return action_result
+        except Exception as e:
+            dred('-------------------------------Tool_Agent.action()报错------------------------------------')
+            dred(f'{e!r}')
+            dred('------------------------------/Tool_Agent.action()报错------------------------------------')
+            return None
 
     def observation(self, in_action_result=''):
         self.agent_tools_description_and_full_history += '\n' + f'[观察]{in_action_result}'

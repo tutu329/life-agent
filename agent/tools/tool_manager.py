@@ -373,7 +373,14 @@ def main_test_register_remote_tool_dynamically():
     reg_data = Registered_Remote_Tool_Data(
         name="Remote_Folder_Tool",
         description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
-        parameters=[{"name": "file_path", "type": "string"}],
+        parameters=[
+            {
+                "name": "file_path",
+                "type": "string",
+                "description": "本参数为文件夹所在的路径",
+                "required": "True",
+            }
+        ],
         endpoint_url="http://localhost:5120/remote_tool_call",
         method="POST",
         timeout=15,

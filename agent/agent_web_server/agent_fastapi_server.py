@@ -16,6 +16,8 @@ from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Config
 from agent.core.tool_agent import Tool_Agent
 from contextlib import asynccontextmanager
+from agent.core.legacy_protocol import Action_Result
+from dataclasses import dataclass, field, asdict
 
 # tools
 from agent.tools.folder_tool import Folder_Tool
@@ -146,11 +148,13 @@ class Remote_Tool_Request(BaseModel):
 @app.post("/remote_tool_call")
 async def remote_tool_call(request: Remote_Tool_Request):
     result_str = safe_encode(get_folder_all_items_string(directory=request.file_path))
-    return {
-        "success": False,
-        "file_path": request.file_path,
-        "result_str": result_str
-    }
+    action_result = Action_Result(result=result_str, data_set_info=None)
+    return action_result
+    # return {
+    #     "success": False,
+    #     "file_path": request.file_path,
+    #     "result_str": result_str
+    # }
 # ----------------------------/用于remote_tool_call测试--------------------------------
 
 if __name__ == "__main__":

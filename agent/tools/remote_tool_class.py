@@ -29,11 +29,23 @@ def generate_tool_class_dynamically(
     """
 
     # ---------- classmethod 版本的 call ----------
-    def _call(cls, para_dict: Dict[str, Any]) -> Any:         # noqa: D401
+    # def _call(cls, para_dict: Dict[str, Any]) -> Any:         # noqa: D401
+    def _call(
+        self,
+        callback_tool_paras_dict,
+        callback_agent_config,
+        callback_agent_id,
+        callback_last_tool_ctx,
+        callback_father_agent_exp,
+    ) -> Any:         # noqa: D401
         """
         向远程 FastAPI 发送请求并返回 JSON（classmethod 形式）
         """
+        para_dict = callback_tool_paras_dict
         try:
+            print(f'--------------------------_call()1-----------------------------------')
+            print(f'{para_dict}')
+            print(f'-------------------------/_call()1-----------------------------------')
             with httpx.Client(timeout=timeout, follow_redirects=True) as client:
                 if method.upper() == "POST":
                     resp = client.post(endpoint_url, json=para_dict, headers=headers)
@@ -45,7 +57,10 @@ def generate_tool_class_dynamically(
                 resp.raise_for_status()
                 return resp.json()          # FastAPI 默认 JSON
         except Exception as exc:
-            raise RuntimeError(f"[{cls.name}] remote call failed: {exc}") from exc
+            # 这里可以做统一的日志或错误包装
+            raise RuntimeError(
+                f"[{self.name}] remote call failed: {exc}"
+            ) from exc
 
     # ---------- 组装类属性 ----------
     attrs = {
@@ -61,13 +76,14 @@ def generate_tool_class_dynamically(
         "parameters": parameters,
 
         # classmethod; 不能直接写 "_call"，要用 `classmethod()` 包装
-        "call": classmethod(_call),
+        "call": _call,
+        # "call": classmethod(_call),
 
         "__doc__": f"Dynamically generated tool that proxies {endpoint_url}",
     }
 
     # ---------- 动态造类 ----------
-    DynamicToolClass = type(f"{name.replace(' ', '')}Tool", (Remote_Tool_Base,), attrs)
+    DynamicToolClass = type(name, (Remote_Tool_Base,), attrs)
 
     return DynamicToolClass
 
@@ -83,9 +99,16 @@ def main():
     )
 
     # 直接用类名调用 classmethod
-    result = Remote_Folder_Tool.call({"file_path": "./"})
+    result = Remote_Folder_Tool().call(
+        callback_tool_paras_dict={"file_path": "./"},
+        callback_agent_config=None,
+        callback_agent_id=None,
+        callback_last_tool_ctx=None,
+        callback_father_agent_exp=None,
+    )
+    # result = Remote_Folder_Tool().call({"file_path": "./"})
     print(f"远端返回：{result!r}")
-    print(result['result_str'])
+    # print(result['result_str'])
 
 # ============= 示范用法 =============
 if __name__ == "__main__":

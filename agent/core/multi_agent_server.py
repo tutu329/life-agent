@@ -141,6 +141,7 @@ def __server_wait_registered_agent(agent_id, timeout_second=10):
 
     # future.result(timeout=5)
     i=0
+    dred(f'__server_wait_registered_agent() invoked.')
     while not future.done():
         # print("还没好，再等⏳")
         time.sleep(1)
@@ -285,14 +286,14 @@ def main_test_server_start_agent():
     from agent.tools.tool_manager import main_test_register_remote_tool_dynamically
     main_test_register_remote_tool_dynamically()
     tool_names = ['Human_Console_Tool', 'Remote_Folder_Tool']
-
     # tool_names = ['Human_Console_Tool', 'Folder_Tool']
     config = Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         model_id='deepseek-chat'
     )
-    query='我叫土土，当前目录下有哪些文件'
+    query='我叫土土，帮我查询下远程服务器下/home/tutu/models/下有哪些文件'
+    # query='我叫土土，当前目录下有哪些文件'
 
     agent_id = server_start_and_register_agent(
         query=query,
@@ -303,7 +304,8 @@ def main_test_server_start_agent():
 
     time.sleep(0.5)
     print_agent_status(agent_id)
-    __server_wait_registered_agent(agent_id, timeout_second=100)
+    # __server_wait_registered_agent(agent_id, timeout_second=30)
+    __server_wait_registered_agent(agent_id, timeout_second=20000000)
 
     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
     #
@@ -344,7 +346,7 @@ def main_test_2_level2_agents_system():
     time.sleep(0.5)
     print_agent_status(agent_id)
     # __server_wait_registered_agent(agent_id, timeout_second=30)
-    __server_wait_registered_agent(agent_id, timeout_second=200)
+    __server_wait_registered_agent(agent_id, timeout_second=20000000)
 
     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 
