@@ -32,7 +32,8 @@ g_thread_pool_executor = ThreadPoolExecutor()
 def server_start_and_register_agent(
     query:str,
     agent_config:Config,
-    tool_names:List[str]
+    tool_names:List[str],
+    exp_json_path:str,
 )->str:     # 返回agent_id
     # agent_id = str(uuid4())
 
@@ -47,7 +48,8 @@ def server_start_and_register_agent(
         tool_classes=class_list,
         agent_config=agent_config,
         agent_status_ref=agent_status,
-        agent_stream_queue_ref=agent_stream_queue
+        agent_stream_queue_ref=agent_stream_queue,
+        tool_agent_experience_json_path=exp_json_path,
     )
     agent_id = agent.agent_id
 
@@ -174,6 +176,7 @@ def _server_create_and_registered_agent_as_tool(
         agent_config=agent_config,
         as_tool_name=as_tool_name,
         as_tool_description=as_tool_description,
+        tool_agent_experience_json_path='',     #agent_as_tool不需要经验，经验由upper agent管理
     ).init()
 
     # 注册agent_as_tool
@@ -190,7 +193,7 @@ def _server_create_and_registered_agent_as_tool(
 # server启动一个2层agent系统的query，并注册
 def server_start_register_2_levels_agents_system(
     query                           :str,
-    upper_agent_dict                :Dict[str, Any],        # {'tool_names':tool_names, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
+    upper_agent_dict                :Dict[str, Any],        # {'tool_names':tool_names, 'exp_json_path':, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
     lower_agents_as_tool_dict_list  :List[Dict[str, Any]],  # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
 ):
     # ----------------构建lower的agents_as_tool----------------
@@ -236,7 +239,8 @@ def server_start_register_2_levels_agents_system(
         tool_classes=tool_class_and_tool_instance_list,     # 这里是[Tool_Class1, Tool_Class2, ... , agent_as_tool1, agent_as_tool2, ...]
         agent_config=upper_agent_dict['agent_config'],
         agent_status_ref=upper_agent_status,
-        agent_stream_queue_ref=upper_agent_stream_queue
+        agent_stream_queue_ref=upper_agent_stream_queue,
+        tool_agent_experience_json_path = upper_agent_dict['exp_json_path'],
     )
     upper_agent_id = upper_agent.agent_id
 
@@ -282,7 +286,12 @@ def main_test_server_start_agent():
     )
     query='我叫土土，当前目录下有哪些文件'
 
-    agent_id = server_start_and_register_agent(query=query, agent_config=config, tool_names=tool_names)
+    agent_id = server_start_and_register_agent(
+        query=query,
+        exp_json_path='agent_started_by_server.json',
+        agent_config=config,
+        tool_names=tool_names
+    )
 
     time.sleep(0.5)
     print_agent_status(agent_id)
@@ -295,7 +304,7 @@ def main_test_server_start_agent():
 def main_test_2_level2_agents_system():
     # query: str,
     # upper_agent_dict: Dict[str, Any],
-    # # {'tool_names':tool_names, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
+    # # {'tool_names':tool_names, 'exp_json_path':exp_json_path, 'agent_config':agent_config}
     # lower_agents_as_tool_dict_list: List[Dict[str, Any]],
     # # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
 
@@ -307,8 +316,8 @@ def main_test_2_level2_agents_system():
     )
     upper_agent_dict = {
         'tool_names':['Human_Console_Tool'],
+        'exp_json_path':'my_2_levels_mas_exp.json',
         'agent_config':config,
-        'tool_agent_experience_json_path':'my_2_levels_mas_exp.json'
     }
     lower_agents_as_tool_dict_list = [
         {

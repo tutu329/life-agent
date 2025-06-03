@@ -64,7 +64,9 @@ class Agent_Experience:
     1. 在初始化时优先尝试从当前目录加载 experience.json；
     2. 若文件不存在则写入一棵默认经验树。
     """
-    def __init__(self, exp_json_file_path, llm:LLM_Client):
+    def __init__(self, exp_json_file_path, llm:LLM_Client, agent_id):
+        self.agent_id = agent_id    # 所属的agent的agent_id
+
         self.exp_file_path = exp_json_file_path
 
         # 根节点固定叫 root，内容留空
@@ -90,9 +92,9 @@ class Agent_Experience:
                 with open(fp, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 self.exp_root = Experience.import_from_json_file(fp)
-                # dyellow(f'----------------------agent经验系统成功初始化------------------------')
-                # dyellow(f"成功载入来自{fp!r}的经验")
-                # dyellow(f'---------------------/agent经验系统成功初始化------------------------')
+                dyellow(f'----------------------agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
+                dyellow(f"成功载入来自{fp!r}的经验")
+                dyellow(f'---------------------/agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
             except Exception as e:
                 dred(f"Agent_Experience._init_exp_from_file()报错：加载 {fp} 失败：{e!r}，改用默认经验树。")
                 self._populate_default_experiences(fp)
@@ -118,9 +120,9 @@ class Agent_Experience:
         # 同时持久化一份模板，方便下次直接读取
         # self.exp_root.export_to_json_file(fp)
 
-        dyellow(f'----------------------agent经验系统成功初始化------------------------')
+        dyellow(f'----------------------agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
         dblue(f'已载入默认经验树。')
-        dyellow(f'---------------------/agent经验系统成功初始化------------------------')
+        dyellow(f'---------------------/agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
 
     def summarize_agent_history(self,
                                 # rendered_experience_tree_string,    # 已有经验树的render后树状string

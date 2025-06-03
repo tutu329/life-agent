@@ -270,11 +270,12 @@ class Tool_Agent(Agent_Base, Base_Tool):
         if self.tool_agent_experience_json_path:
             self.exp = Agent_Experience(
                 exp_json_file_path=self.tool_agent_experience_json_path,
-                llm = self.llm
+                llm = self.llm,
+                agent_id=self.agent_id,
             )
-            dyellow(f'----------------------agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
-            dyellow(f"成功载入来自{self.tool_agent_experience_json_path!r}的经验")
-            dyellow(f'---------------------/agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
+            # dyellow(f'----------------------agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
+            # dyellow(f"成功载入来自{self.tool_agent_experience_json_path!r}的经验")
+            # dyellow(f'---------------------/agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
 
         # 将所有工具转换为{tool_descs}和{tool_names}
         for tool in self.tool_classes:
