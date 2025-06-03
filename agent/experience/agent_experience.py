@@ -90,18 +90,18 @@ class Agent_Experience:
                 with open(fp, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 self.exp_root = Experience.import_from_json_file(fp)
-                dyellow(f"已从 {fp!r} 成功读取经验。")
+                # dyellow(f'----------------------agent经验系统成功初始化------------------------')
+                # dyellow(f"成功载入来自{fp!r}的经验")
+                # dyellow(f'---------------------/agent经验系统成功初始化------------------------')
             except Exception as e:
                 dred(f"Agent_Experience._init_exp_from_file()报错：加载 {fp} 失败：{e!r}，改用默认经验树。")
-                self._populate_default_experiences()
+                self._populate_default_experiences(fp)
         else:
             # 文件不存在，写默认值
-            self._populate_default_experiences()
-            # 同时持久化一份模板，方便下次直接读取
-            self.exp_root.export_to_json_file(fp)
+            self._populate_default_experiences(fp)
 
     # ---------- 新增：默认经验 ----------
-    def _populate_default_experiences(self) -> None:
+    def _populate_default_experiences(self, fp) -> None:
         """
         把题目给出的固定经验写入树。
         """
@@ -114,7 +114,13 @@ class Agent_Experience:
         ]
         for path, summary in defaults:
             self.exp_root.add_node_by_path(path=path, summary=summary)
-        dblue("已载入默认经验树。")
+
+        # 同时持久化一份模板，方便下次直接读取
+        # self.exp_root.export_to_json_file(fp)
+
+        dyellow(f'----------------------agent经验系统成功初始化------------------------')
+        dblue(f'已载入默认经验树。')
+        dyellow(f'---------------------/agent经验系统成功初始化------------------------')
 
     def summarize_agent_history(self,
                                 # rendered_experience_tree_string,    # 已有经验树的render后树状string
@@ -149,10 +155,11 @@ class Agent_Experience:
             dred(f'Experience_Summarizer.summarize_agent_history()增加经验时报错：{e!r}')
             return
 
-        dyellow(f'----------------------目前的经验数据为----------------------\n{self.exp_root.get_tree_all_string()}')
-        dyellow(f'---------------------/目前的经验数据为----------------------')
+        # dyellow(f'----------------------目前的经验数据----------------------')
+        # dyellow(self.exp_root.get_tree_all_string())
+        # dyellow(f'---------------------/目前的经验数据----------------------')
         self.exp_root.export_to_json_file(self.exp_file_path)
-        dblue(f'【经验持久化成功】{self.exp_file_path!r}')
+        dyellow(f'【经验持久化成功】({self.exp_file_path!r})')
 
     # 获取目前的所有经验string
     def get_all_exp_string(self):

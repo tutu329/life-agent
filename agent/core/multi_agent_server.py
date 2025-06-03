@@ -308,7 +308,7 @@ def main_test_2_level2_agents_system():
     upper_agent_dict = {
         'tool_names':['Human_Console_Tool'],
         'agent_config':config,
-        'tool_agent_experience_json_path':'my_2_levels_mas_exp'
+        'tool_agent_experience_json_path':'my_2_levels_mas_exp.json'
     }
     lower_agents_as_tool_dict_list = [
         {

@@ -71,7 +71,7 @@ def main_agent_as_tool():
         tool_classes=tools2,
         agent_config=config,
         has_history=True,
-        tool_agent_experience_json_path='my_1st_example_of_agent_as_tool',
+        tool_agent_experience_json_path='my_1st_example_of_agent_as_tool.json',
     )
     agent.init()
     success = agent.run(query=query)

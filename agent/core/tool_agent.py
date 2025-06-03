@@ -52,14 +52,16 @@ class Tool_Agent(Agent_Base, Base_Tool):
         tool_query = callback_tool_paras_dict['自然语言指令']
         dblue(f'agent_as_tool收到指令: "{tool_query}"')
         dblue(f'agent_as_tool收到para: \n"{callback_tool_paras_dict}"')
-        dyellow(f'agent_as_tool收到father exp: \n"{callback_father_agent_exp}"')
 
         # 将query和exp组合
-        dyellow('---------------------agent_as_tool的query------------------------------')
+        dyellow(f'---------------------agent_as_tool被調用(upper agent_id="{callback_agent_id}")------------------------------')
         if callback_father_agent_exp.strip():
-            tool_query += tool_query + f'\n(获得了已有经验：{callback_father_agent_exp})'
-        dyellow(f'{tool_query}')
-        dyellow('--------------------/agent_as_tool的query------------------------------')
+            tool_query += tool_query + f'\n(获得了已有经验：{callback_father_agent_exp!r})'
+        dyellow(f'upper agent的query: \n"{tool_query}"')
+        dyellow(f'upper agent提供的经验: {callback_father_agent_exp!r}')
+        dyellow(f'upper agent提供的tool_para: {callback_tool_paras_dict!r}')
+        dyellow(f'upper agent提供的tool_context: {callback_last_tool_ctx!r}')
+        dyellow(f'--------------------/agent_as_tool被調用(upper agent_id="{callback_agent_id}")------------------------------')
 
         self.run(query=tool_query)
         # self.run(query=self.query_as_tool)
@@ -108,7 +110,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                  as_tool_name=None,                     # As_Tool的name，如取: "Folder_Agent_As_Tool"
                  as_tool_description=None,              # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  has_history = False,
-                 tool_agent_experience_json_path='',    # 经验json文件
+                 tool_agent_experience_json_path='',    # 经验json文件，如果为‘’，就不设置经验
                  agent_status_ref:Agent_Status=None,                # agent状态，由multi_agent_server管理
                  agent_stream_queue_ref:Agent_Stream_Queue=None,    # agent的stream queue，，由multi_agent_server管理
                  ):
@@ -270,7 +272,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 exp_json_file_path=self.tool_agent_experience_json_path,
                 llm = self.llm
             )
-            dblue(f'【经验初始化完成】{self.tool_agent_experience_json_path!r}')
+            dyellow(f'----------------------agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
+            dyellow(f"成功载入来自{self.tool_agent_experience_json_path!r}的经验")
+            dyellow(f'---------------------/agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
 
         # 将所有工具转换为{tool_descs}和{tool_names}
         for tool in self.tool_classes:
@@ -343,8 +347,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
         if self.description is None and self.exp:
             self.current_exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
-            dyellow(f'task_info is : {self.current_query!r}')
-            dyellow(f'query_agent_experience_by_task_info is : {self.current_exp_str!r}')
+            dyellow(f'----------------------agent查询经验(agent_id="{self.agent_id}")--------------------------------')
+            dyellow(f'用户query: {self.current_query!r}')
+            dyellow(f'根据query查询到的关联经验: {self.current_exp_str!r}')
+            dyellow(f'---------------------/agent查询经验(agent_id="{self.agent_id}")--------------------------------')
         # ----------------------/根据query获取experience-------------------------------------------------
 
         if self.first_query or (not self.has_history):
@@ -385,10 +391,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
                 # --------------总结经验(agent_as_tool时不总结经验)--------------
                 if self.description is None and self.exp:
-                    dyellow(f'总结agent经验中...')
+                    dyellow(f'----------------------本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
                     self.exp.summarize_agent_history(agent_history_string=self.agent_tools_description_and_full_history)
-                    dyellow(f'经验为：\n{self.exp.get_all_exp_string()}')
-                    dyellow(f'总结agent经验完毕.')
+                    dyellow(f'"{self.exp.get_all_exp_string()}"')
+                    dyellow(f'---------------------/本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
                 # -------------/总结经验------------------------------------------
                 dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
                 return True
@@ -508,7 +514,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         if not answer_this_turn.strip():
             import sys
             dyellow('-----------------------------------thinking answer-------------------------------------------')
-            dyellow('answer_this_turn完全为空，请检查大模型的api是否有问题（如官网deepseek r1模型会出现回复为空的情况）。程序退出！')
+            dred('answer_this_turn完全为空，请检查大模型的api是否有问题（如官网deepseek r1模型会出现回复为空的情况）。程序退出！')
             dyellow('-----------------------------------thinking answer-------------------------------------------')
             sys.exit(1)
 
