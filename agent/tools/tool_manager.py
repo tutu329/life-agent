@@ -2,11 +2,13 @@ import os
 import importlib.util
 import inspect
 
-from typing import List, Dict, Any, Type
+from typing import List, Dict, Any, Type, Optional
 from pydantic import BaseModel
 from uuid import uuid4
 
 from agent.core.agent_config import Config
+from agent.tools.remote_tool_class import Remote_Tool_Base, generate_tool_class_dynamically
+
 from config import dred,dgreen,dblue,dcyan,dyellow
 
 class Registered_Tool_Data(BaseModel):
@@ -20,9 +22,10 @@ class Registered_Tool_Data(BaseModel):
 # 全局存储tools的注册( tool_id <--> Registered_Tool_Data )
 g_registered_tools_dict: Dict[str, Registered_Tool_Data] = {}
 
-# server用的tool注册管理，tool_name相当于id(server启动时调用)
-def server_register_all_tool():
-    all_tools_data_list = _get_all_tools_data()
+# server侧将本地tools/文件夹下的所有tool_class都进行注册
+# 以uuid4()的tool_id方式索引
+def server_register_all_local_tool_on_start():
+    all_tools_data_list = _get_all_local_tools_data()
 
     for tool_data in all_tools_data_list:
         tool_class = tool_data['tool_class']
@@ -56,6 +59,46 @@ def print_all_registered_tools():
         # print(f'description: {v.description}', end=' \t')
         # print(f'tool_class: {v.tool_class}')
     print('--------------------/g_registered_tools_dict-----------------------')
+
+class Registered_Remote_Tool_Data(BaseModel):
+    name: str
+    description: str
+    parameters: List[Dict[str, str]]
+    endpoint_url: str
+    method: str = "POST"
+    timeout: float = 10.0
+    headers: Optional[Dict[str, str]] = None
+
+# 输入tool_class注册一个tool
+def _server_register_one_tool(
+    tool_class:Type[Remote_Tool_Base]
+)-> str:    # 返回tool_id
+    # 生成全局唯一的tool_id
+    tool_id = str(uuid4())
+
+    # 查找tool
+    tool_data = Registered_Tool_Data(
+        tool_id=tool_id,
+        name=tool_class.name,
+        description=tool_class.description,
+        parameters=tool_class.parameters,
+        tool_class=tool_class,
+    )
+
+    # server端注册tool
+    g_registered_tools_dict[tool_id] = tool_data
+
+    return tool_id
+
+# 动态注册一个tool(先动态生成一个tool_class，然后注册返回tool_id)
+# 可以配合server_register_all_tool_on_start()之后，动态调用从而注册fastapi类的tool
+# 其实就是MCP机制
+def server_register_remote_tool_dynamically(
+    register_data:Registered_Remote_Tool_Data
+) -> str:    # 返回tool_id
+    tool_class = generate_tool_class_dynamically(**register_data.model_dump())
+    tool_id = _server_register_one_tool(tool_class)
+    return tool_id
 
 def server_get_tool_data_by_id(tool_id):
     return g_registered_tools_dict[tool_id]
@@ -99,18 +142,18 @@ def server_register_tool(
 #     return tool_id
 
 # client用的tool注册管理，必须通过server生成的tool_id唯一化
-def server_register_agent_as_tool(
-    agent_config:Config,    # 该agent的base_url, api_key, model_id等信息
-    tools_name_list,        # 该agent所需tool的name_list
-    as_tool_name,           # 该agent作为tool的name
-    as_tool_description,    # 该agent作为tool的description
-)->str:                     # 返回：str(uuid4())
-    tool_id = str(uuid4())
-
-    return tool_id
+# def server_register_agent_as_tool(
+#     agent_config:Config,    # 该agent的base_url, api_key, model_id等信息
+#     tools_name_list,        # 该agent所需tool的name_list
+#     as_tool_name,           # 该agent作为tool的name
+#     as_tool_description,    # 该agent作为tool的description
+# )->str:                     # 返回：str(uuid4())
+#     tool_id = str(uuid4())
+#
+#     return tool_id
 
 # server启动后的第一步：从tools文件夹获取所有可用的tools（后续第二步，才是将所有tool注册，并获取对应tool_id）
-def _get_all_tools_data() -> List[Dict[str, Any]]:
+def _get_all_local_tools_data() -> List[Dict[str, Any]]:
     """
     获取 tools 文件夹下所有 py 文件里的 tool 信息
 
@@ -228,8 +271,9 @@ def _extract_tool_info_from_file(file_path: str, module_name: str) -> Dict[str, 
 
     return None
 
-def get_tools_class(tool_names):
-    all_tools = _get_all_tools_data()
+# 仅根据tool_names返回local tools中有的
+def get_all_local_tools_class(tool_names):
+    all_tools = _get_all_local_tools_data()
 
     tools_class_list = []
     for tool_name in tool_names:
@@ -244,10 +288,24 @@ def get_tools_class(tool_names):
 
     return tools_class_list
 
+# 根据tool_names返回所有已注册tools中有的
+def get_all_registered_tools_class(tool_names):
+    tools_class_list = []
+    # print(f'-----------------tool_names---------------------')
+    # print(tool_names)
+    # print(f'-----------------tool_names---------------------')
+    for tool_name in tool_names:
+        for k,v in g_registered_tools_dict.items():
+            tool_data:Registered_Tool_Data = v
+            # print(f'tool_data: {tool_data!r}')
+            if tool_name==tool_data.name:
+                tools_class_list.append(tool_data.tool_class)
+    return tools_class_list
+
 def main_test_get_all_tools():
     from pprint import pprint
     # 获取所有工具信息
-    all_tools = _get_all_tools_data()
+    all_tools = _get_all_local_tools_data()
 
     print(f"找到 {len(all_tools)} 个工具:")
     print(f'----------------------------all_tools info----------------------------\n')
@@ -268,7 +326,7 @@ def main_test_agent():
     from agent.core.tool_agent import Tool_Agent
     # tool_names = ['Folder_Tool']
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
-    class_list = get_tools_class(tool_names)
+    class_list = get_all_local_tools_class(tool_names)
     print(class_list)
 
     tools = class_list
@@ -292,7 +350,7 @@ def main_test_agent():
 def main_test_server_start():
     from pprint import pprint
     from agent.core.tool_agent import client_run_agent
-    server_register_all_tool()
+    server_register_all_local_tool_on_start()
 
     tool_data_list = server_get_all_registered_tool_data_list()
 
@@ -307,9 +365,24 @@ def main_test_server_start():
     query='当前目录下有哪些文件'
     client_run_agent(query=query, agent_config=config, tool_names=tool_names)
 
+def main_test_register_remote_tool_dynamically():
+    # 注册local所有tool
+    server_register_all_local_tool_on_start()
 
-# 使用示例
+    # 注册一个远程tool(需要远程开启该tool call的fastapi)
+    reg_data = Registered_Remote_Tool_Data(
+        name="Remote_Folder_Tool",
+        description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
+        parameters=[{"name": "file_path", "type": "string"}],
+        endpoint_url="http://localhost:5120/remote_tool_call",
+        method="POST",
+        timeout=15,
+    )
+    tool_id = server_register_remote_tool_dynamically(reg_data)
+    print_all_registered_tools()
+
 if __name__ == "__main__":
     # main_test_get_all_tools()
     # main_test_agent()
-    main_test_server_start()
+    # main_test_server_start()
+    main_test_register_remote_tool_dynamically()

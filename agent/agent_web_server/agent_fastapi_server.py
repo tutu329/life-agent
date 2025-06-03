@@ -12,7 +12,7 @@ import json
 from config import Port
 
 # agent
-from agent.tools.tool_manager import server_register_all_tool
+from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Config
 from agent.core.tool_agent import Tool_Agent
 from contextlib import asynccontextmanager
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     # 例如：一次性加载 LLM 或建立数据库池
 
     # 初始化agent和tool的注册
-    registered_tools_dict = server_register_all_tool()
+    registered_tools_dict = server_register_all_local_tool_on_start()
 
     # 应用开始接收请求
     yield  # <—— 应用开始接收请求

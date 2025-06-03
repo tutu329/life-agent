@@ -13,7 +13,7 @@ class Remote_Tool_Base:
 
 
 # ========= 动态注册函数 =========
-def register_tool_class(
+def generate_tool_class_dynamically(
         name: str,
         description: str,
         parameters: List[Dict],
@@ -73,7 +73,7 @@ def register_tool_class(
 
 def main():
     # 生成 “类”
-    Remote_Folder_Tool = register_tool_class(
+    Remote_Folder_Tool = generate_tool_class_dynamically(
         name="Remote_Folder_Tool",
         description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
         parameters=[{"name": "file_path", "type": "string"}],

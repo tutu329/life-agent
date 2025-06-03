@@ -6,10 +6,10 @@ import time
 
 from agent.core.tool_agent import Tool_Agent
 from agent.core.agent_config import Config
-from agent.tools.tool_manager import get_tools_class, server_register_tool, server_get_tool_data_by_id
+from agent.tools.tool_manager import get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
-from config import dblue, dyellow
+from config import dblue, dyellow, dred, dgreen, dcyan
 
 class Registered_Agent_Data(BaseModel):
     agent_id            :str
@@ -41,7 +41,9 @@ def server_start_and_register_agent(
     agent_stream_queue = Agent_Stream_Queue()
 
     # 初始化tool_agent
-    class_list = get_tools_class(tool_names)
+    class_list = get_all_registered_tools_class(tool_names)
+    print(f'class_list: {class_list!r}')
+    # class_list = get_all_local_tools_class(tool_names)
     agent = Tool_Agent(
         has_history=True,
         tool_classes=class_list,
@@ -141,10 +143,12 @@ def __server_wait_registered_agent(agent_id, timeout_second=10):
     i=0
     while not future.done():
         # print("还没好，再等⏳")
-        time.sleep(0.5)
+        time.sleep(1)
         i += 1
         # if i>10:
-        if i>timeout_second/0.5:
+        # dred(f'【第{i}秒】')
+        if i>timeout_second:
+            dred(f'server_cancel_agent() invoked.')
             server_cancel_agent(agent_id)
             # break
 
@@ -167,7 +171,7 @@ def _server_create_and_registered_agent_as_tool(
     as_tool_description:str,    # description as tool
 ):
     # 获取该agent需要使用的tools_class_list
-    tools_class_list = get_tools_class(tool_names)
+    tools_class_list = get_all_local_tools_class(tool_names)
 
     # 生成agent(继承自Base_Tool)的实例
     agent_as_tool = Tool_Agent(
@@ -216,7 +220,7 @@ def server_start_register_2_levels_agents_system(
         instance = server_get_tool_data_by_id(agents_as_tool_id).tool_class
         agents_as_tool_instance_list.append(instance)
 
-    upper_agent_tools_class_list = get_tools_class(upper_agent_dict['tool_names'])
+    upper_agent_tools_class_list = get_all_local_tools_class(upper_agent_dict['tool_names'])
     tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
 
     # dred('---------------------upper_agent_tools_class_list-------------------------')
@@ -277,7 +281,12 @@ def server_start_register_2_levels_agents_system(
 #     upper_agent_data.agent_future = future
 
 def main_test_server_start_agent():
-    tool_names = ['Human_Console_Tool', 'Folder_Tool']
+    # 动态注册一个Remote_Folder_Tool
+    from agent.tools.tool_manager import main_test_register_remote_tool_dynamically
+    main_test_register_remote_tool_dynamically()
+    tool_names = ['Human_Console_Tool', 'Remote_Folder_Tool']
+
+    # tool_names = ['Human_Console_Tool', 'Folder_Tool']
     config = Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
@@ -294,11 +303,11 @@ def main_test_server_start_agent():
 
     time.sleep(0.5)
     print_agent_status(agent_id)
-    __server_wait_registered_agent(agent_id, timeout_second=10)
+    __server_wait_registered_agent(agent_id, timeout_second=100)
 
-    server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
-
-    print_agent_status(agent_id)
+    # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
+    #
+    # print_agent_status(agent_id)
 
 def main_test_2_level2_agents_system():
     # query: str,
@@ -334,13 +343,13 @@ def main_test_2_level2_agents_system():
 
     time.sleep(0.5)
     print_agent_status(agent_id)
-    __server_wait_registered_agent(agent_id, timeout_second=30)
-    # server_wait_registered_agent(agent_id, timeout_second=100)
+    # __server_wait_registered_agent(agent_id, timeout_second=30)
+    __server_wait_registered_agent(agent_id, timeout_second=200)
 
     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 
     # print_agent_status(agent_id)
 
 if __name__ == "__main__":
-    # main_test_server_start_agent()
-    main_test_2_level2_agents_system()
+    main_test_server_start_agent()
+    # main_test_2_level2_agents_system()

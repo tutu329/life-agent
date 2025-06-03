@@ -26,7 +26,7 @@ from agent.core.base_tool import PROMPT_REACT
 from agent.core.base_tool import Base_Tool
 from agent.core.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 from agent.core.legacy_protocol import Action_Result
-from agent.tools.tool_manager import get_tools_class
+from agent.tools.tool_manager import get_all_local_tools_class
 
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
@@ -157,7 +157,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.agent_id = str(uuid4())
         if not has_history:
             dred('--------------------------------------------------------------------------------------------')
-            dred(f'Warning: agent没有设置history!(agent_id:"{self.agent_id}")')
+            dred(f'Warning: agent没有设置history!(name:"{self.name}", agent_id:"{self.agent_id}")')
             dred('--------------------------------------------------------------------------------------------')
 
         self.llm = None
@@ -621,6 +621,15 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 rtn = None
                 tool_class_or_agent = self.registered_tool_instances_dict[tool_name]
                 def _run_tool_call_thread():
+                    dred(f'-------------------------tool线程启动(agent_id="{self.agent_id}")------------------------------')
+                    dred(f'tool_name: {tool_name!r}')
+                    dred(f'callback_tool_paras_dict: {callback_tool_paras_dict!r}')
+                    dred(f'self.agent_config: {self.agent_config!r}')
+                    dred(f'self.agent_id: {self.agent_id!r}')
+                    dred(f'last_tool_ctx: {last_tool_ctx!r}')
+                    dred(f'self.current_exp_str: {self.current_exp_str!r}')
+                    dred(f'------------------------/tool线程启动(agent_id="{self.agent_id}")------------------------------')
+                    # nonlocal rtn
                     rtn = tool_class_or_agent.call(
                         callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                         callback_agent_config=self.agent_config,            # 将agent配置传给tool
@@ -628,6 +637,13 @@ class Tool_Agent(Agent_Base, Base_Tool):
                         callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
                         callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
                     )
+                    # dred(f'--------------------------tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
+                    # dred(f'rtn: {rtn!r}')
+                    # dred(f'-------------------------/tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
+
+                    # 这里返回rtn很关键，不然就要用nonlocal rtn才行，局域内的rtn变量并不是外层rtn，这个一定要注意
+                    # 然后后续用rtn = future.result()获取结果
+                    return rtn
 
                 future = g_thread_pool_executor.submit(_run_tool_call_thread)
 
@@ -651,6 +667,12 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
                     time.sleep(0.5)
                 # --------------------/线程化、可cancel，主要针对agent_as_tool、复杂tool等长过程---------------------
+                # dred(f'--------------------------tool线程运行完毕1(agent_id="{self.agent_id}")------------------------------')
+                rtn = future.result()
+                # dred(f'--------------------------tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
+                # dred(f'rtn = {rtn!r}')
+                # dred(f'-------------------------/tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
+
 
                 # 更新tool的上下文context
                 update_tool_context_info(
@@ -659,9 +681,13 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     data_set_info=rtn.data_set_info
                 )
 
+                # dred(f'--------------------------tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
+
                 # 控制台输出action_result
                 dblue(f'rtn: "{rtn}"')
                 dblue(f'action_result: "{rtn.result}"')
+
+                # dred(f'--------------------------tool线程运行完毕3(agent_id="{self.agent_id}")------------------------------')
 
                 # 更新last_tool_task_id
                 self.last_tool_task_id = tool_ctx.tool_info.tool_task_id
@@ -703,7 +729,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
 # client第二步：调用某些tool组合的agent
 def client_run_agent(query:str, agent_config:Config, tool_names:List[str]):
-    class_list = get_tools_class(tool_names)
+    class_list = get_all_local_tools_class(tool_names)
     agent = Tool_Agent(
         query='当前目录下有哪些文件',
         tool_classes=class_list,
