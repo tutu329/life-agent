@@ -129,7 +129,7 @@ def server_cancel_agent(agent_id):
 #     dyellow(f'agent已经取消paused...(agent_id: "{agent_id}")')
 
 # server等待一个agent的future到done
-def server_wait_registered_agent(agent_id, timeout_second=10):
+def __server_wait_registered_agent(agent_id, timeout_second=10):
     agent_data = g_registered_agents_dict[agent_id]
     future = agent_data.agent_future
 
@@ -295,7 +295,7 @@ def main_test_server_start_agent():
 
     time.sleep(0.5)
     print_agent_status(agent_id)
-    server_wait_registered_agent(agent_id, timeout_second=10)
+    __server_wait_registered_agent(agent_id, timeout_second=10)
 
     server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 
@@ -335,10 +335,10 @@ def main_test_2_level2_agents_system():
 
     time.sleep(0.5)
     print_agent_status(agent_id)
-    server_wait_registered_agent(agent_id, timeout_second=100)
+    __server_wait_registered_agent(agent_id, timeout_second=30)
     # server_wait_registered_agent(agent_id, timeout_second=100)
 
-    server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
+    # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 
     # print_agent_status(agent_id)
 

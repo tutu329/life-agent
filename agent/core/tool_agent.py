@@ -8,7 +8,9 @@
 # 其中“--paths=.”表示将/home/tutu/server/life-agent加入到PyInstaller分析路径中，以便找到tools模块
 # 可执行代码将输出至~/tool_agent/下，包括可执行代码和关联so等文件
 
-
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from concurrent.futures import Future
+import time
 
 import config
 from config import dred, dgreen, dblue, dyellow
@@ -31,6 +33,9 @@ from agent.core.tool_manager import get_tools_class
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
 from agent.experience.agent_experience import Agent_Experience
+
+# 全局线程池，真正业务里可以按需设置 max_workers
+g_thread_pool_executor = ThreadPoolExecutor()
 
 class Tool_Agent(Agent_Base, Base_Tool):
 # class Tool_Agent(Web_Server_Base, Base_Tool):
@@ -71,7 +76,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
     def _init_agent_data_in_server(self):
         if self.agent_status_ref and self.agent_stream_queue_ref:
             self.agent_status_ref.started = True
-            self.agent_stream_queue_ref.output = dyellow
+            self.agent_stream_queue_ref.output = print
+        else:
+            self.status.started = True
+            self.stream_queue.output = print
 
     # def set_pause(self):
     #     self.agent_status_ref.paused = True
@@ -85,22 +93,31 @@ class Tool_Agent(Agent_Base, Base_Tool):
     def set_cancel(self):
         if self.agent_status_ref:
             self.agent_status_ref.canceling = True
+        else:
+            self.status.canceling = True
+        dblue(f'【agent set_cancel() invoked】(agent_id="{self.agent_id}")')
 
     def unset_cancel(self):
         if self.agent_status_ref:
             self.agent_status_ref.canceling = False
             self.agent_status_ref.canceled = False
+        else:
+            self.status.canceling = False
+            self.status.canceled = False
+        dblue(f'【agent unset_cancel() invoked】(agent_id="{self.agent_id}")')
 
     def set_canceled(self):
         if self.agent_status_ref:
             self.agent_status_ref.canceled = True
-            dyellow(f'agent已经完成cancel.(agent_id: "{self.agent_id}")')
+        else:
+            self.status.canceled = True
+        dyellow(f'agent已经完成cancel.(agent_id: "{self.agent_id}")')
 
     def is_canceling(self):
         if self.agent_status_ref:
             return self.agent_status_ref.canceling
         else:
-            return False
+            return self.status.canceling
 
     # Tool_Agent方法
     def __init__(self,
@@ -126,6 +143,17 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # multi_agent_server管理的状态
         self.agent_status_ref = agent_status_ref
         self.agent_stream_queue_ref = agent_stream_queue_ref
+
+        # 自身状态与multi_agent_server管理的状态同步，如果没有multi_agent_server状态，则自身初始化一套
+        if self.agent_status_ref:
+            self.status = self.agent_status_ref
+        else:
+            self.status = Agent_Status()
+
+        if self.agent_stream_queue_ref:
+            self.stream_queue = self.agent_stream_queue_ref
+        else:
+            self.stream_queue = Agent_Stream_Queue()
 
         # agent属性
         self.agent_id = str(uuid4())
@@ -583,13 +611,48 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 print('---------------------------------agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
                 pprint(self.registered_tool_instances_dict)
                 print('--------------------------------/agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
-                rtn = self.registered_tool_instances_dict[tool_name].call(
-                    callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
-                    callback_agent_config=self.agent_config,            # 将agent配置传给tool
-                    callback_agent_id=self.agent_id,                    # 将agent_id传给tool
-                    callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
-                    callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
-                )
+                # rtn = self.registered_tool_instances_dict[tool_name].call(
+                #     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
+                #     callback_agent_config=self.agent_config,            # 将agent配置传给tool
+                #     callback_agent_id=self.agent_id,                    # 将agent_id传给tool
+                #     callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+                #     callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
+                # )
+
+                # ---------------------线程化、可cancel，主要针对agent_as_tool、复杂tool等长过程---------------------
+                rtn = None
+                tool_class_or_agent = self.registered_tool_instances_dict[tool_name]
+                def _run_tool_call_thread():
+                    rtn = tool_class_or_agent.call(
+                        callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
+                        callback_agent_config=self.agent_config,            # 将agent配置传给tool
+                        callback_agent_id=self.agent_id,                    # 将agent_id传给tool
+                        callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+                        callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
+                    )
+
+                future = g_thread_pool_executor.submit(_run_tool_call_thread)
+
+                # wait线程，直到结束或cancel信息
+                while not future.done():
+                    if self.is_canceling():
+                        dyellow('--------------------------工具调用成功cancel----------------------------------')
+                        # upper agent
+                        dyellow(f'upper agent_id="{self.agent_id}"')
+
+                        #lower agent
+                        if not isinstance(tool_class_or_agent, type):
+                            # 如果是agent instance，而不是Tool Class
+                            # dred(f'self obj: "{self}", agent_id="{self.agent_id}"')
+                            # dred(f'tool_class_or_agent obj: "{tool_class_or_agent}", agent_id="{tool_class_or_agent.agent_id}"')
+                            tool_class_or_agent.set_cancel()
+                            dyellow(f'lower agent_as_tool agent_id="{tool_class_or_agent.agent_id}"')
+
+                        dyellow('-------------------------/工具调用成功cancel----------------------------------')
+                        break
+
+                    time.sleep(0.5)
+                # --------------------/线程化、可cancel，主要针对agent_as_tool、复杂tool等长过程---------------------
 
                 # 更新tool的上下文context
                 update_tool_context_info(

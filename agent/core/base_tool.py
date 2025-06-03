@@ -123,6 +123,15 @@ class Base_Tool(ABC):
     def __init__(self):
         pass
 
+    def set_cancel(self):
+        pass
+
+    def unset_cancel(self):
+        pass
+
+    def is_canceling(self):
+        pass
+
     @abstractmethod
     def call(
             self,
