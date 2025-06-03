@@ -8,8 +8,7 @@
 # 其中“--paths=.”表示将/home/tutu/server/life-agent加入到PyInstaller分析路径中，以便找到tools模块
 # 可执行代码将输出至~/tool_agent/下，包括可执行代码和关联so等文件
 
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
-from concurrent.futures import Future
+from concurrent.futures import ThreadPoolExecutor
 import time
 
 import config
@@ -20,15 +19,14 @@ from agent.core.agent_config import Config
 from utils.extract import extract_tool_dict
 from uuid import uuid4
 
-from typing import List, Dict, Any, Type
-
+from typing import List
 
 from tools.llm.api_client import LLM_Client
 from agent.core.base_tool import PROMPT_REACT
 from agent.core.base_tool import Base_Tool
 from agent.core.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 from agent.core.legacy_protocol import Action_Result
-from agent.core.tool_manager import get_tools_class
+from agent.tools.tool_manager import get_tools_class
 
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 

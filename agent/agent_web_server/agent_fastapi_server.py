@@ -12,7 +12,7 @@ import json
 from config import Port
 
 # agent
-from agent.core.tool_manager import server_register_all_tool
+from agent.tools.tool_manager import server_register_all_tool
 from agent.core.agent_config import Config
 from agent.core.tool_agent import Tool_Agent
 from contextlib import asynccontextmanager
@@ -21,8 +21,7 @@ from contextlib import asynccontextmanager
 from agent.tools.folder_tool import Folder_Tool
 from agent.tools.human_console_tool import Human_Console_Tool
 
-from config import dyellow,dblue,dcyan,dgreen,dred
-from pprint import pprint
+from config import dyellow
 
 
 @asynccontextmanager
