@@ -123,14 +123,14 @@ class Base_Tool(ABC):
     def __init__(self):
         pass
 
+    # ------------用于agent_as_tool------------
     def set_cancel(self):
         pass
-
     def unset_cancel(self):
         pass
-
     def is_canceling(self):
         pass
+    # -----------/用于agent_as_tool------------
 
     @abstractmethod
     def call(

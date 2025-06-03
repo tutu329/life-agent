@@ -59,6 +59,37 @@ def test_agent_stream():
             data = json.loads(event.data)
             print(f"收到 {data['name']} 的计数器：", data["counter"])
 
+def test_remote_tool_call():
+    from pprint import pprint
+
+    url = "http://localhost:5120/remote_tool_call"
+
+    # 测试数据
+    data = {
+        "file_path": './',
+    }
+
+    try:
+        print("🚀 发送请求到Agent服务器...")
+        response = requests.post(url, json=data)
+
+        if response.status_code == 200:
+            result = response.json()
+            print("✅ 请求成功!")
+            print("📄 响应内容:")
+            print(f'{result!r}')
+            print(result['result_str'])
+            # pprint(json.dumps(result, indent=2, ensure_ascii=False))
+        else:
+            print(f"❌ 请求失败: {response.status_code}")
+            print(response.text)
+
+    except requests.exceptions.ConnectionError:
+        print("❌ 连接失败！请确保agent_server.py已启动")
+    except Exception as e:
+        print(f"❌ 发生错误: {e}")
+
+
 if __name__ == "__main__":
     print("=== Agent Server SSE 测试 ===")
     # 检查依赖
@@ -69,12 +100,14 @@ if __name__ == "__main__":
         exit(1)
 
     # 1. 测试同步调用
-    test_agent_sync()
+    # test_agent_sync()
 
     # 2. 测试流式调用
     # test_agent_stream()
 
     # 3. 测试超时处理
     # test_agent_stream_timeout()
+
+    test_remote_tool_call()
 
     print("\n🎉 所有测试完成!")

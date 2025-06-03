@@ -136,5 +136,23 @@ async def run_agent_stream(request: Agent_Request):
         media_type="text/event-stream"
     )
 
+
+# -----------------------------用于remote_tool_call测试--------------------------------
+from utils.encode import safe_encode
+from utils.folder import get_folder_all_items_string
+
+class Remote_Tool_Request(BaseModel):
+    file_path: str
+
+@app.post("/remote_tool_call")
+async def remote_tool_call(request: Remote_Tool_Request):
+    result_str = safe_encode(get_folder_all_items_string(directory=request.file_path))
+    return {
+        "success": False,
+        "file_path": request.file_path,
+        "result_str": result_str
+    }
+# ----------------------------/用于remote_tool_call测试--------------------------------
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=Port.agent_fastapi_server)
