@@ -2,7 +2,7 @@ from typing import List, Dict, Any, Optional, Type
 import httpx                     # pip install httpx
 
 # ========= 你的基础抽象类 =========
-class Dynamic_Tool_Base:
+class Remote_Tool_Base:
     name: str
     description: str
     parameters: List[Dict]
@@ -22,7 +22,7 @@ def register_tool_class(
         method: str = "POST",
         timeout: float = 10.0,
         headers: Optional[Dict[str, str]] = None,
-) -> Type[Dynamic_Tool_Base]:
+) -> Type[Remote_Tool_Base]:
     """
     生成并返回一个继承 Base_Tool 的新类；其 call() 为 @classmethod，
     会向指定 FastAPI 端点发送 HTTP 请求。
@@ -67,7 +67,7 @@ def register_tool_class(
     }
 
     # ---------- 动态造类 ----------
-    DynamicToolClass = type(f"{name.replace(' ', '')}Tool", (Dynamic_Tool_Base,), attrs)
+    DynamicToolClass = type(f"{name.replace(' ', '')}Tool", (Remote_Tool_Base,), attrs)
 
     return DynamicToolClass
 
