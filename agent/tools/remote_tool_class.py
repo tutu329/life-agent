@@ -108,7 +108,7 @@ def generate_tool_class_dynamically(
 
     return DynamicToolClass
 
-def main():
+def main_test_tool_call():
     from agent.core.agent_config import Agent_Config
     # 生成 “类”
     para = Registered_Remote_Tool_Data(
@@ -150,4 +150,4 @@ def main():
 
 # ============= 示范用法 =============
 if __name__ == "__main__":
-    main()
+    main_test_tool_call()
