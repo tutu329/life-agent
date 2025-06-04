@@ -365,31 +365,31 @@ def main_test_server_start():
     query='当前目录下有哪些文件'
     client_run_agent(query=query, agent_config=config, tool_names=tool_names)
 
-def main_test_register_remote_tool_dynamically():
-    # 注册local所有tool
-    server_register_all_local_tool_on_start()
-
-    # 注册一个远程tool(需要远程开启该tool call的fastapi)
-    reg_data = Registered_Remote_Tool_Data(
-        name="Remote_Folder_Tool",
-        description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
-        parameters=[
-            {
-                "name": "file_path",
-                "type": "string",
-                "description": "本参数为文件夹所在的路径",
-                "required": "True",
-            }
-        ],
-        endpoint_url="http://localhost:5120/remote_tool_call",
-        method="POST",
-        timeout=15,
-    )
-    tool_id = server_register_remote_tool_dynamically(reg_data)
-    print_all_registered_tools()
+# def main_test_register_remote_tool_dynamically():
+#     # 注册local所有tool
+#     server_register_all_local_tool_on_start()
+#
+#     # 注册一个远程tool(需要远程开启该tool call的fastapi)
+#     reg_data = Registered_Remote_Tool_Data(
+#         name="Remote_Folder_Tool",
+#         description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
+#         parameters=[
+#             {
+#                 "name": "file_path",
+#                 "type": "string",
+#                 "description": "本参数为文件夹所在的路径",
+#                 "required": "True",
+#             }
+#         ],
+#         endpoint_url="http://localhost:5120/remote_folder_tool",
+#         method="POST",
+#         timeout=15,
+#     )
+#     tool_id = server_register_remote_tool_dynamically(reg_data)
+#     print_all_registered_tools()
 
 if __name__ == "__main__":
     # main_test_get_all_tools()
     # main_test_agent()
-    # main_test_server_start()
-    main_test_register_remote_tool_dynamically()
+    main_test_server_start()
+    # main_test_register_remote_tool_dynamically()

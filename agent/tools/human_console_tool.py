@@ -1,4 +1,4 @@
-from agent.core.base_tool import Base_Tool
+from agent.tools.base_tool import Base_Tool
 from agent.core.legacy_protocol import Action_Result
 
 class Human_Console_Tool(Base_Tool):

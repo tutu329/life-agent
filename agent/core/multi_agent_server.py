@@ -282,9 +282,31 @@ def server_start_register_2_levels_agents_system(
 #     upper_agent_data.agent_future = future
 
 def main_test_server_start_agent():
-    # 动态注册一个Remote_Folder_Tool
-    from agent.tools.tool_manager import main_test_register_remote_tool_dynamically
-    main_test_register_remote_tool_dynamically()
+    from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, server_register_remote_tool_dynamically, Registered_Remote_Tool_Data
+    # main_test_register_remote_tool_dynamically()
+
+    # 注册local所有tool
+    server_register_all_local_tool_on_start()
+
+    # 注册一个远程tool(需要远程开启该tool call的fastapi)
+    reg_data = Registered_Remote_Tool_Data(
+        name="Remote_Folder_Tool",
+        description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
+        parameters=[
+            {
+                "name": "file_path",
+                "type": "string",
+                "description": "本参数为文件夹所在的路径",
+                "required": "True",
+            }
+        ],
+        endpoint_url="http://localhost:5120/remote_folder_tool",
+        method="POST",
+        timeout=15,
+    )
+    tool_id = server_register_remote_tool_dynamically(reg_data)
+    print_all_registered_tools()
+
     tool_names = ['Human_Console_Tool', 'Remote_Folder_Tool']
     # tool_names = ['Human_Console_Tool', 'Folder_Tool']
     config = Config(
@@ -292,8 +314,8 @@ def main_test_server_start_agent():
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         model_id='deepseek-chat'
     )
-    query='我叫土土，帮我查询下远程服务器下/home/tutu/models/下有哪些文件'
-    # query='我叫土土，当前目录下有哪些文件'
+    # query='我叫土土，帮我查询下远程服务器下/home/tutu/models/下有哪些文件'
+    query='我叫土土，当前目录./下有哪些文件'
 
     agent_id = server_start_and_register_agent(
         query=query,

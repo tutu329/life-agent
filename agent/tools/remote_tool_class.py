@@ -43,9 +43,9 @@ def generate_tool_class_dynamically(
         """
         para_dict = callback_tool_paras_dict
         try:
-            print(f'--------------------------_call()1-----------------------------------')
+            print(f'-------------------已注册Remote_Tool_Class.call()的参数----------------------')
             print(f'{para_dict}')
-            print(f'-------------------------/_call()1-----------------------------------')
+            print(f'------------------/已注册Remote_Tool_Class.call()的参数----------------------')
             with httpx.Client(timeout=timeout, follow_redirects=True) as client:
                 if method.upper() == "POST":
                     resp = client.post(endpoint_url, json=para_dict, headers=headers)

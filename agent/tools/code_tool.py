@@ -1,4 +1,4 @@
-from agent.core.base_tool import Base_Tool
+from agent.tools.base_tool import Base_Tool
 from utils.extract import legacy_extract_dict_string, extract_code
 
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker

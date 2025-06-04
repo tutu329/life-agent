@@ -5,7 +5,7 @@
 # 这时要用utils/encode.py的safe_encode()才行
 
 from utils.encode import safe_encode
-from agent.core.base_tool import Base_Tool
+from agent.tools.base_tool import Base_Tool
 from agent.core.legacy_protocol import Action_Result
 from utils.folder import get_folder_all_items_string
 

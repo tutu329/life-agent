@@ -4,7 +4,7 @@ import os
 import re
 
 from server_manager.web_server_task_manager import Web_Client_Data, Web_Client_Data_Type, Web_Client_Table_Data
-from agent.core.base_tool import Base_Tool
+from agent.tools.base_tool import Base_Tool
 import json
 
 from config import dred, dyellow

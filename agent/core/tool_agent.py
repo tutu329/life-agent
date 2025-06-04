@@ -22,8 +22,8 @@ from uuid import uuid4
 from typing import List
 
 from tools.llm.api_client import LLM_Client
-from agent.core.base_tool import PROMPT_REACT
-from agent.core.base_tool import Base_Tool
+from agent.tools.base_tool import PROMPT_REACT
+from agent.tools.base_tool import Base_Tool
 from agent.core.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 from agent.core.legacy_protocol import Action_Result
 from agent.tools.tool_manager import get_all_local_tools_class

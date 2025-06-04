@@ -145,8 +145,10 @@ from utils.folder import get_folder_all_items_string
 class Remote_Tool_Request(BaseModel):
     file_path: str
 
-@app.post("/remote_tool_call")
-async def remote_tool_call(request: Remote_Tool_Request):
+
+# 为agent开的remote tool
+@app.post("/remote_folder_tool")
+async def remote_folder_tool(request: Remote_Tool_Request):
     result_str = safe_encode(get_folder_all_items_string(directory=request.file_path))
     action_result = Action_Result(result=result_str, data_set_info=None)
     return action_result
