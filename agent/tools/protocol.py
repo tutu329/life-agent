@@ -21,7 +21,7 @@ class Data_Set_Info(BaseModel):
     expires_at              : Optional[datetime] = None     # 可选：指向文件的过期时间，用于前端提示刷新 URL
 
     # 开启“任意类型”支持
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class Tool_Context(BaseModel):
     """
@@ -32,20 +32,32 @@ class Tool_Context(BaseModel):
     data_set_info   : Optional[Data_Set_Info] = None    # 可选：数据集信息（包括url）
 
     # 开启“任意类型”支持
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
+
+class Registered_Remote_Tool_Data(BaseModel):
+    """
+    Registered_Remote_Tool_Data类，注册remote_tool时用的参数
+    """
+    name: str
+    description: str
+    parameters: List[Dict[str, str]]
+    endpoint_url: str
+    method: str = "POST"
+    timeout: float = 10.0
+    headers: Optional[Dict[str, str]] = None
 
 class Tool_Call_Paras(BaseModel):
     """
     Tool_Call_Paras类，agent调用tool时，传递给tool的参数
     """
-    callback_tool_paras_dict    :Dict[str, str]     # 如：{'file_path': './', 'xx':'xx', ...}
-    callback_agent_config       :Agent_Config       # base_url、api_key、model_id、temperature等
-    callback_agent_id           :str                # 如：str(uuid4())
-    callback_last_tool_ctx      :Tool_Context       #
-    callback_father_agent_exp   :str                # 如："搜索远程文件夹的经验是，如果失败可能是..."
+    callback_tool_paras_dict    :Dict[str, str]                 # 如：{'file_path': './', 'xx':'xx', ...}
+    callback_agent_config       :Agent_Config                   # base_url、api_key、model_id、temperature等
+    callback_agent_id           :str                            # 如：str(uuid4())
+    callback_last_tool_ctx      :Optional[Tool_Context] = None  # 上一个tool调用后的上下文结果
+    callback_father_agent_exp   :str                            # 如："搜索远程文件夹的经验是，如果失败可能是..."
 
     # 开启“任意类型”支持
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class Action_Result(BaseModel):
     result          :str

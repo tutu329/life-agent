@@ -16,7 +16,7 @@ from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Agent_Config
 from agent.core.tool_agent import Tool_Agent
 from contextlib import asynccontextmanager
-from agent.tools.protocol import Action_Result
+from agent.tools.protocol import Action_Result, Tool_Call_Paras
 # from agent.core.legacy_protocol import Action_Result
 from dataclasses import dataclass, field, asdict
 
@@ -138,7 +138,6 @@ async def run_agent_stream(request: Agent_Request):
         media_type="text/event-stream"
     )
 
-
 # -----------------------------用于remote_tool_call测试--------------------------------
 from utils.encode import safe_encode
 from utils.folder import get_folder_all_items_string
@@ -146,18 +145,23 @@ from utils.folder import get_folder_all_items_string
 class Remote_Tool_Request(BaseModel):
     file_path: str
 
-
-# 为agent开的remote tool
+# 为agent开的remote tool，该调用相当于local tool的call()
 @app.post("/remote_folder_tool")
-async def remote_folder_tool(request: Remote_Tool_Request):
-    result_str = safe_encode(get_folder_all_items_string(directory=request.file_path))
+async def remote_folder_tool(request: Tool_Call_Paras):
+    tool_paras = request.callback_tool_paras_dict
+
+    print('-----------------http://0.0.0.0/remote_folder_tool/获得client的参数-----------------------')
+    print(tool_paras)
+    print('----------------/http://0.0.0.0/remote_folder_tool/获得client的参数-----------------------')
+
+    # ---------------------------------自定义功能的实现---------------------------------
+    tool_para = tool_paras['file_path']
+    result_str = safe_encode(get_folder_all_items_string(directory=tool_para))
+    # ---------------------------------自定义功能的实现---------------------------------
+
+    # 返回Action_Result
     action_result = Action_Result(result=result_str, data_set_info=None)
     return action_result
-    # return {
-    #     "success": False,
-    #     "file_path": request.file_path,
-    #     "result_str": result_str
-    # }
 # ----------------------------/用于remote_tool_call测试--------------------------------
 
 if __name__ == "__main__":

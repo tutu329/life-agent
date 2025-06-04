@@ -28,11 +28,10 @@ from agent.tools.protocol import create_tool_ctx, get_tool_ctx, update_tool_cont
 # from agent.core.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 from agent.tools.protocol import Action_Result
 # from agent.core.legacy_protocol import Action_Result
-from agent.tools.tool_manager import get_all_local_tools_class
-
+from agent.tools.tool_manager import legacy_get_all_local_tools_class
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
-
 from agent.experience.agent_experience import Agent_Experience
+from agent.tools.protocol import Tool_Call_Paras
 
 # 全局线程池，真正业务里可以按需设置 max_workers
 g_thread_pool_executor = ThreadPoolExecutor()
@@ -45,14 +44,21 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # parameters = None
 
     # Base_Tool方法
-    def call(
-            self,
-            callback_tool_paras_dict,   # agent调用tool时的输入参数
-            callback_agent_config,      # agent配置参数
-            callback_agent_id,          # agent_id
-            callback_last_tool_ctx,     # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
-            callback_father_agent_exp,  # agent_as_tool时，上级agent提供的经验exp
-    ):
+    # def call(
+    #         self,
+    #         callback_tool_paras_dict,   # agent调用tool时的输入参数
+    #         callback_agent_config,      # agent配置参数
+    #         callback_agent_id,          # agent_id
+    #         callback_last_tool_ctx,     # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+    #         callback_father_agent_exp,  # agent_as_tool时，上级agent提供的经验exp
+    # ):
+    def call(self, tool_call_paras:Tool_Call_Paras):
+        callback_tool_paras_dict = tool_call_paras.callback_tool_paras_dict
+        callback_agent_config = tool_call_paras.callback_agent_config
+        callback_agent_id = tool_call_paras.callback_agent_id
+        callback_last_tool_ctx = tool_call_paras.callback_last_tool_ctx
+        callback_father_agent_exp = tool_call_paras.callback_father_agent_exp
+
         # 本agent实例被用作tool调用
         tool_query = callback_tool_paras_dict['自然语言指令']
         dblue(f'agent_as_tool收到指令: "{tool_query}"')
@@ -644,13 +650,22 @@ class Tool_Agent(Agent_Base, Base_Tool):
                         dred(f'self.current_exp_str: {self.current_exp_str!r}')
                         dred(f'------------------------/tool线程启动(agent_id="{self.agent_id}")------------------------------')
                         # nonlocal rtn
-                        rtn = tool_class_or_agent.call(
-                            callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
-                            callback_agent_config=self.agent_config,            # 将agent配置传给tool
-                            callback_agent_id=self.agent_id,                    # 将agent_id传给tool
-                            callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
-                            callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
+
+                        tool_call_paras = Tool_Call_Paras(
+                            callback_tool_paras_dict=callback_tool_paras_dict,
+                            callback_agent_config=self.agent_config,
+                            callback_agent_id=self.agent_id,
+                            callback_last_tool_ctx=last_tool_ctx,
+                            callback_father_agent_exp=self.current_exp_str
                         )
+                        rtn = tool_class_or_agent.call(tool_call_paras)
+                        # rtn = tool_class_or_agent.call(
+                        #     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
+                        #     callback_agent_config=self.agent_config,            # 将agent配置传给tool
+                        #     callback_agent_id=self.agent_id,                    # 将agent_id传给tool
+                        #     callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+                        #     callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
+                        # )
                         dred(f'--------------------------tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
                         dred(f'rtn: {rtn!r}')
                         dred(f'-------------------------/tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
@@ -754,7 +769,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
 # client第二步：调用某些tool组合的agent
 def client_run_agent(query:str, agent_config:Agent_Config, tool_names:List[str]):
-    class_list = get_all_local_tools_class(tool_names)
+    class_list = get_all_registered_tools_class(tool_names)
+    # class_list = legacy_get_all_local_tools_class(tool_names)
     agent = Tool_Agent(
         query='当前目录下有哪些文件',
         tool_classes=class_list,

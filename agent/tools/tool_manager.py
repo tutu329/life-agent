@@ -7,7 +7,10 @@ from pydantic import BaseModel
 from uuid import uuid4
 
 from agent.core.agent_config import Agent_Config
-from agent.tools.remote_tool_class import Remote_Tool_Base, generate_tool_class_dynamically
+from agent.tools.base_tool import Base_Tool
+from agent.tools.protocol import Registered_Remote_Tool_Data
+from agent.tools.remote_tool_class import generate_tool_class_dynamically
+# from agent.tools.remote_tool_class import Remote_Tool_Base, generate_tool_class_dynamically
 
 from config import dred,dgreen,dblue,dcyan,dyellow
 
@@ -60,18 +63,9 @@ def print_all_registered_tools():
         # print(f'tool_class: {v.tool_class}')
     print('--------------------/g_registered_tools_dict-----------------------')
 
-class Registered_Remote_Tool_Data(BaseModel):
-    name: str
-    description: str
-    parameters: List[Dict[str, str]]
-    endpoint_url: str
-    method: str = "POST"
-    timeout: float = 10.0
-    headers: Optional[Dict[str, str]] = None
-
 # 输入tool_class注册一个tool
 def _server_register_one_tool(
-    tool_class:Type[Remote_Tool_Base]
+    tool_class:Type[Base_Tool]
 )-> str:    # 返回tool_id
     # 生成全局唯一的tool_id
     tool_id = str(uuid4())
@@ -96,7 +90,8 @@ def _server_register_one_tool(
 def server_register_remote_tool_dynamically(
     register_data:Registered_Remote_Tool_Data
 ) -> str:    # 返回tool_id
-    tool_class = generate_tool_class_dynamically(**register_data.model_dump())
+    tool_class = generate_tool_class_dynamically(register_data)
+    # tool_class = generate_tool_class_dynamically(**register_data.model_dump())
     tool_id = _server_register_one_tool(tool_class)
     return tool_id
 
@@ -272,7 +267,7 @@ def _extract_tool_info_from_file(file_path: str, module_name: str) -> Dict[str, 
     return None
 
 # 仅根据tool_names返回local tools中有的
-def get_all_local_tools_class(tool_names):
+def legacy_get_all_local_tools_class(tool_names):
     all_tools = _get_all_local_tools_data()
 
     tools_class_list = []
@@ -326,7 +321,8 @@ def main_test_agent():
     from agent.core.tool_agent import Tool_Agent
     # tool_names = ['Folder_Tool']
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
-    class_list = get_all_local_tools_class(tool_names)
+    class_list = get_all_registered_tools_class(tool_names)
+    # class_list = legacy_get_all_local_tools_class(tool_names)
     print(class_list)
 
     tools = class_list

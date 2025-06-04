@@ -6,7 +6,7 @@
 
 from utils.encode import safe_encode
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import Action_Result
+from agent.tools.protocol import Action_Result, Tool_Call_Paras
 # from agent.core.legacy_protocol import Action_Result
 from utils.folder import get_folder_all_items_string
 
@@ -29,15 +29,16 @@ class Folder_Tool(Base_Tool):
     def __init__(self):
         pass
 
-    def call(self,
-             callback_tool_paras_dict,
-             callback_agent_config,
-             callback_agent_id,
-             callback_last_tool_ctx,
-             callback_father_agent_exp,
-             ):
-        print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
-        dir = callback_tool_paras_dict['dir']
+    def call(self, tool_call_paras:Tool_Call_Paras):
+    # def call(self,
+    #          callback_tool_paras_dict,
+    #          callback_agent_config,
+    #          callback_agent_id,
+    #          callback_last_tool_ctx,
+    #          callback_father_agent_exp,
+    #          ):
+        print(f'tool_paras_dict: "{tool_call_paras.callback_tool_paras_dict}"')
+        dir = tool_call_paras.callback_tool_paras_dict['dir']
 
         try:
             # 调用工具

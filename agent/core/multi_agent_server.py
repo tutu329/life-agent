@@ -6,7 +6,7 @@ import time
 
 from agent.core.tool_agent import Tool_Agent
 from agent.core.agent_config import Agent_Config
-from agent.tools.tool_manager import get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
+from agent.tools.tool_manager import legacy_get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
 from config import dblue, dyellow, dred, dgreen, dcyan
@@ -172,7 +172,8 @@ def _server_create_and_registered_agent_as_tool(
     as_tool_description:str,    # description as tool
 ):
     # 获取该agent需要使用的tools_class_list
-    tools_class_list = get_all_local_tools_class(tool_names)
+    tools_class_list = get_all_registered_tools_class(tool_names)
+    # tools_class_list = legacy_get_all_local_tools_class(tool_names)
 
     # 生成agent(继承自Base_Tool)的实例
     agent_as_tool = Tool_Agent(
@@ -221,7 +222,8 @@ def server_start_register_2_levels_agents_system(
         instance = server_get_tool_data_by_id(agents_as_tool_id).tool_class
         agents_as_tool_instance_list.append(instance)
 
-    upper_agent_tools_class_list = get_all_local_tools_class(upper_agent_dict['tool_names'])
+    upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_dict['tool_names'])
+    # upper_agent_tools_class_list = legacy_get_all_local_tools_class(upper_agent_dict['tool_names'])
     tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
 
     # dred('---------------------upper_agent_tools_class_list-------------------------')
@@ -281,14 +283,14 @@ def server_start_register_2_levels_agents_system(
 #     # 更新线程的future
 #     upper_agent_data.agent_future = future
 
+# 测试remote_tool调用（Remote_Folder_Tool）
 def main_test_server_start_agent():
     from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, server_register_remote_tool_dynamically, Registered_Remote_Tool_Data
     # main_test_register_remote_tool_dynamically()
 
+    # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
     # 注册local所有tool
     server_register_all_local_tool_on_start()
-
-    # 注册一个远程tool(需要远程开启该tool call的fastapi)
     reg_data = Registered_Remote_Tool_Data(
         name="Remote_Folder_Tool",
         description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
@@ -306,6 +308,7 @@ def main_test_server_start_agent():
     )
     tool_id = server_register_remote_tool_dynamically(reg_data)
     print_all_registered_tools()
+    # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
 
     tool_names = ['Human_Console_Tool', 'Remote_Folder_Tool']
     # tool_names = ['Human_Console_Tool', 'Folder_Tool']
@@ -333,12 +336,36 @@ def main_test_server_start_agent():
     #
     # print_agent_status(agent_id)
 
+# 测试2层agent系统（含remote_tool调用：Remote_Folder_Tool）
 def main_test_2_level2_agents_system():
+    from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, server_register_remote_tool_dynamically, Registered_Remote_Tool_Data
     # query: str,
     # upper_agent_dict: Dict[str, Any],
     # # {'tool_names':tool_names, 'exp_json_path':exp_json_path, 'agent_config':agent_config}
     # lower_agents_as_tool_dict_list: List[Dict[str, Any]],
     # # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
+
+    # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
+    # 注册local所有tool
+    server_register_all_local_tool_on_start()
+    reg_data = Registered_Remote_Tool_Data(
+        name="Remote_Folder_Tool",
+        description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
+        parameters=[
+            {
+                "name": "file_path",
+                "type": "string",
+                "description": "本参数为文件夹所在的路径",
+                "required": "True",
+            }
+        ],
+        endpoint_url="http://localhost:5120/remote_folder_tool",
+        method="POST",
+        timeout=15,
+    )
+    tool_id = server_register_remote_tool_dynamically(reg_data)
+    print_all_registered_tools()
+    # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
 
     query = r'我叫土土，请告诉我当前文件夹下有哪些文件'
     config = Agent_Config(
@@ -353,7 +380,8 @@ def main_test_2_level2_agents_system():
     }
     lower_agents_as_tool_dict_list = [
         {
-            'tool_names':['Human_Console_Tool', 'Folder_Tool'],
+            'tool_names':['Human_Console_Tool', 'Remote_Folder_Tool'],
+            # 'tool_names':['Human_Console_Tool', 'Folder_Tool'],
             'agent_config':config,
             'as_tool_name':'Folder_Agent_As_Tool',
             'as_tool_description':'本工具用于获取文件夹中的文件和文件夹信息'
@@ -375,5 +403,5 @@ def main_test_2_level2_agents_system():
     # print_agent_status(agent_id)
 
 if __name__ == "__main__":
-    main_test_server_start_agent()
-    # main_test_2_level2_agents_system()
+    # main_test_server_start_agent()
+    main_test_2_level2_agents_system()

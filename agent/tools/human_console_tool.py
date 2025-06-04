@@ -1,5 +1,5 @@
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import Action_Result
+from agent.tools.protocol import Action_Result, Tool_Call_Paras
 # from agent.core.legacy_protocol import Action_Result
 
 class Human_Console_Tool(Base_Tool):
@@ -21,15 +21,16 @@ class Human_Console_Tool(Base_Tool):
     def __init__(self):
         pass
 
-    def call(self,
-             callback_tool_paras_dict,
-             callback_agent_config,
-             callback_agent_id,
-             callback_last_tool_ctx,
-             callback_father_agent_exp
-             ):
-        print(f'tool_paras_dict: "{callback_tool_paras_dict}"')
-        question = callback_tool_paras_dict['question']
+    def call(self, tool_call_paras:Tool_Call_Paras):
+    # def call(self,
+    #          callback_tool_paras_dict,
+    #          callback_agent_config,
+    #          callback_agent_id,
+    #          callback_last_tool_ctx,
+    #          callback_father_agent_exp
+    #          ):
+        print(f'tool_paras_dict: "{tool_call_paras.callback_tool_paras_dict}"')
+        question = tool_call_paras.callback_tool_paras_dict['question']
 
         # 调用工具
         res = input(f'Agent: {question}')

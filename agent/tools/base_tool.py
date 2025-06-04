@@ -5,6 +5,7 @@ from utils.extract import extract_tool_dict
 from agent.core.agent_config import Agent_Config
 from agent.tools.protocol import Tool_Context
 # from agent.core.legacy_protocol import Tool_Context
+from agent.tools.protocol import Tool_Call_Paras
 
 DEBUG = False
 # DEBUG = True
@@ -134,13 +135,14 @@ class Base_Tool(ABC):
     # -----------/用于agent_as_tool------------
 
     @abstractmethod
-    def call(
-            self,
-            callback_tool_paras_dict,               # agent调用tool时的输入参数
-            callback_agent_config:Agent_Config,           # agent配置参数
-            callback_agent_id,                      # agent_id
-            callback_last_tool_ctx:Tool_Context,    # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
-    ):
+    def call(self, tool_call_paras:Tool_Call_Paras):
+    # def call(
+    #         self,
+    #         callback_tool_paras_dict,               # agent调用tool时的输入参数
+    #         callback_agent_config:Agent_Config,           # agent配置参数
+    #         callback_agent_id,                      # agent_id
+    #         callback_last_tool_ctx:Tool_Context,    # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
+    # ):
         pass
 
     @classmethod
