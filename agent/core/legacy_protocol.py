@@ -24,12 +24,12 @@ class Data_Set_Info:
 class Tool_Context:
     """
     Tool_Context类，用于agent调用多个tool时，tool之间的数据上下文交互：
-        如agent调用数据库tool后，返回的大量数据，存放于Tool_Context中。
-        name：数据集逻辑名，如 "raw_2024_usage" / "daily_agg"
+        如agent调用数据库tool后，返回的大量数据，存放于Tool_Context中，给下一个tool用，而不用流过LLM。
     """
     tool_info: Tool_Info                                            # tool的id和所执行任务的status
     # action_result: str = ''                                         # tool留给LLM的可读信息(tool_msg_for_llm)
     data_set_info: Optional[Data_Set_Info] = field(default=None)    # 可选：数据集信息（包括url）
+
 
 @dataclass
 class Action_Result:

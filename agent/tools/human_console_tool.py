@@ -39,14 +39,14 @@ class Human_Console_Tool(Base_Tool):
 
 def main_agent_as_tool():
     from agent.core.tool_agent import Tool_Agent
-    from agent.core.agent_config import Config
+    from agent.core.agent_config import Agent_Config
     from agent.tools.folder_tool import Folder_Tool
 
     tools1=[Human_Console_Tool, Folder_Tool]
     query = r'请告诉我当前文件夹下有哪些文件'
     # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
     # query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
-    config = Config(
+    config = Agent_Config(
         # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
         # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
         base_url='https://api.deepseek.com/v1',
@@ -83,7 +83,7 @@ def main_agent_as_tool():
 def main_human_console_tool():
     import config
     from agent.core.tool_agent import Tool_Agent
-    from agent.core.agent_config import Config
+    from agent.core.agent_config import Agent_Config
     from agent.tools.folder_tool import Folder_Tool
 
     tools=[Human_Console_Tool, Folder_Tool]
@@ -95,7 +95,7 @@ def main_human_console_tool():
         # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
         query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
 
-    config = Config(
+    config = Agent_Config(
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         # base_url='http://powerai.cc:28002/v1',   #qwq
         base_url='http://powerai.cc:28001/v1',  # llama-4-400b or qwen3-235b

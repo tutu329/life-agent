@@ -55,7 +55,7 @@ def main_folder():
     import config
     from agent.core.tool_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
-    from agent.core.agent_config import Config
+    from agent.core.agent_config import Agent_Config
 
     tools=[Folder_Tool]
     print(f'os: "{config.get_os()}"')
@@ -65,7 +65,7 @@ def main_folder():
     else:
         query = r'请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
-    config = Config(
+    config = Agent_Config(
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         # base_url='http://powerai.cc:28002/v1',   #qwq
         base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b

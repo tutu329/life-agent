@@ -60,7 +60,7 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
 def main_db_tool():
     import config
     from agent.core.tool_agent import Tool_Agent
-    from agent.core.agent_config import Config
+    from agent.core.agent_config import Agent_Config
 
     tools=[Frontend_Chart_Code_Transfer_Tool]
     print(f'os: "{config.get_os()}"')
@@ -69,7 +69,7 @@ def main_db_tool():
     else:
         pass
 
-    config = Config(
+    config = Agent_Config(
         base_url='http://powerai.cc:28001/v1',   #qwen3-235b
         # base_url='http://powerai.cc:28002/v1',   #qwq
         api_key='empty',

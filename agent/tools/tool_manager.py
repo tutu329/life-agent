@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Type, Optional
 from pydantic import BaseModel
 from uuid import uuid4
 
-from agent.core.agent_config import Config
+from agent.core.agent_config import Agent_Config
 from agent.tools.remote_tool_class import Remote_Tool_Base, generate_tool_class_dynamically
 
 from config import dred,dgreen,dblue,dcyan,dyellow
@@ -322,7 +322,7 @@ def main_test_get_all_tools():
     print(f"\n所有tool的Class列表: {[cls.__name__ for cls in tools]}")
 
 def main_test_agent():
-    from agent.core.agent_config import Config
+    from agent.core.agent_config import Agent_Config
     from agent.core.tool_agent import Tool_Agent
     # tool_names = ['Folder_Tool']
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
@@ -332,7 +332,7 @@ def main_test_agent():
     tools = class_list
 
     # 创建配置
-    config = Config(
+    config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         model_id='deepseek-chat'
@@ -357,7 +357,7 @@ def main_test_server_start():
     pprint(tool_data_list)
 
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
-    config = Config(
+    config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         model_id='deepseek-chat'

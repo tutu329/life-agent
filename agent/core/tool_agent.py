@@ -15,7 +15,7 @@ import config
 from config import dred, dgreen, dblue, dyellow
 from agent.core.agent_base import Agent_Base
 # from server_manager.web_server_base import Web_Server_Base
-from agent.core.agent_config import Config
+from agent.core.agent_config import Agent_Config
 from utils.extract import extract_tool_dict
 from uuid import uuid4
 
@@ -24,8 +24,10 @@ from typing import List
 from tools.llm.api_client import LLM_Client
 from agent.tools.base_tool import PROMPT_REACT
 from agent.tools.base_tool import Base_Tool
-from agent.core.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
-from agent.core.legacy_protocol import Action_Result
+from agent.tools.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
+# from agent.core.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
+from agent.tools.protocol import Action_Result
+# from agent.core.legacy_protocol import Action_Result
 from agent.tools.tool_manager import get_all_local_tools_class
 
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
@@ -120,14 +122,14 @@ class Tool_Agent(Agent_Base, Base_Tool):
     # Tool_Agent方法
     def __init__(self,
                  tool_classes,
-                 agent_config:Config,
-                 query=None,                            # 用于as_tool(tool仅query一次)
-                 as_tool_name=None,                     # As_Tool的name，如取: "Folder_Agent_As_Tool"
-                 as_tool_description=None,              # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
+                 agent_config:Agent_Config,
+                 query=None,  # 用于as_tool(tool仅query一次)
+                 as_tool_name=None,  # As_Tool的name，如取: "Folder_Agent_As_Tool"
+                 as_tool_description=None,  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  has_history = False,
-                 tool_agent_experience_json_path='',    # 经验json文件，如果为‘’，就不设置经验
-                 agent_status_ref:Agent_Status=None,                # agent状态，由multi_agent_server管理
-                 agent_stream_queue_ref:Agent_Stream_Queue=None,    # agent的stream queue，，由multi_agent_server管理
+                 tool_agent_experience_json_path='',  # 经验json文件，如果为‘’，就不设置经验
+                 agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
+                 agent_stream_queue_ref:Agent_Stream_Queue=None,  # agent的stream queue，，由multi_agent_server管理
                  ):
         Agent_Base.__init__(self)
 
@@ -751,7 +753,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # print(f'{self.prompt}\n------------------------prompt end------------------------')
 
 # client第二步：调用某些tool组合的agent
-def client_run_agent(query:str, agent_config:Config, tool_names:List[str]):
+def client_run_agent(query:str, agent_config:Agent_Config, tool_names:List[str]):
     class_list = get_all_local_tools_class(tool_names)
     agent = Tool_Agent(
         query='当前目录下有哪些文件',
@@ -820,7 +822,7 @@ def main_folder():
     import config
     from agent.core.tool_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
-    from agent.core.agent_config import Config
+    from agent.core.agent_config import Agent_Config
 
     tools=[Folder_Tool]
     print(f'os: "{config.get_os()}"')
@@ -830,7 +832,7 @@ def main_folder():
     else:
         query = r'我叫土土，请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
-    config = Config(
+    config = Agent_Config(
         # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
         # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
         base_url='https://api.deepseek.com/v1',
@@ -861,7 +863,7 @@ def main_table():
     import config
     from agent.core.tool_agent import Tool_Agent
     from agent.tools.table_tool import Table_Tool
-    from agent.core.agent_config import Config
+    from agent.core.agent_config import Agent_Config
 
     tools=[Table_Tool]
     # tools=[Folder_Tool, Search_Tool]
@@ -874,7 +876,7 @@ def main_table():
     else:
         query = r'请告诉我y:/demo/负荷及平衡.xlsx里的"负荷预测"标签中的表格数据.'
 
-    config = Config(
+    config = Agent_Config(
         # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
         # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
         base_url='https://api.deepseek.com/v1',

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List
 from utils.extract import extract_tool_dict
 
-from agent.core.agent_config import Config
+from agent.core.agent_config import Agent_Config
 from agent.core.legacy_protocol import Tool_Context
 
 DEBUG = False
@@ -136,7 +136,7 @@ class Base_Tool(ABC):
     def call(
             self,
             callback_tool_paras_dict,               # agent调用tool时的输入参数
-            callback_agent_config:Config,           # agent配置参数
+            callback_agent_config:Agent_Config,           # agent配置参数
             callback_agent_id,                      # agent_id
             callback_last_tool_ctx:Tool_Context,    # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
     ):

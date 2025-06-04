@@ -13,7 +13,7 @@ from config import Port
 
 # agent
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
-from agent.core.agent_config import Config
+from agent.core.agent_config import Agent_Config
 from agent.core.tool_agent import Tool_Agent
 from contextlib import asynccontextmanager
 from agent.core.legacy_protocol import Action_Result
@@ -69,7 +69,7 @@ def run_agent_sync(request: Agent_Request):
     tools = [Human_Console_Tool, Folder_Tool]
 
     # 创建配置
-    config = Config(
+    config = Agent_Config(
         base_url=request.base_url,
         api_key=request.api_key,
         model_id=request.model_id

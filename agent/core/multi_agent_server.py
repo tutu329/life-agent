@@ -5,7 +5,7 @@ from concurrent.futures import Future
 import time
 
 from agent.core.tool_agent import Tool_Agent
-from agent.core.agent_config import Config
+from agent.core.agent_config import Agent_Config
 from agent.tools.tool_manager import get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
 from agent.core.protocol import Agent_Status, Agent_Stream_Queue
 
@@ -30,7 +30,7 @@ g_thread_pool_executor = ThreadPoolExecutor()
 # server启动一个agent的query，并注册
 def server_start_and_register_agent(
     query:str,
-    agent_config:Config,
+    agent_config:Agent_Config,
     tool_names:List[str],
     exp_json_path:str,
 )->str:     # 返回agent_id
@@ -167,7 +167,7 @@ def server_get_registered_agent_data(agent_id):
 # server创建agent_as_tool
 def _server_create_and_registered_agent_as_tool(
     tool_names:List[str],       # 该agent所需调用tools的name list
-    agent_config:Config,        # agent的config
+    agent_config:Agent_Config,        # agent的config
     as_tool_name:str,           # name as tool
     as_tool_description:str,    # description as tool
 ):
@@ -309,7 +309,7 @@ def main_test_server_start_agent():
 
     tool_names = ['Human_Console_Tool', 'Remote_Folder_Tool']
     # tool_names = ['Human_Console_Tool', 'Folder_Tool']
-    config = Config(
+    config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         model_id='deepseek-chat'
@@ -341,7 +341,7 @@ def main_test_2_level2_agents_system():
     # # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
 
     query = r'我叫土土，请告诉我当前文件夹下有哪些文件'
-    config = Config(
+    config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324

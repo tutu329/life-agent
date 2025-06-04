@@ -77,7 +77,7 @@ def main_db_tool():
     import config
     from agent.core.tool_agent import Tool_Agent
     from agent.tools.frontend_chart_code_transfer_foo import Frontend_Chart_Code_Transfer_Tool
-    from agent.core.agent_config import Config
+    from agent.core.agent_config import Agent_Config
 
     tools=[Database_Tool, Frontend_Chart_Code_Transfer_Tool]
     print(f'os: "{config.get_os()}"')
@@ -89,7 +89,7 @@ def main_db_tool():
         # query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。先推送数据到数据，再写前端代码发给前端，然后等待前端渲染反馈。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
         query = r'请以图文的方式分析下这两年杭州规上行业的用电量异动情况，要聚焦到关键用户。表名是hangzhou_elec_2024，字段名有date、electricity、gdp、sector、customer_name'
 
-    config = Config(
+    config = Agent_Config(
         # base_url='http://powerai.cc:28001/v1',   # qwen3-235b
         base_url='http://powerai.cc:28001/v1',   # deepseek-r1-671b
         # base_url='http://powerai.cc:28002/v1',   # qwq

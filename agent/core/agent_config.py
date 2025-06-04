@@ -5,7 +5,7 @@ from config import dred,dyellow,dblue,dcyan,dgreen
 import config
 
 @dataclass
-class Config:
+class Agent_Config:
     # 基本配置
     output_end:Any = None                   # 最终答复输出end的func
     output_stream_to_console:bool = True    # 最终答复是否stream输出到console
