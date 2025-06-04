@@ -279,7 +279,7 @@ def get_all_local_tools_class(tool_names):
     for tool_name in tool_names:
         for tool in all_tools:
             if tool['name'] == tool_name:
-                dgreen(tool_name)
+                # dgreen(tool_name)
                 tools_class_list.append(tool['tool_class'])
                 break
         else:   # python的for-else机制：内层循环正常结束（没有 break）时才执行 else 块

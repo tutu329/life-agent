@@ -16,7 +16,8 @@ from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Agent_Config
 from agent.core.tool_agent import Tool_Agent
 from contextlib import asynccontextmanager
-from agent.core.legacy_protocol import Action_Result
+from agent.tools.protocol import Action_Result
+# from agent.core.legacy_protocol import Action_Result
 from dataclasses import dataclass, field, asdict
 
 # tools
@@ -56,7 +57,7 @@ class Agent_Request(BaseModel):
     query: str
     base_url: str = "http://powerai.cc:28001/v1"
     api_key: str = "empty"
-    model_id: str = ""
+    llm_model_id: str = ""
 
 @app.get("/")
 def root():
@@ -72,7 +73,7 @@ def run_agent_sync(request: Agent_Request):
     config = Agent_Config(
         base_url=request.base_url,
         api_key=request.api_key,
-        model_id=request.model_id
+        model_id=request.llm_model_id
     )
 
     agent = Tool_Agent(

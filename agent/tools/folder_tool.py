@@ -6,7 +6,8 @@
 
 from utils.encode import safe_encode
 from agent.tools.base_tool import Base_Tool
-from agent.core.legacy_protocol import Action_Result
+from agent.tools.protocol import Action_Result
+# from agent.core.legacy_protocol import Action_Result
 from utils.folder import get_folder_all_items_string
 
 class Folder_Tool(Base_Tool):

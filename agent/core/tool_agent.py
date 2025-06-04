@@ -681,11 +681,11 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
                         time.sleep(0.5)
                     # --------------------/线程化、可cancel，主要针对agent_as_tool、复杂tool等长过程---------------------
-                    dred(f'--------------------------tool线程运行完毕1(agent_id="{self.agent_id}")------------------------------')
+                    # dred(f'--------------------------tool线程运行完毕1(agent_id="{self.agent_id}")------------------------------')
                     rtn = future.result()
-                    dred(f'--------------------------tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
-                    dred(f'rtn = {rtn!r}')
-                    dred(f'-------------------------/tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
+                    # dred(f'--------------------------tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
+                    # dred(f'rtn = {rtn!r}')
+                    # dred(f'-------------------------/tool线程运行完毕2(agent_id="{self.agent_id}")------------------------------')
 
                     if isinstance(rtn, Action_Result):
                         # local返回的是Action_Result对象

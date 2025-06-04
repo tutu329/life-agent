@@ -4,7 +4,8 @@ from typing import List, Dict, Any, Optional
 from agent.core.agent_config import Agent_Config
 from utils.task import Status
 
-import datetime, copy, threading
+from datetime import datetime
+import copy, threading
 from uuid import uuid4
 
 class Tool_Info(BaseModel):
@@ -13,7 +14,7 @@ class Tool_Info(BaseModel):
 
 class Data_Set_Info(BaseModel):
     data_set_content_url    : str                           # 数据集的完整内容的url（带过期签名的对象存储 URL，通常为pyarrow的url）
-    schema                  : str                           # 如"user_id:int, date:date, kWh:float"
+    data_schema             : str                           # 如"user_id:int, date:date, kWh:float"
     rows                    : int                           # 数据集的总行数
     cols                    : int                           # 数据集的总列数
     sample                  : Optional[list] = None         # 可选：样例数据，如20行以内的head或tail
