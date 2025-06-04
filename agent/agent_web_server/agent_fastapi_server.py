@@ -138,6 +138,68 @@ async def run_agent_stream(request: Agent_Request):
         media_type="text/event-stream"
     )
 
+@app.post('/start_agent_stream')
+async def start_agent_stream(request: Agent_Request):
+    import time
+    from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, \
+        server_register_remote_tool_dynamically, Registered_Remote_Tool_Data
+
+    from agent.core.multi_agent_server import server_start_register_2_levels_agents_system, print_agent_status
+    from agent.core.multi_agent_server import __server_wait_registered_agent
+
+    # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
+    # 注册local所有tool
+    server_register_all_local_tool_on_start()
+    reg_data = Registered_Remote_Tool_Data(
+        name="Remote_Folder_Tool",
+        description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
+        parameters=[
+            {
+                "name": "file_path",
+                "type": "string",
+                "description": "本参数为文件夹所在的路径",
+                "required": "True",
+            }
+        ],
+        endpoint_url="http://localhost:5120/remote_folder_tool",
+        method="POST",
+        timeout=15,
+    )
+    tool_id = server_register_remote_tool_dynamically(reg_data)
+    print_all_registered_tools()
+    # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
+
+    query = r'我叫土土，请告诉我当前文件夹下有哪些文件'
+    config = Agent_Config(
+        base_url='https://api.deepseek.com/v1',
+        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+    )
+    upper_agent_dict = {
+        'tool_names': ['Human_Console_Tool'],
+        'exp_json_path': 'my_2_levels_mas_exp.json',
+        'agent_config': config,
+    }
+    lower_agents_as_tool_dict_list = [
+        {
+            'tool_names': ['Human_Console_Tool', 'Remote_Folder_Tool'],
+            'agent_config': config,
+            'as_tool_name': 'Folder_Agent_As_Tool',
+            'as_tool_description': '本工具用于获取文件夹中的文件和文件夹信息'
+        }
+    ]
+    agent_id = server_start_register_2_levels_agents_system(
+        query=query,
+        upper_agent_dict=upper_agent_dict,
+        lower_agents_as_tool_dict_list=lower_agents_as_tool_dict_list
+    )
+
+    time.sleep(0.5)
+    print_agent_status(agent_id)
+    __server_wait_registered_agent(agent_id, timeout_second=20000000)
+
+    # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
+    # print_agent_status(agent_id)
 
 
 if __name__ == "__main__":

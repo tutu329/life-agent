@@ -5,29 +5,10 @@ from agent.tools.protocol import Tool_Call_Paras
 from agent.tools.base_tool import Base_Tool
 from agent.tools.protocol import Registered_Remote_Tool_Data
 
-# ========= 基础抽象类 =========
-# class Remote_Tool_Base:
-#     name: str
-#     description: str
-#     parameters: List[Dict]
-#
-#     def call(self, para_dict: Dict[str, Any]) -> Any:  # type: ignore[override]
-#         raise NotImplementedError
-
-# ========= 动态注册函数 =========
+# ========= server动态注册函数 =========
 def generate_tool_class_dynamically(
-        registered_remote_tool_data:Registered_Remote_Tool_Data
+    registered_remote_tool_data:Registered_Remote_Tool_Data
 ) -> Type[Base_Tool]:
-# def generate_tool_class_dynamically(
-#         name: str,
-#         description: str,
-#         parameters: List[Dict],
-#         *,
-#         endpoint_url: str,
-#         method: str = "POST",
-#         timeout: float = 10.0,
-#         headers: Optional[Dict[str, str]] = None,
-# ) -> Type[Base_Tool]:
     """
     生成并返回一个继承 Base_Tool 的新类；其 call() 为 @classmethod，
     会向指定 FastAPI 端点发送 HTTP 请求。
@@ -43,14 +24,6 @@ def generate_tool_class_dynamically(
     # ---------- classmethod 版本的 call ----------
     # def _call(cls, para_dict: Dict[str, Any]) -> Any:         # noqa: D401
     def _call(self, tool_call_paras:Tool_Call_Paras)->Any:
-    # def _call(
-    #     self,
-    #     callback_tool_paras_dict,
-    #     callback_agent_config,
-    #     callback_agent_id,
-    #     callback_last_tool_ctx,
-    #     callback_father_agent_exp,
-    # ) -> Any:         # noqa: D401
         """
         向远程 FastAPI 发送请求并返回 JSON（classmethod 形式）
         """
@@ -65,12 +38,8 @@ def generate_tool_class_dynamically(
             with httpx.Client(timeout=timeout, follow_redirects=True) as client:
                 if method.upper() == "POST":
                     resp = client.post(endpoint_url, json=tool_call_paras.model_dump(), headers=headers)
-                    # resp = client.post(endpoint_url, json=tool_call_paras, headers=headers)
-                    # resp = client.post(endpoint_url, json=para_dict, headers=headers)
                 elif method.upper() == "GET":
                     resp = client.get(endpoint_url, params=tool_call_paras.model_dump(), headers=headers)
-                    # resp = client.get(endpoint_url, params=tool_call_paras, headers=headers)
-                    # resp = client.get(endpoint_url, params=para_dict, headers=headers)
                 else:
                     raise ValueError(f"Unsupported HTTP method: {method}")
 
@@ -123,13 +92,6 @@ def main_test_tool_call():
     Remote_Folder_Tool = generate_tool_class_dynamically(para)
 
     # 直接用类名调用 classmethod
-    # result = Remote_Folder_Tool().call(
-    #     callback_tool_paras_dict={"file_path": "./"},
-    #     callback_agent_config=None,
-    #     callback_agent_id=None,
-    #     callback_last_tool_ctx=None,
-    #     callback_father_agent_exp=None,
-    # )
     tool_call_paras = Tool_Call_Paras(
         callback_tool_paras_dict={"dir": "./"},     # 'dir'必需与Folder_Tool的parameters一致
         # callback_tool_paras_dict={"file_path": "./"},
@@ -139,16 +101,7 @@ def main_test_tool_call():
         callback_father_agent_exp='',
     )
     result = Remote_Folder_Tool().call(tool_call_paras)
-    # result = Remote_Folder_Tool().call(
-    #     callback_tool_paras_dict={"file_path": "./"},
-    #     callback_agent_config=None,
-    #     callback_agent_id=None,
-    #     callback_last_tool_ctx=None,
-    #     callback_father_agent_exp=None,
-    # )
-    # result = Remote_Folder_Tool().call({"file_path": "./"})
     print(f"远端返回：{result!r}")
-    # print(result['result_str'])
 
 # ============= 示范用法 =============
 if __name__ == "__main__":
