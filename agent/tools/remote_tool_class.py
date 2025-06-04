@@ -115,7 +115,8 @@ def main_test_tool_call():
         name="Remote_Folder_Tool",
         description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
         parameters=[{"name": "file_path", "type": "string"}],
-        endpoint_url="http://localhost:5120/remote_folder_tool",
+        endpoint_url="http://localhost:5120/Folder_Tool",   # 'Folder_Tool'大小写必须正确
+        # endpoint_url="http://localhost:5120/remote_folder_tool",
         method="POST",
         timeout=15,
     )
@@ -130,7 +131,8 @@ def main_test_tool_call():
     #     callback_father_agent_exp=None,
     # )
     tool_call_paras = Tool_Call_Paras(
-        callback_tool_paras_dict={"file_path": "./"},
+        callback_tool_paras_dict={"dir": "./"},     # 'dir'必需与Folder_Tool的parameters一致
+        # callback_tool_paras_dict={"file_path": "./"},
         callback_agent_config=Agent_Config(),
         callback_agent_id='xxxxxxxx',
         callback_last_tool_ctx=None,
