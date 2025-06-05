@@ -196,7 +196,7 @@ def _server_create_and_registered_agent_as_tool(
 
 # 多层agent体系的关键(前后端系统)
 # server启动一个2层agent系统的query，并注册
-def server_start_register_2_levels_agents_system(
+def server_start_and_register_2_levels_agents_system(
     query                           :str,
     upper_agent_dict                :Dict[str, Any],        # {'tool_names':tool_names, 'exp_json_path':, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
     lower_agents_as_tool_dict_list  :List[Dict[str, Any]],  # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
@@ -268,7 +268,8 @@ def server_start_register_2_levels_agents_system(
     # 注册agent的数据
     g_registered_agents_dict[upper_agent_id] = agent_data
 
-    return upper_agent_id
+    return agent_data
+    # return upper_agent_id
 
 # # 2层agent系统的后续轮的query
 # def server_continue_2_levels_agents_system(agent_id, query):
@@ -387,7 +388,7 @@ def main_test_2_level2_agents_system():
             'as_tool_description':'本工具用于获取文件夹中的文件和文件夹信息'
         }
     ]
-    agent_id = server_start_register_2_levels_agents_system(
+    agent_id = server_start_and_register_2_levels_agents_system(
         query=query,
         upper_agent_dict=upper_agent_dict,
         lower_agents_as_tool_dict_list=lower_agents_as_tool_dict_list

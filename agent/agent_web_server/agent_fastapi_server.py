@@ -15,6 +15,8 @@ from config import Port
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Agent_Config
 from agent.core.tool_agent import Tool_Agent
+from agent.core.multi_agent_server import Registered_Agent_Data
+
 from contextlib import asynccontextmanager
 from agent.tools.protocol import Action_Result, Tool_Call_Paras
 # from agent.core.legacy_protocol import Action_Result
@@ -23,6 +25,7 @@ from dataclasses import dataclass, field, asdict
 # tools
 from agent.tools.folder_tool import Folder_Tool
 from agent.tools.human_console_tool import Human_Console_Tool
+from utils.fastapi_server import FastAPI_Endpoint_With_SSE, fastapi_show_all_routes
 
 from config import dyellow
 
@@ -138,14 +141,18 @@ async def run_agent_stream(request: Agent_Request):
         media_type="text/event-stream"
     )
 
-from agent.agent_web_server.protocol import FastAPI_Agent_Endpoint
-@FastAPI_Agent_Endpoint(app)
-async def start_agent_stream(request: Agent_Request):
+@FastAPI_Endpoint_With_SSE(
+    app=app,
+    rtn_id_name='agent_id',
+    rtn_stream_queues_name='agent_stream_queues',
+    return_type=Registered_Agent_Data
+)
+async def start_2_level_agents_stream(request: Agent_Request):
     import time
     from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, \
         server_register_remote_tool_dynamically, Registered_Remote_Tool_Data
 
-    from agent.core.multi_agent_server import server_start_register_2_levels_agents_system, print_agent_status
+    from agent.core.multi_agent_server import server_start_and_register_2_levels_agents_system, print_agent_status
     from agent.core.multi_agent_server import __server_wait_registered_agent
 
     # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
@@ -189,21 +196,23 @@ async def start_agent_stream(request: Agent_Request):
             'as_tool_description': '本工具用于获取文件夹中的文件和文件夹信息'
         }
     ]
-    agent_id = server_start_register_2_levels_agents_system(
+    agent_data = server_start_and_register_2_levels_agents_system(
         query=query,
         upper_agent_dict=upper_agent_dict,
         lower_agents_as_tool_dict_list=lower_agents_as_tool_dict_list
     )
 
     time.sleep(0.5)
-    print_agent_status(agent_id)
-    __server_wait_registered_agent(agent_id, timeout_second=20000000)
+    print_agent_status(agent_data.agent_id)
+
+    return agent_data
+
+    # __server_wait_registered_agent(agent_id, timeout_second=20000000)
 
     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
     # print_agent_status(agent_id)
 
 
 if __name__ == "__main__":
-    from agent.agent_web_server.protocol import fastapi_show_all_routes
     fastapi_show_all_routes(app)
     uvicorn.run(app, host="0.0.0.0", port=Port.agent_fastapi_server)
