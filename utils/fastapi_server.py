@@ -5,13 +5,9 @@ from fastapi import FastAPI
 import asyncio, queue
 from sse_starlette.sse import EventSourceResponse  # pip install sse-starlette
 
-
 # ------------ ❷ 通用的 SSE 生成器 ----------------
 class _GenDone: pass
-
-
 GeneratorDone = _GenDone()  # 特殊标记，用来告诉生成器结束
-
 
 async def _queue_streamer(q: queue.Queue):
     """把线程里写进 Queue 的内容转成 SSE"""
@@ -25,14 +21,14 @@ async def _queue_streamer(q: queue.Queue):
             break
         yield {"data": item}
 
-
 class FastAPI_Endpoint_With_SSE_Result:
     def __init__(self, id: str, stream_queues: Dict):
         self.id = id
         self.stream_queues = stream_queues
 
-
-# ------------ 装饰器：把任意长任务函数挂到 /api/<func_name> --------------
+# ------------ 装饰器：把长过程(如agent执行过程)用fast_api挂载 --------------
+# 1、 task_func挂载到：  /api/{task_func}
+# 2、 sse-stream挂载到： /api/{task_func}/stream/{stream_id}/{stream_name}
 def FastAPI_Endpoint_With_SSE(
         app: FastAPI,
         return_type: Type,  # 告诉装饰器，被装饰函数的返回类型
@@ -82,11 +78,8 @@ def FastAPI_Endpoint_With_SSE(
         # 注册两个路由
         app.post(base_route)(start_endpoint)  # 启动任务
         app.get(f"{base_route}/stream/{{stream_id}}/{{stream_name}}")(stream_endpoint)  # SSE 流
-
         return task_func
-
     return decorator
-
 
 # 显示所有挂载的路由、以及GET/POST情况
 def fastapi_show_all_routes(app: FastAPI):
