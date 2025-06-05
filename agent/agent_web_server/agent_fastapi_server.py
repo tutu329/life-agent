@@ -154,6 +154,7 @@ async def start_2_level_agents_stream(request: Agent_Request):
 
     from agent.core.multi_agent_server import server_start_and_register_2_levels_agents_system, print_agent_status
     from agent.core.multi_agent_server import __server_wait_registered_agent
+    from config import Port
 
     # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
     # 注册local所有tool
@@ -163,13 +164,13 @@ async def start_2_level_agents_stream(request: Agent_Request):
         description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
         parameters=[
             {
-                "name": "file_path",
+                "name": "dir",
                 "type": "string",
                 "description": "本参数为文件夹所在的路径",
                 "required": "True",
             }
         ],
-        endpoint_url="http://localhost:5120/remote_folder_tool",
+        endpoint_url=f"http://localhost:{Port.remote_tool_fastapi_server}/Folder_Tool",
         method="POST",
         timeout=15,
     )
@@ -177,7 +178,7 @@ async def start_2_level_agents_stream(request: Agent_Request):
     print_all_registered_tools()
     # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
 
-    query = r'我叫土土，请告诉我当前文件夹下有哪些文件'
+    query = r'我叫土土，请告诉./文件夹下有哪些文件'
     config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',

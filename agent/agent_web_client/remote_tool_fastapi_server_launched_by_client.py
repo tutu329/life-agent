@@ -29,7 +29,7 @@ def register_remote_tools_on_start():
 
 def main():
     attach_all_remote_tools(app, register_remote_tools_on_start())
-    uvicorn.run(app, host="0.0.0.0", port=Port.agent_fastapi_server)
+    uvicorn.run(app, host="0.0.0.0", port=Port.remote_tool_fastapi_server)
 
 if __name__ == "__main__":
     main()

@@ -164,8 +164,9 @@ class Port():
 
     # agent
 
-    comfy:int                   = 5100  # ComfyUI
-    agent_fastapi_server:int    = 5120
+    comfy                       :int  = 5100  # ComfyUI
+    agent_fastapi_server        :int = 5120
+    remote_tool_fastapi_server  :int = 5121
 
     # 顶层应用
     flowise:int         = 7860

@@ -9,7 +9,7 @@ from uuid import uuid4
 from agent.core.agent_config import Agent_Config
 from agent.tools.base_tool import Base_Tool
 from agent.tools.protocol import Registered_Remote_Tool_Data
-from agent.tools.remote_tool_class import generate_tool_class_dynamically
+from agent.tools.generate_tool_class_dynamically import generate_tool_class_dynamically
 # from agent.tools.remote_tool_class import Remote_Tool_Base, generate_tool_class_dynamically
 
 from config import dred,dgreen,dblue,dcyan,dyellow

@@ -1,49 +1,147 @@
+import requests
 import httpx
 from sseclient import SSEClient  # pip install sseclient-py
+import threading
+import time
 
 from agent.tools.protocol import Registered_Remote_Tool_Data
 from agent.tools.protocol import Tool_Call_Paras
-from agent.tools.remote_tool_class import generate_tool_class_dynamically
+from agent.tools.generate_tool_class_dynamically import generate_tool_class_dynamically
 from agent.core.agent_config import Agent_Config
+
 
 def agent_fastapi_client():
     pass
 
+
+def listen_to_stream(base_url: str, stream_id: str, stream_name: str):
+    """监听单个 SSE 流"""
+    # 注意：这里需要构建正确的流URL
+    # 假设你的服务器基础URL是 http://powerai.cc:5120
+    server_base = base_url.replace('/api/start_2_level_agents_stream', '')
+    stream_url = f"{server_base}/api/start_2_level_agents_stream/stream/{stream_id}/{stream_name}"
+    print(f"🔗 连接到流: {stream_name} - {stream_url}")
+
+    try:
+        response = requests.get(stream_url, stream=True)
+        if response.status_code != 200:
+            print(f"❌ 流连接失败: {response.status_code} - {response.text}")
+            return
+
+        client = SSEClient(response)
+
+        for event in client.events():
+            print(f"[{stream_name}] {event.data}")
+    except Exception as e:
+        print(f"❌ 流 {stream_name} 出错: {e}")
+
+
 def main_test_2_level_agents_system():
-    def test_agent_sync():
-        """Python测试Agent服务器"""
-        # url = "http://localhost:5120/run_agent_sync"
-        url = "http://powerai.cc:5120/run_agent_sync"
+    """Python测试Agent服务器 - 方案1调用方式"""
+    # 第一步：启动任务
+    start_url = "http://powerai.cc:5120/api/start_2_level_agents_stream"
 
-        # 测试数据
-        data = {
-            # "query": '请告诉我当前文件夹下有哪些文件',
-            "query": '请告诉我"agent"下有哪些文件',
-            # "query": '请告诉我"./"下有哪些文件',
-            # "query": '请告诉我"file_to_find.txt"在"d:\\demo\\"文件夹的哪个具体文件夹中',
-            "base_url": 'https://api.deepseek.com/v1',
-            "api_key": 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-            "model_id": 'deepseek-chat'
-        }
+    # 测试数据
+    data = {
+        "query": '请告诉我"./"下有哪些文件',
+        "base_url": 'https://api.deepseek.com/v1',
+        "api_key": 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        "llm_model_id": 'deepseek-chat'
+    }
 
-        try:
-            print("🚀 发送请求到Agent服务器...")
-            response = requests.post(url, json=data)
+    try:
+        print("🚀 第一步：发送请求启动Agent任务...")
+        response = requests.post(start_url, json=data)
 
-            if response.status_code == 200:
-                result = response.json()
-                print("✅ 请求成功!")
-                print("📄 响应内容:")
-                print(result)
-                # print(json.dumps(result, indent=2, ensure_ascii=False))
+        if response.status_code == 200:
+            result = response.json()
+            print("✅ 任务启动成功!")
+            print("📄 启动响应:")
+            print(result)
+
+            # 获取 stream_id 和可用流
+            stream_id = result.get('id')
+            available_streams = result.get('streams', [])
+
+            if stream_id and available_streams:
+                print(f"\n🆔 获得流 ID: {stream_id}")
+                print(f"📡 可用流列表: {available_streams}")
+
+                print(f"\n🔄 第二步：开始监听 SSE 流...")
+
+                # 为每个流创建线程来监听
+                threads = []
+                for stream_name in available_streams:
+                    thread = threading.Thread(
+                        target=listen_to_stream,
+                        args=(start_url, stream_id, stream_name)
+                    )
+                    thread.daemon = True
+                    thread.start()
+                    threads.append(thread)
+
+                # 等待所有流完成（或手动中断）
+                try:
+                    print("⏳ 监听流中... (按 Ctrl+C 停止)")
+                    for thread in threads:
+                        thread.join()
+                except KeyboardInterrupt:
+                    print("\n⚠️ 用户中断，停止监听流")
             else:
-                print(f"❌ 请求失败: {response.status_code}")
-                print(response.text)
+                print("❌ 没有获得有效的流ID或可用流列表")
 
-        except requests.exceptions.ConnectionError:
-            print("❌ 连接失败！请确保agent_server.py已启动")
-        except Exception as e:
-            print(f"❌ 发生错误: {e}")
+        else:
+            print(f"❌ 任务启动失败: {response.status_code}")
+            print(response.text)
+
+    except requests.exceptions.ConnectionError:
+        print("❌ 连接失败！请确保agent_server.py已启动")
+    except Exception as e:
+        print(f"❌ 发生错误: {e}")
+
+
+def main_test_2_level_agents_system_simple():
+    """简化版本：只监听一个流"""
+    # 第一步：启动任务
+    start_url = "http://powerai.cc:5120/api/start_2_level_agents_stream"
+    data = {
+        "query": '请告诉我"./"下有哪些文件',
+        "base_url": 'https://api.deepseek.com/v1',
+        "api_key": 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        "llm_model_id": 'deepseek-chat'
+    }
+
+    try:
+        # 启动任务
+        print("🚀 启动任务...")
+        response = requests.post(start_url, json=data)
+
+        if response.status_code == 200:
+            result = response.json()
+            stream_id = result.get('id')
+            available_streams = result.get('streams', [])
+
+            if stream_id and available_streams:
+                # 监听第一个可用流
+                stream_name = available_streams[0]
+                server_base = start_url.replace('/api/start_2_level_agents_stream', '')
+                stream_url = f"{server_base}/api/start_2_level_agents_stream/stream/{stream_id}/{stream_name}"
+
+                print(f"🔗 监听流: {stream_url}")
+
+                # 直接在主线程监听
+                stream_response = requests.get(stream_url, stream=True)
+                if stream_response.status_code == 200:
+                    client = SSEClient(stream_response)
+                    for event in client.events():
+                        print(f"📨 {event.data}")
+                else:
+                    print(f"❌ 流连接失败: {stream_response.status_code}")
+        else:
+            print(f"❌ 启动失败: {response.status_code}")
+
+    except Exception as e:
+        print(f"❌ 错误: {e}")
 
 # server端简单测试fastapi的remote_tool是否正常
 def main_test_remote_tool_fastapi_server_launched_by_client():
@@ -74,4 +172,5 @@ def main_test_remote_tool_fastapi_server_launched_by_client():
 
 # ============= 示范用法 =============
 if __name__ == "__main__":
-    main_test_remote_tool_fastapi_server_launched_by_client()
+    # main_test_remote_tool_fastapi_server_launched_by_client()
+    main_test_2_level_agents_system()
