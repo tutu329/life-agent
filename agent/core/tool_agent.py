@@ -29,7 +29,7 @@ from agent.tools.protocol import create_tool_ctx, get_tool_ctx, update_tool_cont
 from agent.tools.protocol import Action_Result
 # from agent.core.legacy_protocol import Action_Result
 from agent.tools.tool_manager import legacy_get_all_local_tools_class
-from agent.core.protocol import Agent_Status, Agent_Stream_Queue
+from agent.core.protocol import Agent_Status, Agent_Stream_Queues
 from agent.experience.agent_experience import Agent_Experience
 from agent.tools.protocol import Tool_Call_Paras
 
@@ -135,7 +135,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                  has_history = False,
                  tool_agent_experience_json_path='',  # 经验json文件，如果为‘’，就不设置经验
                  agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
-                 agent_stream_queue_ref:Agent_Stream_Queue=None,  # agent的stream queue，，由multi_agent_server管理
+                 agent_stream_queue_ref:Agent_Stream_Queues=None,  # agent的stream queue，，由multi_agent_server管理
                  ):
         Agent_Base.__init__(self)
 
@@ -159,7 +159,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         if self.agent_stream_queue_ref:
             self.stream_queue = self.agent_stream_queue_ref
         else:
-            self.stream_queue = Agent_Stream_Queue()
+            self.stream_queue = Agent_Stream_Queues()
 
         # agent属性
         self.agent_id = str(uuid4())

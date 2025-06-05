@@ -12,7 +12,7 @@ class Agent_Status(BaseModel):
 
     finished    :bool = False
 
-class Agent_Stream_Queue(BaseModel):
+class Agent_Stream_Queues(BaseModel):
     output          :Queue= Field(default_factory=Queue)
     thinking        :Queue= Field(default_factory=Queue)
     log             :Queue= Field(default_factory=Queue)

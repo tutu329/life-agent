@@ -138,7 +138,8 @@ async def run_agent_stream(request: Agent_Request):
         media_type="text/event-stream"
     )
 
-@app.post('/start_agent_stream')
+from agent.agent_web_server.protocol import FastAPI_Endpoint
+@FastAPI_Endpoint(app)
 async def start_agent_stream(request: Agent_Request):
     import time
     from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, \
@@ -203,4 +204,6 @@ async def start_agent_stream(request: Agent_Request):
 
 
 if __name__ == "__main__":
+    from agent.agent_web_server.protocol import fastapi_show_all_routes
+    fastapi_show_all_routes(app)
     uvicorn.run(app, host="0.0.0.0", port=Port.agent_fastapi_server)

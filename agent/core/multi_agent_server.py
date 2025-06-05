@@ -7,7 +7,7 @@ import time
 from agent.core.tool_agent import Tool_Agent
 from agent.core.agent_config import Agent_Config
 from agent.tools.tool_manager import legacy_get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
-from agent.core.protocol import Agent_Status, Agent_Stream_Queue
+from agent.core.protocol import Agent_Status, Agent_Stream_Queues
 
 from config import dblue, dyellow, dred, dgreen, dcyan
 
@@ -16,7 +16,7 @@ class Registered_Agent_Data(BaseModel):
     agent_obj           :Tool_Agent
     agent_future        :Future
     agent_status        :Agent_Status
-    agent_stream_queue  :Agent_Stream_Queue
+    agent_stream_queues :Agent_Stream_Queues
 
     # 开启“任意类型”支持
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -38,7 +38,7 @@ def server_start_and_register_agent(
 
     # multi_agent_server和tool_agent同步管理的信息
     agent_status = Agent_Status()
-    agent_stream_queue = Agent_Stream_Queue()
+    agent_stream_queue = Agent_Stream_Queues()
 
     # 初始化tool_agent
     class_list = get_all_registered_tools_class(tool_names)
@@ -101,7 +101,7 @@ def server_continue_agent(agent_id, query):
 def print_agent_status(agent_id):
     if g_registered_agents_dict.get(agent_id):
         agent_status = g_registered_agents_dict[agent_id].agent_status
-        agent_stream_queue = g_registered_agents_dict[agent_id].agent_stream_queue
+        agent_stream_queue = g_registered_agents_dict[agent_id].agent_stream_queues
 
         dblue(f'-------------------------agent status(agent_id="{agent_id}")-------------------------------')
         dyellow(f'{"agent status:":<30}({agent_status})')
@@ -214,7 +214,7 @@ def server_start_register_2_levels_agents_system(
     # ----------------构建upper的agent----------------
     # multi_agent_server和tool_agent同步管理的信息
     upper_agent_status = Agent_Status()
-    upper_agent_stream_queue = Agent_Stream_Queue()
+    upper_agent_stream_queue = Agent_Stream_Queues()
 
     # upper_agent需要将所有agent_as_tool和常规tools的融合
     agents_as_tool_instance_list = []
