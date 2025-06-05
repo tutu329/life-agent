@@ -7,6 +7,13 @@ from sse_starlette.sse import EventSourceResponse   # pip install sse-starlette
 
 from agent.core.multi_agent_server import Registered_Agent_Data
 
+class FastAPI_Agent_Result(BaseModel):
+    id                          :str                            # 如: agent_id
+    event_source_response_dict  :Dict[str, EventSourceResponse] # 所有streams的一个dict
+
+    # 开启“任意类型”支持
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 # ------------ ❷ 通用的 SSE 生成器 ----------------
 class _GenDone: pass
 GeneratorDone = _GenDone()      # 特殊标记，用来告诉生成器结束
@@ -22,7 +29,7 @@ async def _queue_streamer(q: queue.Queue):
         yield {"data": item}
 
 # ------------ 装饰器：把任意长任务函数挂到 /api/<func_name> --------------
-def FastAPI_Endpoint(
+def FastAPI_Agent_Endpoint(
     app: FastAPI,
 ):
     """
@@ -44,10 +51,11 @@ def FastAPI_Endpoint(
             }
 
             # 返回 id + 多流字典
-            return {
-                "id":rtn.agent_id,
-                "event_source_response_dict":event_source_response_dict
-            }
+            fastapi_agent_result = FastAPI_Agent_Result(
+                id = rtn.agent_id,
+                event_source_response_dict=event_source_response_dict
+            )
+            return fastapi_agent_result
 
         # 动态注册到 FastAPI
         app.post(route)(endpoint)

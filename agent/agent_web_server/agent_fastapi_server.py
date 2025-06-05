@@ -138,8 +138,8 @@ async def run_agent_stream(request: Agent_Request):
         media_type="text/event-stream"
     )
 
-from agent.agent_web_server.protocol import FastAPI_Endpoint
-@FastAPI_Endpoint(app)
+from agent.agent_web_server.protocol import FastAPI_Agent_Endpoint
+@FastAPI_Agent_Endpoint(app)
 async def start_agent_stream(request: Agent_Request):
     import time
     from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, \
