@@ -71,7 +71,7 @@ def server_start_and_register_agent(
         agent_obj=agent,
         agent_future=future,
         agent_status=agent_status,
-        agent_stream_queue=agent_stream_queue
+        agent_stream_queues=agent_stream_queue
     )
 
     # 注册agent的数据
@@ -262,7 +262,7 @@ def server_start_and_register_2_levels_agents_system(
         agent_obj=upper_agent,
         agent_future=future,
         agent_status=upper_agent_status,
-        agent_stream_queue=upper_agent_stream_queue
+        agent_stream_queues=upper_agent_stream_queue
     )
 
     # 注册agent的数据
@@ -404,5 +404,5 @@ def main_test_2_level2_agents_system():
     # print_agent_status(agent_id)
 
 if __name__ == "__main__":
-    # main_test_server_start_agent()
-    main_test_2_level2_agents_system()
+    main_test_server_start_agent()
+    # main_test_2_level2_agents_system()

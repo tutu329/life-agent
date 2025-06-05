@@ -29,14 +29,14 @@ class FastAPI_Endpoint_With_SSE_Result(BaseModel):
 # ------------ 装饰器：把任意长任务函数挂到 /api/<func_name> --------------
 def FastAPI_Endpoint_With_SSE(
     app: FastAPI,
-    rtn_id_name:str,                # 告诉装饰器，被装饰函数的返回变量中，哪个字段是id（id通常为后端动态生成对象的唯一id，如:'agent_id'）
-    rtn_stream_queues_name:str,     # 告诉装饰器，被装饰函数的返回变量中，哪个字段是stream_queues（stream_queues是与后台对象如id对应agent绑定的sse输出通道）
-    return_type: Type,              # 告诉装饰器，被装饰函数的返回类型
+    return_type: Type,                  # 告诉装饰器，被装饰函数的返回类型
+    return_id_name:str,                 # 告诉装饰器，被装饰函数的返回变量中，哪个字段是id（id通常为后端动态生成对象的唯一id，如:'agent_id'）
+    return_stream_queues_name:str,      # 告诉装饰器，被装饰函数的返回变量中，哪个字段是stream_queues（stream_queues是与后台对象如id对应agent绑定的sse输出通道）
 )-> Callable[..., FastAPI_Endpoint_With_SSE_Result]:    # 整个被装饰结果返回的类型
     """
     用法:
-        @FastAPI_Endpoint(app)
-        def start_agent(queues, some, args): ...
+        @FastAPI_Endpoint_With_SSE(app)
+        def start_agent_sse_task(queues, some, args): ...
     """
     def decorator(task_func: Callable[..., return_type]):
         route = f"/api/{task_func.__name__}"
@@ -47,12 +47,12 @@ def FastAPI_Endpoint_With_SSE(
             # 为每条流构建一个 EventSourceResponse
             event_source_response_dict = {
                 name: EventSourceResponse(_queue_streamer(queue))
-                    for name, queue in rtn.dict()[rtn_stream_queues_name].items()
+                    for name, queue in rtn.dict()[return_stream_queues_name].items()
             }
 
             # 返回 id + 多流字典
             fastapi_result = FastAPI_Endpoint_With_SSE_Result(
-                id = rtn.dict()[rtn_id_name],
+                id = rtn.dict()[return_id_name],
                 event_source_response_dict=event_source_response_dict
             )
             return fastapi_result

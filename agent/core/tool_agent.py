@@ -228,6 +228,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.__finished_keyword = '最终答复'
         self.final_answer = '尚未进行分析和答复'
 
+        # 用于测试调用时长
+        self._start_time = None
+        self._end_time = None
+
     # 设置最终结果stream输出的func
     def set_stream(self, result_output_func, thinking_output_func, log_output_func, tool_result_data_output_func):
         self.agent_config.web_server_stream_result = result_output_func                        # stream输出的func
@@ -459,6 +463,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
             return False
 
     def _thoughts_stream_output(self, gen):
+        # self._start_time = time.time()
+
         thoughts = ''
         thoughts_copy_to_print = ''
 
@@ -531,6 +537,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
             # if self.status_list is not None:
             #     self.status_list.append(thoughts)
 
+        # self._end_time = time.time()
+        # dyellow(f"【action拿到tool_name的执行时间: {self._end_time - self._start_time:.4f} 秒】")
         return thoughts
 
     def thinking(self):

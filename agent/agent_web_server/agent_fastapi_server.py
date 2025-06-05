@@ -143,9 +143,9 @@ async def run_agent_stream(request: Agent_Request):
 
 @FastAPI_Endpoint_With_SSE(
     app=app,
-    rtn_id_name='agent_id',
-    rtn_stream_queues_name='agent_stream_queues',
-    return_type=Registered_Agent_Data
+    return_type=Registered_Agent_Data,
+    return_id_name='agent_id',
+    return_stream_queues_name='agent_stream_queues',
 )
 async def start_2_level_agents_stream(request: Agent_Request):
     import time
