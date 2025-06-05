@@ -29,8 +29,8 @@ class FastAPI_Endpoint_With_SSE_Result(BaseModel):
 # ------------ 装饰器：把任意长任务函数挂到 /api/<func_name> --------------
 def FastAPI_Endpoint_With_SSE(
     app: FastAPI,
-    rtn_id_name:str,                # 告诉装饰器，被装饰函数的返回变量中，哪个字段是id
-    rtn_stream_queues_name:str,     # 告诉装饰器，被装饰函数的返回变量中，哪个字段是stream_queues
+    rtn_id_name:str,                # 告诉装饰器，被装饰函数的返回变量中，哪个字段是id（id通常为后端动态生成对象的唯一id，如:'agent_id'）
+    rtn_stream_queues_name:str,     # 告诉装饰器，被装饰函数的返回变量中，哪个字段是stream_queues（stream_queues是与后台对象如id对应agent绑定的sse输出通道）
     return_type: Type,              # 告诉装饰器，被装饰函数的返回类型
 )-> Callable[..., FastAPI_Endpoint_With_SSE_Result]:    # 整个被装饰结果返回的类型
     """
