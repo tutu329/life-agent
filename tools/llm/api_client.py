@@ -633,12 +633,14 @@ class LLM_Client():
         self.result_stream_buf = result_stream_buf
 
     def thinking_stream(self, chunk):
-        if self.thinking_stream_buf:
-            self.thinking_stream_buf(chunk)
+        # if self.thinking_stream_buf:
+        #     self.thinking_stream_buf(chunk)
+        pass
 
     def result_stream(self, chunk):
-        if self.result_stream_buf:
-            self.result_stream_buf(chunk)
+        # if self.result_stream_buf:
+        #     self.result_stream_buf(chunk)
+        pass
 
     def get_think_generator(self):
         think_started = False
@@ -1905,22 +1907,28 @@ def base_main():
         # model_id='qwq-32b',
     )
     llm.ask_prepare('你是谁？').get_answer_and_sync_print()
-    llm.ask_prepare('我叫土土').get_answer_and_sync_print()
-    llm.ask_prepare('我刚才告诉你我叫什么？').get_answer_and_sync_print()
+    # llm.ask_prepare('我叫土土').get_answer_and_sync_print()
+    # llm.ask_prepare('我刚才告诉你我叫什么？').get_answer_and_sync_print()
 
 def think_and_result_test():
-    llm=LLM_Client()
+    llm = LLM_Client(
+        api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',  # deepseek官网
+        url = 'https://api.deepseek.com/v1',
+        model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+    )
     llm.ask_prepare('你是谁？')
     think_gen = llm.get_think_generator()
+    dyellow('[thinking]')
     for c in think_gen:
         print(c, end='', flush=True)
-    print()
+    dyellow('\n[/thinking]')
 
-    print('==============')
+    dgreen('[result]')
     result_gen = llm.get_result_generator()
     for c in result_gen:
         print(c, end='', flush=True)
-    print()
+    dgreen('\n[/result]')
 
 def async_llm_main():
     allm = Async_LLM(
@@ -1936,9 +1944,9 @@ def async_llm_main():
     allm.wait()
 
 if __name__ == "__main__" :
-    base_main()
+    # base_main()
     # pic_main() # 带pic
-    # think_and_result_test()
+    think_and_result_test()
     # async_llm_main()
 
     # think_main()

@@ -14,9 +14,16 @@ class Agent_Status(BaseModel):
 
 class Agent_Stream_Queues(BaseModel):
     output          :Queue= Field(default_factory=Queue)
+    final_answer    :Queue= Field(default_factory=Queue)
     thinking        :Queue= Field(default_factory=Queue)
     log             :Queue= Field(default_factory=Queue)
     tool_rtn_data   :Queue= Field(default_factory=Queue)
 
     # 开启“任意类型”支持
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+if __name__ == "__main__":
+    q = Agent_Stream_Queues()
+    q.output.put('hello')
+    res = q.output.get()
+    print(res)

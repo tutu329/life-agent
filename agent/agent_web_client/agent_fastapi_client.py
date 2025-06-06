@@ -9,6 +9,7 @@ from agent.tools.protocol import Tool_Call_Paras
 from agent.tools.generate_tool_class_dynamically import generate_tool_class_dynamically
 from agent.core.agent_config import Agent_Config
 
+from config import dblue, dyellow, dgreen, dcyan, dred
 
 def agent_fastapi_client():
     pass
@@ -30,8 +31,21 @@ def listen_to_stream(base_url: str, stream_id: str, stream_name: str):
 
         client = SSEClient(response)
 
+        if stream_name=='output':
+            o = dgreen
+        elif stream_name=='thinking':
+            o = dblue
+        elif stream_name=='final_answer':
+            o = dred
+        elif stream_name=='log':
+            o = print
+        elif stream_name == 'tool_rtn_data':
+            o = dyellow
+
+        o(f'[{stream_name}]', end='')
         for event in client.events():
-            print(f"[{stream_name}] {event.data}")
+            o(f"{event.data}", end='')
+        o()
     except Exception as e:
         print(f"❌ 流 {stream_name} 出错: {e}")
 

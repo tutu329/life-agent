@@ -200,7 +200,7 @@ def server_start_and_register_2_levels_agents_system(
     query                           :str,
     upper_agent_dict                :Dict[str, Any],        # {'tool_names':tool_names, 'exp_json_path':, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
     lower_agents_as_tool_dict_list  :List[Dict[str, Any]],  # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
-):
+)->Registered_Agent_Data:
     # ----------------构建lower的agents_as_tool----------------
     # 所有将创建的agent_as_tool对应的tool_id_list
     agents_as_tool_id_list = []

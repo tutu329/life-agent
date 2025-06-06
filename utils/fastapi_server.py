@@ -5,6 +5,8 @@ from fastapi import FastAPI
 import asyncio, queue
 from sse_starlette.sse import EventSourceResponse  # pip install sse-starlette
 
+from config import dblue, dyellow, dgreen, dcyan, dred
+
 # ------------ ❷ 通用的 SSE 生成器 ----------------
 class _GenDone: pass
 GeneratorDone = _GenDone()  # 特殊标记，用来告诉生成器结束
@@ -16,9 +18,11 @@ async def _queue_streamer(q: queue.Queue):
         # 阻塞队列读取要放在线程池，避免卡住 event loop
         # item = await loop.run_in_executor(None, lambda: q.get(timeout=1))
         # item = await loop.run_in_executor(None, q.get)
-        item = await q.get()
+        # item = await q.get()
+        item = await loop.run_in_executor(None, q.get)
         if item is GeneratorDone:
             break
+        # print(f'--------------------q.get(): "{item}"---------------------------')
         yield {"data": item}
 
 class FastAPI_Endpoint_With_SSE_Result:
@@ -52,6 +56,9 @@ def FastAPI_Endpoint_With_SSE(
             # 将结果存储在内存中（实际应用中可能需要使用 Redis 或数据库）
             result_id = rtn.dict()[return_id_name]
             stream_queues = rtn.dict()[return_stream_queues_name]
+
+            # dred(f'stream_queues: "{stream_queues}"')
+            # dred(f'type of stream_queues.output: "{type(stream_queues["output"])}"')
 
             # 存储到全局变量（生产环境建议使用 Redis）
             if not hasattr(app.state, 'active_streams'):

@@ -9,7 +9,7 @@ import uvicorn
 import asyncio
 import json
 
-from config import Port
+from config import Port, dyellow, dred, dgreen, dcyan, dblue
 
 # agent
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
@@ -155,6 +155,10 @@ async def start_2_level_agents_stream(request: Agent_Request):
     from agent.core.multi_agent_server import server_start_and_register_2_levels_agents_system, print_agent_status
     from agent.core.multi_agent_server import __server_wait_registered_agent
     from config import Port
+
+    dblue(f'--------------------------start_2_level_agents_stream获得request参数--------------------------------')
+    dblue(request)
+    dblue(f'-------------------------/start_2_level_agents_stream获得request参数--------------------------------')
 
     # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
     # 注册local所有tool

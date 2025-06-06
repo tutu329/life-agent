@@ -80,12 +80,12 @@ class Tool_Agent(Agent_Base, Base_Tool):
         return action_result
 
     def _init_agent_data_in_server(self):
-        if self.agent_status_ref and self.agent_stream_queue_ref:
+        if self.agent_status_ref and self.agent_stream_queues_ref:
             self.agent_status_ref.started = True
-            self.agent_stream_queue_ref.output = print
+            # self.agent_stream_queues_ref.output = print
         else:
             self.status.started = True
-            self.stream_queue.output = print
+            # self.stream_queues.output = print
 
     # def set_pause(self):
     #     self.agent_status_ref.paused = True
@@ -148,7 +148,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         # multi_agent_server管理的状态
         self.agent_status_ref = agent_status_ref
-        self.agent_stream_queue_ref = agent_stream_queue_ref
+        self.agent_stream_queues_ref = agent_stream_queue_ref
 
         # 自身状态与multi_agent_server管理的状态同步，如果没有multi_agent_server状态，则自身初始化一套
         if self.agent_status_ref:
@@ -156,10 +156,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
         else:
             self.status = Agent_Status()
 
-        if self.agent_stream_queue_ref:
-            self.stream_queue = self.agent_stream_queue_ref
+        if self.agent_stream_queues_ref:
+            self.stream_queues = self.agent_stream_queues_ref
         else:
-            self.stream_queue = Agent_Stream_Queues()
+            self.stream_queues = Agent_Stream_Queues()
 
         # agent属性
         self.agent_id = str(uuid4())
@@ -478,12 +478,18 @@ class Tool_Agent(Agent_Base, Base_Tool):
             thoughts +=chunk
 
             dgreen(chunk, end='', flush=True)
+
             thoughts_copy_to_print +=chunk
             if f'[{self.__finished_keyword}]' in thoughts:
                 # 最终结果stream输出(去除'[最终答复]'这些字)
                 if self.ostream_use_chunk:
                     # 采用chunk输出，chunk = string_this_turn - string_last_turn
                     str_this_turn = thoughts.split(f'[{self.__finished_keyword}]')[-1]  # 去除'[最终答复]'这些字
+
+                    # --------------------------写入queue stream-----------------------------
+                    self.stream_queues.final_answer.put(str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn)
+                    # -------------------------/写入queue stream-----------------------------
+
                     # dyellow(f'-----> "{str_this_turn}"')
                     if self.output_stream_to_console:
                         # 输出到console
@@ -499,9 +505,17 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     str_last_turn = str_this_turn
                 else:
                     # 采用full_string输出
+                    # --------------------------写入queue stream-----------------------------
+                    self.stream_queues.final_answer.put(thoughts.split(f'[{self.__finished_keyword}]')[-1])
+                    # -------------------------/写入queue stream-----------------------------
+
                     self.output_result_stream_full_string(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
                     # self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
             else:
+                # --------------------------写入queue stream-----------------------------
+                self.stream_queues.output.put(chunk)
+                # -------------------------/写入queue stream-----------------------------
+
                 self.output_thinking_stream_chunk(chunk)
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
                 # self.status_stream(chunk, thoughts)
@@ -549,13 +563,32 @@ class Tool_Agent(Agent_Base, Base_Tool):
         print(f'thinking(turn {self.turns_num})'.center(80, '='))
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
         dred(f'manual_stop: "{self.response_stop}"')
+
+        # self.llm.ask_prepare(
+        #     self.agent_tools_description_and_full_history,
+        #     # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
+        #     manual_stop = self.response_stop,
+        # )
+
+        # think_gen = self.llm.get_think_generator()
+        # for ch in think_gen:
+        #     # --------------------------写入queue stream-----------------------------
+        #     self.stream_queues.thinking.put(ch)
+        #     # -------------------------/写入queue stream-----------------------------
+        #
+        # # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
+        # # thoughts = ''
+        #
+        # result_gen = self.llm.get_result_generator()
+
+        # answer_this_turn = self._thoughts_stream_output(result_gen)
+
+
         gen = self.llm.ask_prepare(
             self.agent_tools_description_and_full_history,
             # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
             manual_stop = self.response_stop,
         ).get_answer_generator()
-        # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
-        # thoughts = ''
 
         answer_this_turn = self._thoughts_stream_output(gen)
         if self.is_canceling():
