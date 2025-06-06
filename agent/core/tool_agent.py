@@ -33,6 +33,8 @@ from agent.core.protocol import Agent_Status, Agent_Stream_Queues
 from agent.experience.agent_experience import Agent_Experience
 from agent.tools.protocol import Tool_Call_Paras
 
+from utils.fastapi_server import GeneratorDone
+
 # 全局线程池，真正业务里可以按需设置 max_workers
 g_thread_pool_executor = ThreadPoolExecutor()
 
@@ -473,7 +475,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         for chunk in gen:
             if self.is_canceling(): break
 
-            chunk = chunk[2]
+            # chunk = chunk[2]
 
             thoughts +=chunk
 
@@ -507,6 +509,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     # 采用full_string输出
                     # --------------------------写入queue stream-----------------------------
                     self.stream_queues.final_answer.put(thoughts.split(f'[{self.__finished_keyword}]')[-1])
+                    # self.stream_queues.final_answer.put(GeneratorDone)
                     # -------------------------/写入queue stream-----------------------------
 
                     self.output_result_stream_full_string(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
@@ -532,6 +535,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     l.pop(0)
                     thoughts_copy_to_print = '\n\n'.join(l)    # 这里用' '.join而不用'\n'.join是为了防止streamlit中status.markdown额外输出\n
         dgreen()
+        # --------------------------写入queue stream-----------------------------
+        # self.stream_queues.output.put(GeneratorDone)
+        # self.stream_queues.final_answer.put(GeneratorDone)
+        # -------------------------/写入queue stream-----------------------------
 
         # stream输出最后的end
         if self.ostream_end_func:
@@ -564,33 +571,36 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
         dred(f'manual_stop: "{self.response_stop}"')
 
-        # self.llm.ask_prepare(
-        #     self.agent_tools_description_and_full_history,
-        #     # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
-        #     manual_stop = self.response_stop,
-        # )
-
-        # think_gen = self.llm.get_think_generator()
-        # for ch in think_gen:
-        #     # --------------------------写入queue stream-----------------------------
-        #     self.stream_queues.thinking.put(ch)
-        #     # -------------------------/写入queue stream-----------------------------
-        #
-        # # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
-        # # thoughts = ''
-        #
-        # result_gen = self.llm.get_result_generator()
-
-        # answer_this_turn = self._thoughts_stream_output(result_gen)
-
-
-        gen = self.llm.ask_prepare(
+        self.llm.ask_prepare(
             self.agent_tools_description_and_full_history,
             # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
             manual_stop = self.response_stop,
-        ).get_answer_generator()
+        )
 
-        answer_this_turn = self._thoughts_stream_output(gen)
+        think_gen = self.llm.get_think_generator()
+        for ch in think_gen:
+            # --------------------------写入queue stream-----------------------------
+            self.stream_queues.thinking.put(ch)
+            # -------------------------/写入queue stream-----------------------------
+        # self.stream_queues.thinking.put(GeneratorDone)
+
+        # gen = self.llm.ask_prepare(self.agent_desc_and_action_history, in_stop=self.action_stop).get_answer_generator()
+        # thoughts = ''
+
+        result_gen = self.llm.get_result_generator()
+        answer_this_turn = self._thoughts_stream_output(result_gen)
+
+
+        # gen = self.llm.ask_prepare(
+        #     self.agent_tools_description_and_full_history,
+        #     # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
+        #     manual_stop = self.response_stop,
+        # ).get_answer_generator()
+        #
+        # answer_this_turn = self._thoughts_stream_output(gen)
+
+
+
         if self.is_canceling():
             self.agent_tools_description_and_full_history += '\n<用户中断>用户中断了执行。</用户中断>'
             return '<用户中断>用户中断了执行。</用户中断>'
