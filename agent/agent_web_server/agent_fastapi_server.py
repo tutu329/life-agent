@@ -178,7 +178,7 @@ async def start_2_level_agents_stream(request: Agent_Request):
     print_all_registered_tools()
     # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
 
-    query = r'我叫土土，请告诉./文件夹下有哪些文件'
+    query = r'我叫电力用户，请告诉./文件夹下有哪些文件'
     config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',

@@ -39,7 +39,8 @@ def listen_to_stream(base_url: str, stream_id: str, stream_name: str):
 def main_test_2_level_agents_system():
     """Python测试Agent服务器 - 方案1调用方式"""
     # 第一步：启动任务
-    start_url = "http://powerai.cc:5120/api/start_2_level_agents_stream"
+    start_url = "http://localhost:5120/api/start_2_level_agents_stream"
+    # start_url = "http://powerai.cc:5120/api/start_2_level_agents_stream"
 
     # 测试数据
     data = {
