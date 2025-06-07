@@ -1915,6 +1915,7 @@ def base_main():
     # llm.ask_prepare('我叫土土').get_answer_and_sync_print()
     # llm.ask_prepare('我刚才告诉你我叫什么？').get_answer_and_sync_print()
 
+
 def think_and_result_test():
     llm = LLM_Client(
         api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',  # deepseek官网
