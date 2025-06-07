@@ -82,11 +82,11 @@ class Tool_Agent(Agent_Base, Base_Tool):
         return action_result
 
     def _init_agent_data_in_server(self):
-        if self.agent_status_ref and self.agent_stream_queues_ref:
-            self.agent_status_ref.started = True
+        # if self.agent_status_ref and self.agent_stream_queues_ref:
+        #     self.agent_status_ref.started = True
             # self.agent_stream_queues_ref.output = print
-        else:
-            self.status.started = True
+        # else:
+        self.status.started = True
             # self.stream_queues.output = print
 
     # def set_pause(self):
@@ -99,33 +99,33 @@ class Tool_Agent(Agent_Base, Base_Tool):
     #     return self.agent_status_ref.paused
 
     def set_cancel(self):
-        if self.agent_status_ref:
-            self.agent_status_ref.canceling = True
-        else:
-            self.status.canceling = True
+        # if self.agent_status_ref:
+        #     self.agent_status_ref.canceling = True
+        # else:
+        self.status.canceling = True
         dblue(f'【agent set_cancel() invoked】(agent_id="{self.agent_id}")')
 
     def unset_cancel(self):
-        if self.agent_status_ref:
-            self.agent_status_ref.canceling = False
-            self.agent_status_ref.canceled = False
-        else:
-            self.status.canceling = False
-            self.status.canceled = False
+        # if self.agent_status_ref:
+        #     self.agent_status_ref.canceling = False
+        #     self.agent_status_ref.canceled = False
+        # else:
+        self.status.canceling = False
+        self.status.canceled = False
         dblue(f'【agent unset_cancel() invoked】(agent_id="{self.agent_id}")')
 
     def set_canceled(self):
-        if self.agent_status_ref:
-            self.agent_status_ref.canceled = True
-        else:
-            self.status.canceled = True
+        # if self.agent_status_ref:
+        #     self.agent_status_ref.canceled = True
+        # else:
+        self.status.canceled = True
         dyellow(f'agent已经完成cancel.(agent_id: "{self.agent_id}")')
 
     def is_canceling(self):
-        if self.agent_status_ref:
-            return self.agent_status_ref.canceling
-        else:
-            return self.status.canceling
+        # if self.agent_status_ref:
+        #     return self.agent_status_ref.canceling
+        # else:
+        return self.status.canceling
 
     # Tool_Agent方法
     def __init__(self,
@@ -136,8 +136,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
                  as_tool_description=None,  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  has_history = False,
                  tool_agent_experience_json_path='',  # 经验json文件，如果为‘’，就不设置经验
-                 agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
-                 agent_stream_queue_ref:Agent_Stream_Queues=None,  # agent的stream queue，，由multi_agent_server管理
+                 # agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
+                 # agent_stream_queue_ref:Agent_Stream_Queues=None,  # agent的stream queue，，由multi_agent_server管理
                  ):
         Agent_Base.__init__(self)
 
@@ -149,19 +149,19 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.description = as_tool_description
 
         # multi_agent_server管理的状态
-        self.agent_status_ref = agent_status_ref
-        self.agent_stream_queues_ref = agent_stream_queue_ref
+        # self.agent_status_ref = agent_status_ref
+        # self.agent_stream_queues_ref = agent_stream_queue_ref
 
         # 自身状态与multi_agent_server管理的状态同步，如果没有multi_agent_server状态，则自身初始化一套
-        if self.agent_status_ref:
-            self.status = self.agent_status_ref
-        else:
-            self.status = Agent_Status()
+        # if self.agent_status_ref:
+        #     self.status = self.agent_status_ref
+        # else:
+        self.status = Agent_Status()
 
-        if self.agent_stream_queues_ref:
-            self.stream_queues = self.agent_stream_queues_ref
-        else:
-            self.stream_queues = Agent_Stream_Queues()
+        # if self.agent_stream_queues_ref:
+        #     self.stream_queues = self.agent_stream_queues_ref
+        # else:
+        self.stream_queues = Agent_Stream_Queues()
 
         # agent属性
         self.agent_id = str(uuid4())

@@ -15,7 +15,7 @@ class Registered_Agent_Data(BaseModel):
     agent_id            :str
     agent_obj           :Tool_Agent
     agent_future        :Future
-    agent_status        :Agent_Status
+    # agent_status        :Agent_Status
     agent_stream_queues :Agent_Stream_Queues
 
     # 开启“任意类型”支持
@@ -38,7 +38,7 @@ def server_start_and_register_agent(
 
     # multi_agent_server和tool_agent同步管理的信息
     agent_status = Agent_Status()
-    agent_stream_queue = Agent_Stream_Queues()
+    # agent_stream_queue = Agent_Stream_Queues()
 
     # 初始化tool_agent
     class_list = get_all_registered_tools_class(tool_names)
@@ -48,8 +48,8 @@ def server_start_and_register_agent(
         has_history=True,
         tool_classes=class_list,
         agent_config=agent_config,
-        agent_status_ref=agent_status,
-        agent_stream_queue_ref=agent_stream_queue,
+        # agent_status_ref=agent_status,
+        # agent_stream_queue_ref=agent_stream_queue,
         tool_agent_experience_json_path=exp_json_path,
     )
     agent_id = agent.agent_id
@@ -70,8 +70,8 @@ def server_start_and_register_agent(
         agent_id=agent_id,
         agent_obj=agent,
         agent_future=future,
-        agent_status=agent_status,
-        agent_stream_queues=agent_stream_queue
+        # agent_status=agent_status,
+        agent_stream_queues=agent.stream_queues
     )
 
     # 注册agent的数据
@@ -100,15 +100,15 @@ def server_continue_agent(agent_id, query):
 
 def print_agent_status(agent_id):
     if g_registered_agents_dict.get(agent_id):
-        agent_status = g_registered_agents_dict[agent_id].agent_status
-        agent_stream_queue = g_registered_agents_dict[agent_id].agent_stream_queues
+        agent_status = g_registered_agents_dict[agent_id].agent_obj.status
+        # agent_stream_queue = g_registered_agents_dict[agent_id].agent_stream_queues
 
         dblue(f'-------------------------agent status(agent_id="{agent_id}")-------------------------------')
         dyellow(f'{"agent status:":<30}({agent_status})')
-        dyellow(f'{"agent stream output:":<30}({agent_stream_queue.output})')
-        dyellow(f'{"agent stream thinking:":<30}({agent_stream_queue.thinking})')
-        dyellow(f'{"agent stream log:":<30}({agent_stream_queue.log})')
-        dyellow(f'{"agent stream tool_rtn_data:":<30}({agent_stream_queue.tool_rtn_data})')
+        # dyellow(f'{"agent stream output:":<30}({agent_stream_queue.output})')
+        # dyellow(f'{"agent stream thinking:":<30}({agent_stream_queue.thinking})')
+        # dyellow(f'{"agent stream log:":<30}({agent_stream_queue.log})')
+        # dyellow(f'{"agent stream tool_rtn_data:":<30}({agent_stream_queue.tool_rtn_data})')
         dblue(f'------------------------/agent status(agent_id="{agent_id}")-------------------------------')
 
 # 对agent进行cancel操作
@@ -214,7 +214,7 @@ def server_start_and_register_2_levels_agents_system(
     # ----------------构建upper的agent----------------
     # multi_agent_server和tool_agent同步管理的信息
     upper_agent_status = Agent_Status()
-    upper_agent_stream_queue = Agent_Stream_Queues()
+    # upper_agent_stream_queue = Agent_Stream_Queues()
 
     # upper_agent需要将所有agent_as_tool和常规tools的融合
     agents_as_tool_instance_list = []
@@ -244,8 +244,8 @@ def server_start_and_register_2_levels_agents_system(
         has_history=True,
         tool_classes=tool_class_and_tool_instance_list,     # 这里是[Tool_Class1, Tool_Class2, ... , agent_as_tool1, agent_as_tool2, ...]
         agent_config=upper_agent_dict['agent_config'],
-        agent_status_ref=upper_agent_status,
-        agent_stream_queue_ref=upper_agent_stream_queue,
+        # agent_status_ref=upper_agent_status,
+        # agent_stream_queue_ref=upper_agent_stream_queue,
         tool_agent_experience_json_path = upper_agent_dict['exp_json_path'],
     )
     upper_agent_id = upper_agent.agent_id
@@ -261,8 +261,8 @@ def server_start_and_register_2_levels_agents_system(
         agent_id=upper_agent_id,
         agent_obj=upper_agent,
         agent_future=future,
-        agent_status=upper_agent_status,
-        agent_stream_queues=upper_agent_stream_queue
+        # agent_status=upper_agent_status,
+        agent_stream_queues=upper_agent.stream_queues
     )
 
     # 注册agent的数据
