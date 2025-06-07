@@ -5,7 +5,7 @@ from concurrent.futures import Future
 import time
 
 from agent.core.tool_agent import Tool_Agent
-from agent.core.agent_config import Agent_Config
+from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.tools.tool_manager import legacy_get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
 from agent.core.protocol import Agent_Status, Agent_Stream_Queues
 
@@ -165,29 +165,68 @@ def server_get_registered_agent_data(agent_id):
 
 # 多层agent体系的关键(前后端系统)
 # server创建agent_as_tool
+# def _server_create_and_registered_agent_as_tool(
+#     tool_names:List[str],       # 该agent所需调用tools的name list
+#     agent_config:Agent_Config,        # agent的config
+#     as_tool_name:str,           # name as tool
+#     as_tool_description:str,    # description as tool
+# ):
+#     # 获取该agent需要使用的tools_class_list
+#     tools_class_list = get_all_registered_tools_class(tool_names)
+#     # tools_class_list = legacy_get_all_local_tools_class(tool_names)
+#
+#     # 生成agent(继承自Base_Tool)的实例
+#     agent_as_tool = Tool_Agent(
+#         tool_classes=tools_class_list,
+#         agent_config=agent_config,
+#         as_tool_name=as_tool_name,
+#         as_tool_description=as_tool_description,
+#         tool_agent_experience_json_path='',     #agent_as_tool不需要经验，经验由upper agent管理
+#     ).init()
+#
+#     # 注册agent_as_tool
+#     tool_id = server_register_tool(
+#         name=as_tool_name,
+#         description=as_tool_description,
+#         parameters=[],                          # 这里不需要具体信息，Tool_Agent会自动注入agent_as_tool的固定的'自然语言指令'para
+#         tool_class_or_instance=agent_as_tool,   # 这里因为是agent_as_tool，所以将instance而非class传入
+#     )
+#
+#     return tool_id
+
 def _server_create_and_registered_agent_as_tool(
-    tool_names:List[str],       # 该agent所需调用tools的name list
-    agent_config:Agent_Config,        # agent的config
-    as_tool_name:str,           # name as tool
-    as_tool_description:str,    # description as tool
+    # tool_names:List[str],       # 该agent所需调用tools的name list
+    # agent_config:Agent_Config,  # agent的config
+    # as_tool_name:str,           # name as tool
+    # as_tool_description:str,    # description as tool
+    agent_as_tool_config:Agent_As_Tool_Config
 ):
     # 获取该agent需要使用的tools_class_list
-    tools_class_list = get_all_registered_tools_class(tool_names)
+    tools_class_list = get_all_registered_tools_class(agent_as_tool_config.tool_names)
     # tools_class_list = legacy_get_all_local_tools_class(tool_names)
+
+    agent_config = Agent_Config(
+        tool_names=agent_as_tool_config.tool_names,
+        exp_json_path=agent_as_tool_config.exp_json_path,
+        base_url=agent_as_tool_config.base_url,
+        api_key=agent_as_tool_config.api_key,
+        llm_model_id=agent_as_tool_config.llm_model_id,
+        temperature=agent_as_tool_config.temperature
+    )
 
     # 生成agent(继承自Base_Tool)的实例
     agent_as_tool = Tool_Agent(
         tool_classes=tools_class_list,
         agent_config=agent_config,
-        as_tool_name=as_tool_name,
-        as_tool_description=as_tool_description,
+        as_tool_name=agent_as_tool_config.as_tool_name,
+        as_tool_description=agent_as_tool_config.as_tool_description,
         tool_agent_experience_json_path='',     #agent_as_tool不需要经验，经验由upper agent管理
     ).init()
 
     # 注册agent_as_tool
     tool_id = server_register_tool(
-        name=as_tool_name,
-        description=as_tool_description,
+        name=agent_as_tool_config.as_tool_description,
+        description=agent_as_tool_config.as_tool_description,
         parameters=[],                          # 这里不需要具体信息，Tool_Agent会自动注入agent_as_tool的固定的'自然语言指令'para
         tool_class_or_instance=agent_as_tool,   # 这里因为是agent_as_tool，所以将instance而非class传入
     )
@@ -196,18 +235,93 @@ def _server_create_and_registered_agent_as_tool(
 
 # 多层agent体系的关键(前后端系统)
 # server启动一个2层agent系统的query，并注册
+# def server_start_and_register_2_levels_agents_system(
+#     query                           :str,
+#     upper_agent_dict                :Dict[str, Any],        # {'tool_names':tool_names, 'exp_json_path':, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
+#     lower_agents_as_tool_dict_list  :List[Dict[str, Any]],  # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
+# )->Registered_Agent_Data:
+#     # ----------------构建lower的agents_as_tool----------------
+#     # 所有将创建的agent_as_tool对应的tool_id_list
+#     agents_as_tool_id_list = []
+#
+#     # 创建所有agent_as_tool
+#     for agents_as_tool_dict in lower_agents_as_tool_dict_list:
+#         tool_id = _server_create_and_registered_agent_as_tool(**agents_as_tool_dict)
+#         agents_as_tool_id_list.append(tool_id)
+#     # ---------------/构建lower的agents_as_tool----------------
+#
+#     # ----------------构建upper的agent----------------
+#     # multi_agent_server和tool_agent同步管理的信息
+#     upper_agent_status = Agent_Status()
+#     # upper_agent_stream_queue = Agent_Stream_Queues()
+#
+#     # upper_agent需要将所有agent_as_tool和常规tools的融合
+#     agents_as_tool_instance_list = []
+#     for agents_as_tool_id in agents_as_tool_id_list:
+#         instance = server_get_tool_data_by_id(agents_as_tool_id).tool_class
+#         agents_as_tool_instance_list.append(instance)
+#
+#     upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_dict['tool_names'])
+#     # upper_agent_tools_class_list = legacy_get_all_local_tools_class(upper_agent_dict['tool_names'])
+#     tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
+#
+#     # dred('---------------------upper_agent_tools_class_list-------------------------')
+#     # print(upper_agent_tools_class_list)
+#     # dred('--------------------/upper_agent_tools_class_list-------------------------')
+#     #
+#     # dred('---------------------agents_as_tool_instance_list-------------------------')
+#     # print(agents_as_tool_instance_list)
+#     # dred('--------------------/agents_as_tool_instance_list-------------------------')
+#     #
+#     #
+#     # dred('---------------------tool_class_and_tool_instance_list--------------------')
+#     # print(tool_class_and_tool_instance_list)
+#     # dred('--------------------/tool_class_and_tool_instance_list--------------------')
+#
+#     # ---------------/构建upper的agent----------------
+#     upper_agent = Tool_Agent(
+#         has_history=True,
+#         tool_classes=tool_class_and_tool_instance_list,     # 这里是[Tool_Class1, Tool_Class2, ... , agent_as_tool1, agent_as_tool2, ...]
+#         agent_config=upper_agent_dict['agent_config'],
+#         # agent_status_ref=upper_agent_status,
+#         # agent_stream_queue_ref=upper_agent_stream_queue,
+#         tool_agent_experience_json_path = upper_agent_dict['exp_json_path'],
+#     )
+#     upper_agent_id = upper_agent.agent_id
+#
+#     def _run_agent_thread():
+#         upper_agent.init()
+#         success = upper_agent.run(query=query)
+#
+#     future = g_thread_pool_executor.submit(_run_agent_thread)
+#
+#     # 初始化agent的注册数据
+#     agent_data = Registered_Agent_Data(
+#         agent_id=upper_agent_id,
+#         agent_obj=upper_agent,
+#         agent_future=future,
+#         # agent_status=upper_agent_status,
+#         agent_stream_queues=upper_agent.stream_queues
+#     )
+#
+#     # 注册agent的数据
+#     g_registered_agents_dict[upper_agent_id] = agent_data
+#
+#     return agent_data
+#     # return upper_agent_id
+
 def server_start_and_register_2_levels_agents_system(
-    query                           :str,
-    upper_agent_dict                :Dict[str, Any],        # {'tool_names':tool_names, 'exp_json_path':, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
-    lower_agents_as_tool_dict_list  :List[Dict[str, Any]],  # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
+    query                   :str,
+    upper_agent_config      :Agent_Config,                  # 顶层agent的配置
+    lower_agents_config     :List[Agent_As_Tool_Config],    # 下层agent的配置（多个）
 )->Registered_Agent_Data:
     # ----------------构建lower的agents_as_tool----------------
     # 所有将创建的agent_as_tool对应的tool_id_list
     agents_as_tool_id_list = []
 
     # 创建所有agent_as_tool
-    for agents_as_tool_dict in lower_agents_as_tool_dict_list:
-        tool_id = _server_create_and_registered_agent_as_tool(**agents_as_tool_dict)
+    for lower_agent_config in lower_agents_config:
+        tool_id = _server_create_and_registered_agent_as_tool(lower_agent_config)
         agents_as_tool_id_list.append(tool_id)
     # ---------------/构建lower的agents_as_tool----------------
 
@@ -222,7 +336,7 @@ def server_start_and_register_2_levels_agents_system(
         instance = server_get_tool_data_by_id(agents_as_tool_id).tool_class
         agents_as_tool_instance_list.append(instance)
 
-    upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_dict['tool_names'])
+    upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_config.tool_names)
     # upper_agent_tools_class_list = legacy_get_all_local_tools_class(upper_agent_dict['tool_names'])
     tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
 
@@ -243,10 +357,10 @@ def server_start_and_register_2_levels_agents_system(
     upper_agent = Tool_Agent(
         has_history=True,
         tool_classes=tool_class_and_tool_instance_list,     # 这里是[Tool_Class1, Tool_Class2, ... , agent_as_tool1, agent_as_tool2, ...]
-        agent_config=upper_agent_dict['agent_config'],
+        agent_config=upper_agent_config,
         # agent_status_ref=upper_agent_status,
         # agent_stream_queue_ref=upper_agent_stream_queue,
-        tool_agent_experience_json_path = upper_agent_dict['exp_json_path'],
+        tool_agent_experience_json_path = upper_agent_config.exp_json_path,
     )
     upper_agent_id = upper_agent.agent_id
 

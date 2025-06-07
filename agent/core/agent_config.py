@@ -34,10 +34,17 @@ class Agent_Config(BaseModel):
     # inout_output_list:Any = None
     # status_stream_buf:Any = None
 
-    base_url:str = config.LLM_Default.url
-    api_key:str = 'empty'
-    llm_model_id:str = ''
-    temperature:float = config.LLM_Default.temperature
+    # agent配置
+    tool_names      :List[str]  # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    exp_json_path   :str = ''   # 如：'my_2_levels_mas_exp.json'
+
+    # LLM配置
+    base_url        :str = config.LLM_Default.url
+    api_key         :str = 'empty'
+    llm_model_id    :str = ''
+    temperature     :float = config.LLM_Default.temperature
+
+
 
     # web-server相关配置
     # is_web_server:              bool = False    # agent是否为web-server
@@ -45,3 +52,16 @@ class Agent_Config(BaseModel):
     # web_server_stream_thinking:            Any = None      # agent思考过程thinking的stream输出func
     # web_server_stream_log:                 Any = None      # agent日志信息log的stream输出func
     # web_server_stream_tool_client_data:    Any = None      # agent工具调用结果数据的stream输出func
+
+class Agent_As_Tool_Config(BaseModel):
+    # agent配置
+    tool_names              :List[str]  # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    exp_json_path           :str = ''   # 如：'my_2_levels_mas_exp.json'
+    as_tool_name            :str        # 如：'Folder_Agent_As_Tool'
+    as_tool_description     :str        # 如：'本工具用于获取文件夹中的文件和文件夹信息'
+
+    # LLM配置
+    base_url        :str = config.LLM_Default.url
+    api_key         :str = 'empty'
+    llm_model_id    :str = ''
+    temperature     :float = config.LLM_Default.temperature

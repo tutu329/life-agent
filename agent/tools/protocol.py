@@ -38,13 +38,13 @@ class Registered_Remote_Tool_Data(BaseModel):
     """
     Registered_Remote_Tool_Data类，注册remote_tool时用的参数
     """
-    name: str
-    description: str
-    parameters: List[Dict[str, str]]
-    endpoint_url: str
-    method: str = "POST"
-    timeout: float = 10.0
-    headers: Optional[Dict[str, str]] = None
+    name            : str                               # 如："Remote_Folder_Tool"
+    description     : str                               # 如："返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。"
+    parameters      : List[Dict[str, str]]              # 要求为：[{"name": "para1", "type": "string", "description": "本参数为文件夹所在的路径", "required": "True"}]
+    endpoint_url    : str                               # 如："http://localhost:{Port.remote_tool_fastapi_server}/Folder_Tool"
+    method          : str = "POST"                      # 如：'POST'、'GET'
+    timeout         : float = 10.0                      # 如：10、15
+    headers         : Optional[Dict[str, str]] = None
 
 class Tool_Call_Paras(BaseModel):
     """

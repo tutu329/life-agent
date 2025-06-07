@@ -8,12 +8,13 @@ import uvicorn
 
 import asyncio
 import json
+from typing import List, Dict, Any, Type, Optional
 
 from config import Port, dyellow, dred, dgreen, dcyan, dblue
 
 # agent
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
-from agent.core.agent_config import Agent_Config
+from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.core.tool_agent import Tool_Agent
 from agent.core.multi_agent_server import Registered_Agent_Data
 
@@ -26,6 +27,7 @@ from dataclasses import dataclass, field, asdict
 from agent.tools.folder_tool import Folder_Tool
 from agent.tools.human_console_tool import Human_Console_Tool
 from utils.fastapi_server import FastAPI_Endpoint_With_SSE, fastapi_show_all_routes
+from agent.tools.tool_manager import Registered_Remote_Tool_Data
 
 from config import dyellow
 
@@ -56,9 +58,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# class Agent_Request(BaseModel):
+#     query           : str
+#     agent_config    : Agent_Config
+
 class Agent_Request(BaseModel):
-    query           : str
-    agent_config    : Agent_Config
+    query               : str                                   # 如：'当前文件夹下有哪些文件'
+    remote_tools        : List[Registered_Remote_Tool_Data]     # remote_tool的配置（多个）
+    upper_agent_config  : Agent_Config                          # 顶层agent的配置
+    lower_agents_config : List[Agent_As_Tool_Config]            # 下层agent的配置（多个）
 
 @app.get("/")
 def root():
@@ -139,6 +147,84 @@ async def run_agent_stream(request: Agent_Request):
         media_type="text/event-stream"
     )
 
+# @FastAPI_Endpoint_With_SSE(
+#     app=app,
+#     return_type=Registered_Agent_Data,
+#     return_id_name='agent_id',
+#     return_stream_queues_name='agent_stream_queues',
+# )
+# async def start_2_level_agents_stream(request: Agent_Request):
+#     import time
+#     from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, \
+#         server_register_remote_tool_dynamically, Registered_Remote_Tool_Data
+#
+#     from agent.core.multi_agent_server import server_start_and_register_2_levels_agents_system, print_agent_status
+#     from agent.core.multi_agent_server import __server_wait_registered_agent
+#     from config import Port
+#
+#     dblue(f'--------------------------start_2_level_agents_stream获得request参数--------------------------------')
+#     dblue(request)
+#     dblue(f'-------------------------/start_2_level_agents_stream获得request参数--------------------------------')
+#
+#     # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
+#     # 注册local所有tool
+#     server_register_all_local_tool_on_start()
+#     reg_data = Registered_Remote_Tool_Data(
+#         name="Remote_Folder_Tool",
+#         description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
+#         parameters=[
+#             {
+#                 "name": "dir",
+#                 "type": "string",
+#                 "description": "本参数为文件夹所在的路径",
+#                 "required": "True",
+#             }
+#         ],
+#         endpoint_url=f"http://localhost:{Port.remote_tool_fastapi_server}/Folder_Tool",
+#         method="POST",
+#         timeout=15,
+#     )
+#     tool_id = server_register_remote_tool_dynamically(reg_data)
+#     print_all_registered_tools()
+#     # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
+#
+#     query = r'我叫电力用户，请告诉./文件夹下有哪些文件'
+#     config = Agent_Config(
+#         **(request.agent_config.dict())
+#         # base_url='https://api.deepseek.com/v1',
+#         # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+#         # llm_model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+#         # llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+#     )
+#     upper_agent_dict = {
+#         'tool_names': ['Human_Console_Tool'],
+#         'exp_json_path': 'my_2_levels_mas_exp.json',
+#         'agent_config': config,
+#     }
+#     lower_agents_as_tool_dict_list = [
+#         {
+#             'tool_names': ['Human_Console_Tool', 'Remote_Folder_Tool'],
+#             'agent_config': config,
+#             'as_tool_name': 'Folder_Agent_As_Tool',
+#             'as_tool_description': '本工具用于获取文件夹中的文件和文件夹信息'
+#         }
+#     ]
+#     agent_data = server_start_and_register_2_levels_agents_system(
+#         query=query,
+#         upper_agent_dict=upper_agent_dict,
+#         lower_agents_as_tool_dict_list=lower_agents_as_tool_dict_list
+#     )
+#
+#     time.sleep(0.5)
+#     print_agent_status(agent_data.agent_id)
+#
+#     return agent_data
+#
+#     # __server_wait_registered_agent(agent_id, timeout_second=20000000)
+#
+#     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
+#     # print_agent_status(agent_id)
+
 @FastAPI_Endpoint_With_SSE(
     app=app,
     return_type=Registered_Agent_Data,
@@ -148,7 +234,7 @@ async def run_agent_stream(request: Agent_Request):
 async def start_2_level_agents_stream(request: Agent_Request):
     import time
     from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, \
-        server_register_remote_tool_dynamically, Registered_Remote_Tool_Data
+        server_register_remote_tool_dynamically, server_register_remote_tools_dynamically, Registered_Remote_Tool_Data
 
     from agent.core.multi_agent_server import server_start_and_register_2_levels_agents_system, print_agent_status
     from agent.core.multi_agent_server import __server_wait_registered_agent
@@ -161,50 +247,14 @@ async def start_2_level_agents_stream(request: Agent_Request):
     # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
     # 注册local所有tool
     server_register_all_local_tool_on_start()
-    reg_data = Registered_Remote_Tool_Data(
-        name="Remote_Folder_Tool",
-        description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
-        parameters=[
-            {
-                "name": "dir",
-                "type": "string",
-                "description": "本参数为文件夹所在的路径",
-                "required": "True",
-            }
-        ],
-        endpoint_url=f"http://localhost:{Port.remote_tool_fastapi_server}/Folder_Tool",
-        method="POST",
-        timeout=15,
-    )
-    tool_id = server_register_remote_tool_dynamically(reg_data)
+    tool_ids = server_register_remote_tools_dynamically(request.remote_tools)
     print_all_registered_tools()
     # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
 
-    query = r'我叫电力用户，请告诉./文件夹下有哪些文件'
-    config = Agent_Config(
-        **(request.agent_config.dict())
-        # base_url='https://api.deepseek.com/v1',
-        # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        # llm_model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        # llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
-    )
-    upper_agent_dict = {
-        'tool_names': ['Human_Console_Tool'],
-        'exp_json_path': 'my_2_levels_mas_exp.json',
-        'agent_config': config,
-    }
-    lower_agents_as_tool_dict_list = [
-        {
-            'tool_names': ['Human_Console_Tool', 'Remote_Folder_Tool'],
-            'agent_config': config,
-            'as_tool_name': 'Folder_Agent_As_Tool',
-            'as_tool_description': '本工具用于获取文件夹中的文件和文件夹信息'
-        }
-    ]
     agent_data = server_start_and_register_2_levels_agents_system(
-        query=query,
-        upper_agent_dict=upper_agent_dict,
-        lower_agents_as_tool_dict_list=lower_agents_as_tool_dict_list
+        query=request.query,
+        upper_agent_config=request.upper_agent_config,
+        lower_agents_config=request.lower_agents_config
     )
 
     time.sleep(0.5)
@@ -216,7 +266,6 @@ async def start_2_level_agents_stream(request: Agent_Request):
 
     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
     # print_agent_status(agent_id)
-
 
 if __name__ == "__main__":
     fastapi_show_all_routes(app)

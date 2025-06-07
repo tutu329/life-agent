@@ -7,15 +7,17 @@ import time
 from agent.tools.protocol import Registered_Remote_Tool_Data
 from agent.tools.protocol import Tool_Call_Paras
 from agent.tools.generate_tool_class_dynamically import generate_tool_class_dynamically
-from agent.core.agent_config import Agent_Config
+from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
+from agent.agent_web_server.agent_fastapi_server import Agent_Request
 
+from config import Port
 from config import dblue, dyellow, dgreen, dcyan, dred
 
 def agent_fastapi_client():
     pass
 
 
-def listen_to_stream(base_url: str, stream_id: str, stream_name: str):
+def _listen_to_stream(base_url: str, stream_id: str, stream_name: str):
     """监听单个 SSE 流"""
     # 注意：这里需要构建正确的流URL
     # 假设你的服务器基础URL是 http://powerai.cc:5120
@@ -66,18 +68,62 @@ def main_test_2_level_agents_system():
     #     ).dict(),
     # }
 
-    request = {
-        "query": '请告诉我"./"下有哪些文件',
-        'agent_config':Agent_Config(
-            base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
-            api_key='sk-9f507c06d7534acf978cf30091bc5529',  # 通义千问官网
-            llm_model_id='qwen3-235b-a22b',  # 模型指向 qwen3-235b-a22b
-        ).dict(),
-    }
+    # request = {
+    #     "query": '请告诉我"./"下有哪些文件',
+    #     'agent_config':Agent_Config(
+    #         base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
+    #         api_key='sk-9f507c06d7534acf978cf30091bc5529',  # 通义千问官网
+    #         llm_model_id='qwen3-235b-a22b',  # 模型指向 qwen3-235b-a22b
+    #     ).dict(),
+    # }
+    request = Agent_Request(
+        query=r'我叫电力用户，请告诉./文件夹下有哪些文件',
+        remote_tools=[
+            Registered_Remote_Tool_Data(
+                name="Remote_Folder_Tool",
+                description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
+                parameters=[
+                    {
+                        "name": "dir",
+                        "type": "string",
+                        "description": "本参数为文件夹所在的路径",
+                        "required": "True",
+                    }
+                ],
+                endpoint_url=f"http://localhost:{Port.remote_tool_fastapi_server}/Folder_Tool",
+                method="POST",
+                timeout=15,
+            )
+        ],
+        upper_agent_config=Agent_Config(
+            tool_names=['Human_Console_Tool'],
+            exp_json_path='my_2_levels_mas_exp.json',
+
+            base_url='https://api.deepseek.com/v1',
+            api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+            # llm_model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+            llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+            temperature=0.65
+        ),
+        lower_agents_config=[
+            Agent_As_Tool_Config(
+                tool_names=['Human_Console_Tool', 'Remote_Folder_Tool'],
+                exp_json_path='',
+                as_tool_name='Folder_Agent_As_Tool',
+                as_tool_description='本工具用于获取文件夹中的文件和文件夹信息',
+
+                base_url='https://api.deepseek.com/v1',
+                api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+                # llm_model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+                llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+                temperature=0.70
+            )
+        ]
+    )
 
     try:
         print("🚀 第一步：发送请求启动Agent任务...")
-        response = requests.post(start_url, json=request)
+        response = requests.post(start_url, json=request.dict())
 
         if response.status_code == 200:
             result = response.json()
@@ -99,7 +145,7 @@ def main_test_2_level_agents_system():
                 threads = []
                 for stream_name in available_streams:
                     thread = threading.Thread(
-                        target=listen_to_stream,
+                        target=_listen_to_stream,
                         args=(start_url, stream_id, stream_name)
                     )
                     thread.daemon = True

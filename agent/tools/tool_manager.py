@@ -95,6 +95,17 @@ def server_register_remote_tool_dynamically(
     tool_id = _server_register_one_tool(tool_class)
     return tool_id
 
+# 动态注册多个tool
+def server_register_remote_tools_dynamically(
+    register_data_list: List[Registered_Remote_Tool_Data]
+) -> List[str]:  # 返回tool_id_list
+    tool_id_list = []
+    for data in register_data_list:
+        tool_class = generate_tool_class_dynamically(data)
+        tool_id = _server_register_one_tool(tool_class)
+        tool_id_list.append(tool_id)
+    return tool_id_list
+
 def server_get_tool_data_by_id(tool_id):
     return g_registered_tools_dict[tool_id]
 
