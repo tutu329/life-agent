@@ -676,9 +676,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
                         last_tool_ctx = get_tool_ctx(self.last_tool_task_id)
 
                     # 调用工具
-                    from pprint import pprint
+                    # from pprint import pprint
                     print('---------------------------------agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
-                    pprint(self.registered_tool_instances_dict)
+                    print(self.registered_tool_instances_dict)
                     print('--------------------------------/agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
                     # rtn = self.registered_tool_instances_dict[tool_name].call(
                     #     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
@@ -700,7 +700,6 @@ class Tool_Agent(Agent_Base, Base_Tool):
                         dred(f'last_tool_ctx: {last_tool_ctx!r}')
                         dred(f'self.current_exp_str: {self.current_exp_str!r}')
                         dred(f'------------------------/tool线程启动(agent_id="{self.agent_id}")------------------------------')
-                        # nonlocal rtn
 
                         tool_call_paras = Tool_Call_Paras(
                             callback_tool_paras_dict=callback_tool_paras_dict,
@@ -710,6 +709,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
                             callback_father_agent_exp=self.current_exp_str
                         )
                         rtn = tool_class_or_agent.call(tool_call_paras)
+                        # --------------------------写入queue stream-----------------------------
+                        self.stream_queues.tool_rtn_data.put(tool_call_paras)
+                        # -------------------------/写入queue stream-----------------------------
+
                         # rtn = tool_class_or_agent.call(
                         #     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                         #     callback_agent_config=self.agent_config,            # 将agent配置传给tool
