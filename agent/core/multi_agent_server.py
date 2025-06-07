@@ -316,7 +316,7 @@ def main_test_server_start_agent():
     config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        model_id='deepseek-chat'
+        llm_model_id='deepseek-chat'
     )
     # query='我叫土土，帮我查询下远程服务器下/home/tutu/models/下有哪些文件'
     query='我叫土土，当前目录./下有哪些文件'
@@ -372,7 +372,7 @@ def main_test_2_level2_agents_system():
     config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        llm_model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
     upper_agent_dict = {
         'tool_names':['Human_Console_Tool'],

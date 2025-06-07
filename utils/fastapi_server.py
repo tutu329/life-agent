@@ -35,9 +35,9 @@ class FastAPI_Endpoint_With_SSE_Result:
 # 2、 sse-stream挂载到： /api/{task_func}/stream/{stream_id}/{stream_name}
 def FastAPI_Endpoint_With_SSE(
         app: FastAPI,
-        return_type: Type,  # 告诉装饰器，被装饰函数的返回类型
-        return_id_name: str,  # 告诉装饰器，被装饰函数的返回变量中，哪个字段是id
-        return_stream_queues_name: str,  # 告诉装饰器，被装饰函数的返回变量中，哪个字段是stream_queues
+        return_type: Type,                  # 告诉装饰器，被装饰函数的返回类型
+        return_id_name: str,                # 告诉装饰器，被装饰函数的返回变量中，哪个字段是id
+        return_stream_queues_name: str,     # 告诉装饰器，被装饰函数的返回变量中，哪个字段是stream_queues
 ):
     """
     用法:

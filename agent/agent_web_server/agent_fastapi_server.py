@@ -57,10 +57,8 @@ app.add_middleware(
 )
 
 class Agent_Request(BaseModel):
-    query: str
-    base_url: str = "http://powerai.cc:28001/v1"
-    api_key: str = "empty"
-    llm_model_id: str = ""
+    query           : str
+    agent_config    : Agent_Config
 
 @app.get("/")
 def root():
@@ -76,7 +74,7 @@ def run_agent_sync(request: Agent_Request):
     config = Agent_Config(
         base_url=request.base_url,
         api_key=request.api_key,
-        model_id=request.llm_model_id
+        llm_model_id=request.llm_model_id
     )
 
     agent = Tool_Agent(
@@ -184,10 +182,11 @@ async def start_2_level_agents_stream(request: Agent_Request):
 
     query = r'我叫电力用户，请告诉./文件夹下有哪些文件'
     config = Agent_Config(
-        base_url='https://api.deepseek.com/v1',
-        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        # model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+        **(request.agent_config.dict())
+        # base_url='https://api.deepseek.com/v1',
+        # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+        # llm_model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
     )
     upper_agent_dict = {
         'tool_names': ['Human_Console_Tool'],

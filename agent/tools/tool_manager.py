@@ -331,7 +331,7 @@ def main_test_agent():
     config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        model_id='deepseek-chat'
+        llm_model_id='deepseek-chat'
     )
 
     agent = Tool_Agent(
@@ -356,7 +356,7 @@ def main_test_server_start():
     config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        model_id='deepseek-chat'
+        llm_model_id='deepseek-chat'
     )
     query='当前目录下有哪些文件'
     client_run_agent(query=query, agent_config=config, tool_names=tool_names)

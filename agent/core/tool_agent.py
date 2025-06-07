@@ -180,7 +180,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.temperature = self.agent_config.temperature
         self.url = self.agent_config.base_url
         self.api_key = self.agent_config.api_key
-        self.model_id = self.agent_config.model_id
+        self.model_id = self.agent_config.llm_model_id
         self.agent_tools_description_and_full_history = ''
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
 
@@ -219,13 +219,14 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # self.response_stop = ['<res_stop>']
         self.turns_num = 0  # 用于统计当前对象的action轮次
 
-        self.ostream_end_func = self.agent_config.output_end               # 最终结果stream输出的end的func
-        self.ostream_use_chunk = self.agent_config.output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
-        self.output_stream_to_console = self.agent_config.output_stream_to_console
-        self.sstream = self.agent_config.status_stream_buf                 # 中间状态输出的stream
+        # self.ostream_end_func = self.agent_config.output_end               # 最终结果stream输出的end的func
+        # self.ostream_use_chunk = self.agent_config.output_stream_use_chunk # 最终结果输出方式：chunk还是full_string
+        # self.output_stream_to_console = self.agent_config.output_stream_to_console
+        # self.sstream = self.agent_config.status_stream_buf                 # 中间状态输出的stream
 
         # self.status_list = inout_status_list     # 状态历史
-        self.output_list = self.agent_config.inout_output_list     # 输出历史
+        self.output_list = []     # 输出历史
+        # self.output_list = self.agent_config.inout_output_list     # 输出历史
 
         self.__finished_keyword = '最终答复'
         self.final_answer = '尚未进行分析和答复'
@@ -235,62 +236,62 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self._end_time = None
 
     # 设置最终结果stream输出的func
-    def set_stream(self, result_output_func, thinking_output_func, log_output_func, tool_result_data_output_func):
-        self.agent_config.web_server_stream_result = result_output_func                        # stream输出的func
-        self.agent_config.web_server_stream_thinking = thinking_output_func                    # stream输出的func
-        self.agent_config.web_server_stream_log = log_output_func                              # stream输出的func
-        self.agent_config.web_server_stream_tool_client_data = tool_result_data_output_func    # stream输出的func
+    # def set_stream(self, result_output_func, thinking_output_func, log_output_func, tool_result_data_output_func):
+    #     self.agent_config.web_server_stream_result = result_output_func                        # stream输出的func
+    #     self.agent_config.web_server_stream_thinking = thinking_output_func                    # stream输出的func
+    #     self.agent_config.web_server_stream_log = log_output_func                              # stream输出的func
+    #     self.agent_config.web_server_stream_tool_client_data = tool_result_data_output_func    # stream输出的func
 
     # 最终结果输出
-    def output_print(self, in_string):
-        if self.output_stream_buf is not None:
-            self.output_stream_buf(in_string)
-
-            if self.output_list is not None:
-                self.output_list.append(in_string)
-        else:
-            pass
-            # print(in_string)
+    # def output_print(self, in_string):
+    #     if self.output_stream_buf is not None:
+    #         self.output_stream_buf(in_string)
+    #
+    #         if self.output_list is not None:
+    #             self.output_list.append(in_string)
+    #     else:
+    #         pass
+    #         # print(in_string)
 
     # 中间状态输出
-    def status_print(self, in_string):
-        if self.sstream is not None:
-            self.sstream(in_string)
-
-            if self.status_list is not None:
-                self.status_list.append(in_string)
-        else:
-            pass
-            # print(in_string)
+    # def status_print(self, in_string):
+    #     if self.sstream is not None:
+    #         self.sstream(in_string)
+    #
+    #         if self.status_list is not None:
+    #             self.status_list.append(in_string)
+    #     else:
+    #         pass
+    #         # print(in_string)
 
     # 最终结果stream输出full_string
-    def output_result_stream_full_string(self, in_full_response):
-        if self.agent_config.web_server_stream_result is not None:
-            self.agent_config.web_server_stream_result(in_full_response)
+    # def output_result_stream_full_string(self, in_full_response):
+    #     if self.agent_config.web_server_stream_result is not None:
+    #         self.agent_config.web_server_stream_result(in_full_response)
 
     # 最终结果stream输出chunk，注意：要确保chunk中没有'[最终答复]'或'终答复]'
-    def output_result_stream_chunk(self, chunk, **kwargs):
-        if self.agent_config.web_server_stream_result is not None:
-            self.agent_config.web_server_stream_result(chunk, **kwargs)
+    # def output_result_stream_chunk(self, chunk, **kwargs):
+    #     if self.agent_config.web_server_stream_result is not None:
+    #         self.agent_config.web_server_stream_result(chunk, **kwargs)
 
     # thinking内容的stream输出chunk
-    def output_thinking_stream_chunk(self, chunk, **kwargs):
-        if self.agent_config.web_server_stream_thinking is not None:
-            self.agent_config.web_server_stream_thinking(chunk, **kwargs)
+    # def output_thinking_stream_chunk(self, chunk, **kwargs):
+    #     if self.agent_config.web_server_stream_thinking is not None:
+    #         self.agent_config.web_server_stream_thinking(chunk, **kwargs)
 
     # log内容的stream输出chunk
-    def output_log_stream_chunk(self, chunk, **kwargs):
-        if self.agent_config.web_server_stream_log is not None:
-            self.agent_config.web_server_stream_log(chunk, **kwargs)
+    # def output_log_stream_chunk(self, chunk, **kwargs):
+    #     if self.agent_config.web_server_stream_log is not None:
+    #         self.agent_config.web_server_stream_log(chunk, **kwargs)
 
     # 中间状态stream输出(注意：streamlit的status不支持stream输出，只能打印)
-    def output_status_stream(self, in_chunk, in_full_response):
-        if self.sstream is not None:
-            # self.sstream(in_chunk)
-            pass
-        else:
-            pass
-            # print(in_chunk, end='', flush=True)
+    # def output_status_stream(self, in_chunk, in_full_response):
+    #     if self.sstream is not None:
+    #         # self.sstream(in_chunk)
+    #         pass
+    #     else:
+    #         pass
+    #         # print(in_chunk, end='', flush=True)
 
     def init(self):
         self._init_agent_data_in_server()
@@ -484,42 +485,42 @@ class Tool_Agent(Agent_Base, Base_Tool):
             thoughts_copy_to_print +=chunk
             if f'[{self.__finished_keyword}]' in thoughts:
                 # 最终结果stream输出(去除'[最终答复]'这些字)
-                if self.ostream_use_chunk:
-                    # 采用chunk输出，chunk = string_this_turn - string_last_turn
-                    str_this_turn = thoughts.split(f'[{self.__finished_keyword}]')[-1]  # 去除'[最终答复]'这些字
+                # if self.ostream_use_chunk:
+                # 采用chunk输出，chunk = string_this_turn - string_last_turn
+                str_this_turn = thoughts.split(f'[{self.__finished_keyword}]')[-1]  # 去除'[最终答复]'这些字
 
-                    # --------------------------写入queue stream-----------------------------
-                    self.stream_queues.final_answer.put(str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn)
-                    # -------------------------/写入queue stream-----------------------------
+                # --------------------------写入queue stream-----------------------------
+                self.stream_queues.final_answer.put(str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn)
+                # -------------------------/写入queue stream-----------------------------
 
-                    # dyellow(f'-----> "{str_this_turn}"')
-                    if self.output_stream_to_console:
-                        # 输出到console
-                        self.output_result_stream_chunk(
-                            str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn ,
-                            end='',
-                            flush=True
-                        )
-                    else:
-                        # 输出到如word文档中
-                        self.output_result_stream_chunk(str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn)
-                        # self.thinking_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
-                    str_last_turn = str_this_turn
-                else:
+                # dyellow(f'-----> "{str_this_turn}"')
+                # if self.output_stream_to_console:
+                #     # 输出到console
+                #     self.output_result_stream_chunk(
+                #         str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn ,
+                #         end='',
+                #         flush=True
+                #     )
+                # else:
+                #     # 输出到如word文档中
+                #     self.output_result_stream_chunk(str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn)
+                #     # self.thinking_stream_chunk( str_this_turn.split(str_last_turn)[-1] if str_last_turn != '' else str_this_turn )
+                str_last_turn = str_this_turn
+                # else:
                     # 采用full_string输出
                     # --------------------------写入queue stream-----------------------------
-                    self.stream_queues.final_answer.put(thoughts.split(f'[{self.__finished_keyword}]')[-1])
+                    # self.stream_queues.final_answer.put(thoughts.split(f'[{self.__finished_keyword}]')[-1])
                     # self.stream_queues.final_answer.put(GeneratorDone)
                     # -------------------------/写入queue stream-----------------------------
 
-                    self.output_result_stream_full_string(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
+                    # self.output_result_stream_full_string(thoughts.split(f'[{self.__finished_keyword}]')[-1])    # 去除'[最终答复]'这些字
                     # self.output_stream(chunk, thoughts.replace(self.__finished_keyword, ''))
             else:
                 # --------------------------写入queue stream-----------------------------
                 self.stream_queues.output.put(chunk)
                 # -------------------------/写入queue stream-----------------------------
 
-                self.output_thinking_stream_chunk(chunk)
+                # self.output_thinking_stream_chunk(chunk)
                 # 中间状态stream输出(streamlit的status不支持stream输出，所以这里为空操作，并在后续作status_print处理)
                 # self.status_stream(chunk, thoughts)
 
@@ -527,7 +528,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 if '\n\n' in thoughts_copy_to_print:
                     # 输出已经有\n的内容
                     print_content = thoughts_copy_to_print.split('\n\n')[0]
-                    self.status_print(print_content)
+                    # self.status_print(print_content)
                     # if self.status_list is not None:
                     #     self.status_list.append(print_content)
                     # 删除第一个\n前的内容
@@ -541,8 +542,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # -------------------------/写入queue stream-----------------------------
 
         # stream输出最后的end
-        if self.ostream_end_func:
-            self.ostream_end_func()
+        # if self.ostream_end_func:
+        #     self.ostream_end_func()
 
         # 添加输出历史
         if self.__finished_keyword in thoughts:
@@ -783,11 +784,12 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
                     action_result=rtn.result
                 else:
-                    self.status_print('未选择任何工具。')
+                    # self.status_print('未选择任何工具。')
+                    pass
                 # --------------------------- call tool ---------------------------
 
-                self.status_print(f'调用工具的行动结果为: \n{action_result}')
-                self.output_log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
+                # self.status_print(f'调用工具的行动结果为: \n{action_result}')
+                # self.output_log_stream_chunk(f'\n调用工具的行动结果为: \n{action_result}\n')
 
                 # dblue(f'action_result(turn {self.turns_num})'.center(80, '='))
                 # dblue(action_result)
@@ -910,7 +912,7 @@ def main_folder():
         # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         # api_key='empty',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        llm_model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
         # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
 
@@ -955,7 +957,7 @@ def main_table():
         # api_key='empty',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         # model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        llm_model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
     )
     agent = Tool_Agent(
         query=query,

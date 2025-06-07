@@ -57,16 +57,19 @@ def main_test_2_level_agents_system():
     # start_url = "http://powerai.cc:5120/api/start_2_level_agents_stream"
 
     # 测试数据
-    data = {
+    request = {
         "query": '请告诉我"./"下有哪些文件',
-        "base_url": 'https://api.deepseek.com/v1',
-        "api_key": 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        "llm_model_id": 'deepseek-chat'
+        'agent_config':Agent_Config(
+            base_url='https://api.deepseek.com/v1',
+            api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+            # llm_model_id='deepseek-reasoner',    # 模型指向 DeepSeek-R1-0528
+            llm_model_id='deepseek-chat',        # 模型指向 DeepSeek-V3-0324
+        ).dict(),
     }
 
     try:
         print("🚀 第一步：发送请求启动Agent任务...")
-        response = requests.post(start_url, json=data)
+        response = requests.post(start_url, json=request)
 
         if response.status_code == 200:
             result = response.json()
