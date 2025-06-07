@@ -13,12 +13,12 @@ class Agent_Base(ABC):
         pass
 
     # 设置输出stream的buf
-    @abstractmethod
-    def set_stream(
-            self,
-            result_output_func,
-            thinking_output_func,
-            log_output_func,
-            tool_result_data_output_func
-    ):
-        pass
+    # @abstractmethod
+    # def set_stream(
+    #         self,
+    #         result_output_func,
+    #         thinking_output_func,
+    #         log_output_func,
+    #         tool_result_data_output_func
+    # ):
+    #     pass
