@@ -1895,10 +1895,15 @@ def base_main():
         # url='https://powerai.cc:8001/v1'
         # url='http://powerai.cc:8001/v1'
 
-        api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',  # deepseek官网
-        url = 'https://api.deepseek.com/v1',
-        model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        # api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',  # deepseek官网
+        # url = 'https://api.deepseek.com/v1',
+        # model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+        # # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+
+        # 模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
+        api_key='sk-9f507c06d7534acf978cf30091bc5529',  # 通义千问官网
+        url='https://dashscope.aliyuncs.com/compatible-mode/v1',
+        model_id='qwen3-235b-a22b',  # 模型指向 qwen3-235b-a22b
 
     # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
         # url='https://ark.cn-beijing.volces.com/api/v3/',
@@ -1944,9 +1949,9 @@ def async_llm_main():
     allm.wait()
 
 if __name__ == "__main__" :
-    # base_main()
+    base_main()
     # pic_main() # 带pic
-    think_and_result_test()
+    # think_and_result_test()
     # async_llm_main()
 
     # think_main()
