@@ -164,9 +164,10 @@ class Port():
 
     # agent
 
-    comfy                       :int  = 5100  # ComfyUI
-    agent_fastapi_server        :int = 5120
-    remote_tool_fastapi_server  :int = 5121
+    comfy                           :int = 5100    # ComfyUI
+    agent_fastapi_server            :int = 5120
+    remote_tool_fastapi_server      :int = 5121     # 该端口可发布多个fastapi的remote_tools
+    only_office_web_socket_server   :int = 5122     # 该端口为前端only-office的受控端口
 
     # 顶层应用
     flowise:int         = 7860
