@@ -10,13 +10,14 @@ import asyncio
 import json
 from typing import List, Dict, Any, Type, Optional
 
+import config
 from config import Port, dyellow, dred, dgreen, dcyan, dblue
 
 # agent
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.core.tool_agent import Tool_Agent
-from agent.core.multi_agent_server import Registered_Agent_Data
+from agent.core.multi_agent_server import Registered_Agent_Data, server_continue_agent, server_cancel_agent, server_start_and_register_2_levels_agents_system, print_agent_status, __server_wait_registered_agent
 
 from contextlib import asynccontextmanager
 from agent.tools.protocol import Action_Result, Tool_Call_Paras
@@ -62,18 +63,22 @@ app.add_middleware(
 #     query           : str
 #     agent_config    : Agent_Config
 
-class Agent_Request(BaseModel):
-    query               : str                                   # 如：'当前文件夹下有哪些文件'
+class Agents_System_Request(BaseModel):
+    # query               : str                                   # 如：'当前文件夹下有哪些文件'
     remote_tools        : List[Registered_Remote_Tool_Data]     # remote_tool的配置（多个）
     upper_agent_config  : Agent_Config                          # 顶层agent的配置
     lower_agents_config : List[Agent_As_Tool_Config]            # 下层agent的配置（多个）
+
+class Query_Agent_Request(BaseModel):
+    agent_id    : str
+    query       : str                                   # 如：'当前文件夹下有哪些文件'
 
 @app.get("/")
 def root():
     return {"server status": "Agent FastAPI Server 运行中..."}
 
 @app.post("/run_agent_sync")
-def run_agent_sync(request: Agent_Request):
+def run_agent_sync(request: Agents_System_Request):
     """运行Agent"""
     # 创建工具列表
     tools = [Human_Console_Tool, Folder_Tool]
@@ -131,7 +136,7 @@ async def event_generator(name: str):
         await asyncio.sleep(1)
 
 @app.post("/run_agent_stream")
-async def run_agent_stream(request: Agent_Request):
+async def run_agent_stream(request: Agents_System_Request):
     """
     用 POST 建立 SSE。请求体可选，示例里接收 {"name": "..."}。
     EventSource 只支持 GET，因此该端点主要供后端或 CLI 客户端消费。
@@ -225,18 +230,55 @@ async def run_agent_stream(request: Agent_Request):
 #     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 #     # print_agent_status(agent_id)
 
-@FastAPI_Endpoint_With_SSE(
-    app=app,
-    return_type=Registered_Agent_Data,
-    return_id_name='agent_id',
-    return_stream_queues_name='agent_stream_queues',
-)
-async def start_2_level_agents_stream(request: Agent_Request):
+# @FastAPI_Endpoint_With_SSE(
+#     app=app,
+#     return_type=Registered_Agent_Data,
+#     return_id_name='agent_id',
+#     return_stream_queues_name='agent_stream_queues',
+# )
+# async def start_2_level_agents_stream(request: Agent_Request):
+#     import time
+#     from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, \
+#         server_register_remote_tool_dynamically, server_register_remote_tools_dynamically, Registered_Remote_Tool_Data
+#
+#     from agent.core.multi_agent_server import server_start_and_register_2_levels_agents_system, print_agent_status
+#     from agent.core.multi_agent_server import __server_wait_registered_agent
+#     from config import Port
+#
+#     dblue(f'--------------------------start_2_level_agents_stream获得request参数--------------------------------')
+#     dblue(request)
+#     dblue(f'-------------------------/start_2_level_agents_stream获得request参数--------------------------------')
+#
+#     # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
+#     # 注册local所有tool
+#     server_register_all_local_tool_on_start()
+#     tool_ids = server_register_remote_tools_dynamically(request.remote_tools)
+#     print_all_registered_tools()
+#     # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
+#
+#     agent_data = server_start_and_register_2_levels_agents_system(
+#         query=request.query,
+#         upper_agent_config=request.upper_agent_config,
+#         lower_agents_config=request.lower_agents_config
+#     )
+#
+#     time.sleep(0.5)
+#     print_agent_status(agent_data.agent_id)
+#
+#     return agent_data
+#
+#     # __server_wait_registered_agent(agent_id, timeout_second=20000000)
+#
+#     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
+#     # print_agent_status(agent_id)
+
+@app.post("/api/start_2_level_agents_system")
+async def start_2_level_agents_system(request: Agents_System_Request):
     import time
     from agent.tools.tool_manager import print_all_registered_tools, server_register_all_local_tool_on_start, \
         server_register_remote_tool_dynamically, server_register_remote_tools_dynamically, Registered_Remote_Tool_Data
 
-    from agent.core.multi_agent_server import server_start_and_register_2_levels_agents_system, print_agent_status
+    # from agent.core.multi_agent_server import server_start_and_register_2_levels_agents_system, print_agent_status
     from agent.core.multi_agent_server import __server_wait_registered_agent
     from config import Port
 
@@ -252,14 +294,34 @@ async def start_2_level_agents_stream(request: Agent_Request):
     # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
 
     agent_data = server_start_and_register_2_levels_agents_system(
-        query=request.query,
         upper_agent_config=request.upper_agent_config,
         lower_agents_config=request.lower_agents_config
     )
 
+    # 测试用
+    # __server_wait_registered_agent(agent_id=agent_data.agent_id, timeout_second=20000000)
+    # server_continue_agent(agent_id=agent_data.agent_id, query='我刚才告诉你我叫什么？我刚才让你执行大的任务大的结果是什么来着？')
+
     time.sleep(0.5)
     print_agent_status(agent_data.agent_id)
 
+    return agent_data.agent_id
+    # return agent_data
+
+    # __server_wait_registered_agent(agent_id, timeout_second=20000000)
+
+    # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
+    # print_agent_status(agent_id)
+
+@FastAPI_Endpoint_With_SSE(
+    app=app,
+    return_type=Registered_Agent_Data,
+    return_id_name='agent_id',
+    return_stream_queues_name='agent_stream_queues',
+)
+async def query_2_level_agents_system(request: Query_Agent_Request):
+    agent_data = server_continue_agent(agent_id=request.agent_id, query=request.query)
+    # __server_wait_registered_agent(agent_id=request.agent_id, timeout_second=config.Agent.TIMEOUT_SECONDS)
     return agent_data
 
     # __server_wait_registered_agent(agent_id, timeout_second=20000000)

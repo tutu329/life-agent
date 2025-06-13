@@ -8,7 +8,7 @@ from agent.tools.protocol import Registered_Remote_Tool_Data
 from agent.tools.protocol import Tool_Call_Paras
 from agent.tools.generate_tool_class_dynamically import generate_tool_class_dynamically
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
-from agent.agent_web_server.agent_fastapi_server import Agent_Request
+from agent.agent_web_server.agent_fastapi_server import Agents_System_Request, Query_Agent_Request
 
 from config import Port
 from config import dblue, dyellow, dgreen, dcyan, dred
@@ -21,8 +21,8 @@ def _listen_to_stream(base_url: str, stream_id: str, stream_name: str):
     """监听单个 SSE 流"""
     # 注意：这里需要构建正确的流URL
     # 假设你的服务器基础URL是 http://powerai.cc:5120
-    server_base = base_url.replace('/api/start_2_level_agents_stream', '')
-    stream_url = f"{server_base}/api/start_2_level_agents_stream/stream/{stream_id}/{stream_name}"
+    server_base = base_url.replace('/api/query_2_level_agents_system', '')
+    stream_url = f"{server_base}/api/query_2_level_agents_system/stream/{stream_id}/{stream_name}"
     print(f"🔗 连接到流: {stream_name} - {stream_url}")
 
     try:
@@ -76,7 +76,7 @@ def main_test_2_level_agents_system():
     #         llm_model_id='qwen3-235b-a22b',  # 模型指向 qwen3-235b-a22b
     #     ).dict(),
     # }
-    request = Agent_Request(
+    request = Agents_System_Request(
         query=r'我叫电力用户，请告诉./文件夹下有哪些文件',
         remote_tools=[
             Registered_Remote_Tool_Data(
@@ -171,11 +171,90 @@ def main_test_2_level_agents_system():
     except Exception as e:
         print(f"❌ 发生错误: {e}")
 
-def main_test_2_level_agents_system_without_remote_tool():
-    start_url = "http://localhost:5110/api/start_2_level_agents_stream"
+# def main_test_2_level_agents_system_without_remote_tool():
+#     start_url = "http://localhost:5110/api/start_2_level_agents_stream"
+#
+#     request = Agents_System_Request(
+#         query=r'我叫电力用户，请告诉./文件夹下有哪些文件',
+#         remote_tools=[],
+#         upper_agent_config=Agent_Config(
+#             tool_names=['Human_Console_Tool'],
+#             exp_json_path='my_2_levels_mas_exp.json',
+#
+#             base_url='https://api.deepseek.com/v1',
+#             api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+#             # llm_model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+#             llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+#             temperature=0.65
+#         ),
+#         lower_agents_config=[
+#             Agent_As_Tool_Config(
+#                 tool_names=['Human_Console_Tool', 'Folder_Tool'],
+#                 exp_json_path='',
+#                 as_tool_name='Folder_Agent_As_Tool',
+#                 as_tool_description='本工具用于获取文件夹中的文件和文件夹信息',
+#
+#                 base_url='https://api.deepseek.com/v1',
+#                 api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+#                 # llm_model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+#                 llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+#                 temperature=0.70
+#             )
+#         ]
+#     )
+#
+#     try:
+#         print("🚀 第一步：发送请求启动Agent任务...")
+#         response = requests.post(start_url, json=request.dict())
+#
+#         if response.status_code == 200:
+#             result = response.json()
+#             print("✅ 任务启动成功!")
+#             print("📄 启动响应:")
+#             print(result)
+#
+#             # 获取 stream_id 和可用流
+#             stream_id = result.get('id')
+#             available_streams = result.get('streams', [])
+#
+#             if stream_id and available_streams:
+#                 print(f"\n🆔 获得流 ID: {stream_id}")
+#                 print(f"📡 可用流列表: {available_streams}")
+#
+#                 print(f"\n🔄 第二步：开始监听 SSE 流...")
+#
+#                 # 为每个流创建线程来监听
+#                 threads = []
+#                 for stream_name in available_streams:
+#                     thread = threading.Thread(
+#                         target=_listen_to_stream,
+#                         args=(start_url, stream_id, stream_name)
+#                     )
+#                     thread.daemon = True
+#                     thread.start()
+#                     threads.append(thread)
+#
+#                 # 等待所有流完成（或手动中断）
+#                 try:
+#                     print("⏳ 监听流中... (按 Ctrl+C 停止)")
+#                     for thread in threads:
+#                         thread.join()
+#                 except KeyboardInterrupt:
+#                     print("\n⚠️ 用户中断，停止监听流")
+#             else:
+#                 print("❌ 没有获得有效的流ID或可用流列表")
+#
+#         else:
+#             print(f"❌ 任务启动失败: {response.status_code}")
+#             print(response.text)
+#
+#     except requests.exceptions.ConnectionError:
+#         print("❌ 连接失败！请确保agent_server.py已启动")
+#     except Exception as e:
+#         print(f"❌ 发生错误: {e}")
 
-    request = Agent_Request(
-        query=r'我叫电力用户，请告诉./文件夹下有哪些文件',
+def main_test_2_level_agents_system_without_remote_tool():
+    request = Agents_System_Request(
         remote_tools=[],
         upper_agent_config=Agent_Config(
             tool_names=['Human_Console_Tool'],
@@ -204,12 +283,38 @@ def main_test_2_level_agents_system_without_remote_tool():
     )
 
     try:
-        print("🚀 第一步：发送请求启动Agent任务...")
+        start_url = "http://localhost:5110/api/start_2_level_agents_system"
+        print("🚀 第一步：发送请求启动Agents System...")
         response = requests.post(start_url, json=request.dict())
 
         if response.status_code == 200:
             result = response.json()
-            print("✅ 任务启动成功!")
+            print("✅ Agents System已启动!")
+            print(f"✅ result: '{result}'")
+        else:
+            print(f"❌ Agents System启动失败: {response.status_code}")
+            print(response.text)
+
+    except requests.exceptions.ConnectionError:
+        print("❌ 连接失败！请确保agent_fastapi_server.py已启动")
+    except Exception as e:
+        print(f"❌ 发生错误: {e}")
+
+    query = r'我叫电力用户，请告诉./文件夹下有哪些文件'
+    request = Query_Agent_Request(
+        agent_id=result,    # result即为agent_id
+        query=query
+    )
+
+    try:
+        start_url = "http://localhost:5110/api/query_2_level_agents_system"
+        print("🚀 第二步：对Agents System进行query...")
+        print(f"🚀 query内容: '{query}'")
+        response = requests.post(start_url, json=request.dict())
+
+        if response.status_code == 200:
+            result = response.json()
+            print("✅ 对Agents System的query任务启动成功!")
             print("📄 启动响应:")
             print(result)
 
@@ -249,7 +354,7 @@ def main_test_2_level_agents_system_without_remote_tool():
             print(response.text)
 
     except requests.exceptions.ConnectionError:
-        print("❌ 连接失败！请确保agent_server.py已启动")
+        print("❌ 连接失败！请确保agent_fastapi_server.py已启动")
     except Exception as e:
         print(f"❌ 发生错误: {e}")
 

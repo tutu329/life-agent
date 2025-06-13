@@ -98,6 +98,8 @@ def server_continue_agent(agent_id, query):
     # 更新线程的future
     agent_data.agent_future = future
 
+    return agent_data
+
 def print_agent_status(agent_id):
     if g_registered_agents_dict.get(agent_id):
         agent_status = g_registered_agents_dict[agent_id].agent_obj.status
@@ -309,7 +311,6 @@ def _server_create_and_registered_agent_as_tool(
 #     # return upper_agent_id
 
 def server_start_and_register_2_levels_agents_system(
-    query                   :str,
     upper_agent_config      :Agent_Config,                  # 顶层agent的配置
     lower_agents_config     :List[Agent_As_Tool_Config],    # 下层agent的配置（多个）
 )->Registered_Agent_Data:
@@ -362,17 +363,16 @@ def server_start_and_register_2_levels_agents_system(
     )
     upper_agent_id = upper_agent.agent_id
 
-    def _run_agent_thread():
-        upper_agent.init()
-        success = upper_agent.run(query=query)
+    # def _run_agent_thread():
+    #     upper_agent.init()
 
-    future = g_thread_pool_executor.submit(_run_agent_thread)
+    upper_agent.init()
 
     # 初始化agent的注册数据
     agent_data = Registered_Agent_Data(
         agent_id=upper_agent_id,
         agent_obj=upper_agent,
-        agent_future=future,
+        agent_future=Future(),  # 这里其实不需要future，但是pydantic要验证
         # agent_status=upper_agent_status,
         agent_stream_queues=upper_agent.stream_queues
     )
@@ -382,6 +382,9 @@ def server_start_and_register_2_levels_agents_system(
 
     return agent_data
     # return upper_agent_id
+
+def cancel_2_levels_agents_system():
+    pass
 
 # # 2层agent系统的后续轮的query
 # def server_continue_2_levels_agents_system(agent_id, query):
