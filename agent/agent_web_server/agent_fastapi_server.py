@@ -337,6 +337,41 @@ async def query_2_level_agents_system(request: Query_Agent_Request):
     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
     # print_agent_status(agent_id)
 
+import platform
+from pathlib import Path
+import uvicorn
+
+# … 你的其它 import、app 定义 …
+
 if __name__ == "__main__":
-    fastapi_show_all_routes(app)
-    uvicorn.run(app, host="0.0.0.0", port=Port.agent_fastapi_server)
+    from config import get_os
+    fastapi_show_all_routes(app)          # 保留原来的路由打印
+    # ---------- ① 自动启用 SSL (仅限 Linux) ----------
+    ssl_kwargs = {}
+    if get_os() == "ubuntu":
+        print(f'操作系统为：ubuntu')
+        ssl_dir = Path("/home/tutu/ssl")
+        certfile = ssl_dir / "powerai_public.crt"   # 公钥证书
+        keyfile  = ssl_dir / "powerai.key"          # 私钥
+        cafile   = ssl_dir / "powerai_chain.crt"    # CA/中间证书链
+
+        if all(p.exists() for p in (certfile, keyfile, cafile)):
+            ssl_kwargs = {
+                "ssl_certfile": str(certfile),
+                "ssl_keyfile":  str(keyfile),
+                "ssl_ca_certs": str(cafile),
+            }
+        else:
+            missing = [p.name for p in (certfile, keyfile, cafile) if not p.exists()]
+            raise FileNotFoundError(f"SSL 启动失败，缺少文件: {', '.join(missing)}")
+    else:
+        print(f'操作系统为：windows')
+
+    # ---------- ② 启动 Uvicorn ----------
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=Port.agent_fastapi_server,
+        **ssl_kwargs                      # 非 Linux 或文件缺失时为空，自动回退到 HTTP
+    )
+
