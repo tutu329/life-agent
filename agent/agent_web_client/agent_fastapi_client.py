@@ -55,7 +55,7 @@ def _listen_to_stream(base_url: str, stream_id: str, stream_name: str):
 def main_test_2_level_agents_system():
     """Python测试Agent服务器 - 方案1调用方式"""
     # 第一步：启动任务
-    start_url = "http://localhost:5120/api/start_2_level_agents_stream"
+    start_url = "http://localhost:5110/api/start_2_level_agents_stream"
     # start_url = "http://powerai.cc:5120/api/start_2_level_agents_stream"
 
     # request = {
@@ -108,6 +108,88 @@ def main_test_2_level_agents_system():
         lower_agents_config=[
             Agent_As_Tool_Config(
                 tool_names=['Human_Console_Tool', 'Remote_Folder_Tool'],
+                exp_json_path='',
+                as_tool_name='Folder_Agent_As_Tool',
+                as_tool_description='本工具用于获取文件夹中的文件和文件夹信息',
+
+                base_url='https://api.deepseek.com/v1',
+                api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+                # llm_model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+                llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+                temperature=0.70
+            )
+        ]
+    )
+
+    try:
+        print("🚀 第一步：发送请求启动Agent任务...")
+        response = requests.post(start_url, json=request.dict())
+
+        if response.status_code == 200:
+            result = response.json()
+            print("✅ 任务启动成功!")
+            print("📄 启动响应:")
+            print(result)
+
+            # 获取 stream_id 和可用流
+            stream_id = result.get('id')
+            available_streams = result.get('streams', [])
+
+            if stream_id and available_streams:
+                print(f"\n🆔 获得流 ID: {stream_id}")
+                print(f"📡 可用流列表: {available_streams}")
+
+                print(f"\n🔄 第二步：开始监听 SSE 流...")
+
+                # 为每个流创建线程来监听
+                threads = []
+                for stream_name in available_streams:
+                    thread = threading.Thread(
+                        target=_listen_to_stream,
+                        args=(start_url, stream_id, stream_name)
+                    )
+                    thread.daemon = True
+                    thread.start()
+                    threads.append(thread)
+
+                # 等待所有流完成（或手动中断）
+                try:
+                    print("⏳ 监听流中... (按 Ctrl+C 停止)")
+                    for thread in threads:
+                        thread.join()
+                except KeyboardInterrupt:
+                    print("\n⚠️ 用户中断，停止监听流")
+            else:
+                print("❌ 没有获得有效的流ID或可用流列表")
+
+        else:
+            print(f"❌ 任务启动失败: {response.status_code}")
+            print(response.text)
+
+    except requests.exceptions.ConnectionError:
+        print("❌ 连接失败！请确保agent_fastapi_server.py已启动")
+    except Exception as e:
+        print(f"❌ 发生错误: {e}")
+
+def main_test_2_level_agents_system_without_remote_tool():
+    start_url = "http://localhost:5110/api/start_2_level_agents_stream"
+
+    request = Agent_Request(
+        query=r'我叫电力用户，请告诉./文件夹下有哪些文件',
+        remote_tools=[],
+        upper_agent_config=Agent_Config(
+            tool_names=['Human_Console_Tool'],
+            exp_json_path='my_2_levels_mas_exp.json',
+
+            base_url='https://api.deepseek.com/v1',
+            api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+            # llm_model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
+            llm_model_id='deepseek-chat',  # 模型指向 DeepSeek-V3-0324
+            temperature=0.65
+        ),
+        lower_agents_config=[
+            Agent_As_Tool_Config(
+                tool_names=['Human_Console_Tool', 'Folder_Tool'],
                 exp_json_path='',
                 as_tool_name='Folder_Agent_As_Tool',
                 as_tool_description='本工具用于获取文件夹中的文件和文件夹信息',
@@ -245,4 +327,5 @@ def main_test_remote_tool_fastapi_server_launched_by_client():
 # ============= 示范用法 =============
 if __name__ == "__main__":
     # main_test_remote_tool_fastapi_server_launched_by_client()
-    main_test_2_level_agents_system()
+    # main_test_2_level_agents_system()
+    main_test_2_level_agents_system_without_remote_tool()
