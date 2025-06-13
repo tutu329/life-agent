@@ -254,6 +254,9 @@ def main_test_2_level_agents_system():
 #         print(f"❌ 发生错误: {e}")
 
 def main_test_2_level_agents_system_without_remote_tool():
+    server_name = 'powerai.cc'
+    # server_name = 'localhost'
+
     request = Agents_System_Request(
         remote_tools=[],
         upper_agent_config=Agent_Config(
@@ -283,7 +286,7 @@ def main_test_2_level_agents_system_without_remote_tool():
     )
 
     try:
-        start_url = "http://localhost:5110/api/start_2_level_agents_system"
+        start_url = f"http://{server_name}:5110/api/start_2_level_agents_system"
         print("🚀 第一步：发送请求启动Agents System...")
         response = requests.post(start_url, json=request.dict())
 
@@ -308,7 +311,7 @@ def main_test_2_level_agents_system_without_remote_tool():
     )
 
     try:
-        start_url = "http://localhost:5110/api/query_2_level_agents_system"
+        start_url = f"http://{server_name}:5110/api/query_2_level_agents_system"
         print("🚀 第二步：对Agents System进行query...")
         print(f"🚀 query内容: '{query}'")
         response = requests.post(start_url, json=request.dict())
@@ -359,7 +362,7 @@ def main_test_2_level_agents_system_without_remote_tool():
     except Exception as e:
         print(f"❌ 发生错误: {e}")
 
-    start_url = "http://localhost:5110/api/get_agent_status"
+    start_url = f"http://{server_name}:5110/api/get_agent_status"
     print("检查对Agents System的query是否完成...")
     request = Agent_Status_Request(
         agent_id=agent_id
