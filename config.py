@@ -162,16 +162,16 @@ class Port():
     # 8012-8020
     # 8001-8011
 
-    comfy                           :int = 5100     # ComfyUI
+    comfy                               :int = 5100     # ComfyUI
 
     # 前端项目life_agent_web相关
-    agent_web                       :int = 5101
-    agent_web_only_office_server    :int = 5102     # only-office-server
+    agent_web                           :int = 5101
+    agent_web_only_office_server        :int = 5102     # only-office-server
 
     # 后端agent用的tool相关
-    agent_fastapi_server            :int = 5110     # 后端agent的server
-    remote_tool_fastapi_server      :int = 5111     # 后端agent的remote_tools
-    only_office_web_socket_server   :int = 5112     # 前端only-office控件被后台agent控制的端口
+    agent_fastapi_server                :int = 5110     # 后端agent的server
+    remote_tool_fastapi_server          :int = 5111     # 后端agent的remote_tools
+    collabora_code_web_socket_server    :int = 5112     # 前端collabora CODE office控件(基于libre-office，完全开源、可商用)被后台agent控制的端口
 
     # 顶层应用
     flowise:int         = 7860
