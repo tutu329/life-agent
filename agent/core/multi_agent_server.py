@@ -233,20 +233,18 @@ def _server_create_and_registered_agent_as_tool(
 
     return tool_id
 
-# 多层agent体系的关键(前后端系统)
-# server启动一个2层agent系统的query，并注册
 # def server_start_and_register_2_levels_agents_system(
-#     query                           :str,
-#     upper_agent_dict                :Dict[str, Any],        # {'tool_names':tool_names, 'exp_json_path':, 'agent_config':agent_config, 'tool_agent_experience_json_path':tool_agent_experience_json_path}
-#     lower_agents_as_tool_dict_list  :List[Dict[str, Any]],  # [{'tool_names':tool_names, 'agent_config':agent_config, 'as_tool_name':as_tool_name, 'as_tool_description':as_tool_description}, ...]
+#     query                   :str,
+#     upper_agent_config      :Agent_Config,                  # 顶层agent的配置
+#     lower_agents_config     :List[Agent_As_Tool_Config],    # 下层agent的配置（多个）
 # )->Registered_Agent_Data:
 #     # ----------------构建lower的agents_as_tool----------------
 #     # 所有将创建的agent_as_tool对应的tool_id_list
 #     agents_as_tool_id_list = []
 #
 #     # 创建所有agent_as_tool
-#     for agents_as_tool_dict in lower_agents_as_tool_dict_list:
-#         tool_id = _server_create_and_registered_agent_as_tool(**agents_as_tool_dict)
+#     for lower_agent_config in lower_agents_config:
+#         tool_id = _server_create_and_registered_agent_as_tool(lower_agent_config)
 #         agents_as_tool_id_list.append(tool_id)
 #     # ---------------/构建lower的agents_as_tool----------------
 #
@@ -261,7 +259,7 @@ def _server_create_and_registered_agent_as_tool(
 #         instance = server_get_tool_data_by_id(agents_as_tool_id).tool_class
 #         agents_as_tool_instance_list.append(instance)
 #
-#     upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_dict['tool_names'])
+#     upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_config.tool_names)
 #     # upper_agent_tools_class_list = legacy_get_all_local_tools_class(upper_agent_dict['tool_names'])
 #     tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
 #
@@ -282,10 +280,10 @@ def _server_create_and_registered_agent_as_tool(
 #     upper_agent = Tool_Agent(
 #         has_history=True,
 #         tool_classes=tool_class_and_tool_instance_list,     # 这里是[Tool_Class1, Tool_Class2, ... , agent_as_tool1, agent_as_tool2, ...]
-#         agent_config=upper_agent_dict['agent_config'],
+#         agent_config=upper_agent_config,
 #         # agent_status_ref=upper_agent_status,
 #         # agent_stream_queue_ref=upper_agent_stream_queue,
-#         tool_agent_experience_json_path = upper_agent_dict['exp_json_path'],
+#         tool_agent_experience_json_path = upper_agent_config.exp_json_path,
 #     )
 #     upper_agent_id = upper_agent.agent_id
 #
@@ -518,5 +516,5 @@ def main_test_2_level2_agents_system():
     # print_agent_status(agent_id)
 
 if __name__ == "__main__":
-    main_test_server_start_agent()
-    # main_test_2_level2_agents_system()
+    # main_test_server_start_agent()
+    main_test_2_level2_agents_system()
