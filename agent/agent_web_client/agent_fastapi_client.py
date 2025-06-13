@@ -8,7 +8,7 @@ from agent.tools.protocol import Registered_Remote_Tool_Data
 from agent.tools.protocol import Tool_Call_Paras
 from agent.tools.generate_tool_class_dynamically import generate_tool_class_dynamically
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
-from agent.agent_web_server.agent_fastapi_server import Agents_System_Request, Query_Agent_Request
+from agent.agent_web_server.agent_fastapi_server import Agents_System_Request, Query_Agent_Request, Agent_Status_Request
 
 from config import Port
 from config import dblue, dyellow, dgreen, dcyan, dred
@@ -301,8 +301,9 @@ def main_test_2_level_agents_system_without_remote_tool():
         print(f"❌ 发生错误: {e}")
 
     query = r'我叫电力用户，请告诉./文件夹下有哪些文件'
+    agent_id = result# result即为agent_id
     request = Query_Agent_Request(
-        agent_id=result,    # result即为agent_id
+        agent_id=agent_id,    # result即为agent_id
         query=query
     )
 
@@ -342,8 +343,8 @@ def main_test_2_level_agents_system_without_remote_tool():
                 # 等待所有流完成（或手动中断）
                 try:
                     print("⏳ 监听流中... (按 Ctrl+C 停止)")
-                    for thread in threads:
-                        thread.join()
+                    # for thread in threads:
+                    #     thread.join()
                 except KeyboardInterrupt:
                     print("\n⚠️ 用户中断，停止监听流")
             else:
@@ -357,6 +358,23 @@ def main_test_2_level_agents_system_without_remote_tool():
         print("❌ 连接失败！请确保agent_fastapi_server.py已启动")
     except Exception as e:
         print(f"❌ 发生错误: {e}")
+
+    start_url = "http://localhost:5110/api/get_agent_status"
+    print("检查对Agents System的query是否完成...")
+    request = Agent_Status_Request(
+        agent_id=agent_id
+    )
+    while(True):
+        response = requests.post(start_url, json=request.dict())
+        time.sleep(0.5)
+        if response.status_code == 200:
+            status = response.json()
+            # print(f'status: "{status}"')
+
+            if status['finished']==True:
+                break
+        time.sleep(1)
+    print(f'agent任务执行已完成，客户端退出！')
 
 
 def main_test_2_level_agents_system_simple():

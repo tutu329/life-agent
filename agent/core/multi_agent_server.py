@@ -100,6 +100,12 @@ def server_continue_agent(agent_id, query):
 
     return agent_data
 
+# 返回agent的状态
+def server_get_agent_status(agent_id)->Agent_Status:
+    if g_registered_agents_dict.get(agent_id):
+        agent_status = g_registered_agents_dict[agent_id].agent_obj.status
+        return agent_status
+
 def print_agent_status(agent_id):
     if g_registered_agents_dict.get(agent_id):
         agent_status = g_registered_agents_dict[agent_id].agent_obj.status
@@ -382,9 +388,6 @@ def server_start_and_register_2_levels_agents_system(
 
     return agent_data
     # return upper_agent_id
-
-def cancel_2_levels_agents_system():
-    pass
 
 # # 2层agent系统的后续轮的query
 # def server_continue_2_levels_agents_system(agent_id, query):

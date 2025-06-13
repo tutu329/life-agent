@@ -17,7 +17,7 @@ from config import Port, dyellow, dred, dgreen, dcyan, dblue
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.core.tool_agent import Tool_Agent
-from agent.core.multi_agent_server import Registered_Agent_Data, server_continue_agent, server_cancel_agent, server_start_and_register_2_levels_agents_system, print_agent_status, __server_wait_registered_agent
+from agent.core.multi_agent_server import Registered_Agent_Data, server_continue_agent, server_cancel_agent, server_start_and_register_2_levels_agents_system, print_agent_status, server_get_agent_status, __server_wait_registered_agent
 
 from contextlib import asynccontextmanager
 from agent.tools.protocol import Action_Result, Tool_Call_Paras
@@ -69,9 +69,12 @@ class Agents_System_Request(BaseModel):
     upper_agent_config  : Agent_Config                          # 顶层agent的配置
     lower_agents_config : List[Agent_As_Tool_Config]            # 下层agent的配置（多个）
 
+class Agent_Status_Request(BaseModel):
+    agent_id    : str
+
 class Query_Agent_Request(BaseModel):
     agent_id    : str
-    query       : str                                   # 如：'当前文件夹下有哪些文件'
+    query       : str   # 如：'当前文件夹下有哪些文件'
 
 @app.get("/")
 def root():
@@ -271,6 +274,11 @@ async def run_agent_stream(request: Agents_System_Request):
 #
 #     # server_continue_agent(agent_id, query='我刚才告诉你我叫什么？')
 #     # print_agent_status(agent_id)
+
+@app.post("/api/get_agent_status")
+async def get_agent_status(request:Agent_Status_Request):
+    agent_status = server_get_agent_status(agent_id=request.agent_id)
+    return agent_status
 
 @app.post("/api/start_2_level_agents_system")
 async def start_2_level_agents_system(request: Agents_System_Request):

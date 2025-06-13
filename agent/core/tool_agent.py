@@ -445,6 +445,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                         dyellow(f'---------------------/本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
                     # -------------/总结经验------------------------------------------
                     dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
+                    self.status.finished = True
                     return True
 
                 # 3、观察
