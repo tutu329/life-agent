@@ -1,16 +1,9 @@
-# 通用WebSocket管理器 - 可被多个模块使用
-# 提供WebSocket服务器和消息发送功能
-
-import json
-import asyncio
-import websockets
-import threading
 import time
 from utils.encode import safe_encode
 from agent.tools.base_tool import Base_Tool
 from agent.tools.protocol import Action_Result, Tool_Call_Paras
 
-from agent.agent_web_server.agent_fastapi_server import get_websocket_manager
+from utils.web_socket_manager import get_websocket_manager
 
 class Office_Tool(Base_Tool):
     name = 'Office_Tool'
