@@ -207,6 +207,7 @@ def _server_create_and_registered_agent_as_tool(
     # agent_config:Agent_Config,  # agent的config
     # as_tool_name:str,           # name as tool
     # as_tool_description:str,    # description as tool
+
     agent_as_tool_config:Agent_As_Tool_Config
 ):
     # 获取该agent需要使用的tools_class_list
@@ -368,6 +369,13 @@ def server_start_and_register_2_levels_agents_system(
         tool_agent_experience_json_path = upper_agent_config.exp_json_path,
     )
     upper_agent_id = upper_agent.agent_id
+
+    # ---------------------注入top_agent_id------------------------
+    # 因为lower_agent先初始化，所以只能在upper_agent初始化之后，遍历所有lower_agent注入top_agent_id
+    for agent_as_tool_instance in agents_as_tool_instance_list:
+        # print(f'agent_as_tool_instance: ({agent_as_tool_instance})')
+        agent_as_tool_instance.set_top_agent_id(upper_agent=upper_agent)
+    # --------------------/注入top_agent_id------------------------
 
     # def _run_agent_thread():
     #     upper_agent.init()

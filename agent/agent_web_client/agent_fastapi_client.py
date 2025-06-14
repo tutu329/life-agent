@@ -55,7 +55,7 @@ def _listen_to_stream(base_url: str, stream_id: str, stream_name: str):
 def main_test_2_level_agents_system():
     """Python测试Agent服务器 - 方案1调用方式"""
     # 第一步：启动任务
-    start_url = "http://localhost:5110/api/start_2_level_agents_stream"
+    start_url = "https://localhost:5110/api/start_2_level_agents_stream"
     # start_url = "http://powerai.cc:5120/api/start_2_level_agents_stream"
 
     # request = {
@@ -90,7 +90,7 @@ def main_test_2_level_agents_system():
                         "required": "True",
                     }
                 ],
-                endpoint_url=f"http://localhost:{Port.remote_tool_fastapi_server}/Folder_Tool",
+                endpoint_url=f"https://localhost:{Port.remote_tool_fastapi_server}/Folder_Tool",
                 method="POST",
                 timeout=15,
             )
@@ -286,7 +286,7 @@ def main_test_2_level_agents_system_without_remote_tool():
     )
 
     try:
-        start_url = f"http://{server_name}:5110/api/start_2_level_agents_system"
+        start_url = f"https://{server_name}:5110/api/start_2_level_agents_system"
         print("🚀 第一步：发送请求启动Agents System...")
         response = requests.post(start_url, json=request.dict())
 
@@ -304,14 +304,14 @@ def main_test_2_level_agents_system_without_remote_tool():
         print(f"❌ 发生错误: {e}")
 
     query = r'我叫电力用户，请告诉./文件夹下有哪些文件'
-    agent_id = result# result即为agent_id
+    agent_id = result   # result即为agent_id
     request = Query_Agent_Request(
         agent_id=agent_id,    # result即为agent_id
         query=query
     )
 
     try:
-        start_url = f"http://{server_name}:5110/api/query_2_level_agents_system"
+        start_url = f"https://{server_name}:5110/api/query_2_level_agents_system"
         print("🚀 第二步：对Agents System进行query...")
         print(f"🚀 query内容: '{query}'")
         response = requests.post(start_url, json=request.dict())
@@ -362,7 +362,7 @@ def main_test_2_level_agents_system_without_remote_tool():
     except Exception as e:
         print(f"❌ 发生错误: {e}")
 
-    start_url = f"http://{server_name}:5110/api/get_agent_status"
+    start_url = f"https://{server_name}:5110/api/get_agent_status"
     print("检查对Agents System的query是否完成...")
     request = Agent_Status_Request(
         agent_id=agent_id
@@ -383,7 +383,7 @@ def main_test_2_level_agents_system_without_remote_tool():
 def main_test_2_level_agents_system_simple():
     """简化版本：只监听一个流"""
     # 第一步：启动任务
-    start_url = "http://powerai.cc:5120/api/start_2_level_agents_stream"
+    start_url = "https://powerai.cc:5120/api/start_2_level_agents_stream"
     data = {
         "query": '请告诉我"./"下有哪些文件',
         "base_url": 'https://api.deepseek.com/v1',
@@ -430,7 +430,7 @@ def main_test_remote_tool_fastapi_server_launched_by_client():
         name="Remote_Folder_Tool",
         description="返回远程服务器上指定文件夹下所有文件和文件夹的名字信息。",
         parameters=[{"name": "dir", "type": "string"}],
-        endpoint_url="http://localhost:5120/Folder_Tool",   # 'Folder_Tool'大小写必须正确
+        endpoint_url="https://localhost:5120/Folder_Tool",   # 'Folder_Tool'大小写必须正确
         method="POST",
         timeout=15,
     )

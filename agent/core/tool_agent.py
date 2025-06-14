@@ -57,6 +57,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
     def call(self, tool_call_paras:Tool_Call_Paras):
         callback_tool_paras_dict = tool_call_paras.callback_tool_paras_dict
         callback_agent_config = tool_call_paras.callback_agent_config
+        callback_top_agent_id = tool_call_paras.callback_top_agent_id
         callback_agent_id = tool_call_paras.callback_agent_id
         callback_last_tool_ctx = tool_call_paras.callback_last_tool_ctx
         callback_father_agent_exp = tool_call_paras.callback_father_agent_exp
@@ -67,14 +68,14 @@ class Tool_Agent(Agent_Base, Base_Tool):
         dblue(f'agent_as_tool收到para: \n"{callback_tool_paras_dict}"')
 
         # 将query和exp组合
-        dyellow(f'---------------------agent_as_tool被調用(upper agent_id="{callback_agent_id}")------------------------------')
+        dyellow(f'---------------------agent_as_tool被調用(upper agent_id="{callback_agent_id}, top agent_id="{callback_top_agent_id}")------------------------------')
         if callback_father_agent_exp.strip():
             tool_query += tool_query + f'\n(获得了已有经验：{callback_father_agent_exp!r})'
         dyellow(f'upper agent的query: \n"{tool_query}"')
         dyellow(f'upper agent提供的经验: {callback_father_agent_exp!r}')
         dyellow(f'upper agent提供的tool_para: {callback_tool_paras_dict!r}')
         dyellow(f'upper agent提供的tool_context: {callback_last_tool_ctx!r}')
-        dyellow(f'--------------------/agent_as_tool被調用(upper agent_id="{callback_agent_id}")------------------------------')
+        dyellow(f'--------------------/agent_as_tool被調用(upper agent_id="{callback_agent_id}, top agent_id="{callback_top_agent_id}")------------------------------')
 
         self.run(query=tool_query)
         # self.run(query=self.query_as_tool)
@@ -127,17 +128,22 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # else:
         return self.status.canceling
 
+    # 注入top_agent_id(来自于upper agent)
+    def set_top_agent_id(self, upper_agent):
+        self.top_agent_id = upper_agent.top_agent_id
+
     # Tool_Agent方法
     def __init__(self,
                  tool_classes,
                  agent_config:Agent_Config,
-                 query=None,  # 用于as_tool(tool仅query一次)
-                 as_tool_name=None,  # As_Tool的name，如取: "Folder_Agent_As_Tool"
-                 as_tool_description=None,  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
+                 query=None,                            # 用于as_tool(tool仅query一次)
+                 as_tool_name=None,                     # As_Tool的name，如取: "Folder_Agent_As_Tool"
+                 as_tool_description=None,              # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  has_history = False,
-                 tool_agent_experience_json_path='',  # 经验json文件，如果为‘’，就不设置经验
+                 tool_agent_experience_json_path='',    # 经验json文件，如果为‘’，就不设置经验
                  # agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
                  # agent_stream_queue_ref:Agent_Stream_Queues=None,  # agent的stream queue，，由multi_agent_server管理
+                 top_agent_id=None,                     # top_agent_id为None时，表明自己即为top agent
                  ):
         Agent_Base.__init__(self)
 
@@ -165,6 +171,18 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         # agent属性
         self.agent_id = str(uuid4())
+
+        # 顶层的agent_id，主要用于多层agents系统中，让top_agent_id<-->connection，而与下层agent_id无关
+        # top_agent_id的形成有2种情况：
+        # 1）多层agents system中，靠parent agent注入
+        # 2）自己即为top agent，则self.top_agent_id=self.agent_id
+        if top_agent_id:
+            # 外部注入了top_agent_id
+            self.top_agent_id = top_agent_id
+        else:
+            # 外部没有注入top_agent_id
+            self.top_agent_id = self.agent_id
+
         if not has_history:
             dred('--------------------------------------------------------------------------------------------')
             dred(f'Warning: agent没有设置history!(name:"{self.name}", agent_id:"{self.agent_id}")')
@@ -698,12 +716,14 @@ class Tool_Agent(Agent_Base, Base_Tool):
                         dred(f'tool_name: {tool_name!r}')
                         dred(f'callback_tool_paras_dict: {callback_tool_paras_dict!r}')
                         dred(f'self.agent_config: {self.agent_config!r}')
+                        dred(f'self.top_agent_id: {self.top_agent_id!r}')
                         dred(f'self.agent_id: {self.agent_id!r}')
                         dred(f'last_tool_ctx: {last_tool_ctx!r}')
                         dred(f'self.current_exp_str: {self.current_exp_str!r}')
                         dred(f'------------------------/tool线程启动(agent_id="{self.agent_id}")------------------------------')
 
                         tool_call_paras = Tool_Call_Paras(
+                            callback_top_agent_id=self.top_agent_id,
                             callback_tool_paras_dict=callback_tool_paras_dict,
                             callback_agent_config=self.agent_config,
                             callback_agent_id=self.agent_id,
@@ -722,9 +742,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
                         #     callback_last_tool_ctx=last_tool_ctx,               # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
                         #     callback_father_agent_exp=self.current_exp_str      # 调用agent_as_tool时，将经验exp传给该agent_as_tool
                         # )
-                        dred(f'--------------------------tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
+                        dred(f'--------------------------tool线程运行完毕(agent_id="{self.agent_id}", top_agent_id="{self.top_agent_id}")------------------------------')
                         dred(f'rtn: {rtn!r}')
-                        dred(f'-------------------------/tool线程运行完毕(agent_id="{self.agent_id}")------------------------------')
+                        dred(f'-------------------------/tool线程运行完毕(agent_id="{self.agent_id}", top_agent_id="{self.top_agent_id}")------------------------------')
 
                         # 这里返回rtn很关键，不然就要用nonlocal rtn才行，局域内的rtn变量并不是外层rtn，这个一定要注意
                         # 然后后续用rtn = future.result()获取结果

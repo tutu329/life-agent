@@ -52,6 +52,7 @@ class Tool_Call_Paras(BaseModel):
     """
     callback_tool_paras_dict    :Dict[str, str]                 # 如：{'file_path': './', 'xx':'xx', ...}
     callback_agent_config       :Agent_Config                   # base_url、api_key、model_id、temperature等
+    callback_top_agent_id       :str                            # 顶层的agent_id，主要用于多层agents系统中，让top_agent_id<-->connection，而与下层agent_id无关
     callback_agent_id           :str                            # 如：str(uuid4())
     callback_last_tool_ctx      :Optional[Tool_Context] = None  # 上一个tool调用后的上下文结果
     callback_father_agent_exp   :str                            # 如："搜索远程文件夹的经验是，如果失败可能是..."
