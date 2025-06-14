@@ -108,9 +108,11 @@ class Web_Socket_Manager:
                 with self.connection_lock:
                     if websocket in self.connection_reverse:
                         client_id = self.connection_reverse[websocket]
-                        print(f'🗑️ 清理断开连接: {client_id}')
-                        del self.connections[client_id]
-                        del self.connection_reverse[websocket]
+                        if client_id in self.connections:
+                            print(f'🗑️ 清理断开连接: {client_id}')
+                            del self.connections[client_id]
+                        if websocket in self.connection_reverse:
+                            del self.connection_reverse[websocket]
                         print(f'🔍 剩余连接数: {len(self.connections)}')
 
         async def start_server():

@@ -278,7 +278,13 @@ async def run_agent_stream(request: Agents_System_Request):
 @app.post("/api/get_agent_status")
 async def get_agent_status(request:Agent_Status_Request):
     agent_status = server_get_agent_status(agent_id=request.agent_id)
-    return agent_status
+    dred(f'------------------agent(id="{request.agent_id}")\'s status is "{agent_status}"-----------------')
+    if agent_status:
+        if agent_status.finished:
+            dgreen(f'------------------agent(id="{request.agent_id}")\'s status is finished.-----------------')
+        return agent_status
+    else:
+        return None
 
 @app.post("/api/start_2_level_agents_system")
 async def start_2_level_agents_system(request: Agents_System_Request):
