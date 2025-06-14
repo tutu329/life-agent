@@ -403,10 +403,22 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # 设置为第一次query，相当于清楚历史
         self.first_query = True
 
+    # 每一次run之前都要正确设置状态
+    def _run_before(self):
+        # 完全初始化Agent_Status
+        self.status = Agent_Status()
+        self.status.started = True
+
+    # 每一次run之后都要正确设置状态
+    def _run_after(self, success):
+        self.status.finished = True
+        self.status.task_success = success
+
     def run(self,
             query=None,
             in_max_retry=config.Agent.MAX_TRIES
             ):
+        self._run_before()
         try:
             self.current_query = query or self.query
 
@@ -463,8 +475,12 @@ class Tool_Agent(Agent_Base, Base_Tool):
                         dyellow(f'---------------------/本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
                     # -------------/总结经验------------------------------------------
                     dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
-                    self.status.finished = True
+
+                    # ----------------run()结束-------------------
+                    self._run_after(success=True)
+                    # self.status.finished = True
                     return True
+                    # ---------------/run()结束-------------------
 
                 # 3、观察
                 self.observation(in_action_result=action_result)
@@ -477,7 +493,11 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 self.set_canceled()
 
             self.final_answer = '未能成功答复，请重试。'
+            # ----------------run()结束-------------------
+            self._run_after(success=False)
+            # self.status.finished = True
             return False
+            # ---------------/run()结束-------------------
         except Exception as e:
             dred('-------------------------------Tool_Agent.run()报错------------------------------------')
             dred(f'{e!r}')

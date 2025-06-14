@@ -85,14 +85,8 @@ def server_continue_agent(agent_id, query):
     agent = agent_data.agent_obj
 
     def _run_agent_thread():
-        agent.unset_cancel()
-        # dred(f'-----------------------history1----------------------------')
-        # print(agent.agent_tools_description_and_full_history)
-        # dred(f'----------------------/history1----------------------------')
+        # agent.unset_cancel()
         success = agent.run(query=query)
-        # dred(f'-----------------------history2----------------------------')
-        # print(agent.agent_tools_description_and_full_history)
-        # dred(f'----------------------/history2----------------------------')
     future = g_thread_pool_executor.submit(_run_agent_thread)
 
     # 更新线程的future
