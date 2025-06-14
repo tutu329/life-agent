@@ -73,8 +73,7 @@ class Office_Tool(Base_Tool):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        async def handler(websocket):
-        # async def handler(websocket, path):
+        async def handler(websocket, path):
             print(f'📱 新的WebSocket连接: {websocket.remote_address}')
             self.connected_clients.add(websocket)
             try:
@@ -91,7 +90,7 @@ class Office_Tool(Base_Tool):
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             try:
                 # 使用 powerai.cc 的证书
-                ssl_context.load_cert_chain('/home/tutu/ssl/powerai_public.crt', '/home/tutu/ssl/powerai.key')
+                ssl_context.load_cert_chain('/home/tutu/ssl/powerai.cc.crt', '/home/tutu/ssl/powerai.cc.key')
 
                 self.server = await websockets.serve(
                     handler,
