@@ -176,8 +176,9 @@ class Office_Tool(Base_Tool):
         },
         {
             'name': 'format_options',
-            'type': 'object',
-            'description': '一个包含格式化选项的字典，用于 `format_text` 操作。支持的键包括 `font_name`, `font_size`, `color`, `bold`, `italic`, `underline`。例如: `{"font_name": "宋体", "font_size": 12, "color": "#FF0000", "bold": true}`',
+            'type': 'string',
+            # 'type': 'object',
+            'description': '一个包含格式化选项的字典字符串，用于 `format_text` 操作。支持的键包括 `font_name`, `font_size`, `color`, `bold`, `italic`, `underline`。例如: `{"font_name": "宋体", "font_size": 12, "color": "#FF0000", "bold": true}`',
             'required': 'False',
         }
     ]
