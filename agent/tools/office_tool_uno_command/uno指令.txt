@@ -1,0 +1,28 @@
+可用的：
+1、插入文本
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '大家好'}}}}
+
+2、选中刚刚插入的文本(注意必须是boolean而不能是手册里显示的bool!!!)
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:GoLeft', 'Args': {'Count': {'type': 'long', 'value': '3'}, 'Select': {'type': 'boolean', 'value': 'true'}}}}
+
+3、修改文字背景色（选中的）
+{"MessageId":"Send_UNO_Command","Values":{"Command":".uno:CharBackColor","Args":{"Name":"Color","Value":{"type":"long","value": "16776960"}}}}
+
+3、插入表格（参数不对，则会弹窗让用户确认参数如行数、列数）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertTable', 'Args': {'Columns': {'type': 'long', 'value': '3'}, 'Rows': {'type': 'long', 'value': '4'}}}}
+
+4、选中光标所在的段落
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectText'}}
+
+5、选中光标所在的句子（以句号‘。’或'.'为边界）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectSentence'}}
+
+6、选中光标所在的表格（光标在表格里时）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectTable'}}
+
+7、搜索（注意：SearchItem不是输入一个参数，而是和Quiet平行的多个参数！！！参数详见https://thebiasplanet.blogspot.com/2021/12/writerunoexecutesearch.html。0 -> find the next occurrence, 1 -> find all the occurrences, 2 -> replace the current occurrence and find the next occurrence, 3 -> replace all the occurrences）
+
+{'MessageId': 'Send_UNO_Command','Values': {'Command': '.uno:ExecuteSearch','Args': {'SearchItem.SearchString':{'type': 'string', 'value': '大家'},'SearchItem.Command':{'type': 'short', 'value': '0'},'Quiet': {'type': 'boolean', 'value': 'false'},'UseAttrItemList': {'type': 'boolean', 'value': 'false'}}}}
+
+8、光标移到段落最后（即使文本选中，也可以把光标移到最后）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:GoToEndOfPara'}}
