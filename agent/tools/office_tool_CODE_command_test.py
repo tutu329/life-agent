@@ -1,6 +1,6 @@
 import asyncio
 import time
-import json
+import json, json5
 import ast  # 引入ast模块用于安全地解析字符串为Python对象
 from utils.web_socket_manager import get_websocket_manager
 
@@ -82,10 +82,11 @@ def main():
 
         try:
             # 使用ast.literal_eval安全地将字符串转为字典
-            data = ast.literal_eval(data_str)
-            if not isinstance(data, dict):
-                print("❌ 错误：输入的内容不是一个有效的字典格式。请重试。\n")
-                continue
+            # data = ast.literal_eval(data_str)
+            # if not isinstance(data, dict):
+            #     print("❌ 错误：输入的内容不是一个有效的字典格式。请重试。\n")
+            #     continue
+            data = json5.loads(data_str)
         except (ValueError, SyntaxError) as e:
             print(f"❌ 错误：解析字典失败: {e}。")
             print("   请确保输入是有效的Python字典格式，例如：{'MessageId': 'Action_Paste', ...}\n")
