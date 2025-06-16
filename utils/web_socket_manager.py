@@ -40,7 +40,7 @@ class Web_Socket_Manager:
         self.connection_lock = threading.Lock()
         print('🔧 WebSocket_Manager 单例已初始化')
 
-    def start_server(self):
+    def start_server(self, port=5112):
         """启动WebSocket服务器"""
         print(f'🔍 WebSocket服务器状态检查: server_started={self.server_started}')
 
@@ -50,7 +50,7 @@ class Web_Socket_Manager:
 
         if self.server_thread is None or not self.server_thread.is_alive():
             print('🚀 启动新的WebSocket服务器线程...')
-            self.server_thread = threading.Thread(target=self._run_server, daemon=True)
+            self.server_thread = threading.Thread(target=self._run_server, kwargs={'port': port}, daemon=True)
             self.server_thread.start()
             print('🚀 WebSocket服务器启动中... (端口:5112)')
             self.server_started = True
@@ -59,7 +59,7 @@ class Web_Socket_Manager:
             print('⚠️ WebSocket服务器线程已存在且运行中')
             self.server_started = True
 
-    def _run_server(self):
+    def _run_server(self, port=5112):
         """运行WebSocket服务器"""
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -115,25 +115,24 @@ class Web_Socket_Manager:
                             del self.connection_reverse[websocket]
                         print(f'🔍 剩余连接数: {len(self.connections)}')
 
-
-        async def start_server():
+        async def start_server(port=port):
             import ssl
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             try:
                 ssl_context.load_cert_chain('/home/tutu/ssl/powerai_public.crt', '/home/tutu/ssl/powerai.key')
-                self.server = await websockets.serve(handler, '0.0.0.0', 5112, ssl=ssl_context)
-                print('✅ WebSocket服务器已启动 (WSS端口:5112)')
+                self.server = await websockets.serve(handler, '0.0.0.0', port, ssl=ssl_context)
+                print(f'✅ WebSocket服务器已启动 (WSS端口:{port})')
                 await self.server.wait_closed()
             except FileNotFoundError:
                 print('⚠️ SSL证书未找到，使用普通WebSocket连接')
-                self.server = await websockets.serve(handler, '0.0.0.0', 5112)
-                print('✅ WebSocket服务器已启动 (WS端口:5112)')
+                self.server = await websockets.serve(handler, '0.0.0.0', port)
+                print(f'✅ WebSocket服务器已启动 (WS端口:{port})')
                 await self.server.wait_closed()
             except Exception as e:
                 print(f'❌ SSL WebSocket启动失败: {e}，回退到普通连接')
                 try:
-                    self.server = await websockets.serve(handler, '0.0.0.0', 5112)
-                    print('✅ WebSocket服务器已启动 (WS端口:5112)')
+                    self.server = await websockets.serve(handler, '0.0.0.0', port)
+                    print(f'✅ WebSocket服务器已启动 (WS端口:{port})')
                     await self.server.wait_closed()
                 except Exception as fallback_error:
                     print(f'❌ WebSocket服务器启动完全失败: {fallback_error}')

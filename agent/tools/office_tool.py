@@ -188,7 +188,11 @@ class Office_Tool(Base_Tool):
         # 使用通用WebSocket管理器
         self.ws_manager = get_websocket_manager()
         # 启动WebSocket服务器（如果尚未启动）
-        self.ws_manager.start_server()
+
+        # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
+        self.ws_manager.start_server(port=5113)
+        # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
+        # self.ws_manager.start_server(port=5112)
         print('✅ Office_Tool 初始化完成')
 
     def call(self, tool_call_paras: Tool_Call_Paras):
