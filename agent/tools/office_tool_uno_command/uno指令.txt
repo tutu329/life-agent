@@ -1,28 +1,76 @@
 可用的：
-1、插入文本
+1、插入文本(可以先设置3、4、5、6、7、8，然后insert)
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '大家好'}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '大家好\n'}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '        大家好\n'}}}}
 
 2、选中刚刚插入的文本(注意必须是boolean而不能是手册里显示的bool!!!)
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:GoLeft', 'Args': {'Count': {'type': 'long', 'value': '3'}, 'Select': {'type': 'boolean', 'value': 'true'}}}}
 
-3、修改文字背景色（选中的）
-{"MessageId":"Send_UNO_Command","Values":{"Command":".uno:CharBackColor","Args":{"Name":"Color","Value":{"type":"long","value": "16776960"}}}}
+3、文字变成粗体（选中的）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:Bold'}}
 
-3、插入表格（参数不对，则会弹窗让用户确认参数如行数、列数）
-{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertTable', 'Args': {'Columns': {'type': 'long', 'value': '3'}, 'Rows': {'type': 'long', 'value': '4'}}}}
+4、文字设置背景色（选中的）
+{"MessageId":"Send_UNO_Command","Values":{"Command":".uno:CharBackColor","Args":{"CharBackColor":{"type":"long","value": "16776960"}}}}
 
-4、选中光标所在的段落
+5、文字设置颜色（选中的）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:Color',"Args":{"Color":{"type":"long","value": "16776960"}}}}
+
+6、文字设置字体（选中的）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:CharFontName',"Args":{"CharFontName.FamilyName":{"type":"string","value": "SimSun"}}}}
+
+7、文字设置大小（选中的，如16pt、100%和150%大小）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:FontHeight',"Args":{"FontHeight.Height":{"type":"short","value": "32"}, "FontHeight.Prop":{"type":"short","value": "100"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:FontHeight',"Args":{"FontHeight.Height":{"type":"short","value": "16"}, "FontHeight.Prop":{"type":"short","value": "100"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:FontHeight',"Args":{"FontHeight.Height":{"type":"short","value": "16"}, "FontHeight.Prop":{"type":"short","value": "150"}}}}
+
+8、文字设置上标和下标（选中的）
+{"MessageId":"Send_UNO_Command","Values":{"Command":".uno:SuperScript"}}
+{"MessageId":"Send_UNO_Command","Values":{"Command":".uno:SubScript"}}
+
+9、段落变成居中（光标所在段落、或者选中的文字所在段落）
+{"MessageId":"Send_UNO_Command","Values":{"Command":".uno:CenterPara"}}
+
+9、插入表格（TableName为该表格的书签名；参数不对，则会弹窗让用户确认参数如行数、列数）
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertTable', 'Args': {'TableName': {'type': 'string', 'value': '这个表格的书签名'}, 'Columns': {'type': 'long', 'value': '3'}, 'Rows': {'type': 'long', 'value': '4'}}}}
+
+10、选中光标所在的段落
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectText'}}
 
-5、选中光标所在的句子（以句号‘。’或'.'为边界）
+11、选中光标所在的句子（以句号‘。’或'.'为边界）
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectSentence'}}
 
-6、选中光标所在的表格（光标在表格里时）
+12、选中光标所在的表格（光标在表格里时）
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectTable'}}
 
-7、搜索（注意：SearchItem不是输入一个参数，而是和Quiet平行的多个参数！！！参数详见https://thebiasplanet.blogspot.com/2021/12/writerunoexecutesearch.html。0 -> find the next occurrence, 1 -> find all the occurrences, 2 -> replace the current occurrence and find the next occurrence, 3 -> replace all the occurrences）
-
+13、搜索（注意：SearchItem不是输入一个参数，而是和Quiet平行的多个参数！！！参数详见https://thebiasplanet.blogspot.com/2021/12/writerunoexecutesearch.html。）
+# 0 -> find the next occurrence
+# 1 -> find all the occurrences
+# 2 -> replace the current occurrence and find the next occurrence
+# 3 -> replace all the occurrences）
+# AlgorithmType为0：普通搜索
+# AlgorithmType为1：正则搜索
+# AlgorithmType为2：like搜索
 {'MessageId': 'Send_UNO_Command','Values': {'Command': '.uno:ExecuteSearch','Args': {'SearchItem.SearchString':{'type': 'string', 'value': '大家'},'SearchItem.Command':{'type': 'short', 'value': '0'},'Quiet': {'type': 'boolean', 'value': 'false'},'UseAttrItemList': {'type': 'boolean', 'value': 'false'}}}}
+{'MessageId': 'Send_UNO_Command','Values': {'Command': '.uno:ExecuteSearch','Args': {'SearchItem.SearchString':{'type': 'string', 'value': '.*3.2.*'},'SearchItem.AlgorithmType':{'type': 'short', 'value': '1'},'SearchItem.Command':{'type': 'short', 'value': '0'},'Quiet': {'type': 'boolean', 'value': 'false'},'UseAttrItemList': {'type': 'boolean', 'value': 'false'}}}}
 
-8、光标移到段落最后（即使文本选中，也可以把光标移到最后）
+14、光标移到段落最后（即使文本选中，也可以把光标移到最后）
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:GoToEndOfPara'}}
+
+15、添加书签
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertBookmark',"Args":{"Bookmark":{"type":"string","value": "我的书签"}}}}
+
+16、添加书签和对应的文字
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertBookmark',"Args":{"Bookmark":{"type":"string","value": "我的书签"}, "BookmarkText":{"type":"string","value": "my bookmark"}}}}
+
+17、按书签名，跳转到某个书签
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:JumpToMark',"Args":{"Bookmark":{"type":"string","value": "我的书签"}}}}
+
+18、Undo
+{"MessageId":"Send_UNO_Command","Values":{"Command":".uno:Undo"}}
+
+19、Redo
+{"MessageId":"Send_UNO_Command","Values":{"Command":".uno:Redo"}}
+
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent ":{"type":"short","value": "400"}}}}
