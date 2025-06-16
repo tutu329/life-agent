@@ -3,6 +3,7 @@
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '大家好'}}}}
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '大家好\n'}}}}
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '        大家好\n'}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '        大家好1\n        大家好2\n        大家好3\n'}}}}
 
 2、选中刚刚插入的文本(注意必须是boolean而不能是手册里显示的bool!!!)
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:GoLeft', 'Args': {'Count': {'type': 'long', 'value': '3'}, 'Select': {'type': 'boolean', 'value': 'true'}}}}
@@ -74,4 +75,48 @@
 
 
 
-{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent ":{"type":"short","value": "400"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:FirstLineParaMargin',"Args":{"FirstLineParaMargin.FirstLineIndent":{"type":"string","value": "741"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:FirstLineParaMargin',"Args":{"FirstLineParaMargin.FirstLineIndent":{"type":"short","value": "741"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:FirstLineParaMargin',"Args":{"FirstLineParaMargin.FirstLineIndent":{"type":"long","value": "741"}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"ParagraphChangeState.FirstLineIndent":{"type":"short","value": "741"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"ParagraphChangeState.FirstLineIndent":{"type":"string","value": "741"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"ParagraphChangeState.FirstLineIndent":{"type":"long","value": "741"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "741"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"short","value": "741"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"short","value": "2"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"long","value": "741"}}}}
+
+
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:LeftRightMargin',"Args":{"LeftRightMargin.FirstLineIndent":{"type":"short","value": "741"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:LeftRightMargin',"Args":{"LeftRightMargin.FirstLineIndent":{"type":"short","value": "2"}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:LeftRightMargin',"Args":{"LeftRightMargin.FirstLineIndent":{"type":"short","value": "2"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:LeftRightMargin',"Args":{"LeftRightMargin.FirstLineIndent":{"type":"long","value": "2"},"LeftRightMargin.FirstLineRelIdent":{"type":"long","value": "100"},"LeftRightMargin.AutoFirst":{"type":"boolean","value": "False"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:LeftRightMargin',"Args":{"LeftRightMargin.FirstLineIndent":{"type":"string","value": "2"},"LeftRightMargin.FirstLineRelIdent":{"type":"string","value": "100"},"LeftRightMargin.AutoFirst":{"type":"boolean","value": "false"}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "741"},"FirstLineRelIdent":{"type":"string","value": "100"},"AutoFirst":{"type":"boolean","value": "false"}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "7"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "70"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "30"}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "7.4"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "1.4"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "600"},"FirstLineRelIdent":{"type":"string","value": "10"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "595"}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "200"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "20"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "2"}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "600"}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '大家好1\n大家好2\n大家好3\n'}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertText', 'Args': {'Text': {'type': 'string', 'value': '        大家好1\n        大家好2\n        大家好3\n'}}}}
+
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "741"},"LeftParaIndent":{"type":"string","value": "100"},"RightParaIndent":{"type":"string","value": "100"}}}}
+{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:ParagraphChangeState',"Args":{"FirstLineIndent":{"type":"string","value": "2"},"LeftParaIndent":{"type":"string","value": "1"},"RightParaIndent":{"type":"string","value": "1"}}}}
+
+
