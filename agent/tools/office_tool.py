@@ -252,11 +252,7 @@ class Office_Tool(Base_Tool):
             if operation == 'docx_write_chapter_title':
                 # UNO指令
                 uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text = paras.get('title'))
-                try:
-                    command['data'] = json5.loads(uno_cmd)
-                except (ValueError, SyntaxError) as e:
-                    # print(f"❌ 错误：解析字典失败: {e}。")
-                    return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": Uno_Command解析失败(报错: "{e}").'))
+                command['data'] = json5.loads(uno_cmd)
 
                 if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
                     return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
@@ -280,6 +276,9 @@ class Office_Tool(Base_Tool):
                 result = f"❌ 【Office_Tool】'{operation}': 发送指令失败: {message}"
                 print(result)
 
+        except (ValueError, SyntaxError) as e:
+            # print(f"❌ 错误：解析字典失败: {e}。")
+            return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": Uno_Command解析失败(报错: "{e}").'))
         except Exception as e:
             result = f"❌ 【Office_Tool】'{operation}':操作失败: {e!r}"
 
