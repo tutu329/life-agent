@@ -77,6 +77,7 @@ class LLM_Client():
     def __init__(self,
                  history=None,
                  history_max_turns=config.Global.llm_max_chat_turns,
+                 llm_config=None,
                  model_id=None,
                  history_clear_method='pop',
                  api_key=None,
@@ -97,25 +98,43 @@ class LLM_Client():
         url = config.LLM_Default.url if url is None else url
         max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
 
-        dblue(f'【LLM_Client】url="{url}"')
-        dblue(f'【LLM_Client】model_id="{model_id}"')
 
-        self.url = url
+
         self.openai = None
+
+        # llm配置
+        self.url = url
         self.model_id = model_id
         self.api_key = api_key
+        self.temperature = temperature
+        self.top_p = top_p
+        self.max_new_tokens = max_new_tokens
+
+        if llm_config:
+            self.url = llm_config.base_url
+            self.model_id = llm_config.llm_model_id
+            self.api_key = llm_config.api_key
+            self.temperature = llm_config.temperature
+            self.top_p = llm_config.top_p
+            self.max_new_tokens = llm_config.max_new_tokens
+
+        dblue(f'【LLM_Client】base_url={self.url!r}')
+        dblue(f'【LLM_Client】model_id={self.model_id!r}')
+        dblue(f'【LLM_Client】api_key={self.api_key!r}')
+        dblue(f'【LLM_Client】temperature={self.temperature!r}')
+        dblue(f'【LLM_Client】top_p={self.top_p!r}')
+        dblue(f'【LLM_Client】max_new_tokens={self.max_new_tokens!r}')
 
         self.uuid = str(uuid4())
         self.gen = None     # 返回结果的generator
         self.usage = None   # 返回 usage={'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
         self.stop = None    # 用于对vllm的openai api的stop进行过滤
         self.response_canceled = False  # response过程是否被中断
-        self.temperature = temperature
-        self.top_p = top_p
+
         self.system_prompt = config.Global.llm_system_prompt
+
         # self.system_prompt = '' # 系统提示
         # self.top_p = top_p
-        self.max_new_tokens = max_new_tokens
         # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
 
         self.result_chunk_as_think_chunk = '' # 非reason模型推理时，获取think输出时，会误将result_chunk当成think_chunk，这里要保存这个chunk，后续交给result
@@ -1948,8 +1967,15 @@ def async_llm_main():
     print('quit.')
     allm.wait()
 
+def llm_config_test():
+    from config import g_online_deepseek_chat
+    llm = LLM_Client(llm_config=g_online_deepseek_chat)
+    llm.ask_prepare('你是谁？').get_answer_and_sync_print()
+
 if __name__ == "__main__" :
-    base_main()
+    # base_main()
+    llm_config_test()
+
     # pic_main() # 带pic
     # think_and_result_test()
     # async_llm_main()

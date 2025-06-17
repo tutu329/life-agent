@@ -2,7 +2,9 @@ import socket, requests
 
 from dataclasses import dataclass, field
 from colorama import Fore, Back, Style
-from typing import Dict, List, Optional, Any
+
+from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
+from pydantic import BaseModel, Field, ConfigDict
 
 import platform
 
@@ -247,7 +249,7 @@ class Domain():
 class LLM_Default:
     temperature:float   = 0.6
     top_p:float         = 0.95
-    max_new_tokens:int  = 2048
+    max_new_tokens:int  = 8192
     # stop:List[str]      = field(default_factory=list)
     stream:int         = 1          # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     history:int        = 1          # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
@@ -256,6 +258,23 @@ class LLM_Default:
     url:str             = Domain.llm_url
 
     think_pairs: tuple  = ('<think>', '</think>')
+
+class LLM_Config(BaseModel):
+    base_url        :str = LLM_Default.url
+    api_key         :str = 'empty'
+    llm_model_id    :str = ''
+    temperature     :float = LLM_Default.temperature
+    top_p           :float = LLM_Default.top_p
+    max_new_tokens  :int = LLM_Default.max_new_tokens
+
+g_online_deepseek_chat = LLM_Config(
+    base_url='https://api.deepseek.com/v1',
+    api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+    llm_model_id='deepseek-chat',
+    temperature=0.6,
+    top_p=0.95,
+    max_new_tokens=8192
+)
 
 def main():
     os = get_os()
