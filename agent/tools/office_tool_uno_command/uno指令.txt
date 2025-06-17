@@ -29,22 +29,23 @@
 {"MessageId":"Send_UNO_Command","Values":{"Command":".uno:SuperScript"}}
 {"MessageId":"Send_UNO_Command","Values":{"Command":".uno:SubScript"}}
 
-9、段落变成居中（光标所在段落、或者选中的文字所在段落）
+9、段落变成居中和左对齐即取消居中（光标所在段落、或者选中的文字所在段落）
 {"MessageId":"Send_UNO_Command","Values":{"Command":".uno:CenterPara"}}
+{'MessageId':'Send_UNO_Command','Values':{'Command':'.uno:LeftPara'}}
 
-9、插入表格（TableName为该表格的书签名；参数不对，则会弹窗让用户确认参数如行数、列数）
+10、插入表格（TableName为该表格的书签名；参数不对，则会弹窗让用户确认参数如行数、列数）
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertTable', 'Args': {'TableName': {'type': 'string', 'value': '这个表格的书签名'}, 'Columns': {'type': 'long', 'value': '3'}, 'Rows': {'type': 'long', 'value': '4'}}}}
 
-10、选中光标所在的段落
+11、选中光标所在的段落
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectText'}}
 
-11、选中光标所在的句子（以句号‘。’或'.'为边界）
+12、选中光标所在的句子（以句号‘。’或'.'为边界）
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectSentence'}}
 
-12、选中光标所在的表格（光标在表格里时）
+13、选中光标所在的表格（光标在表格里时）
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:SelectTable'}}
 
-13、搜索（注意：SearchItem不是输入一个参数，而是和Quiet平行的多个参数！！！参数详见https://thebiasplanet.blogspot.com/2021/12/writerunoexecutesearch.html。）
+14、搜索（注意：SearchItem不是输入一个参数，而是和Quiet平行的多个参数！！！参数详见https://thebiasplanet.blogspot.com/2021/12/writerunoexecutesearch.html。）
 # 0 -> find the next occurrence
 # 1 -> find all the occurrences
 # 2 -> replace the current occurrence and find the next occurrence
@@ -55,22 +56,22 @@
 {'MessageId': 'Send_UNO_Command','Values': {'Command': '.uno:ExecuteSearch','Args': {'SearchItem.SearchString':{'type': 'string', 'value': '大家'},'SearchItem.Command':{'type': 'short', 'value': '0'},'Quiet': {'type': 'boolean', 'value': 'false'},'UseAttrItemList': {'type': 'boolean', 'value': 'false'}}}}
 {'MessageId': 'Send_UNO_Command','Values': {'Command': '.uno:ExecuteSearch','Args': {'SearchItem.SearchString':{'type': 'string', 'value': '.*3.2.*'},'SearchItem.AlgorithmType':{'type': 'short', 'value': '1'},'SearchItem.Command':{'type': 'short', 'value': '0'},'Quiet': {'type': 'boolean', 'value': 'false'},'UseAttrItemList': {'type': 'boolean', 'value': 'false'}}}}
 
-14、光标移到段落最后（即使文本选中，也可以把光标移到最后）
+15、光标移到段落最后（即使文本选中，也可以把光标移到最后）
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:GoToEndOfPara'}}
 
-15、添加书签
+16、添加书签
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertBookmark',"Args":{"Bookmark":{"type":"string","value": "我的书签"}}}}
 
-16、添加书签和对应的文字
+17、添加书签和对应的文字
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:InsertBookmark',"Args":{"Bookmark":{"type":"string","value": "我的书签"}, "BookmarkText":{"type":"string","value": "my bookmark"}}}}
 
-17、按书签名，跳转到某个书签
+18、按书签名，跳转到某个书签
 {'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:JumpToMark',"Args":{"Bookmark":{"type":"string","value": "我的书签"}}}}
 
-18、Undo
+19、Undo
 {"MessageId":"Send_UNO_Command","Values":{"Command":".uno:Undo"}}
 
-19、Redo
+20、Redo
 {"MessageId":"Send_UNO_Command","Values":{"Command":".uno:Redo"}}
 
 
