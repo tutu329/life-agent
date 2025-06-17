@@ -1,15 +1,16 @@
 from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
 from pydantic import BaseModel, Field, ConfigDict
 
-Uno_Color:Dict[str, str] = {
-    'red'           :"16776960",
-    'green'         :"16776960",
-    'blue'          :"16776960",
-    'black'         :"16776960",
-    'white'         :"16776960",
-    'gray'          :"16776960",
-    'yellow'        :"16776960",
+Uno_Color: Dict[str, str] = {
+    "red":    "16711680",   # 0xFF0000
+    "green":  "65280",      # 0x00FF00
+    "blue":   "255",        # 0x0000FF
+    "black":  "0",          # 0x000000
+    "white":  "16777215",   # 0xFFFFFF
+    "gray":   "8421504",    # 0x808080 (中灰)
+    "yellow": "16776960",   # 0xFFFF00
 }
+
 
 class Uno_Command(BaseModel):
     # 主要输入变量
