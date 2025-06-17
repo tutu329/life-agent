@@ -242,19 +242,25 @@ class Office_Tool(Base_Tool):
         }
 
         # UNO指令
-        # uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text=paras.get('title'))
+        # 解决\n问题
+        uno_cmd = uno_cmd.replace('\n', '\\n')
+
+        # string->obj
         cmd_obj = json5.loads(uno_cmd)
+
+        # 获取uno指令
         command['data'] = cmd_obj
         cmd_name = cmd_obj['Values']['Command']
 
+        # 通过web-socket发送至前端
         success, message = self.ws_manager.send_command(top_agent_id, command)
         if success:
-            print(f"✅ 【Office_Tool】'uno_cmd({cmd_name!r})': 指令已成功发送。")
+            # print(f"✅ 【Office_Tool】'uno_cmd({cmd_name!r})': 指令已成功发送。")
             result = f"💬 【Office_Tool】'uno_cmd({cmd_name!r})': WebSocket管理器响应: {message}"
-            print(result)
+            # print(result)
         else:
             result = f"❌ 【Office_Tool】'uno_cmd({cmd_name!r})': 发送指令失败: {message}"
-            print(result)
+            # print(result)
 
         return result
 
@@ -318,9 +324,33 @@ class Office_Tool(Base_Tool):
                 question = chapter_demand
                 chunks = llm.ask_prepare(question=question).get_result_generator()
                 print('-------------------docx_write_chapter_text-LLM-------------------')
+                content = ''
+                first_chunk = True
                 for chunk in chunks:
-                    print(chunk, end='', flush=True)
+                    try:
+                        print(chunk, end='', flush=True)
+                        _indent = '        '
+                        # 第一个字之前增加缩进
+                        if first_chunk:
+                            chunk = _indent + chunk
+                            first_chunk = False
+
+                        # \n后面增加缩进
+                        chunk = chunk.replace('\n', '\n'+_indent)
+
+                        uno_cmd = Uno_Command().uno_insert_text.format(uno_text=chunk)
+                        self._call_raw_command(top_agent_id, uno_cmd)
+                        content += chunk
+                    except (ValueError, SyntaxError) as e:
+                        print(f'-----------------【Office_Tool】"{operation}": Uno_Command解析失败--------------------')
+                        print(f'报错："{e}"')
+                        print(f'uno_cmd = "{Uno_Command().uno_insert_text}"')
+                        print(f'chunk = "{chunk}"')
+                        print(f'content = "{content}"')
+                        print(f'----------------/【Office_Tool】"{operation}": Uno_Command解析失败--------------------')
+                        continue
                 print('\n------------------/docx_write_chapter_text-LLM-------------------')
+                result = f'【Office_Tool】operation("{operation}")已经完成，写入docx内容(部分截取)为"{content[:20]}...{content[-20:]}"'
 
             elif operation == 'docx_write_chapter_table':
                 pass
@@ -329,8 +359,6 @@ class Office_Tool(Base_Tool):
             else:
                 result = f'❌ 【Office_Tool】operation "{operation}" 暂未实现或未知'
                 return Action_Result(result=safe_encode(result))
-
-
 
         except (ValueError, SyntaxError) as e:
             # print(f"❌ 错误：解析字典失败: {e}。")

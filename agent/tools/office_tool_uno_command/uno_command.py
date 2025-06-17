@@ -2,8 +2,13 @@ from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKI
 from pydantic import BaseModel, Field, ConfigDict
 
 Uno_Color:Dict[str, str] = {
-    'red'       :"16776960",
-    'yellow'    :"16776960",
+    'red'           :"16776960",
+    'green'         :"16776960",
+    'blue'          :"16776960",
+    'black'         :"16776960",
+    'white'         :"16776960",
+    'gray'          :"16776960",
+    'yellow'        :"16776960",
 }
 
 class Uno_Command(BaseModel):
@@ -14,8 +19,10 @@ class Uno_Command(BaseModel):
     # uno_font
     # uno_char_color
 
+    # 插入文本
+    uno_insert_text                 :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:InsertText', 'Args': {{'Text': {{'type': 'string', 'value': '{uno_text}'}}}}}}}}"
     # 插入文本并换行
-    uno_insert_text_and_return      :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:InsertText', 'Args': {{'Text': {{'type': 'string', 'value': '{uno_text}'}}}}}}}}"
+    uno_insert_text_and_return      :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:InsertText', 'Args': {{'Text': {{'type': 'string', 'value': '{uno_text}\\n'}}}}}}}}"
 
     # 文字字体
     uno_font                        :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:CharFontName','Args':{{'CharFontName.FamilyName':{{'type':'string','value': '{uno_font}'}}}}}}}}"
