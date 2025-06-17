@@ -1,4 +1,4 @@
-import time
+import time, json5
 
 import config
 from utils.encode import safe_encode
@@ -225,7 +225,7 @@ class Office_Tool(Base_Tool):
         print('✅ Office_Tool 初始化完成')
 
     def call(self, tool_call_paras: Tool_Call_Paras):
-        print(f'🔧 Office_Tool 调用参数: {tool_call_paras.callback_tool_paras_dict}')
+        print(f'🔧 【Office_Tool】开始调用，调用参数: {tool_call_paras.callback_tool_paras_dict}')
 
         # 获取顶层agent_id（用于WebSocket连接管理）
         top_agent_id = tool_call_paras.callback_top_agent_id
@@ -233,7 +233,7 @@ class Office_Tool(Base_Tool):
         operation = paras.get('operation')
 
         if not operation:
-            return Action_Result(result=safe_encode('❌ 必须提供 "operation" 参数'))
+            return Action_Result(result=safe_encode('❌ 【Office_Tool】必须提供 "operation" 参数'))
 
         print(f'🎯 【Office_Tool】Agent ID: {top_agent_id}, 全部参数: {paras}')
         print(f'🎯 【Office_Tool】Agent ID: {top_agent_id}, operation: {operation!r}')
@@ -242,7 +242,7 @@ class Office_Tool(Base_Tool):
             # 桥接collabora CODE接口
             command = {
                 'type': 'office_operation',
-                'operation': operation,
+                'operation': 'call_raw_command',
                 'agent_id': top_agent_id,
                 'data': {},
                 'timestamp': int(time.time() * 1000)
@@ -251,17 +251,12 @@ class Office_Tool(Base_Tool):
             # 根据操作类型填充data
             if operation == 'docx_write_chapter_title':
                 # UNO指令
-                uno_cmd = Uno_Command.uno_insert_text_and_return
-                command['data'] = uno_cmd
-
-                # 发送web-socket指令到collabora CODE前端页面
-                success, message = self.ws_manager.send_command(top_agent_id, command)
-                if success:
-                    print(f"✅ 【Office_Tool】'{operation}': 指令已成功发送。")
-                    print(f"💬 【Office_Tool】'{operation}': WebSocket管理器响应: {message}")
-                else:
-                    print(f"❌ 【Office_Tool】'{operation}': 发送指令失败: {message}\n")
-
+                uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text = paras.get('title'))
+                try:
+                    command['data'] = json5.loads(uno_cmd)
+                except (ValueError, SyntaxError) as e:
+                    # print(f"❌ 错误：解析字典失败: {e}。")
+                    return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": Uno_Command解析失败(报错: "{e}").'))
 
                 if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
                     return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
@@ -272,15 +267,18 @@ class Office_Tool(Base_Tool):
             elif operation == 'docx_write_chapter_image':
                 pass
             else:
-                result = f'❌ operation "{operation}" 暂未实现或未知'
+                result = f'❌ 【Office_Tool】operation "{operation}" 暂未实现或未知'
                 return Action_Result(result=safe_encode(result))
 
-            # 发送命令到WebSocket客户端
+            # 发送web-socket指令到collabora CODE前端页面
             success, message = self.ws_manager.send_command(top_agent_id, command)
             if success:
-                result = f'✅ 成功向客户端 {top_agent_id} 发送操作: "{operation}"'
+                print(f"✅ 【Office_Tool】'{operation}': 指令已成功发送。")
+                result = f"💬 【Office_Tool】'{operation}': WebSocket管理器响应: {message}"
+                print(result)
             else:
-                result = f'❌ 向客户端 {top_agent_id} 发送操作 "{operation}" 失败: {message}'
+                result = f"❌ 【Office_Tool】'{operation}': 发送指令失败: {message}"
+                print(result)
 
         except Exception as e:
             result = f"❌ 【Office_Tool】'{operation}':操作失败: {e!r}"
