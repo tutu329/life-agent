@@ -8,6 +8,7 @@ from agent.tools.protocol import Action_Result, Tool_Call_Paras
 from utils.web_socket_manager import get_websocket_manager
 
 from agent.tools.office_tool_uno_command.uno_command import Uno_Command, Uno_Color
+from tools.llm.api_client import LLM_Client
 
 # class Office_Tool(Base_Tool):
 #     name = 'Office_Tool'
@@ -210,6 +211,12 @@ class Office_Tool(Base_Tool):
             'required': 'False',
             'default': 'False',
         },
+        {
+            'name': 'chapter_demand',
+            'type': 'string',
+            'description': '(用于"docx_write_chapter_text")章节文本编制的要求',
+            'required': 'True',
+        },
     ]
 
     def __init__(self):
@@ -258,9 +265,14 @@ class Office_Tool(Base_Tool):
         top_agent_id = tool_call_paras.callback_top_agent_id
         paras = tool_call_paras.callback_tool_paras_dict
         operation = paras.get('operation')
+
+        # docx_write_chapter_title参数
         title = paras.get('title')
         uno_font = paras.get('font-family')
         uno_char_color = paras.get('font-color')
+
+        # docx_write_chapter_text参数
+        chapter_demand = paras.get('chapter_demand')
 
         if not operation:
             return Action_Result(result=safe_encode('❌ 【Office_Tool】必须提供 "operation" 参数'))
@@ -277,23 +289,39 @@ class Office_Tool(Base_Tool):
                 if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
                     return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
 
-                # 发送web-socket指令到collabora CODE前端页面
+                # 标题设置字体
                 if uno_font:
                     uno_cmd = Uno_Command().uno_font.format(uno_font=uno_font)
                     result = self._call_raw_command(top_agent_id, uno_cmd)
 
+                # 标题设置颜色
                 if uno_char_color:
                     print(f'-------------------uno_char_color:{uno_char_color}-----------------')
                     uno_cmd = Uno_Command().uno_char_color.format(uno_char_color=Uno_Color[uno_char_color])
                     result = self._call_raw_command(top_agent_id, uno_cmd)
 
-
-
+                # 标题文字
                 uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text=title)
                 result = self._call_raw_command(top_agent_id, uno_cmd)
 
             elif operation == 'docx_write_chapter_text':
-                pass
+                # 校核参数
+                if 'chapter_demand' not in paras:
+                    return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": 操作缺少参数chapter_demand'))
+
+
+                # 选择llm和参数
+                llm_config = config.g_online_deepseek_chat
+                llm = LLM_Client(llm_config=llm_config)
+
+                # llm输出
+                question = chapter_demand
+                chunks = llm.ask_prepare(question=question).get_result_generator()
+                print('-------------------docx_write_chapter_text-LLM-------------------')
+                for chunk in chunks:
+                    print(chunk, end='', flush=True)
+                print('\n------------------/docx_write_chapter_text-LLM-------------------')
+
             elif operation == 'docx_write_chapter_table':
                 pass
             elif operation == 'docx_write_chapter_image':
