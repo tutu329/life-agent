@@ -321,7 +321,7 @@ class Office_Tool(Base_Tool):
                 llm = LLM_Client(llm_config=llm_config)
 
                 # llm输出
-                question = chapter_demand
+                question = chapter_demand + '\n注意：不能输出markdown格式和风格的内容，因为你的输出要写入docx文档。'
                 chunks = llm.ask_prepare(question=question).get_result_generator()
                 print('-------------------docx_write_chapter_text-LLM-------------------')
                 content = ''
