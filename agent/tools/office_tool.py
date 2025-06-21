@@ -291,28 +291,24 @@ class Office_Tool(Base_Tool):
                 # 标题设置字体
                 if uno_font:
                     uno_cmd = Uno_Command().uno_font.format(uno_font=uno_font)
+                    print(f'-------------------uno_font:{uno_cmd!r}-----------------')
                     self._call_raw_command(top_agent_id, uno_cmd)
 
                 # 标题设置颜色
                 if uno_char_color:
-                    print(f'-------------------uno_char_color:{uno_char_color}-----------------')
                     uno_cmd = Uno_Command().uno_char_color.format(uno_char_color=Uno_Color[uno_char_color])
+                    print(f'-------------------uno_char_color:{uno_cmd!r}-----------------')
                     self._call_raw_command(top_agent_id, uno_cmd)
 
-                # 标题设置颜色
-                if uno_char_color:
-                    print(f'-------------------uno_char_color:{uno_char_color}-----------------')
-                    uno_cmd = Uno_Command().uno_char_color.format(uno_char_color=Uno_Color[uno_char_color])
-                    self._call_raw_command(top_agent_id, uno_cmd)
-
-                # 标题设置颜色
+                # 标题设置粗体
                 if uno_bold:
-                    print(f'-------------------uno_bold-----------------')
                     uno_cmd = Uno_Command().uno_bold
+                    print(f'-------------------uno_bold:{uno_cmd!r}-----------------')
                     self._call_raw_command(top_agent_id, uno_cmd)
 
                 # 标题文字
                 uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text=title)
+                print(f'-------------------uno_insert_text_and_return:{uno_cmd!r}-----------------')
                 self._call_raw_command(top_agent_id, uno_cmd)
                 result = f'【Office_Tool】operation("{operation}")已经完成。'
 
@@ -357,8 +353,9 @@ class Office_Tool(Base_Tool):
                         continue
                 print('\n------------------/docx_write_chapter_text-LLM-------------------')
                 content_summary = content.strip()
+                print(f'--------content_summary:{content_summary!r}----------')
                 content_len = len(content_summary)
-                content_summary = f'{content_summary[:20]}...{content_summary[-20:]}' if len(content_len)<=20 else content_summary
+                content_summary = f'{content_summary[:20]}...{content_summary[-20:]}' if content_len<=20 else content_summary
                 result = f'【Office_Tool】operation("{operation}")已经完成，写入docx内容(部分截取)为"{content_summary}"(共计{content_len}字)'
 
             elif operation == 'docx_write_chapter_table':

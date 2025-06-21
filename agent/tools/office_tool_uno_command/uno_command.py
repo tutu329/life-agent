@@ -28,7 +28,7 @@ class Uno_Command(BaseModel):
     # 文字字体
     uno_font                        :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:CharFontName','Args':{{'CharFontName.FamilyName':{{'type':'string','value': '{uno_font}'}}}}}}}}"
     # 文字粗体
-    uno_bold                        :Dict[str, Any] = "{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:Bold'}"
+    uno_bold                        :Dict[str, Any] = "{'MessageId': 'Send_UNO_Command', 'Values': {'Command': '.uno:Bold'}}"
 
     # 文字颜色
     uno_char_color                  :Dict[str, Any] = "{{'MessageId':'Send_UNO_Command','Values':{{'Command':'.uno:Color','Args':{{'Color':{{'type':'long','value': '{uno_char_color}'}}}}}}}}"
