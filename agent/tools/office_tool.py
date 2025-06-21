@@ -355,7 +355,7 @@ class Office_Tool(Base_Tool):
                 content_summary = content.strip()
                 print(f'--------content_summary:{content_summary!r}----------')
                 content_len = len(content_summary)
-                content_summary = f'{content_summary[:20]}...{content_summary[-20:]}' if content_len<=20 else content_summary
+                content_summary = f'{content_summary[:20]}...{content_summary[-20:]}' if content_len>=50 else content_summary
                 result = f'【Office_Tool】operation("{operation}")已经完成，写入docx内容(部分截取)为"{content_summary}"(共计{content_len}字)'
 
             elif operation == 'docx_write_chapter_table':
