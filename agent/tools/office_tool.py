@@ -254,15 +254,7 @@ class Office_Tool(Base_Tool):
 
         # 通过web-socket发送至前端
         success, message = self.ws_manager.send_command(top_agent_id, command)
-        if success:
-            # print(f"✅ 【Office_Tool】'uno_cmd({cmd_name!r})': 指令已成功发送。")
-            result = f"💬 【Office_Tool】'uno_cmd({cmd_name!r})': WebSocket管理器响应: {message}"
-            # print(result)
-        else:
-            result = f"❌ 【Office_Tool】'uno_cmd({cmd_name!r})': 发送指令失败: {message}"
-            # print(result)
-
-        return result
+        return success, message
 
     def call(self, tool_call_paras: Tool_Call_Paras):
         print(f'🔧 【Office_Tool】开始调用，调用参数: {tool_call_paras.callback_tool_paras_dict}')
@@ -276,6 +268,7 @@ class Office_Tool(Base_Tool):
         title = paras.get('title')
         uno_font = paras.get('font-family')
         uno_char_color = paras.get('font-color')
+        uno_bold = paras.get('font-bold')
 
         # docx_write_chapter_text参数
         chapter_demand = paras.get('chapter_demand')
@@ -298,17 +291,30 @@ class Office_Tool(Base_Tool):
                 # 标题设置字体
                 if uno_font:
                     uno_cmd = Uno_Command().uno_font.format(uno_font=uno_font)
-                    result = self._call_raw_command(top_agent_id, uno_cmd)
+                    self._call_raw_command(top_agent_id, uno_cmd)
 
                 # 标题设置颜色
                 if uno_char_color:
                     print(f'-------------------uno_char_color:{uno_char_color}-----------------')
                     uno_cmd = Uno_Command().uno_char_color.format(uno_char_color=Uno_Color[uno_char_color])
-                    result = self._call_raw_command(top_agent_id, uno_cmd)
+                    self._call_raw_command(top_agent_id, uno_cmd)
+
+                # 标题设置颜色
+                if uno_char_color:
+                    print(f'-------------------uno_char_color:{uno_char_color}-----------------')
+                    uno_cmd = Uno_Command().uno_char_color.format(uno_char_color=Uno_Color[uno_char_color])
+                    self._call_raw_command(top_agent_id, uno_cmd)
+
+                # 标题设置颜色
+                if uno_bold:
+                    print(f'-------------------uno_bold-----------------')
+                    uno_cmd = Uno_Command().uno_bold
+                    self._call_raw_command(top_agent_id, uno_cmd)
 
                 # 标题文字
                 uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text=title)
-                result = self._call_raw_command(top_agent_id, uno_cmd)
+                self._call_raw_command(top_agent_id, uno_cmd)
+                result = f'【Office_Tool】operation("{operation}")已经完成。'
 
             elif operation == 'docx_write_chapter_text':
                 # 校核参数
