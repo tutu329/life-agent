@@ -269,7 +269,7 @@ class Office_Tool(Base_Tool):
         uno_font = paras.get('font-family')
         uno_char_color = paras.get('font-color')
         uno_bold = paras.get('font-bold')
-        uno_outline = paras.get('heading')
+        uno_outline_level = paras.get('heading')
 
         # docx_write_chapter_text参数
         chapter_demand = paras.get('chapter_demand')
@@ -308,10 +308,10 @@ class Office_Tool(Base_Tool):
                     self._call_raw_command(top_agent_id, uno_cmd)
 
                 # 标题设置大纲级别
-                # if uno_outline:
-                #     uno_cmd = Uno_Command().uno_set_outline.format(uno_outline=uno_outline)
-                #     print(f'-------------------uno_outline_level:{uno_cmd!r}-----------------')
-                #     self._call_raw_command(top_agent_id, uno_cmd)
+                if uno_outline_level:
+                    uno_cmd = Uno_Command().uno_outline_level.format(uno_outline_level=uno_outline_level)
+                    print(f'-------------------uno_outline_level:{uno_cmd!r}-----------------')
+                    self._call_raw_command(top_agent_id, uno_cmd)
 
                 # 标题文字
                 uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text=title)

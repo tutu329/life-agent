@@ -20,6 +20,7 @@ class Uno_Command(BaseModel):
     # uno_font
     # uno_char_color
     # uno_outline
+    # uno_outline_level
 
     # 插入文本
     uno_insert_text                 :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:InsertText', 'Args': {{'Text': {{'type': 'string', 'value': '{uno_text}'}}}}}}}}"
@@ -27,7 +28,10 @@ class Uno_Command(BaseModel):
     uno_insert_text_and_return      :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:InsertText', 'Args': {{'Text': {{'type': 'string', 'value': '{uno_text}\\n'}}}}}}}}"
 
     # 文字的缩进级别（不是大纲级别）
-    uno_set_outline               :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:SetOutline', 'Args': {{'SetOutline': {{'type': 'long', 'value': '{uno_outline}'}}}}}}}}"
+    uno_set_outline                 :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:SetOutline', 'Args': {{'SetOutline': {{'type': 'long', 'value': '{uno_outline}'}}}}}}}}"
+
+    # 文字的大纲级别(测试无效，long、short都不行)
+    uno_outline_level               :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:OutlineLevel', 'Args': {{'OutlineLevel': {{'type': 'short', 'value': '{uno_outline_level}'}}}}}}}}"
 
     # 文字字体
     uno_font                        :Dict[str, Any] = "{{'MessageId': 'Send_UNO_Command', 'Values': {{'Command': '.uno:CharFontName','Args':{{'CharFontName.FamilyName':{{'type':'string','value': '{uno_font}'}}}}}}}}"
