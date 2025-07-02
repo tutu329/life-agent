@@ -631,8 +631,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # thoughts = ''
 
         result_gen = self.llm.get_result_generator()
+        dred(f'-----------------self._thoughts_stream_output-0----------------------')
         answer_this_turn = self._thoughts_stream_output(result_gen)
-
+        dred(f'-----------------self._thoughts_stream_output-1----------------------')
 
         # gen = self.llm.ask_prepare(
         #     self.agent_tools_description_and_full_history,

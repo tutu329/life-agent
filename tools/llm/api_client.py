@@ -994,6 +994,7 @@ class LLM_Client():
                     #         # vllm API采用: {'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
                     #         self.usage = chunk.usage
 
+                    # print(chunk.choices[0].delta.content, end='', flush=True)
                     my_chunk = chunk.choices[0].delta.content
                     answer += my_chunk
 
@@ -1015,6 +1016,13 @@ class LLM_Client():
                     if self.manual_stop:
                     # if self.stop:
                         # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
+
+                        for stop_string in self.manual_stop:
+                            # 如果answer包含stop，退出
+                            if stop_string in answer:
+                                # dyellow(f'【stop】遇到stop标识"{stop_string}"，返回，answer="{answer}"')
+                                return my_chunk, think_chunk_output, result_chunk_after_stop
+
                         # answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, ['[观察]'])
                         answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, self.manual_stop)
 
