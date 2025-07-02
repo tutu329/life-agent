@@ -302,8 +302,9 @@ async def start_2_level_agents_system(request: Agents_System_Request):
 
     # --------注册一个远程tool(需要远程开启该tool call的fastapi)--------
     # 注册local所有tool
-    server_register_all_local_tool_on_start()
+    # server_register_all_local_tool_on_start()
     tool_ids = server_register_remote_tools_dynamically(request.remote_tools)
+    print(f'start_2_level_agents_system:print_all_registered_tools()')
     print_all_registered_tools()
     # -------/注册一个远程tool(需要远程开启该tool call的fastapi)--------
 

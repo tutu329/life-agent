@@ -229,6 +229,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 tool_name = tool_instance.name
                 self.registered_tool_instances_dict[tool_name] = tool_instance
 
+        dblue(f'【Agent(id={self.agent_id})的self.tool_classes】{self.tool_classes}')
+        dblue(f'【Agent(id={self.agent_id})的self.registered_tool_instances_dict】{self.registered_tool_instances_dict}')
+
         # self.human = in_human    # 是否和human交互
         # self.action_stop = ['[观察]']
         # self.observation_stop = ['[观察]']

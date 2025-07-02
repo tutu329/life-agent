@@ -336,6 +336,8 @@ def server_start_and_register_2_levels_agents_system(
         instance = server_get_tool_data_by_id(agents_as_tool_id).tool_class
         agents_as_tool_instance_list.append(instance)
 
+    dred(f'【agents_as_tool_instance_list】{agents_as_tool_instance_list}')
+
     upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_config.tool_names)
     # upper_agent_tools_class_list = legacy_get_all_local_tools_class(upper_agent_dict['tool_names'])
     tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
@@ -363,6 +365,8 @@ def server_start_and_register_2_levels_agents_system(
         tool_agent_experience_json_path = upper_agent_config.exp_json_path,
     )
     upper_agent_id = upper_agent.agent_id
+    dyellow(f'【upper_agent_config.tool_names】{upper_agent_config.tool_names}')
+    dred(f'【upper_agent_tools_class_list(upper_agent_id={upper_agent_id})】{upper_agent_tools_class_list}')
 
     # ---------------------注入top_agent_id------------------------
     # 因为lower_agent先初始化，所以只能在upper_agent初始化之后，遍历所有lower_agent注入top_agent_id

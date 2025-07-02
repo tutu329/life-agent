@@ -51,12 +51,23 @@ def server_register_all_local_tool_on_start():
             # server端注册tool
             g_registered_tools_dict[tool_id] = tool_data
 
+    print(f'server_register_all_local_tool_on_start:print_all_registered_tools()')
     print_all_registered_tools()
     return g_registered_tools_dict
 
 def print_all_registered_tools():
+    # 测试是否有重名和描述重复的，如果有，大概率是server_register_all_local_tool_on_start()重复执行了，系统状态就错误了！
+    test_dict = {}
+
     print('---------------------g_registered_tools_dict-----------------------')
     for k,v in g_registered_tools_dict.items():
+
+        # 测试是否有重名和描述重复的，如果有，大概率是server_register_all_local_tool_on_start()重复执行了，系统状态就错误了！
+        if test_dict.get(v.name) and test_dict[v.name]['test_desc']==v.description:
+            dred(f'【警告】g_registered_tools_dict的name发现重复{v.name}，大概率server_register_all_local_tool_on_start()执行重复，系统状态可能已经错误！')
+        test_dict[v.name] = {'test_name': v.name, 'test_desc':v.description}
+        # 测试是否有重名和描述重复的，如果有，大概率是server_register_all_local_tool_on_start()重复执行了，系统状态就错误了！
+
         print(f'tool_id: {v.tool_id}', end=' ')
         print(f'name: {v.name}')
         # print(f'description: {v.description}', end=' \t')
