@@ -29,7 +29,7 @@ from agent.tools.protocol import create_tool_ctx, get_tool_ctx, update_tool_cont
 from agent.tools.protocol import Action_Result
 # from agent.core.legacy_protocol import Action_Result
 from agent.tools.tool_manager import legacy_get_all_local_tools_class
-from agent.core.protocol import Agent_Status, Agent_Stream_Queues
+from agent.core.protocol import Agent_Status, Agent_Stream_Queues, Query_Agent_Context
 from agent.experience.agent_experience import Agent_Experience
 from agent.tools.protocol import Tool_Call_Paras
 
@@ -60,6 +60,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         callback_top_agent_id = tool_call_paras.callback_top_agent_id
         callback_agent_id = tool_call_paras.callback_agent_id
         callback_last_tool_ctx = tool_call_paras.callback_last_tool_ctx
+        callback_client_ctx = tool_call_paras.callback_client_ctx
         callback_father_agent_exp = tool_call_paras.callback_father_agent_exp
 
         # 本agent实例被用作tool调用
@@ -77,7 +78,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         dyellow(f'upper agent提供的tool_context: {callback_last_tool_ctx!r}')
         dyellow(f'--------------------/agent_as_tool被調用(upper agent_id="{callback_agent_id}, top agent_id="{callback_top_agent_id}")------------------------------')
 
-        self.run(query=tool_query)
+        self.run(query=tool_query, content=callback_client_ctx)
         # self.run(query=self.query_as_tool)
         action_result = Action_Result(result=self.get_final_answer())
         return action_result
@@ -417,8 +418,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.status.finished = True
         self.status.task_success = success
 
+
     def run(self,
             query=None,
+            content:Query_Agent_Context=None,
             in_max_retry=config.Agent.MAX_TRIES
             ):
         self._run_before()
@@ -461,7 +464,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 if self.is_canceling(): break
 
                 # 2、行动
-                action_result = self.action(in_answer=answer_this_turn)
+                action_result = self.action(in_answer=answer_this_turn, context=content)
                 if self.is_canceling(): break
 
                 # 如输出[最终答复]且无tool，则表明任务完成，正常退出
@@ -668,7 +671,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
         return answer_this_turn
 
-    def action(self, in_answer):
+    def action(self, in_answer, context:Query_Agent_Context=None):
         try:
             dgreen(f'action(turn {self.turns_num})'.center(80, '='))
             # --------------------------- call tool ---------------------------
@@ -752,6 +755,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                             callback_agent_config=self.agent_config,
                             callback_agent_id=self.agent_id,
                             callback_last_tool_ctx=last_tool_ctx,
+                            callback_client_ctx=context,
                             callback_father_agent_exp=self.current_exp_str
                         )
                         rtn = tool_class_or_agent.call(tool_call_paras)

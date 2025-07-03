@@ -14,6 +14,7 @@ import config
 from config import Port, dyellow, dred, dgreen, dcyan, dblue
 
 # agent
+from agent.core.protocol import Query_Agent_Context
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.core.tool_agent import Tool_Agent
@@ -72,9 +73,15 @@ class Agents_System_Request(BaseModel):
 class Agent_Status_Request(BaseModel):
     agent_id    : str
 
+
+# class Query_Agent_Context(BaseModel):
+#     template_filename   : str = ''
+#     shared_filename     : str = ''
+
 class Query_Agent_Request(BaseModel):
     agent_id    : str
     query       : str   # 如：'当前文件夹下有哪些文件'
+    context     : Query_Agent_Context
 
 @app.get("/")
 def root():
@@ -335,7 +342,9 @@ async def start_2_level_agents_system(request: Agents_System_Request):
     return_stream_queues_name='agent_stream_queues',
 )
 async def query_2_level_agents_system(request: Query_Agent_Request):
-    agent_data = server_continue_agent(agent_id=request.agent_id, query=request.query)
+    print(f'----------------------------------request----------------------------------\n{request}')
+
+    agent_data = server_continue_agent(agent_id=request.agent_id, query=request.query, context=request.context)
     # __server_wait_registered_agent(agent_id=request.agent_id, timeout_second=config.Agent.TIMEOUT_SECONDS)
     return agent_data
 

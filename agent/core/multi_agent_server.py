@@ -7,7 +7,7 @@ import time
 from agent.core.tool_agent import Tool_Agent
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.tools.tool_manager import legacy_get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
-from agent.core.protocol import Agent_Status, Agent_Stream_Queues
+from agent.core.protocol import Agent_Status, Agent_Stream_Queues, Query_Agent_Context
 
 from config import dblue, dyellow, dred, dgreen, dcyan
 
@@ -80,13 +80,13 @@ def server_start_and_register_agent(
     return agent_id
 
 # agent后续轮的query
-def server_continue_agent(agent_id, query):
+def server_continue_agent(agent_id, query, context:Query_Agent_Context):
     agent_data = g_registered_agents_dict[agent_id]
     agent = agent_data.agent_obj
 
     def _run_agent_thread():
         # agent.unset_cancel()
-        success = agent.run(query=query)
+        success = agent.run(query=query, context=context)
     future = g_thread_pool_executor.submit(_run_agent_thread)
 
     # 更新线程的future

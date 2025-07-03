@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Any, Optional
 
+from agent.core.protocol import Query_Agent_Context
 from agent.core.agent_config import Agent_Config
 from utils.task import Status
 
@@ -55,10 +56,12 @@ class Tool_Call_Paras(BaseModel):
     callback_top_agent_id       :str                            # 顶层的agent_id，主要用于多层agents系统中，让top_agent_id<-->connection，而与下层agent_id无关
     callback_agent_id           :str                            # 如：str(uuid4())
     callback_last_tool_ctx      :Optional[Tool_Context] = None  # 上一个tool调用后的上下文结果
+    callback_client_ctx         :Optional[Query_Agent_Context] = None  # client发过来的context
     callback_father_agent_exp   :str                            # 如："搜索远程文件夹的经验是，如果失败可能是..."
 
     # 开启“任意类型”支持
     # model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class Action_Result(BaseModel):
     result          :str

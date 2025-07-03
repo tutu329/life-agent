@@ -25,13 +25,13 @@ class Write_Chapter_Tool(Base_Tool):
 - "docx_write_chapter_image": 编制docx文档一个章节的图片。
 '''
     parameters = [
-        {
-            'name': 'template_filename',
-            'type': 'string',
-            'description': '(用于"docx_write_chapter_text")模板文档的完整文件名，包含扩展名',
-            'required': 'False',
-            'default': '',
-        },
+        # {
+        #     'name': 'template_filename',
+        #     'type': 'string',
+        #     'description': '(用于"docx_write_chapter_text")模板文档的完整文件名，包含扩展名',
+        #     'required': 'False',
+        #     'default': '',
+        # },
         {
             'name': 'operation',
             'type': 'string',
@@ -187,6 +187,7 @@ class Write_Chapter_Tool(Base_Tool):
         # 获取顶层agent_id（用于WebSocket连接管理）
         top_agent_id = tool_call_paras.callback_top_agent_id
         paras = tool_call_paras.callback_tool_paras_dict
+        client_ctx = tool_call_paras.callback_client_ctx
         operation = paras.get('operation')
 
         if not operation:
@@ -201,7 +202,12 @@ class Write_Chapter_Tool(Base_Tool):
         outline_level = paras.get('heading')
 
         # docx_write_chapter_text参数
-        template_filename = paras.get('template_filename')
+
+        # client context
+        # template_filename = paras.get('template_filename')
+        template_filename = tool_call_paras.callback_client_ctx.template_filename
+        shared_filename = tool_call_paras.callback_client_ctx.shared_filename
+
         chapter_demand = paras.get('chapter_demand')
 
         print(f'🎯 【Write_Chapter_Tool】Agent ID: {top_agent_id}, 全部参数: {paras}')
