@@ -26,7 +26,7 @@ class Write_Chapter_Tool(Base_Tool):
             'type': 'string',
             'description': \
                 '''操作类型，支持以下值：
-                - "docx_write_chapter_title": 编制docx文档一个章节的标题，如"3.2、什么是哲学"。
+                - "docx_write_chapter_title": 编制docx文档一个章节的标题。
                 - "docx_write_chapter_text": 编制docx文档一个章节的文本。
                 - "docx_write_chapter_table": 编制docx文档一个章节的表格。
                 - "docx_write_chapter_image": 编制docx文档一个章节的图片。
@@ -36,7 +36,7 @@ class Write_Chapter_Tool(Base_Tool):
         {
             'name': 'title',
             'type': 'string',
-            'description': '(用于"docx_write_chapter_title")章节号，如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等',
+            'description': '(用于"docx_write_chapter_title")章节标题，其中章节号如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等，章节标题的文字不要漏写',
             'required': 'True',
         },
         {
@@ -217,6 +217,17 @@ class Write_Chapter_Tool(Base_Tool):
                 if 'chapter_demand' not in paras:
                     return Action_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数chapter_demand'))
 
+                # 设置后续注入文本的段落格式
+                params = {
+                    'line_spacing': 1.5,
+                    'first_line_indent': 700,
+                    'left_margin': 0,
+                    'right_margin': 0,
+                    'space_before': 0,
+                    'space_after': 0,
+                }
+                self._call_collabora_api(top_agent_id=top_agent_id, cmd='set_paragraph', params=params)
+
                 # 选择llm和参数
                 llm_config = config.g_online_deepseek_chat
                 llm = LLM_Client(llm_config=llm_config)
@@ -246,8 +257,8 @@ class Write_Chapter_Tool(Base_Tool):
                             'font_name': 'SimSun',
                             'font_color': 'black',
                             'font_size': 12,
-                            'line_spacing':1.5,
-                            'first_line_indent':700,
+                            # 'line_spacing':1.5,
+                            # 'first_line_indent':700,
                         }
                         self._call_collabora_api(top_agent_id=top_agent_id, cmd='insert_text', params=params)
 
