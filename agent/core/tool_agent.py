@@ -424,8 +424,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
             content:Query_Agent_Context=None,
             in_max_retry=config.Agent.MAX_TRIES
             ):
+        print(f'-----------------run1------------------------')
         self._run_before()
         try:
+            print(f'-----------------run2------------------------')
             self.current_query = query or self.query
 
             # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
@@ -456,7 +458,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 if self.is_canceling(): break
 
                 # 1、思考
+                print(f'-----------------run3------------------------')
                 answer_this_turn = self.thinking()
+                print(f'-----------------run4------------------------')
                 # dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
                 # if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
                 #     self._parse_final_answer(answer_this_turn)
