@@ -10,6 +10,138 @@ from utils.web_socket_manager import get_websocket_manager
 from agent.tools.office_tool_uno_command.uno_command import Uno_Command, Uno_Color
 from tools.llm.api_client import LLM_Client
 
+class Write_Chapter_Tool(Base_Tool):
+    name = 'Write_Chapter_Tool'
+    description = \
+'''控制前端Collabora CODE文档编辑器在doc/docx文档中编制章节标题和章节内容的工具。
+支持的操作包括：
+- "docx_write_chapter_title": 编制docx文档一个章节的标题。
+- "docx_write_chapter_text": 编制docx文档一个章节的文本。
+- "docx_write_chapter_table": 编制docx文档一个章节的表格。
+- "docx_write_chapter_image": 编制docx文档一个章节的图片。
+'''
+    parameters = [
+        {
+            'name': 'operation',
+            'type': 'string',
+            'description': \
+                '''操作类型，支持以下值：
+                - "docx_write_chapter_title": 编制docx文档一个章节的标题。
+                - "docx_write_chapter_text": 编制docx文档一个章节的文本。
+                - "docx_write_chapter_table": 编制docx文档一个章节的表格。
+                - "docx_write_chapter_image": 编制docx文档一个章节的图片。
+                ''',
+            'required': 'True',
+        },
+        {
+            'name': 'title',
+            'type': 'string',
+            'description': '(用于"docx_write_chapter_title")章节号，如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等',
+            'required': 'True',
+        },
+        {
+            'name': 'heading',
+            'type': 'int',
+            'description': '(用于"docx_write_chapter_title")标题的大纲级别，如1、2、3、4、5等',
+            'required': 'True',
+        },
+        {
+            'name': 'font-size',
+            'type': 'int',
+            'description': '(用于"docx_write_chapter_title")标题的字体大小，如14、20等(单位为pt)',
+            'required': 'True',
+        },
+        {
+            'name': 'font-family',
+            'type': 'string',
+            'description': '(用于"docx_write_chapter_title")标题的字体名，如"SimSun"等',
+            'required': 'False',
+            'default': 'SimSun',
+        },
+        {
+            'name': 'font-color',
+            'type': 'int',
+            'description': '(用于"docx_write_chapter_title")标题的字体颜色，仅可选择"red"、"green"、"blue"、"black"、"white"、"gray"、"yellow"之一',
+            'required': 'False',
+            'default': 'red',
+        },
+        {
+            'name': 'font-bold',
+            'type': 'bool',
+            'description': '(用于"docx_write_chapter_title")标题的字体是否加粗',
+            'required': 'False',
+            'default': 'False',
+        },
+        {
+            'name': 'center',
+            'type': 'bool',
+            'description': '(用于"docx_write_chapter_title")标题是否居中',
+            'required': 'False',
+            'default': 'False',
+        },
+        {
+            'name': 'chapter_demand',
+            'type': 'string',
+            'description': '(用于"docx_write_chapter_text")章节文本编制的要求',
+            'required': 'True',
+        },
+    ]
+
+    def __init__(self):
+        print('🔧 Write_Chapter_Tool 初始化中...')
+        # 使用通用WebSocket管理器
+        self.ws_manager = get_websocket_manager()
+        # 启动WebSocket服务器（如果尚未启动）
+
+        # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
+        # self.ws_manager.start_server(port=5113)
+        # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
+        self.ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
+        print('✅ Write_Chapter_Tool 初始化完成')
+
+    def _test_call_collabora_api(self):
+        # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
+        timeout = 30  # 等待30秒
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            # 使用新的 `get_connected_clients` 方法，替换旧的 `.clients` 访问
+            registered_clients = self.ws_manager.get_connected_clients()
+
+            if registered_clients:
+                # 选择第一个连接的客户端进行测试
+                agent_id = registered_clients[0]
+                print(f"✅ 成功发现已连接的客户端! Agent ID: {agent_id}")
+                break
+            else:
+                print("   ...尚未发现客户端，2秒后重试...")
+                time.sleep(2)
+        # -----/临时的websocket连接方式（选择第一个连接的客户端进行测试）------
+
+        # 桥接collabora CODE接口
+        command = {
+            'type': 'office_operation',
+            'operation': 'call_python_script',
+            'agent_id': agent_id,
+            # 'agent_id': top_agent_id,
+            'data': {},
+            'timestamp': int(time.time() * 1000)
+        }
+
+        command['data'] = {
+            'text':'hi every body2!',
+            'font_name':'SimSun',
+            'font_color':'red',
+            'font_size':22,
+        }
+
+        # 通过web-socket发送至前端
+        success, message = self.ws_manager.send_command(agent_id, command)
+        return success, message
+
+    def call(self, tool_call_paras: Tool_Call_Paras):
+        pass
+
 class Office_Tool(Base_Tool):
     name = 'Office_Tool'
     description = \
@@ -94,9 +226,9 @@ class Office_Tool(Base_Tool):
         # 启动WebSocket服务器（如果尚未启动）
 
         # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
-        # self.ws_manager.start_server(port=5113)
+        self.ws_manager.start_server(port=5113)
         # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
-        self.ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
+        # self.ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
         print('✅ Office_Tool 初始化完成')
 
     def _call_raw_command(self, top_agent_id, uno_cmd):
@@ -272,6 +404,12 @@ def main_office():
     agent.init()
     success = agent.run()
 
+def main_write_chapter_tool_test():
+    tool = Write_Chapter_Tool()
+    tool._test_call_collabora_api()
+
+
 
 if __name__ == "__main__":
-    main_office()
+    # main_office()
+    main_write_chapter_tool_test()
