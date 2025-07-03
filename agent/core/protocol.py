@@ -13,7 +13,6 @@ class Agent_Status(BaseModel):
     finished        :bool = False
     task_success    :bool = False   #任务是否有效完成
 
-
 class Agent_Stream_Queues(BaseModel):
     output          :Queue= Field(default_factory=Queue)
     final_answer    :Queue= Field(default_factory=Queue)
