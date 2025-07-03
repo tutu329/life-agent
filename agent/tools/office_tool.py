@@ -2,8 +2,12 @@ import time, json5
 
 import config
 from utils.encode import safe_encode
+from utils.extract import extract_chapter_no
+
 from agent.tools.base_tool import Base_Tool
 from agent.tools.protocol import Action_Result, Tool_Call_Paras
+from tools.doc.docx_para import DocxParser
+from tools.doc.docx_outline import DocxOutlineExtractor
 
 from utils.web_socket_manager import get_websocket_manager
 
@@ -22,6 +26,13 @@ class Write_Chapter_Tool(Base_Tool):
 '''
     parameters = [
         {
+            'name': 'template_filename',
+            'type': 'string',
+            'description': '(用于"docx_write_chapter_text")模板文档的完整文件名，包含扩展名',
+            'required': 'False',
+            'default': '',
+        },
+        {
             'name': 'operation',
             'type': 'string',
             'description': \
@@ -36,7 +47,7 @@ class Write_Chapter_Tool(Base_Tool):
         {
             'name': 'title',
             'type': 'string',
-            'description': '(用于"docx_write_chapter_title")章节标题，其中章节号如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等，章节标题的文字不要漏写',
+            'description': '(用于"docx_write_chapter_title"和"docx_write_chapter_text")章节标题，其中章节号如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等，章节标题的文字不要漏写',
             'required': 'True',
         },
         {
@@ -190,6 +201,7 @@ class Write_Chapter_Tool(Base_Tool):
         outline_level = paras.get('heading')
 
         # docx_write_chapter_text参数
+        template_filename = paras.get('template_filename')
         chapter_demand = paras.get('chapter_demand')
 
         print(f'🎯 【Write_Chapter_Tool】Agent ID: {top_agent_id}, 全部参数: {paras}')
@@ -216,6 +228,19 @@ class Write_Chapter_Tool(Base_Tool):
                 # 校核参数
                 if 'chapter_demand' not in paras:
                     return Action_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数chapter_demand'))
+
+                # 读取模板文件信息
+                if template_filename:
+                    template_file_path = config.Uploads.template_path + template_filename
+                    print(f'【Write_Chapter_Tool】template_file_path: {template_file_path!r}')
+
+                    tree_string = DocxOutlineExtractor(template_file_path, max_level=5).outline()
+                    print(f'【Write_Chapter_Tool】tree_string: {tree_string!r}')
+
+                    doc_parser = DocxParser(template_file_path)
+                    title_no = extract_chapter_no(title)
+                    para_content = doc_parser.get_chapter(title_no)
+                    print(f'【Write_Chapter_Tool】para_content({title_no}): {para_content!r}')
 
                 # 设置后续注入文本的段落格式
                 params = {

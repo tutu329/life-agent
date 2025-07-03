@@ -158,6 +158,12 @@ class Agent:
     TIMEOUT_SECONDS:int = 3600  # agent运行的超时时间
 
 @dataclass
+class Uploads:
+    uploads_path        :str = '/home/tutu/server/life-agent-web/uploads/'
+    template_path       :str = uploads_path + 'templates/'
+    shared_path         :str = uploads_path + 'shared/'
+
+@dataclass
 class Port():
     # frp的port范围
     # 5100-5120

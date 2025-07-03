@@ -9,6 +9,22 @@ def dprint(*args, **kwargs):
     else:
         pass
 
+def extract_chapter_no(title: str) -> str | None:
+    """提取章节号；若匹配失败返回 None"""
+    # 三大分支写在一个分组里，用 | 连接
+    chapter_re = re.compile(r'''
+        ^\s*(
+            (?:\d+(?:\.\d+)*\.?)                 # 3 3.2 3.2.1.1 可带结尾的 .
+          | [一二三四五六七八九十百千万]+、?        # 二、  十二、
+          | 第(?:\d+|[一二三四五六七八九十百千万]+)章  # 第1章  第二章
+        )\s*
+    ''', re.VERBOSE)
+
+    m = chapter_re.match(title)
+    if not m:
+        return None
+    # 去掉末尾可能的装饰符号
+    return m.group(1).rstrip(' 、.')
 
 # 解析字符串中的代码块（由于json5无法解析包含'''...'''或"""..."""的字符串，因此通过re抠出'''...'''或"""..."""内容）
 def extract_code(text):
@@ -91,5 +107,21 @@ def main():
     cookie = get_ajs_anonymous_id_from_cookie(s)
     print(cookie)
 
+def main_test_extract_title_no():
+    # ====== 演示 ======
+    tests = [
+        "3 第一节 绪论",
+        "3.2 复合材料",
+        "3.2.1 力学性能",
+        "3.2.1.1.1 深入讨论",
+        "二、研究背景",
+        "第二章 文献综述",
+        "第1章 绪论",
+    ]
+
+    for t in tests:
+        print(f"{t!r} --> {extract_chapter_no(t)!r}")
+
 if __name__ == "__main__" :
-    main()
+    # main()
+    main_test_extract_title_no()
