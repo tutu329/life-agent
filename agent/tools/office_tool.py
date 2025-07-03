@@ -26,7 +26,7 @@ class Write_Chapter_Tool(Base_Tool):
             'type': 'string',
             'description': \
                 '''操作类型，支持以下值：
-                - "docx_write_chapter_title": 编制docx文档一个章节的标题。
+                - "docx_write_chapter_title": 编制docx文档一个章节的标题，如"3.2、什么是哲学"。
                 - "docx_write_chapter_text": 编制docx文档一个章节的文本。
                 - "docx_write_chapter_table": 编制docx文档一个章节的表格。
                 - "docx_write_chapter_image": 编制docx文档一个章节的图片。
@@ -158,6 +158,8 @@ class Write_Chapter_Tool(Base_Tool):
         #     'font_name':'SimSun',
         #     'font_color':'blue',
         #     'font_size':12,
+        #     'line_spacing':1.5,
+        #     'first_line_indent':700,
         # }
         command['data'] = {
             'cmd':cmd,
@@ -184,6 +186,7 @@ class Write_Chapter_Tool(Base_Tool):
         font_name = paras.get('font-family')
         font_color = paras.get('font-color')
         font_bold = paras.get('font-bold')
+        font_size = paras.get('font-size')
         outline_level = paras.get('heading')
 
         # docx_write_chapter_text参数
@@ -197,6 +200,17 @@ class Write_Chapter_Tool(Base_Tool):
                 # 校核参数
                 if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
                     return Action_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
+
+                params = {
+                    'title': title,
+                    'outline_level': outline_level,
+                    'font_name': font_name,
+                    'font_size': font_size,
+                    'font_color': font_color,
+                    'font_bold': font_bold,
+                }
+                self._call_collabora_api(top_agent_id=top_agent_id, cmd='insert_title', params=params)
+                result = f'【Write_Chapter_Tool】operation("{operation}")已经完成。'
 
             elif operation == 'docx_write_chapter_text':
                 # 校核参数
@@ -219,19 +233,21 @@ class Write_Chapter_Tool(Base_Tool):
                         _indent = '        '
                         # 第一个字之前增加缩进
                         if first_chunk:
-                            chunk = _indent + chunk
+                            # chunk = _indent + chunk
                             first_chunk = False
 
                         # \n后面增加缩进
-                        chunk = chunk.replace('\n', '\n'+_indent)
+                        # chunk = chunk.replace('\n', '\n'+_indent)
 
                         # uno_cmd = Uno_Command().uno_insert_text.format(uno_text=chunk)
                         # self._call_raw_command(top_agent_id, uno_cmd)
                         params = {
                             'text': chunk,
                             'font_name': 'SimSun',
-                            'font_color': 'red',
+                            'font_color': 'black',
                             'font_size': 12,
+                            'line_spacing':1.5,
+                            'first_line_indent':700,
                         }
                         self._call_collabora_api(top_agent_id=top_agent_id, cmd='insert_text', params=params)
 
