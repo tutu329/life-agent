@@ -160,7 +160,7 @@ class Agent:
 @dataclass
 class Uploads:
     uploads_path        :str = '/home/tutu/server/life-agent-web/uploads/'
-    template_path       :str = uploads_path + 'templates/'
+    template_path       :str = uploads_path + 'template/'
     shared_path         :str = uploads_path + 'shared/'
 
 @dataclass
