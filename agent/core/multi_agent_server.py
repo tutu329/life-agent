@@ -83,18 +83,17 @@ def server_start_and_register_agent(
 def server_continue_agent(agent_id, query, context:Query_Agent_Context):
     agent_data = g_registered_agents_dict[agent_id]
     agent = agent_data.agent_obj
-    print(f'-----------------server_continue_agent1------------------------')
 
     def _run_agent_thread():
         # agent.unset_cancel()
-        print(f'-----------------server_continue_agent2(agent_id:"{agent_id}")------------------------')
-        print(f'query={query}, context={context}')
-        success = agent.run(query=query)
-        # success = agent.run(query=query, context=context)
-        print(f'-----------------server_continue_agent3------------------------')
+        try:
+            print(f'query={query}, context={context}')
+            # success = agent.run(query=query)
+            success = agent.run(query=query, context=context)
+        except Exception as e:
+            dred(f'server_continue_agent()报错：{e!r}')
 
     future = g_thread_pool_executor.submit(_run_agent_thread)
-    print(f'-----------------server_continue_agent4------------------------')
 
     # 更新线程的future
     agent_data.agent_future = future

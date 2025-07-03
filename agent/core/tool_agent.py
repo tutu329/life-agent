@@ -78,7 +78,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         dyellow(f'upper agent提供的tool_context: {callback_last_tool_ctx!r}')
         dyellow(f'--------------------/agent_as_tool被調用(upper agent_id="{callback_agent_id}, top agent_id="{callback_top_agent_id}")------------------------------')
 
-        self.run(query=tool_query, content=callback_client_ctx)
+        self.run(query=tool_query, context=callback_client_ctx)
         # self.run(query=self.query_as_tool)
         action_result = Action_Result(result=self.get_final_answer())
         return action_result
@@ -421,13 +421,11 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
     def run(self,
             query=None,
-            content:Query_Agent_Context=None,
+            context:Query_Agent_Context=None,
             in_max_retry=config.Agent.MAX_TRIES
             ):
-        print(f'-----------------run1------------------------')
         self._run_before()
         try:
-            print(f'-----------------run2------------------------')
             self.current_query = query or self.query
 
             # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
@@ -458,9 +456,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 if self.is_canceling(): break
 
                 # 1、思考
-                print(f'-----------------run3------------------------')
                 answer_this_turn = self.thinking()
-                print(f'-----------------run4------------------------')
                 # dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
                 # if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
                 #     self._parse_final_answer(answer_this_turn)
@@ -468,7 +464,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 if self.is_canceling(): break
 
                 # 2、行动
-                action_result = self.action(in_answer=answer_this_turn, context=content)
+                action_result = self.action(in_answer=answer_this_turn, context=context)
                 if self.is_canceling(): break
 
                 # 如输出[最终答复]且无tool，则表明任务完成，正常退出
