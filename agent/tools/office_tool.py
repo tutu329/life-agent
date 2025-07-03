@@ -128,19 +128,145 @@ class Write_Chapter_Tool(Base_Tool):
             'timestamp': int(time.time() * 1000)
         }
 
-        command['data'] = {
-            'text':'hi every body2!',
+        params = {
+            'text':'hi every body4!\n hi every body5!',
             'font_name':'SimSun',
-            'font_color':'red',
-            'font_size':22,
+            'font_color':'blue',
+            'font_size':12,
+        }
+        command['data'] = {
+            'cmd':'insert_text',
+            'params':params
         }
 
         # 通过web-socket发送至前端
         success, message = self.ws_manager.send_command(agent_id, command)
         return success, message
 
+    def _call_collabora_api(self, top_agent_id, cmd, params):
+        # 桥接collabora CODE接口
+        command = {
+            'type': 'office_operation',
+            'operation': 'call_python_script',
+            'agent_id': top_agent_id,
+            'data': {},
+            'timestamp': int(time.time() * 1000)
+        }
+
+        # params = {
+        #     'text':'hi every body3!',
+        #     'font_name':'SimSun',
+        #     'font_color':'blue',
+        #     'font_size':12,
+        # }
+        command['data'] = {
+            'cmd':cmd,
+            'params':params
+        }
+
+        # 通过web-socket发送至前端
+        success, message = self.ws_manager.send_command(top_agent_id, command)
+        return success, message
+
     def call(self, tool_call_paras: Tool_Call_Paras):
-        pass
+        print(f'🔧 【Write_Chapter_Tool】开始调用，调用参数: {tool_call_paras.callback_tool_paras_dict}')
+
+        # 获取顶层agent_id（用于WebSocket连接管理）
+        top_agent_id = tool_call_paras.callback_top_agent_id
+        paras = tool_call_paras.callback_tool_paras_dict
+        operation = paras.get('operation')
+
+        if not operation:
+            return Action_Result(result=safe_encode('❌ 【Write_Chapter_Tool】必须提供 "operation" 参数'))
+
+        # docx_write_chapter_title参数
+        title = paras.get('title')
+        font_name = paras.get('font-family')
+        font_color = paras.get('font-color')
+        font_bold = paras.get('font-bold')
+        outline_level = paras.get('heading')
+
+        # docx_write_chapter_text参数
+        chapter_demand = paras.get('chapter_demand')
+
+        print(f'🎯 【Write_Chapter_Tool】Agent ID: {top_agent_id}, 全部参数: {paras}')
+        print(f'🎯 【Write_Chapter_Tool】Agent ID: {top_agent_id}, operation: {operation!r}')
+
+        try:
+            if operation == 'docx_write_chapter_title':
+                # 校核参数
+                if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
+                    return Action_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
+
+            elif operation == 'docx_write_chapter_text':
+                # 校核参数
+                if 'chapter_demand' not in paras:
+                    return Action_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数chapter_demand'))
+
+                # 选择llm和参数
+                llm_config = config.g_online_deepseek_chat
+                llm = LLM_Client(llm_config=llm_config)
+
+                # llm输出
+                question = chapter_demand + '\n注意：不能输出markdown格式和风格的内容，因为你的输出要写入docx文档。'
+                chunks = llm.ask_prepare(question=question).get_result_generator()
+                print('-------------------docx_write_chapter_text-LLM-------------------')
+                content = ''
+                first_chunk = True
+                for chunk in chunks:
+                    try:
+                        print(chunk, end='', flush=True)
+                        _indent = '        '
+                        # 第一个字之前增加缩进
+                        if first_chunk:
+                            chunk = _indent + chunk
+                            first_chunk = False
+
+                        # \n后面增加缩进
+                        chunk = chunk.replace('\n', '\n'+_indent)
+
+                        # uno_cmd = Uno_Command().uno_insert_text.format(uno_text=chunk)
+                        # self._call_raw_command(top_agent_id, uno_cmd)
+                        params = {
+                            'text': chunk,
+                            'font_name': 'SimSun',
+                            'font_color': 'red',
+                            'font_size': 12,
+                        }
+                        self._call_collabora_api(top_agent_id=top_agent_id, cmd='insert_text', params=params)
+
+                        content += chunk
+
+                    except (ValueError, SyntaxError) as e:
+                        print(f'-----------------【Write_Chapter_Tool】"{operation}": 解析失败--------------------')
+                        print(f'报错："{e}"')
+                        print(f'chunk = "{chunk}"')
+                        print(f'content = "{content}"')
+                        print(f'----------------/【Write_Chapter_Tool】"{operation}": 解析失败--------------------')
+                        continue
+
+                print('\n------------------/docx_write_chapter_text-LLM-------------------')
+                content_summary = content.strip()
+                print(f'--------content_summary:{content_summary!r}----------')
+                content_len = len(content_summary)
+                content_summary = f'{content_summary[:20]}...{content_summary[-20:]}' if content_len>=50 else content_summary
+                result = f'【Write_Chapter_Tool】operation("{operation}")已经完成，写入docx内容(部分截取)为"{content_summary}"(共计{content_len}字)'
+
+            # elif operation == 'docx_write_chapter_table':
+            #     pass
+            # elif operation == 'docx_write_chapter_image':
+            #     pass
+            else:
+                result = f'❌ 【Write_Chapter_Tool】operation "{operation}" 暂未实现或未知'
+                return Action_Result(result=safe_encode(result))
+
+        except (ValueError, SyntaxError) as e:
+            return Action_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 解析失败(报错: "{e}").'))
+        except Exception as e:
+            result = f"❌ 【Write_Chapter_Tool】'{operation}':操作失败: {e!r}"
+
+        # 确保返回安全编码的结果
+        return Action_Result(result=safe_encode(result))
 
 class Office_Tool(Base_Tool):
     name = 'Office_Tool'
@@ -222,11 +348,11 @@ class Office_Tool(Base_Tool):
     def __init__(self):
         print('🔧 Office_Tool 初始化中...')
         # 使用通用WebSocket管理器
-        self.ws_manager = get_websocket_manager()
+        # self.ws_manager = get_websocket_manager()
         # 启动WebSocket服务器（如果尚未启动）
 
         # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
-        self.ws_manager.start_server(port=5113)
+        # self.ws_manager.start_server(port=5113)
         # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
         # self.ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
         print('✅ Office_Tool 初始化完成')
