@@ -9,7 +9,10 @@ from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.tools.tool_manager import legacy_get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
 from agent.core.protocol import Agent_Status, Agent_Stream_Queues, Query_Agent_Context
 
+import config
 from config import dblue, dyellow, dred, dgreen, dcyan
+
+from tools.doc.docx_outline import DocxOutlineExtractor
 
 class Registered_Agent_Data(BaseModel):
     agent_id            :str
@@ -86,12 +89,26 @@ def server_continue_agent(agent_id, query, context:Query_Agent_Context):
 
     def _run_agent_thread():
         # agent.unset_cancel()
+        question = query
         try:
-            print(f'query={query}, context={context}')
+            template_filename = context.custom_data_dict.get('template_filename')
+            if template_filename:
+                template_file_path = config.Uploads.template_path + template_filename
+
+                # 获取模板报告的完整提纲
+                extractor = DocxOutlineExtractor()
+                chapters = extractor.extract_outline(template_file_path, max_depth=5)
+                project_outline = extractor.format_outline(chapters)
+
+                # 将模板报告的提纲注入question
+                question += '\n' + '<所需参照的模板文档的完整提纲>\n' + project_outline + '\n</所需参照的模板文档的完整提纲>'
+
+            print(f'【server_continue_agent】query={question}, context={context}')
             # success = agent.run(query=query)
-            success = agent.run(query=query, context=context)
+            success = agent.run(query=question, context=context)
+
         except Exception as e:
-            dred(f'server_continue_agent()报错：{e!r}')
+            dred(f'【server_continue_agent】报错：{e!r}')
 
     future = g_thread_pool_executor.submit(_run_agent_thread)
 
