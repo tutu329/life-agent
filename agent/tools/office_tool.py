@@ -240,7 +240,10 @@ class Write_Chapter_Tool(Base_Tool):
                     template_file_path = config.Uploads.template_path + template_filename
                     print(f'【Write_Chapter_Tool】template_file_path: {template_file_path!r}')
 
-                    tree_string = DocxOutlineExtractor(template_file_path, max_level=5).outline()
+                    extractor = DocxOutlineExtractor()
+                    chapters = extractor.extract_outline(template_file_path, max_depth=5)
+                    tree_string = extractor.format_outline(chapters)
+
                     print(f'【Write_Chapter_Tool】tree_string: {tree_string!r}')
 
                     doc_parser = DocxParser(template_file_path)
@@ -591,8 +594,6 @@ def main_office():
 def main_write_chapter_tool_test():
     tool = Write_Chapter_Tool()
     tool._test_call_collabora_api()
-
-
 
 if __name__ == "__main__":
     # main_office()
