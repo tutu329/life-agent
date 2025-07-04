@@ -1,6 +1,7 @@
 import time, json5
 
 import config
+from config import dred, dgreen, dcyan, dblue, dyellow
 from utils.encode import safe_encode
 from utils.extract import extract_chapter_no
 
@@ -13,6 +14,55 @@ from utils.web_socket_manager import get_websocket_manager
 
 from agent.tools.office_tool_uno_command.uno_command import Uno_Command, Uno_Color
 from tools.llm.api_client import LLM_Client
+
+from pydantic import BaseModel
+
+class Prompt_Write_Chapter_Text(BaseModel):
+    project_name            :str =''  # 项目名称
+    project_key_demand      :str =''  # 项目核心需求
+    project_outline         :str =''  # 项目完整提纲
+    project_investment      :str =''  # 项目预期投资
+    chapter_content_demand  :str =''  # 需编制的章节内容的编制要求
+    chapter_template        :str =''  # 需编制的章节对应的章节模板内容
+
+g_prompt_write_chapter_text = \
+'''
+<总体要求>
+请严格根据【章节编制总体要求】、【项目名称】、【项目核心需求】、【报告完整提纲】、【项目预期投资水平】、【章节模板】的内容或要求，编写章节内容。
+</总体要求>
+
+<章节编制总体要求>
+1、内容要求
+    1）编制的是章节内容，而不是编制整个报告，因此要注意该章节内容在【报告完整提纲】中的大概定位，不要错误的编制应该其他章节编制的内容。
+    2）章节内容的范围，应与【章节模板】一致或相符，绝对不能随意写入【章节模板】以外其他内容，也绝对不能提及【章节编制总体要求】、【项目名称】、【项目核心需求】、【报告完整提纲】、【项目预期投资水平】、【章节模板】等高于该章节层次的信息或与编制内容无关的信息，因为那样会破坏该章节内容组织和表述的合理性。
+    3）章节内容的篇幅和形式，必须让文字段落在字数上占主导比例，不能让标题化的内容在字数上占主导比例。
+2、格式要求：编制的文本都会写入docx文档中，因此绝对不能输出markdown文本，否则docx文档中会出现大量未渲染md格式文本，这是不可接受的。
+</章节编制总体要求>
+
+<章节编制具体要求>
+{chapter_content_demand}
+</章节编制具体要求>
+
+<项目名称>
+{project_name}
+</项目名称>
+
+<项目核心需求>
+{project_key_demand}
+</项目核心需求>
+
+<报告完整提纲>
+{project_outline}
+</报告完整提纲>
+
+<项目预期投资水平>
+{project_investment}
+</项目预期投资水平>
+
+<章节模板>
+{chapter_template}
+</章节模板>
+'''
 
 class Write_Chapter_Tool(Base_Tool):
     name = 'Write_Chapter_Tool'
@@ -94,6 +144,24 @@ class Write_Chapter_Tool(Base_Tool):
             'name': 'chapter_demand',
             'type': 'string',
             'description': '(用于"docx_write_chapter_text")章节文本编制的要求',
+            'required': 'True',
+        },
+        {
+            'name': 'project_name',
+            'type': 'string',
+            'description': '(用于"docx_write_chapter_text")项目名称',
+            'required': 'True',
+        },
+        {
+            'name': 'project_key_demand',
+            'type': 'string',
+            'description': '(用于"docx_write_chapter_text")项目核心需求',
+            'required': 'True',
+        },
+        {
+            'name': 'project_investment',
+            'type': 'string',
+            'description': '(用于"docx_write_chapter_text")项目预期投资',
             'required': 'True',
         },
     ]
@@ -202,9 +270,11 @@ class Write_Chapter_Tool(Base_Tool):
         outline_level = paras.get('heading')
 
         # docx_write_chapter_text参数
+        project_name = paras.get('project_name')
+        project_key_demand = paras.get('project_key_demand')
+        project_investment = paras.get('project_investment')
 
         # client context
-        # template_filename = paras.get('template_filename')
         template_filename = tool_call_paras.callback_client_ctx.custom_data_dict.get('template_filename')
         shared_filename = tool_call_paras.callback_client_ctx.custom_data_dict.get('shared_filename')
 
@@ -235,21 +305,34 @@ class Write_Chapter_Tool(Base_Tool):
                 if 'chapter_demand' not in paras:
                     return Action_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数chapter_demand'))
 
+                # 处理prompt
+                prompt = Prompt_Write_Chapter_Text()
+
+                prompt.chapter_content_demand = chapter_demand
+                prompt.project_name = project_name
+                prompt.project_key_demand = project_key_demand
+                prompt.project_investment = project_investment
+
                 # 读取模板文件信息
                 if template_filename:
-                    template_file_path = config.Uploads.template_path + template_filename
-                    print(f'【Write_Chapter_Tool】template_file_path: {template_file_path!r}')
+                    try:
+                        template_file_path = config.Uploads.template_path + template_filename
+                        print(f'【Write_Chapter_Tool】template_file_path: {template_file_path!r}')
 
-                    extractor = DocxOutlineExtractor()
-                    chapters = extractor.extract_outline(template_file_path, max_depth=5)
-                    tree_string = extractor.format_outline(chapters)
+                        # 报告完整提纲
+                        extractor = DocxOutlineExtractor()
+                        chapters = extractor.extract_outline(template_file_path, max_depth=5)
+                        prompt.project_outline = extractor.format_outline(chapters)
 
-                    print(f'【Write_Chapter_Tool】tree_string: {tree_string!r}')
+                        print(f'【Write_Chapter_Tool】tree_string: {prompt.project_outline!r}')
 
-                    doc_parser = DocxParser(template_file_path)
-                    title_no = extract_chapter_no(title)
-                    para_content = doc_parser.get_chapter(title_no)
-                    print(f'【Write_Chapter_Tool】para_content({title_no}): {para_content!r}')
+                        # 需编制章节的对应模板内容
+                        doc_parser = DocxParser(template_file_path)
+                        title_no = extract_chapter_no(title)
+                        prompt.chapter_template = doc_parser.get_chapter(title_no)
+                        print(f'【Write_Chapter_Tool】para_content({title_no}): {prompt.chapter_template!r}')
+                    except Exception as e:
+                        dred(f'【Write_Chapter_Tool】处理template_filename报错：{e!r}')
 
                 # 设置后续注入文本的段落格式
                 params = {
@@ -266,8 +349,19 @@ class Write_Chapter_Tool(Base_Tool):
                 llm_config = config.g_online_deepseek_chat
                 llm = LLM_Client(llm_config=llm_config)
 
+                # question的准备
+                question = g_prompt_write_chapter_text.format(
+                    chapter_content_demand  = prompt.chapter_content_demand,
+                    project_name            = prompt.project_name,
+                    project_key_demand      = prompt.project_key_demand,
+                    project_outline         = prompt.project_outline,
+                    project_investment      = prompt.project_investment,
+                    chapter_template        = prompt.chapter_template,
+                )
+
+                dblue(f'【Write_Chapter_Tool】question: \n{question!r}')
+
                 # llm输出
-                question = chapter_demand + '\n注意：不能输出markdown格式和风格的内容，因为你的输出要写入docx文档。'
                 chunks = llm.ask_prepare(question=question).get_result_generator()
                 print('-------------------docx_write_chapter_text-LLM-------------------')
                 content = ''
@@ -329,245 +423,245 @@ class Write_Chapter_Tool(Base_Tool):
         # 确保返回安全编码的结果
         return Action_Result(result=safe_encode(result))
 
-class Office_Tool(Base_Tool):
-    name = 'Office_Tool'
-    description = \
-'''控制前端Collabora CODE文档编辑器对文档进行编制的工具。
-支持的操作包括：
-- "docx_write_chapter_title": 编制docx文档一个章节的标题。
-- "docx_write_chapter_text": 编制docx文档一个章节的文本。
-- "docx_write_chapter_table": 编制docx文档一个章节的表格。
-- "docx_write_chapter_image": 编制docx文档一个章节的图片。
-'''
-    parameters = [
-        {
-            'name': 'operation',
-            'type': 'string',
-            'description': \
-'''操作类型，支持以下值：
-- "docx_write_chapter_title": 编制docx文档一个章节的标题。
-- "docx_write_chapter_text": 编制docx文档一个章节的文本。
-- "docx_write_chapter_table": 编制docx文档一个章节的表格。
-- "docx_write_chapter_image": 编制docx文档一个章节的图片。
-''',
-            'required': 'True',
-        },
-        {
-            'name': 'title',
-            'type': 'string',
-            'description': '(用于"docx_write_chapter_title")章节号，如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等',
-            'required': 'True',
-        },
-        {
-            'name': 'heading',
-            'type': 'int',
-            'description': '(用于"docx_write_chapter_title")标题的大纲级别，如1、2、3、4、5等',
-            'required': 'True',
-        },
-        {
-            'name': 'font-size',
-            'type': 'int',
-            'description': '(用于"docx_write_chapter_title")标题的字体大小，如14、20等(单位为pt)',
-            'required': 'True',
-        },
-        {
-            'name': 'font-family',
-            'type': 'string',
-            'description': '(用于"docx_write_chapter_title")标题的字体名，如"SimSun"等',
-            'required': 'False',
-            'default': 'SimSun',
-        },
-        {
-            'name': 'font-color',
-            'type': 'int',
-            'description': '(用于"docx_write_chapter_title")标题的字体颜色，仅可选择"red"、"green"、"blue"、"black"、"white"、"gray"、"yellow"之一',
-            'required': 'False',
-            'default': 'red',
-        },
-        {
-            'name': 'font-bold',
-            'type': 'bool',
-            'description': '(用于"docx_write_chapter_title")标题的字体是否加粗',
-            'required': 'False',
-            'default': 'False',
-        },
-        {
-            'name': 'center',
-            'type': 'bool',
-            'description': '(用于"docx_write_chapter_title")标题是否居中',
-            'required': 'False',
-            'default': 'False',
-        },
-        {
-            'name': 'chapter_demand',
-            'type': 'string',
-            'description': '(用于"docx_write_chapter_text")章节文本编制的要求',
-            'required': 'True',
-        },
-    ]
-
-    def __init__(self):
-        print('🔧 Office_Tool 初始化中...')
-        # 使用通用WebSocket管理器
-        # self.ws_manager = get_websocket_manager()
-        # 启动WebSocket服务器（如果尚未启动）
-
-        # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
-        # self.ws_manager.start_server(port=5113)
-        # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
-        # self.ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
-        print('✅ Office_Tool 初始化完成')
-
-    def _call_raw_command(self, top_agent_id, uno_cmd):
-        # 桥接collabora CODE接口
-        command = {
-            'type': 'office_operation',
-            'operation': 'call_raw_command',
-            'agent_id': top_agent_id,
-            'data': {},
-            'timestamp': int(time.time() * 1000)
-        }
-
-        # UNO指令
-        # 解决\n问题
-        uno_cmd = uno_cmd.replace('\n', '\\n')
-
-        # string->obj
-        cmd_obj = json5.loads(uno_cmd)
-
-        # 获取uno指令
-        command['data'] = cmd_obj
-        cmd_name = cmd_obj['Values']['Command']
-
-        # 通过web-socket发送至前端
-        success, message = self.ws_manager.send_command(top_agent_id, command)
-        return success, message
-
-    def call(self, tool_call_paras: Tool_Call_Paras):
-        print(f'🔧 【Office_Tool】开始调用，调用参数: {tool_call_paras.callback_tool_paras_dict}')
-
-        # 获取顶层agent_id（用于WebSocket连接管理）
-        top_agent_id = tool_call_paras.callback_top_agent_id
-        paras = tool_call_paras.callback_tool_paras_dict
-        operation = paras.get('operation')
-
-        # docx_write_chapter_title参数
-        title = paras.get('title')
-        uno_font = paras.get('font-family')
-        uno_char_color = paras.get('font-color')
-        uno_bold = paras.get('font-bold')
-        uno_outline_level = paras.get('heading')
-
-        # docx_write_chapter_text参数
-        chapter_demand = paras.get('chapter_demand')
-
-        if not operation:
-            return Action_Result(result=safe_encode('❌ 【Office_Tool】必须提供 "operation" 参数'))
-
-        print(f'🎯 【Office_Tool】Agent ID: {top_agent_id}, 全部参数: {paras}')
-        print(f'🎯 【Office_Tool】Agent ID: {top_agent_id}, operation: {operation!r}')
-
-        try:
-
-
-            # 根据操作类型填充data
-            if operation == 'docx_write_chapter_title':
-                # 校核参数
-                if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
-                    return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
-
-                # 标题设置字体
-                if uno_font:
-                    uno_cmd = Uno_Command().uno_font.format(uno_font=uno_font)
-                    print(f'-------------------uno_font:{uno_cmd!r}-----------------')
-                    self._call_raw_command(top_agent_id, uno_cmd)
-
-                # 标题设置颜色
-                if uno_char_color:
-                    uno_cmd = Uno_Command().uno_char_color.format(uno_char_color=Uno_Color[uno_char_color])
-                    print(f'-------------------uno_char_color:{uno_cmd!r}-----------------')
-                    self._call_raw_command(top_agent_id, uno_cmd)
-
-                # 标题设置粗体
-                if uno_bold:
-                    uno_cmd = Uno_Command().uno_bold
-                    print(f'-------------------uno_bold:{uno_cmd!r}-----------------')
-                    self._call_raw_command(top_agent_id, uno_cmd)
-
-                # 标题设置大纲级别
-                if uno_outline_level:
-                    uno_cmd = Uno_Command().uno_outline_level.format(uno_outline_level=uno_outline_level)
-                    print(f'-------------------uno_outline_level:{uno_cmd!r}-----------------')
-                    self._call_raw_command(top_agent_id, uno_cmd)
-
-                # 标题文字
-                uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text=title)
-                print(f'-------------------uno_insert_text_and_return:{uno_cmd!r}-----------------')
-                self._call_raw_command(top_agent_id, uno_cmd)
-                result = f'【Office_Tool】operation("{operation}")已经完成。'
-
-            elif operation == 'docx_write_chapter_text':
-                # 校核参数
-                if 'chapter_demand' not in paras:
-                    return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": 操作缺少参数chapter_demand'))
-
-
-                # 选择llm和参数
-                llm_config = config.g_online_deepseek_chat
-                llm = LLM_Client(llm_config=llm_config)
-
-                # llm输出
-                question = chapter_demand + '\n注意：不能输出markdown格式和风格的内容，因为你的输出要写入docx文档。'
-                chunks = llm.ask_prepare(question=question).get_result_generator()
-                print('-------------------docx_write_chapter_text-LLM-------------------')
-                content = ''
-                first_chunk = True
-                for chunk in chunks:
-                    try:
-                        print(chunk, end='', flush=True)
-                        _indent = '        '
-                        # 第一个字之前增加缩进
-                        if first_chunk:
-                            chunk = _indent + chunk
-                            first_chunk = False
-
-                        # \n后面增加缩进
-                        chunk = chunk.replace('\n', '\n'+_indent)
-
-                        uno_cmd = Uno_Command().uno_insert_text.format(uno_text=chunk)
-                        self._call_raw_command(top_agent_id, uno_cmd)
-                        content += chunk
-                    except (ValueError, SyntaxError) as e:
-                        print(f'-----------------【Office_Tool】"{operation}": Uno_Command解析失败--------------------')
-                        print(f'报错："{e}"')
-                        print(f'uno_cmd = "{Uno_Command().uno_insert_text}"')
-                        print(f'chunk = "{chunk}"')
-                        print(f'content = "{content}"')
-                        print(f'----------------/【Office_Tool】"{operation}": Uno_Command解析失败--------------------')
-                        continue
-                print('\n------------------/docx_write_chapter_text-LLM-------------------')
-                content_summary = content.strip()
-                print(f'--------content_summary:{content_summary!r}----------')
-                content_len = len(content_summary)
-                content_summary = f'{content_summary[:20]}...{content_summary[-20:]}' if content_len>=50 else content_summary
-                result = f'【Office_Tool】operation("{operation}")已经完成，写入docx内容(部分截取)为"{content_summary}"(共计{content_len}字)'
-
-            elif operation == 'docx_write_chapter_table':
-                pass
-            elif operation == 'docx_write_chapter_image':
-                pass
-            else:
-                result = f'❌ 【Office_Tool】operation "{operation}" 暂未实现或未知'
-                return Action_Result(result=safe_encode(result))
-
-        except (ValueError, SyntaxError) as e:
-            # print(f"❌ 错误：解析字典失败: {e}。")
-            return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": Uno_Command解析失败(报错: "{e}").'))
-        except Exception as e:
-            result = f"❌ 【Office_Tool】'{operation}':操作失败: {e!r}"
-
-        # 确保返回安全编码的结果
-        return Action_Result(result=safe_encode(result))
+# class Office_Tool(Base_Tool):
+#     name = 'Office_Tool'
+#     description = \
+# '''控制前端Collabora CODE文档编辑器对文档进行编制的工具。
+# 支持的操作包括：
+# - "docx_write_chapter_title": 编制docx文档一个章节的标题。
+# - "docx_write_chapter_text": 编制docx文档一个章节的文本。
+# - "docx_write_chapter_table": 编制docx文档一个章节的表格。
+# - "docx_write_chapter_image": 编制docx文档一个章节的图片。
+# '''
+#     parameters = [
+#         {
+#             'name': 'operation',
+#             'type': 'string',
+#             'description': \
+# '''操作类型，支持以下值：
+# - "docx_write_chapter_title": 编制docx文档一个章节的标题。
+# - "docx_write_chapter_text": 编制docx文档一个章节的文本。
+# - "docx_write_chapter_table": 编制docx文档一个章节的表格。
+# - "docx_write_chapter_image": 编制docx文档一个章节的图片。
+# ''',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'title',
+#             'type': 'string',
+#             'description': '(用于"docx_write_chapter_title")章节号，如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'heading',
+#             'type': 'int',
+#             'description': '(用于"docx_write_chapter_title")标题的大纲级别，如1、2、3、4、5等',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'font-size',
+#             'type': 'int',
+#             'description': '(用于"docx_write_chapter_title")标题的字体大小，如14、20等(单位为pt)',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'font-family',
+#             'type': 'string',
+#             'description': '(用于"docx_write_chapter_title")标题的字体名，如"SimSun"等',
+#             'required': 'False',
+#             'default': 'SimSun',
+#         },
+#         {
+#             'name': 'font-color',
+#             'type': 'int',
+#             'description': '(用于"docx_write_chapter_title")标题的字体颜色，仅可选择"red"、"green"、"blue"、"black"、"white"、"gray"、"yellow"之一',
+#             'required': 'False',
+#             'default': 'red',
+#         },
+#         {
+#             'name': 'font-bold',
+#             'type': 'bool',
+#             'description': '(用于"docx_write_chapter_title")标题的字体是否加粗',
+#             'required': 'False',
+#             'default': 'False',
+#         },
+#         {
+#             'name': 'center',
+#             'type': 'bool',
+#             'description': '(用于"docx_write_chapter_title")标题是否居中',
+#             'required': 'False',
+#             'default': 'False',
+#         },
+#         {
+#             'name': 'chapter_demand',
+#             'type': 'string',
+#             'description': '(用于"docx_write_chapter_text")章节文本编制的要求',
+#             'required': 'True',
+#         },
+#     ]
+#
+#     def __init__(self):
+#         print('🔧 Office_Tool 初始化中...')
+#         # 使用通用WebSocket管理器
+#         # self.ws_manager = get_websocket_manager()
+#         # 启动WebSocket服务器（如果尚未启动）
+#
+#         # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
+#         # self.ws_manager.start_server(port=5113)
+#         # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
+#         # self.ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
+#         print('✅ Office_Tool 初始化完成')
+#
+#     def _call_raw_command(self, top_agent_id, uno_cmd):
+#         # 桥接collabora CODE接口
+#         command = {
+#             'type': 'office_operation',
+#             'operation': 'call_raw_command',
+#             'agent_id': top_agent_id,
+#             'data': {},
+#             'timestamp': int(time.time() * 1000)
+#         }
+#
+#         # UNO指令
+#         # 解决\n问题
+#         uno_cmd = uno_cmd.replace('\n', '\\n')
+#
+#         # string->obj
+#         cmd_obj = json5.loads(uno_cmd)
+#
+#         # 获取uno指令
+#         command['data'] = cmd_obj
+#         cmd_name = cmd_obj['Values']['Command']
+#
+#         # 通过web-socket发送至前端
+#         success, message = self.ws_manager.send_command(top_agent_id, command)
+#         return success, message
+#
+#     def call(self, tool_call_paras: Tool_Call_Paras):
+#         print(f'🔧 【Office_Tool】开始调用，调用参数: {tool_call_paras.callback_tool_paras_dict}')
+#
+#         # 获取顶层agent_id（用于WebSocket连接管理）
+#         top_agent_id = tool_call_paras.callback_top_agent_id
+#         paras = tool_call_paras.callback_tool_paras_dict
+#         operation = paras.get('operation')
+#
+#         # docx_write_chapter_title参数
+#         title = paras.get('title')
+#         uno_font = paras.get('font-family')
+#         uno_char_color = paras.get('font-color')
+#         uno_bold = paras.get('font-bold')
+#         uno_outline_level = paras.get('heading')
+#
+#         # docx_write_chapter_text参数
+#         chapter_demand = paras.get('chapter_demand')
+#
+#         if not operation:
+#             return Action_Result(result=safe_encode('❌ 【Office_Tool】必须提供 "operation" 参数'))
+#
+#         print(f'🎯 【Office_Tool】Agent ID: {top_agent_id}, 全部参数: {paras}')
+#         print(f'🎯 【Office_Tool】Agent ID: {top_agent_id}, operation: {operation!r}')
+#
+#         try:
+#
+#
+#             # 根据操作类型填充data
+#             if operation == 'docx_write_chapter_title':
+#                 # 校核参数
+#                 if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
+#                     return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
+#
+#                 # 标题设置字体
+#                 if uno_font:
+#                     uno_cmd = Uno_Command().uno_font.format(uno_font=uno_font)
+#                     print(f'-------------------uno_font:{uno_cmd!r}-----------------')
+#                     self._call_raw_command(top_agent_id, uno_cmd)
+#
+#                 # 标题设置颜色
+#                 if uno_char_color:
+#                     uno_cmd = Uno_Command().uno_char_color.format(uno_char_color=Uno_Color[uno_char_color])
+#                     print(f'-------------------uno_char_color:{uno_cmd!r}-----------------')
+#                     self._call_raw_command(top_agent_id, uno_cmd)
+#
+#                 # 标题设置粗体
+#                 if uno_bold:
+#                     uno_cmd = Uno_Command().uno_bold
+#                     print(f'-------------------uno_bold:{uno_cmd!r}-----------------')
+#                     self._call_raw_command(top_agent_id, uno_cmd)
+#
+#                 # 标题设置大纲级别
+#                 if uno_outline_level:
+#                     uno_cmd = Uno_Command().uno_outline_level.format(uno_outline_level=uno_outline_level)
+#                     print(f'-------------------uno_outline_level:{uno_cmd!r}-----------------')
+#                     self._call_raw_command(top_agent_id, uno_cmd)
+#
+#                 # 标题文字
+#                 uno_cmd = Uno_Command().uno_insert_text_and_return.format(uno_text=title)
+#                 print(f'-------------------uno_insert_text_and_return:{uno_cmd!r}-----------------')
+#                 self._call_raw_command(top_agent_id, uno_cmd)
+#                 result = f'【Office_Tool】operation("{operation}")已经完成。'
+#
+#             elif operation == 'docx_write_chapter_text':
+#                 # 校核参数
+#                 if 'chapter_demand' not in paras:
+#                     return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": 操作缺少参数chapter_demand'))
+#
+#
+#                 # 选择llm和参数
+#                 llm_config = config.g_online_deepseek_chat
+#                 llm = LLM_Client(llm_config=llm_config)
+#
+#                 # llm输出
+#                 question = chapter_demand + '\n注意：不能输出markdown格式和风格的内容，因为你的输出要写入docx文档。'
+#                 chunks = llm.ask_prepare(question=question).get_result_generator()
+#                 print('-------------------docx_write_chapter_text-LLM-------------------')
+#                 content = ''
+#                 first_chunk = True
+#                 for chunk in chunks:
+#                     try:
+#                         print(chunk, end='', flush=True)
+#                         _indent = '        '
+#                         # 第一个字之前增加缩进
+#                         if first_chunk:
+#                             chunk = _indent + chunk
+#                             first_chunk = False
+#
+#                         # \n后面增加缩进
+#                         chunk = chunk.replace('\n', '\n'+_indent)
+#
+#                         uno_cmd = Uno_Command().uno_insert_text.format(uno_text=chunk)
+#                         self._call_raw_command(top_agent_id, uno_cmd)
+#                         content += chunk
+#                     except (ValueError, SyntaxError) as e:
+#                         print(f'-----------------【Office_Tool】"{operation}": Uno_Command解析失败--------------------')
+#                         print(f'报错："{e}"')
+#                         print(f'uno_cmd = "{Uno_Command().uno_insert_text}"')
+#                         print(f'chunk = "{chunk}"')
+#                         print(f'content = "{content}"')
+#                         print(f'----------------/【Office_Tool】"{operation}": Uno_Command解析失败--------------------')
+#                         continue
+#                 print('\n------------------/docx_write_chapter_text-LLM-------------------')
+#                 content_summary = content.strip()
+#                 print(f'--------content_summary:{content_summary!r}----------')
+#                 content_len = len(content_summary)
+#                 content_summary = f'{content_summary[:20]}...{content_summary[-20:]}' if content_len>=50 else content_summary
+#                 result = f'【Office_Tool】operation("{operation}")已经完成，写入docx内容(部分截取)为"{content_summary}"(共计{content_len}字)'
+#
+#             elif operation == 'docx_write_chapter_table':
+#                 pass
+#             elif operation == 'docx_write_chapter_image':
+#                 pass
+#             else:
+#                 result = f'❌ 【Office_Tool】operation "{operation}" 暂未实现或未知'
+#                 return Action_Result(result=safe_encode(result))
+#
+#         except (ValueError, SyntaxError) as e:
+#             # print(f"❌ 错误：解析字典失败: {e}。")
+#             return Action_Result(result=safe_encode(f'❌ 【Office_Tool】"{operation}": Uno_Command解析失败(报错: "{e}").'))
+#         except Exception as e:
+#             result = f"❌ 【Office_Tool】'{operation}':操作失败: {e!r}"
+#
+#         # 确保返回安全编码的结果
+#         return Action_Result(result=safe_encode(result))
 
 # 用于测试的主函数
 def main_office():
