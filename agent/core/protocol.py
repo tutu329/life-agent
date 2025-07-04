@@ -24,8 +24,9 @@ class Agent_Stream_Queues(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class Query_Agent_Context(BaseModel):
-    template_filename   : str = ''
-    shared_filename     : str = ''
+    custom_data_dict    : Dict[str, Any] = Field(default_factory=dict)    # 用于存放agent调用方的自定义数据
+    # template_filename   : str = ''
+    # shared_filename     : str = ''
 
 if __name__ == "__main__":
     q = Agent_Stream_Queues()

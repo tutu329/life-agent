@@ -205,8 +205,8 @@ class Write_Chapter_Tool(Base_Tool):
 
         # client context
         # template_filename = paras.get('template_filename')
-        template_filename = tool_call_paras.callback_client_ctx.template_filename
-        shared_filename = tool_call_paras.callback_client_ctx.shared_filename
+        template_filename = tool_call_paras.callback_client_ctx.custom_data_dict.get('template_filename')
+        shared_filename = tool_call_paras.callback_client_ctx.custom_data_dict.get('shared_filename')
 
         chapter_demand = paras.get('chapter_demand')
 
