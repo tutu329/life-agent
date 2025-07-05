@@ -154,7 +154,7 @@ class Global():
 
 @dataclass
 class Agent:
-    MAX_TRIES:int       = 20    # agent的最大尝试轮次
+    MAX_TRIES:int       = 200   # agent的最大尝试轮次
     TIMEOUT_SECONDS:int = 3600  # agent运行的超时时间
 
 @dataclass
