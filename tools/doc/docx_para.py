@@ -123,16 +123,36 @@ class DocxParser:
         """
         target_chapters = []
 
+        # 检查是否是精确的章节编号匹配
+        exact_match_found = False
+
         for chapter in self.chapters:
             number = chapter.get('number', '')
 
             # 精确匹配目标章节
             if self._match_chapter_number(number, chapter_number):
                 target_chapters.append(chapter)
+                exact_match_found = True
 
-            # 匹配子章节
-            elif self._is_sub_chapter(number, chapter_number):
-                target_chapters.append(chapter)
+        # 如果找到精确匹配，且是主章节（如"1"），则只返回主章节
+        # 主章节的内容范围会自动包含所有子章节内容
+        if exact_match_found:
+            # 检查查找的是否是主章节（不包含小数点，如"1", "2", "7"）
+            if '.' not in chapter_number:
+                # 对于主章节，只返回主章节，不返回子章节
+                # 这样可以避免重复内容
+                main_chapters = [ch for ch in target_chapters if ch.get('number', '') == chapter_number]
+                if main_chapters:
+                    return main_chapters
+
+        # 如果没有找到精确匹配，或者是子章节查找，则包含子章节
+        if not exact_match_found:
+            for chapter in self.chapters:
+                number = chapter.get('number', '')
+
+                # 匹配子章节
+                if self._is_sub_chapter(number, chapter_number):
+                    target_chapters.append(chapter)
 
         # 按章节号排序
         target_chapters.sort(key=lambda x: self._get_sort_key(x.get('number', '')))
@@ -371,14 +391,14 @@ class DocxParser:
         if number and re.match(rf'^{re.escape(number)}\s+\d+\s*$', para_text):
             return False
 
-        # 构建完整的章节标题模式
+        # **优先匹配完整的章节标题模式**
         if number:
             # 尝试匹配 "编号 标题" 或 "编号标题" 的格式
             full_title_patterns = [
-                f"{number} {title}",  # "3.2 项目数据需求"
-                f"{number}{title}",  # "3.2项目数据需求"
-                f"{number}、{title}",  # "3.2、项目数据需求"
-                f"{number}．{title}",  # "3.2．项目数据需求"
+                f"{number} {title}",  # "4.3.3 技术架构"
+                f"{number}{title}",  # "4.3.3技术架构"
+                f"{number}、{title}",  # "4.3.3、技术架构"
+                f"{number}．{title}",  # "4.3.3．技术架构"
             ]
 
             for pattern in full_title_patterns:
@@ -387,26 +407,20 @@ class DocxParser:
                     if not self._looks_like_toc_pattern(para_text, pattern):
                         return True
 
-        # 完全匹配标题
-        if title in para_text:
-            # 确保不是目录条目
-            if not self._looks_like_toc_pattern(para_text, title):
-                return True
-
-        # 通过编号匹配（只有编号开头的情况）
+        # **严格匹配：只匹配以章节编号开头的段落**
         if number and para_text.startswith(number):
-            # 确保不是目录条目
-            if not self._looks_like_toc_pattern(para_text, number):
-                return True
+            # 检查编号后是否紧跟标题或分隔符
+            if (para_text.startswith(f"{number} {title}") or
+                    para_text.startswith(f"{number}{title}") or
+                    para_text.startswith(f"{number}、{title}") or
+                    para_text.startswith(f"{number}．{title}")):
+                # 确保不是目录条目
+                if not self._looks_like_toc_pattern(para_text, number):
+                    return True
 
-        # 去除标点符号后匹配
-        clean_para = re.sub(r'[^\w\s]', '', para_text)
-        clean_title = re.sub(r'[^\w\s]', '', title)
-
-        if clean_title and clean_title in clean_para:
-            # 确保不是目录条目
-            if not self._looks_like_toc_pattern(para_text, clean_title):
-                return True
+        # **避免误匹配：不允许仅通过标题关键词匹配**
+        # 这里移除了原来的 title in para_text 的宽松匹配
+        # 因为这容易导致误匹配，如"技术架构"出现在参考文献中
 
         return False
 
