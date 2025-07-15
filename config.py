@@ -1,4 +1,4 @@
-import socket, requests
+import socket, requests, os
 
 from dataclasses import dataclass, field
 from colorama import Fore, Back, Style
@@ -272,6 +272,9 @@ class LLM_Config(BaseModel):
     temperature     :float = LLM_Default.temperature
     top_p           :float = LLM_Default.top_p
     max_new_tokens  :int = LLM_Default.max_new_tokens
+    vpn_on          :bool = False
+
+g_vpn_proxy = "http://127.0.0.1:7890"
 
 g_online_deepseek_chat = LLM_Config(
     base_url='https://api.deepseek.com/v1',
@@ -284,11 +287,12 @@ g_online_deepseek_chat = LLM_Config(
 
 g_online_groq_kimi_k2 = LLM_Config(
     base_url='https://api.groq.com/openai/v1',
-    api_key='',
+    api_key=os.getenv("GROQ_API_KEY"),
     llm_model_id='moonshotai/kimi-k2-instruct',
     temperature=0.6,
     top_p=0.95,
-    max_new_tokens=8192
+    max_new_tokens=8192,
+    vpn_on=True
 )
 
 def main():
