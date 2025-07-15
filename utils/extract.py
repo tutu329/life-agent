@@ -59,7 +59,7 @@ def extract_tool_dict(raw: str) -> dict:
     # print(f'----------------------/extract_tool_dict----------------------------------')
 
     # —— ① 找到 'tool_invoke' 所在位置 ——
-    key_pos = raw.find("'tool_invoke'")
+    key_pos = raw.find("tool_invoke")
     if key_pos == -1:
         raise ValueError("文本里没有出现 'tool_invoke'！")
 
@@ -87,6 +87,14 @@ def extract_tool_dict(raw: str) -> dict:
 
     # —— ⑤ 字面量安全解析 ——
     return ast.literal_eval(snippet)
+
+    # try:
+    #     rtn = ast.literal_eval(snippet)
+    # except (ValueError, SyntaxError):
+    #     try:
+    #         return json5.loads(snippet)
+    #     except Exception:
+    #         return snippet  # 留给调用方处理
 
 # 用re把字符串中的最外层{}里的内容抠出来，包含{}
 def legacy_extract_dict_string(text):

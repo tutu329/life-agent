@@ -112,6 +112,7 @@ class LLM_Client():
         self.temperature = temperature
         self.top_p = top_p
         self.max_new_tokens = max_new_tokens
+        self.vpn_on = False
 
         if llm_config:
             self.url = llm_config.base_url

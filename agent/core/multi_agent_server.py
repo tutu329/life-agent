@@ -231,15 +231,19 @@ def _server_create_and_registered_agent_as_tool(
     tools_class_list = get_all_registered_tools_class(agent_as_tool_config.tool_names)
     # tools_class_list = legacy_get_all_local_tools_class(tool_names)
 
+    # agent_config = Agent_Config(
+    #     tool_names=agent_as_tool_config.tool_names,
+    #     exp_json_path=agent_as_tool_config.exp_json_path,
+    #     base_url=agent_as_tool_config.base_url,
+    #     api_key=agent_as_tool_config.api_key,
+    #     llm_model_id=agent_as_tool_config.llm_model_id,
+    #     temperature=agent_as_tool_config.temperature
+    # )
     agent_config = Agent_Config(
         tool_names=agent_as_tool_config.tool_names,
         exp_json_path=agent_as_tool_config.exp_json_path,
-        base_url=agent_as_tool_config.base_url,
-        api_key=agent_as_tool_config.api_key,
-        llm_model_id=agent_as_tool_config.llm_model_id,
-        temperature=agent_as_tool_config.temperature
+        llm_config=agent_as_tool_config.llm_config
     )
-
     # 生成agent(继承自Base_Tool)的实例
     agent_as_tool = Tool_Agent(
         tool_classes=tools_class_list,

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
+from config import LLM_Config
 from config import dred,dyellow,dblue,dcyan,dgreen
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -38,11 +39,13 @@ class Agent_Config(BaseModel):
     tool_names      :List[str]  # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
     exp_json_path   :str = ''   # 如：'my_2_levels_mas_exp.json'
 
+    llm_config      :LLM_Config = config.g_online_groq_kimi_k2
+
     # LLM配置
-    base_url        :str = config.LLM_Default.url
-    api_key         :str = 'empty'
-    llm_model_id    :str = ''
-    temperature     :float = config.LLM_Default.temperature
+    # base_url        :str = config.LLM_Default.url
+    # api_key         :str = 'empty'
+    # llm_model_id    :str = ''
+    # temperature     :float = config.LLM_Default.temperature
 
 
 
@@ -60,8 +63,13 @@ class Agent_As_Tool_Config(BaseModel):
     as_tool_name            :str        # 如：'Folder_Agent_As_Tool'
     as_tool_description     :str        # 如：'本工具用于获取文件夹中的文件和文件夹信息'
 
+    llm_config              :LLM_Config = config.g_online_groq_kimi_k2
+
     # LLM配置
-    base_url        :str = config.LLM_Default.url
-    api_key         :str = 'empty'
-    llm_model_id    :str = ''
-    temperature     :float = config.LLM_Default.temperature
+    # base_url        :str = config.LLM_Default.url
+    # api_key         :str = 'empty'
+    # llm_model_id    :str = ''
+    # temperature     :float = config.LLM_Default.temperature
+
+    # 开启“任意类型”支持
+    # model_config = ConfigDict(arbitrary_types_allowed=True)

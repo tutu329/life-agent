@@ -196,10 +196,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
 
-        self.temperature = self.agent_config.temperature
-        self.url = self.agent_config.base_url
-        self.api_key = self.agent_config.api_key
-        self.model_id = self.agent_config.llm_model_id
+        # self.temperature = self.agent_config.temperature
+        # self.url = self.agent_config.base_url
+        # self.api_key = self.agent_config.api_key
+        # self.model_id = self.agent_config.llm_model_id
         self.agent_tools_description_and_full_history = ''
         # self.remove_content_in_think_pairs = remove_content_in_think_pairs  # 是否think模型
 
@@ -318,14 +318,19 @@ class Tool_Agent(Agent_Base, Base_Tool):
     def init(self):
         self._init_agent_data_in_server()
 
+        # self.llm = LLM_Client(
+        #     url=self.url,
+        #     api_key=self.api_key,
+        #     model_id=self.model_id,
+        #     temperature=self.temperature,
+        #     history=False,
+        #     print_input=False,
+        #     max_new_tokens=config.LLM_Default.max_new_tokens
+        # )
         self.llm = LLM_Client(
-            url=self.url,
-            api_key=self.api_key,
-            model_id=self.model_id,
-            temperature=self.temperature,
+            llm_config=self.agent_config.llm_config,
             history=False,
             print_input=False,
-            max_new_tokens=config.LLM_Default.max_new_tokens
         )
         # self.agent_tools_description_and_full_history = PROMPT_REACT
 
