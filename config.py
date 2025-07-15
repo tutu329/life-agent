@@ -282,6 +282,15 @@ g_online_deepseek_chat = LLM_Config(
     max_new_tokens=8192
 )
 
+g_online_groq_kimi_k2 = LLM_Config(
+    base_url='https://api.groq.com/openai/v1',
+    api_key='',
+    llm_model_id='moonshotai/kimi-k2-instruct',
+    temperature=0.6,
+    top_p=0.95,
+    max_new_tokens=8192
+)
+
 def main():
     os = get_os()
     print(os)
