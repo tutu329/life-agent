@@ -359,6 +359,7 @@ class Write_Chapter_Tool(Base_Tool):
                 self._call_collabora_api(top_agent_id=top_agent_id, cmd='set_paragraph', params=params)
 
                 # 选择llm和参数
+                # llm_config = config.g_online_groq_kimi_k2
                 llm_config = config.g_online_deepseek_chat
                 llm = LLM_Client(llm_config=llm_config)
 

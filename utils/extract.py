@@ -84,6 +84,9 @@ def extract_tool_dict(raw: str) -> dict:
 
     # —— ④ 去掉所有 “, }” 这种 Python 不允许的拖尾逗号写法 ——
     snippet = re.sub(r",\s*}", "}", snippet)
+    # 小写true、false改为True、False
+    snippet = re.sub(r'\btrue\b', 'True', snippet, flags=re.I)
+    snippet = re.sub(r'\bfalse\b', 'False', snippet, flags=re.I)
 
     # —— ⑤ 字面量安全解析 ——
     return ast.literal_eval(snippet)
