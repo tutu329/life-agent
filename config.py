@@ -287,7 +287,7 @@ g_online_deepseek_chat = LLM_Config(
 
 g_online_groq_kimi_k2 = LLM_Config(
     base_url='https://api.groq.com/openai/v1',
-    api_key=os.getenv("GROQ_API_KEY"),
+    api_key=os.getenv("GROQ_API_KEY") or 'empty',
     llm_model_id='moonshotai/kimi-k2-instruct',
     temperature=0.6,
     top_p=0.95,
