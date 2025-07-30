@@ -1992,8 +1992,8 @@ def base_main():
         # model_id='qwen3-235b-a22b',  # 模型指向 qwen3-235b-a22b
 
         api_key='',  # 通义千问官网
-        url='http://powerai.cc:8001/v1',
-        model_id='Qwen3-30B-A3B-Instruct-2507-Q8',  # 模型指向 qwen3-235b-a22b
+        url='https://powerai.cc:8001/v1',
+        model_id='Qwen3-30B-A3B-Instruct-2507',  # 模型指向 qwen3-235b-a22b
 
         # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
         # url='https://ark.cn-beijing.volces.com/api/v3/',
