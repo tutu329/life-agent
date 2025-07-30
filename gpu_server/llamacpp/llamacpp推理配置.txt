@@ -1,0 +1,30 @@
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+./gpu.sh
+
+~/llama.cpp/build/bin/llama-server \
+--model /home/tutu/models/Qwen3-30B-A3B-Instruct-2507-UD-Q8_K_XL.gguf \
+--alias Qwen3-30B-A3B-Instruct-2507-Q8 \
+--port 8001 \
+--host 0.0.0.0 \
+--threads -1 --n-gpu-layers 99 --temp 0.7 --top-k 20 --top-p 0.8 --min-p 0 \
+--presence_penalty 1.05 --flash-attn --ctx-size 131072 --n-predict 16384 --cache-type-k q8_0 --cache-type-v q8_0 \
+--cache-reuse 256 --no-context-shift \
+--ssl-key-file /home/tutu/ssl/powerai.key \
+--ssl-cert-file /home/tutu/ssl/powerai_public.crt
+
+# 一、下载模型(可续传)
+# HF_HUB_DISABLE_XET=1 HF_HUB_ENABLE_HF_TRANSFER=0 \
+# huggingface-cli download unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF \
+#   --include "Qwen3-30B-A3B-Instruct-2507-UD-Q8_K_XL.gguf" \
+#   --revision main \
+#   --local-dir . \
+#   --local-dir-use-symlinks False
+
+# 二、编译安装（docker会有版本问题）
+# 1、下载
+# git clone https://github.com/ggml-org/llama.cpp
+# cd llama.cpp
+# 2、编译gpu版本（指定2080的7.5）
+# rm -rf build/*
+# cmake -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="75" -DLLAMA_SERVER_SSL=ON
+# cmake --build build --config Release -t llama-server
