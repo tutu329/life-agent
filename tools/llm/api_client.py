@@ -976,7 +976,6 @@ class LLM_Client():
 
         # thinking_model_has_no_start_thinking_first = True
 
-
         try:
             # dprint(f'self.gen: {self.gen}')
             for chunk in self.gen:
