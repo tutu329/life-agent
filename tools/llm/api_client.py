@@ -109,6 +109,7 @@ class LLM_Client():
         self.url = url
         self.model_id = model_id
         self.api_key = api_key
+
         self.temperature = temperature
         self.top_p = top_p
         self.max_new_tokens = max_new_tokens
@@ -173,6 +174,9 @@ class LLM_Client():
             has_history=self.history,
         )
         status_to_redis(self.status)
+
+        dyellow(f'【LLM_Client】vpn_on={self.vpn_on!r}')
+        dyellow(f'【LLM_Client】system_prompt={self.system_prompt!r}')
 
     # 动态修改role_prompt
     # def set_role_prompt(self, in_role_prompt):
@@ -663,8 +667,7 @@ class LLM_Client():
             dprint(f'===self.openai.chat.completions.create() invoked.===')
             dprint(f'{"-" * 80}')
         except Exception as e:
-            print(f'【LLM_Client异常】ask_prepare(): {e}')
-            print('返回gen = None')
+            dred(f'【LLM_Client异常】ask_prepare(): {e!r}(注意：api_key不能设置为"")')
             self.question_last_turn = question
             return self
 
@@ -971,12 +974,18 @@ class LLM_Client():
         chunk_for_stop = ''
         result_chunk_after_stop = ''
 
+        # thinking_model_has_no_start_thinking_first = True
+
         try:
             # dprint(f'self.gen: {self.gen}')
             for chunk in self.gen:
                 # dprint(f'chunk: {chunk}')
                 if self.response_canceled:
                     break
+
+                # if 'hink' in self.model_id and thinking_model_has_no_start_thinking_first:
+                #     thinking_model_has_no_start_thinking_first = False
+                    # chunk = '<think>'
 
                 chunk_output = ''
                 think_chunk_output = ''
@@ -1991,9 +2000,12 @@ def base_main():
         # url='https://dashscope.aliyuncs.com/compatible-mode/v1',
         # model_id='qwen3-235b-a22b',  # 模型指向 qwen3-235b-a22b
 
-        api_key='',  # 通义千问官网
+        # api_key='',  # 通义千问官网
+        # api_key='empty',  # 通义千问官网
+        # url='http://localhost:8001/v1',
         url='https://powerai.cc:8001/v1',
-        model_id='Qwen3-30B-A3B-Instruct-2507',  # 模型指向 qwen3-235b-a22b
+        # model_id='Qwen3-30B-A3B-Instruct-2507',  # 模型指向 qwen3-235b-a22b
+        model_id='Qwen3-30B-A3B-Thinking-2507',  # 模型指向 qwen3-235b-a22b
 
         # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
         # url='https://ark.cn-beijing.volces.com/api/v3/',
