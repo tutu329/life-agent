@@ -2007,6 +2007,7 @@ def base_main():
         # model_id='Qwen3-30B-A3B-Instruct-2507',  # 模型指向 qwen3-235b-a22b
         model_id='Qwen3-30B-A3B-Thinking-2507',  # 模型指向 qwen3-235b-a22b
 
+
         # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
         # url='https://ark.cn-beijing.volces.com/api/v3/',
         # model_id='deepseek-r1-250120',
