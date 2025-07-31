@@ -276,6 +276,24 @@ class LLM_Config(BaseModel):
 
 g_vpn_proxy = "http://127.0.0.1:7890"
 
+g_local_qwen3_30b_chat = LLM_Config(
+    base_url='https://powerai.cc:8001/v1',
+    api_key='empty',
+    # llm_model_id='',
+    temperature=0.6,
+    top_p=0.8,
+    max_new_tokens=8192
+)
+
+g_local_qwen3_30b_thinking = LLM_Config(
+    base_url='https://powerai.cc:8002/v1',
+    api_key='empty',
+    # llm_model_id='',
+    temperature=0.7,
+    top_p=0.95,
+    max_new_tokens=8192
+)
+
 g_online_deepseek_chat = LLM_Config(
     base_url='https://api.deepseek.com/v1',
     api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',

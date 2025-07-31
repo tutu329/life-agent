@@ -39,7 +39,8 @@ class Agent_Config(BaseModel):
     tool_names      :List[str]  # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
     exp_json_path   :str = ''   # 如：'my_2_levels_mas_exp.json'
 
-    llm_config      :LLM_Config = config.g_online_groq_kimi_k2
+    llm_config      :LLM_Config = config.g_local_qwen3_30b_chat
+    # llm_config      :LLM_Config = config.g_online_groq_kimi_k2
 
     # LLM配置
     # base_url        :str = config.LLM_Default.url

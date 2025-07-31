@@ -956,18 +956,14 @@ def main_folder():
         # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
         query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
-        query = r'我叫土土，请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
+        query = r'我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。'
+        # query = r'我叫土土，请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
     config = Agent_Config(
-        # base_url='http://powerai.cc:28001/v1',  # llama-4-400b#llama-4-400b
-        # base_url='http://powerai.cc:28002/v1',  # qwen3-235b
-        base_url='https://api.deepseek.com/v1',
-        # base_url='http://powerai.cc:38001/v1',   #deepseek-r1-671b
-        # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
-        # api_key='empty',
-        api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        llm_model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        tool_names=['Folder_Tool'],
+        base_url='http://powerai.cc:8001/v1',   #qwen3-30b
+        llm_config=config.g_local_qwen3_30b_chat
+        # llm_config=config.g_local_qwen3_30b_thinking
     )
 
     agent = Tool_Agent(
@@ -977,13 +973,13 @@ def main_folder():
     )
     agent.init()
     success = agent.run(query=query)
-    print(f'最终输出：\n{agent.final_answer}')
-    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"./"下有哪些文件夹。注意，通常这种测试要输出格式要是markdown格式')
-    print(f'最终输出：\n{agent.final_answer}')
+    dyellow(f'最终输出：\n{agent.final_answer}')
+    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中。')
+    dyellow(f'最终输出：\n{agent.final_answer}')
 
     agent.clear_history()
-    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"./"下有哪些文件夹')
-    print(f'最终输出：\n{agent.final_answer}')
+    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"/home/tutu/demo"下有哪些文件夹')
+    dyellow(f'history cleared. 最终输出：\n{agent.final_answer}')
 
 def main_table():
     import config
