@@ -7,6 +7,7 @@ from copy import deepcopy
 import base64, wave
 from pprint import pprint
 # import os, requests, torch
+import requests, re
 
 import sys, time
 from uuid import uuid4
@@ -114,6 +115,8 @@ class LLM_Client():
         self.top_p = top_p
         self.max_new_tokens = max_new_tokens
         self.vpn_on = False
+
+        self.history_input_tokens_num = 0
 
         if llm_config:
             self.url = llm_config.base_url
@@ -469,6 +472,92 @@ class LLM_Client():
                 wav_file.setframerate(frame_rate)
                 wav_file.writeframes(wav_data)
 
+    def get_history_input_tokens_num(self):
+        return self.history_input_tokens_num
+
+    def _vllm_api_get_token_num(self, query):
+        # 1. 定义 API 端点和请求头
+        dyellow(f'url={self.url!r}')
+
+        # "https://powerai.cc:8001/v1"改为"https://powerai.cc:8001/tokenize"
+        # 定义匹配模式
+        pattern = r"^(.*?)/v1$"
+        # ^       -> 匹配字符串的开始
+        # (.*?)   -> 非贪婪地捕获所有字符，直到下一个模式。这是捕获组1
+        # /v1     -> 匹配字面上的 /v1
+        # $       -> 匹配字符串的结尾
+
+        # 定义替换格式
+        # \1 代表在 pattern 中捕获的第一个组的内容
+        replacement = r"\1/tokenize"
+
+        # 执行替换
+        # re.sub 如果找不到匹配，会原样返回字符串
+        new_url, count = re.subn(pattern, replacement, self.url)
+
+        url = new_url
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        # 2. 准备要发送的数据 (payload)
+        # 注意：在原始 curl 命令中，缺少 "model" 参数。
+        # vLLM 的 /tokenize 接口通常需要模型名称。
+        # 这里我们假设模型是 'default'，您可能需要根据实际情况修改。
+        payload = {
+            "prompt": query,
+            "model": self.model_id  # <-- 如果需要，请取消此行注释并填入正确的模型名称
+        }
+
+        rtn_data = {
+            'success': False,
+            'count': 0,
+            'max_model_len': 0
+        }
+
+        try:
+            # 3. 发送 POST 请求
+            # - requests.post() 发送 POST 请求
+            # - url 是请求的目标地址
+            # - headers 参数传递请求头
+            # - json 参数会将 Python 字典自动转换为 JSON 字符串并设置正确的 Content-Type
+            response = requests.post(url, headers=headers, json=payload)
+
+            # 4. 检查响应状态码，确保请求成功 (200 OK)
+            response.raise_for_status()  # 如果状态码不是 2xx，则会抛出异常
+
+            # 5. 解析并打印 JSON 响应内容
+            response_data = response.json()
+            # print("请求成功！")
+            # print("响应内容:")
+            # 使用 json.dumps 美化输出
+            # print(json.dumps(response_data, indent=2, ensure_ascii=False))
+
+            # 单独提取 token 数量
+            if "count" in response_data:
+                # print(f"\nToken 数量: {response_data['count']}")
+
+                rtn_data['success'] = True
+                rtn_data['count'] = response_data['count']
+                dgreen(f"【LLM_Client】本次输入token数 : {rtn_data['count']}")
+                if "max_model_len" in response_data:
+                    rtn_data['max_model_len'] = response_data['max_model_len']
+                    dgreen(f"【LLM_Client】api的max_model_len : {rtn_data['max_model_len']}")
+
+                # 刷新LLM_Client的历史token数量
+                if self.history:
+                    self.history_input_tokens_num += response_data['count']
+                    dgreen(f"【LLM_Client】历史输入token数 : {self.history_input_tokens_num}")
+                else:
+                    self.history_input_tokens_num = response_data['count']
+                    dgreen(f"【LLM_Client】历史输入token数 : {self.history_input_tokens_num}")
+
+        except Exception as e:
+            # 如果响应不是有效的 JSON，则捕获错误
+            dred(f'LLM_Client._vllm_api_get_token_num()报错：{e!r}')
+
+        return rtn_data
+
     # 返回stream(generator)
     def ask_prepare(
             self,
@@ -490,6 +579,8 @@ class LLM_Client():
             role_prompt=None,
             audio_string=None,
     ):
+        self._vllm_api_get_token_num(query=question)
+
         # self.temperature = config.LLM_Default.temperature if temperature is None else temperature
         self.max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
         clear_history = int(config.LLM_Default.clear_history if clear_history is None else clear_history)
@@ -2014,10 +2105,9 @@ def base_main():
         # model_id='deepseek-v3-241226',
         # model_id='qwq-32b',
     )
-    llm.ask_prepare('你是谁？').get_answer_and_sync_print()
+    llm.ask_prepare('你是谁？我叫土土，你好。').get_answer_and_sync_print()
     # llm.ask_prepare('我叫土土').get_answer_and_sync_print()
-    # llm.ask_prepare('我刚才告诉你我叫什么？').get_answer_and_sync_print()
-
+    llm.ask_prepare('我刚才告诉你我叫什么？').get_answer_and_sync_print()
 
 def think_and_result_test():
     llm = LLM_Client(
