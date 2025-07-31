@@ -673,7 +673,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         self.agent_tools_description_and_full_history += '\n' + answer_this_turn
 
-        print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
+        print(f'/thinking(turn {self.turns_num}, {self.llm.get_history_input_tokens_num()}tokens, id={self.agent_id})'.center(80, '-'))
         return answer_this_turn
 
     def action(self, in_answer, context:Query_Agent_Context=None):

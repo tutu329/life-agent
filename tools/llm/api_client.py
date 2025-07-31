@@ -117,6 +117,9 @@ class LLM_Client():
         self.vpn_on = False
 
         self.history_input_tokens_num = 0
+        self.input_tokens_num_this_turn = 0
+        self.history_output_tokens_num = 0
+        self.output_tokens_num_this_turn = 0
 
         if llm_config:
             self.url = llm_config.base_url
@@ -128,6 +131,7 @@ class LLM_Client():
             self.vpn_on = llm_config.vpn_on
 
         dblue(f'【LLM_Client】base_url={self.url!r}')
+        dblue(f'【LLM_Client】history={history!r}')
         dblue(f'【LLM_Client】model_id={self.model_id!r}')
         dblue(f'【LLM_Client】api_key={self.api_key!r}')
         dblue(f'【LLM_Client】temperature={self.temperature!r}')
@@ -472,12 +476,21 @@ class LLM_Client():
                 wav_file.setframerate(frame_rate)
                 wav_file.writeframes(wav_data)
 
+    def get_input_tokens_num_this_turn(self):
+        return self.input_tokens_num_this_turn
+
+    def get_output_tokens_num_this_turn(self):
+        return self.output_tokens_num_this_turn
+
     def get_history_input_tokens_num(self):
         return self.history_input_tokens_num
 
+    def get_history_output_tokens_num(self):
+        return self.history_output_tokens_num
+
     def _vllm_api_get_token_num(self, query):
         # 1. 定义 API 端点和请求头
-        dyellow(f'url={self.url!r}')
+        # dyellow(f'url={self.url!r}')
 
         # "https://powerai.cc:8001/v1"改为"https://powerai.cc:8001/tokenize"
         # 定义匹配模式
@@ -539,18 +552,19 @@ class LLM_Client():
 
                 rtn_data['success'] = True
                 rtn_data['count'] = response_data['count']
-                dgreen(f"【LLM_Client】本次输入token数 : {rtn_data['count']}")
+                # dgreen(f"【LLM_Client】本次输入token数 : {rtn_data['count']}")
                 if "max_model_len" in response_data:
                     rtn_data['max_model_len'] = response_data['max_model_len']
-                    dgreen(f"【LLM_Client】api的max_model_len : {rtn_data['max_model_len']}")
+                    # dgreen(f"【LLM_Client】api的max_model_len : {rtn_data['max_model_len']}")
 
                 # 刷新LLM_Client的历史token数量
+                self.input_tokens_num_this_turn = response_data['count']
                 if self.history:
                     self.history_input_tokens_num += response_data['count']
-                    dgreen(f"【LLM_Client】历史输入token数 : {self.history_input_tokens_num}")
+                    # dgreen(f"【LLM_Client】历史输入token数 : {self.history_input_tokens_num}")
                 else:
                     self.history_input_tokens_num = response_data['count']
-                    dgreen(f"【LLM_Client】历史输入token数 : {self.history_input_tokens_num}")
+                    # dgreen(f"【LLM_Client】历史输入token数 : {self.history_input_tokens_num}")
 
         except Exception as e:
             # 如果响应不是有效的 JSON，则捕获错误
@@ -693,13 +707,13 @@ class LLM_Client():
                 # question为文本
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, top_p={run_top_p})')
+                dgreen(f'</User>(temperature={run_temperature}, top_p={run_top_p}, {self.input_tokens_num_this_turn}/{self.history_input_tokens_num}tokens)')
                 # dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"))')
             else:
                 # question为文本和图片
                 dgreen('<User>', end='', flush=True)
                 print(msgs[-1]['content'][0]['text'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, top_p={run_top_p} with image.)')
+                dgreen(f'</User>(temperature={run_temperature}, top_p={run_top_p}, {self.input_tokens_num_this_turn}/{self.history_input_tokens_num}tokens with image.)')
                 # dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"), with image.)')
 
         if stop is None:
@@ -841,7 +855,7 @@ class LLM_Client():
                     dblue('<assistant>', end='', flush=True)
                 print(chunk[2], end='', flush=True)
                 result_started = True
-        dblue('</assistant>')
+        dblue(f'</assistant>({self.output_tokens_num_this_turn}/{self.history_output_tokens_num}tokens)')
 
         return result
 
@@ -1089,6 +1103,13 @@ class LLM_Client():
                     self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
                     self.usage['total_tokens'] = chunk.usage.total_tokens
                     self.usage['completion_tokens'] = chunk.usage.completion_tokens
+
+                    self.output_tokens_num_this_turn = self.usage['completion_tokens']
+                    if self.history:
+                        self.history_output_tokens_num += self.usage['completion_tokens']
+                    else:
+                        self.history_output_tokens_num = self.usage['completion_tokens']
+
 
                 # if chunk.choices:
                 #     print(chunk.choices[0].delta)
@@ -2075,39 +2096,14 @@ def think_main():
 
 def base_main():
     llm = LLM_Client(
-        # temperature=0.6,
-        # url='http://powerai.cc:28001/v1',
-        # url='http://powerai.cc:38001/v1',
-        # url='https://powerai.cc:8001/v1'
-        # url='http://powerai.cc:8001/v1'
-
-        # api_key = 'sk-c1d34a4f21e3413487bb4b2806f6c4b8',  # deepseek官网
-        # url = 'https://api.deepseek.com/v1',
-        # model_id = 'deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
-        # # model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
-
-        # 模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
-        # api_key='sk-9f507c06d7534acf978cf30091bc5529',  # 通义千问官网
-        # url='https://dashscope.aliyuncs.com/compatible-mode/v1',
-        # model_id='qwen3-235b-a22b',  # 模型指向 qwen3-235b-a22b
-
-        # api_key='',  # 通义千问官网
-        # api_key='empty',  # 通义千问官网
-        # url='http://localhost:8001/v1',
-        url='https://powerai.cc:8001/v1',
-        # model_id='Qwen3-30B-A3B-Instruct-2507',  # 模型指向 qwen3-235b-a22b
-        # model_id='Qwen3-30B-A3B-Thinking-2507',  # 模型指向 qwen3-235b-a22b
-
-
-        # api_key='f5565670-0583-41f5-a562-d8e770522bd7',  #火山
-        # url='https://ark.cn-beijing.volces.com/api/v3/',
-        # model_id='deepseek-r1-250120',
-        # model_id='deepseek-v3-241226',
-        # model_id='qwq-32b',
+        llm_config=config.g_local_qwen3_30b_chat,
+        # llm_config=config.g_local_qwen3_30b_thinking,
     )
+    # llm.ask_prepare('1+1=?只给出答案').get_answer_and_sync_print()
     llm.ask_prepare('你是谁？我叫土土，你好。').get_answer_and_sync_print()
     # llm.ask_prepare('我叫土土').get_answer_and_sync_print()
     llm.ask_prepare('我刚才告诉你我叫什么？').get_answer_and_sync_print()
+    # llm.ask_prepare('2+3=').get_answer_and_sync_print()
 
 def think_and_result_test():
     llm = LLM_Client(

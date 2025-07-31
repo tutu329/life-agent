@@ -280,7 +280,7 @@ g_local_qwen3_30b_chat = LLM_Config(
     base_url='https://powerai.cc:8001/v1',
     api_key='empty',
     # llm_model_id='',
-    temperature=0.6,
+    temperature=0.7,
     top_p=0.8,
     max_new_tokens=8192
 )
@@ -289,7 +289,7 @@ g_local_qwen3_30b_thinking = LLM_Config(
     base_url='https://powerai.cc:8002/v1',
     api_key='empty',
     # llm_model_id='',
-    temperature=0.7,
+    temperature=0.6,
     top_p=0.95,
     max_new_tokens=8192
 )
