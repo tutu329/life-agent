@@ -3,6 +3,8 @@ import socket, requests, os
 from dataclasses import dataclass, field
 from colorama import Fore, Back, Style
 
+from enum import Enum
+
 from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -265,6 +267,11 @@ class LLM_Default:
 
     think_pairs: tuple  = ('<think>', '</think>')
 
+class Reasoning_Effort(str, Enum):
+    LOW     = 'low'
+    MEDIUM  = 'medium'
+    HIGH    = 'high'
+
 class LLM_Config(BaseModel):
     base_url        :str = LLM_Default.url
     api_key         :str = 'empty'
@@ -272,9 +279,23 @@ class LLM_Config(BaseModel):
     temperature     :float = LLM_Default.temperature
     top_p           :float = LLM_Default.top_p
     max_new_tokens  :int = LLM_Default.max_new_tokens
+
+    reasoning_effort:Optional[Reasoning_Effort] = None
+
     vpn_on          :bool = False
 
 g_vpn_proxy = "http://127.0.0.1:7890"
+
+g_local_gpt_oss_20b_mxfp4 = LLM_Config(
+    base_url='http://powerai.cc:18002/v1',
+    api_key='empty',
+    # llm_model_id='',
+    temperature=0.6,
+    top_p=0.8,
+    max_new_tokens=8192,
+    # reasoning_effort=Reasoning_Effort.HIGH
+    reasoning_effort=Reasoning_Effort.LOW
+)
 
 g_local_qwen3_30b_chat = LLM_Config(
     base_url='https://powerai.cc:8001/v1',

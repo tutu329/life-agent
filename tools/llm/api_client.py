@@ -114,6 +114,7 @@ class LLM_Client():
         self.temperature = temperature
         self.top_p = top_p
         self.max_new_tokens = max_new_tokens
+        self.reasoning_effort = None
         self.vpn_on = False
 
         self.history_input_tokens_num = 0
@@ -128,6 +129,7 @@ class LLM_Client():
             self.temperature = llm_config.temperature
             self.top_p = llm_config.top_p
             self.max_new_tokens = llm_config.max_new_tokens
+            self.reasoning_effort = llm_config.reasoning_effort
             self.vpn_on = llm_config.vpn_on
 
         dblue(f'【LLM_Client】base_url={self.url!r}')
@@ -749,26 +751,50 @@ class LLM_Client():
         status_to_redis(self.status)
 
         try:
-            gen = self.openai.chat.completions.create(
-                model=self.model_id,
-                temperature=run_temperature,
-                top_p=run_top_p,
-                # top_k=self.top_k,
-                # top_p = run_top_p,
-                # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
-                messages=msgs,
-                stream=stream,
-                # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                stop=stop,
-                # stop_token_ids=[151329, 151336, 151338],    # glm9b-chat-1m
-                # Specifying stop words in streaming output format is not yet supported and is under development.
+            if self.reasoning_effort is not None:
+                gen = self.openai.chat.completions.create(
+                    model=self.model_id,
+                    temperature=run_temperature,
+                    top_p=run_top_p,
+                    # top_k=self.top_k,
+                    # top_p = run_top_p,
+                    # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
+                    messages=msgs,
+                    stream=stream,
+                    # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    stop=stop,
+                    # stop_token_ids=[151329, 151336, 151338],    # glm9b-chat-1m
+                    # Specifying stop words in streaming output format is not yet supported and is under development.
 
-                stream_options={"include_usage": True},  # 最新版本openai的要求
-                # top_p=0.95,   # 防止过度重复
-                # top_k=40,     # 复杂数学或代码
-                # top_k=20,     # 其他类型问题
-            )
+                    stream_options={"include_usage": True},  # 最新版本openai的要求
+                    extra_body={'reasoning_effort':self.reasoning_effort}
+                    # top_p=0.95,   # 防止过度重复
+                    # top_k=40,     # 复杂数学或代码
+                    # top_k=20,     # 其他类型问题
+                )
+            else:
+                gen = self.openai.chat.completions.create(
+                    model=self.model_id,
+                    temperature=run_temperature,
+                    top_p=run_top_p,
+                    # top_k=self.top_k,
+                    # top_p = run_top_p,
+                    # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
+                    messages=msgs,
+                    stream=stream,
+                    # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    stop=stop,
+                    # stop_token_ids=[151329, 151336, 151338],    # glm9b-chat-1m
+                    # Specifying stop words in streaming output format is not yet supported and is under development.
+
+                    stream_options={"include_usage": True},  # 最新版本openai的要求
+                    # top_p=0.95,   # 防止过度重复
+                    # top_k=40,     # 复杂数学或代码
+                    # top_k=20,     # 其他类型问题
+                )
+
             dprint(f'===self.openai.chat.completions.create() invoked.===')
             dprint(f'{"-" * 80}')
         except Exception as e:
@@ -2096,6 +2122,7 @@ def think_main():
 
 def base_main():
     llm = LLM_Client(
+        # llm_config=config.g_local_gpt_oss_20b_mxfp4,
         llm_config=config.g_local_qwen3_30b_chat,
         # llm_config=config.g_local_qwen3_30b_thinking,
     )
@@ -2104,6 +2131,13 @@ def base_main():
     # llm.ask_prepare('我叫土土').get_answer_and_sync_print()
     llm.ask_prepare('我刚才告诉你我叫什么？').get_answer_and_sync_print()
     # llm.ask_prepare('2+3=').get_answer_and_sync_print()
+
+def reasoning_effort_main():
+    llm = LLM_Client(
+        llm_config=config.g_local_gpt_oss_20b_mxfp4,
+    )
+    prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
+    llm.ask_prepare(prompt).get_answer_and_sync_print()
 
 def think_and_result_test():
     llm = LLM_Client(
@@ -2149,7 +2183,10 @@ def llm_config_test():
     llm.ask_prepare('你是谁？').get_answer_and_sync_print()
 
 if __name__ == "__main__":
-    base_main()
+    # base_main()
+
+    reasoning_effort_main()
+
     # llm_config_test()
 
     # pic_main() # 带pic
