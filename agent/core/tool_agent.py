@@ -973,9 +973,9 @@ def main_folder():
     tools=[Folder_Tool]
     config = Agent_Config(
         tool_names=['Folder_Tool'],
-        # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
         llm_config=llm_protocol.g_online_groq_kimi_k2
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4
+
         # llm_config=llm_protocol.g_local_qwen3_30b_chat
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking
     )
