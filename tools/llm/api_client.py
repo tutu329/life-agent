@@ -80,7 +80,6 @@ def status_to_redis(in_status: LLM_Client_Status):
 
 class LLM_Client():
     # LLM_SERVER = llm_protocol.LLM_Default.url
-
     def __init__(self,
                  history=None,
                  history_max_turns=config.Global.llm_max_chat_turns,
