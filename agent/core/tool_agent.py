@@ -673,7 +673,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         if not answer_this_turn.strip():
             import sys
             dyellow('-----------------------------------thinking answer-------------------------------------------')
-            dred('answer_this_turn完全为空，请检查大模型的api是否有问题（如官网deepseek r1模型会出现回复为空的情况）。程序退出！')
+            dred('answer_this_turn完全为空，请检查大模型的api是否有问题（如官网deepseek r1模型会出现回复为空的情况、vllm推理GPT-oss模型也有该情况）。程序退出！')
             dyellow('-----------------------------------thinking answer-------------------------------------------')
             sys.exit(1)
 
