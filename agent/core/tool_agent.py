@@ -33,6 +33,9 @@ from agent.core.protocol import Agent_Status, Agent_Stream_Queues, Query_Agent_C
 from agent.experience.agent_experience import Agent_Experience
 from agent.tools.protocol import Tool_Call_Paras
 
+import llm_protocol
+from llm_protocol import LLM_Config, LLM_Query_Paras
+
 from utils.fastapi_server import GeneratorDone
 
 # 全局线程池，真正业务里可以按需设置 max_workers
@@ -327,10 +330,10 @@ class Tool_Agent(Agent_Base, Base_Tool):
         #     print_input=False,
         #     max_new_tokens=config.LLM_Default.max_new_tokens
         # )
+
+        self.agent_config.llm_config.has_history = False
         self.llm = LLM_Client(
             llm_config=self.agent_config.llm_config,
-            history=False,
-            print_input=False,
         )
         # self.agent_tools_description_and_full_history = PROMPT_REACT
 
@@ -622,11 +625,16 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
         dred(f'manual_stop: "{self.response_stop}"')
 
-        self.llm.ask_prepare(
-            self.agent_tools_description_and_full_history,
-            # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
-            manual_stop = self.response_stop,
+        query = LLM_Query_Paras(
+            query=self.agent_tools_description_and_full_history,
+            manual_stop=self.response_stop
         )
+        self.llm.ask_prepare(query)
+        # self.llm.ask_prepare(
+        #     self.agent_tools_description_and_full_history,
+        #     # stop=self.response_stop,  # vllm的stop（如['观察']）输出有问题，所以暂时作专门处理
+        #     manual_stop = self.response_stop,
+        # )
 
         think_gen = self.llm.get_think_generator()
         for ch in think_gen:
@@ -640,7 +648,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         result_gen = self.llm.get_result_generator()
         dred(f'-----------------self._thoughts_stream_output-0----------------------')
+        # dyellow(f'text: "{self.agent_tools_description_and_full_history}"')
         answer_this_turn = self._thoughts_stream_output(result_gen)
+        dred(f'answer_this_turn = {answer_this_turn}')
         dred(f'-----------------self._thoughts_stream_output-1----------------------')
 
         # gen = self.llm.ask_prepare(
@@ -949,22 +959,29 @@ def main_folder():
     from agent.core.tool_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
     from agent.core.agent_config import Agent_Config
+    from agent.tools.tool_manager import server_register_all_local_tool_on_start
+    from agent.tools.tool_manager import get_all_registered_tools_class
 
-    tools=[Folder_Tool]
     print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
-        # query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
-        query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
+        query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
+        # query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
         query = r'我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。'
         # query = r'我叫土土，请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
+    tools=[Folder_Tool]
     config = Agent_Config(
         tool_names=['Folder_Tool'],
-        base_url='http://powerai.cc:8001/v1',   #qwen3-30b
-        llm_config=config.g_local_qwen3_30b_chat
-        # llm_config=config.g_local_qwen3_30b_thinking
+        # base_url='http://powerai.cc:8001/v1',   #qwen3-30b
+        llm_config=llm_protocol.g_online_groq_kimi_k2
+        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4
+        # llm_config=llm_protocol.g_local_qwen3_30b_chat
+        # llm_config=llm_protocol.g_local_qwen3_30b_thinking
     )
+
+    # server_register_all_local_tool_on_start()
+    # get_all_registered_tools_class()
 
     agent = Tool_Agent(
         has_history=True,
