@@ -98,7 +98,7 @@ class legacy_LLM_Client():
                  ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
-        history = int(llm_protocol.LLM_Default.history if history is None else history)
+        history = int(llm_protocol.LLM_Default.has_history if history is None else history)
         api_key = llm_protocol.LLM_Default.api_key if api_key is None else api_key
         temperature = llm_protocol.LLM_Default.temperature if temperature is None else temperature
         url = llm_protocol.LLM_Default.url if url is None else url
@@ -1336,7 +1336,7 @@ class LLM_Client():
                  ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
-        history = int(llm_protocol.LLM_Default.history if history is None else history)
+        history = int(llm_protocol.LLM_Default.has_history if history is None else history)
         api_key = llm_protocol.LLM_Default.api_key if api_key is None else api_key
         temperature = llm_protocol.LLM_Default.temperature if temperature is None else temperature
         url = llm_protocol.LLM_Default.url if url is None else url

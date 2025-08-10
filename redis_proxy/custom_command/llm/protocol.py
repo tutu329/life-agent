@@ -22,7 +22,7 @@ class Redis_Proxy_Command_LLM(Enum):
 @dataclass
 class LLM_Init_Para():
     url:str = config.LLM_Default.url
-    history:bool = config.LLM_Default.history
+    history:bool = config.LLM_Default.has_history
     max_new_tokens:int = config.LLM_Default.max_new_tokens
     temperature:float = config.LLM_Default.temperature
     api_key:str = config.LLM_Default.api_key
