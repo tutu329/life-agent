@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKI
 from pydantic import BaseModel, Field, ConfigDict
 
 import config
+from config import dred, dyellow, dblue, dcyan
 
 class LLM_Default:
     temperature:float   = 0.6
@@ -25,6 +26,8 @@ class LLM_Reasoning_Effort(str, Enum):
     HIGH    = 'high'
 
 class LLM_Config(BaseModel):
+    name            :str = 'default llm config 1'
+
     base_url        :str = LLM_Default.url
     api_key         :str = 'empty'
     llm_model_id    :str = ''
@@ -36,7 +39,15 @@ class LLM_Config(BaseModel):
 
     vpn_on          :bool = False
 
+    def __str__(self):
+        data = self.model_dump()
+        rtn_str = f'"{self.name}"'.center(80, '-') + '\n'
+        rtn_str += '\n'.join(f'{k:18}: {v}' for k, v in data.items()) + '\n'
+        rtn_str += f'/"{self.name}"'.center(80, '-')
+        return rtn_str
+
 g_local_gpt_oss_20b_mxfp4 = LLM_Config(
+    name = 'local_gpt_oss_20b_mxfp4',
     base_url='http://powerai.cc:18002/v1',
     api_key='empty',
     # llm_model_id='',
@@ -48,6 +59,7 @@ g_local_gpt_oss_20b_mxfp4 = LLM_Config(
 )
 
 g_local_qwen3_30b_chat = LLM_Config(
+    name = 'local_qwen3_30b_chat',
     base_url='https://powerai.cc:8001/v1',
     api_key='empty',
     # llm_model_id='',
@@ -57,6 +69,7 @@ g_local_qwen3_30b_chat = LLM_Config(
 )
 
 g_local_qwen3_30b_thinking = LLM_Config(
+    name = 'local_qwen3_30b_thinking',
     base_url='https://powerai.cc:8002/v1',
     api_key='empty',
     # llm_model_id='',
@@ -66,6 +79,7 @@ g_local_qwen3_30b_thinking = LLM_Config(
 )
 
 g_online_deepseek_chat = LLM_Config(
+    name = 'online_deepseek_chat',
     base_url='https://api.deepseek.com/v1',
     api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
     llm_model_id='deepseek-chat',
@@ -75,6 +89,7 @@ g_online_deepseek_chat = LLM_Config(
 )
 
 g_online_groq_kimi_k2 = LLM_Config(
+    name = 'online_groq_kimi_k2',
     base_url='https://api.groq.com/openai/v1',
     api_key=os.getenv("GROQ_API_KEY") or 'empty',
     llm_model_id='moonshotai/kimi-k2-instruct',

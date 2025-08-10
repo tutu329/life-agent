@@ -2136,6 +2136,7 @@ def reasoning_effort_main():
     llm = LLM_Client(
         llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
     )
+    print(llm_protocol.g_local_gpt_oss_20b_mxfp4)
     prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
     llm.ask_prepare(prompt).get_answer_and_sync_print()
 
