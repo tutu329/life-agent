@@ -15,11 +15,9 @@ from uuid import uuid4
 import asyncio
 import threading
 
-import config
 from utils.string_util import str_remove_partial_substring_or_right, str_remove_content_in_partial_pairs, \
     _str_get_content_in_partial_pairs
 
-from config import dred, dgreen, dblue, dcyan, dyellow
 
 from dataclasses import dataclass, field, asdict
 from typing import List, Optional, Dict
@@ -30,6 +28,10 @@ from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Cli
     Web_Client_Text_Data, Web_Client_Image_Data
 from utils.image import get_image_string_from_url
 import json
+
+from config import dred, dgreen, dblue, dcyan, dyellow
+import config
+import llm_protocol
 
 # DEBUG = True
 DEBUG = False
@@ -77,7 +79,7 @@ def status_to_redis(in_status: LLM_Client_Status):
 
 
 class LLM_Client():
-    LLM_SERVER = config.LLM_Default.url
+    LLM_SERVER = llm_protocol.LLM_Default.url
 
     # LLM_SERVER = 'http://127.0.0.1:8001/v1/'
     def __init__(self,
@@ -88,8 +90,8 @@ class LLM_Client():
                  history_clear_method='pop',
                  api_key=None,
                  # api_key='b1ad5dac212f563be4765b646543ca1b',
-                 temperature=config.LLM_Default.temperature,
-                 top_p=config.LLM_Default.top_p,
+                 temperature=llm_protocol.LLM_Default.temperature,
+                 top_p=llm_protocol.LLM_Default.top_p,
                  # top_p=None,
                  url=None,
                  max_new_tokens=None,
@@ -98,11 +100,11 @@ class LLM_Client():
                  ):
         dprint(f'【LLM_Client】 LLM_Client() inited.')
 
-        history = int(config.LLM_Default.history if history is None else history)
-        api_key = config.LLM_Default.api_key if api_key is None else api_key
-        temperature = config.LLM_Default.temperature if temperature is None else temperature
-        url = config.LLM_Default.url if url is None else url
-        max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
+        history = int(llm_protocol.LLM_Default.history if history is None else history)
+        api_key = llm_protocol.LLM_Default.api_key if api_key is None else api_key
+        temperature = llm_protocol.LLM_Default.temperature if temperature is None else temperature
+        url = llm_protocol.LLM_Default.url if url is None else url
+        max_new_tokens = llm_protocol.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
 
         self.openai = None
 
@@ -590,18 +592,18 @@ class LLM_Client():
             stop=None,
             manual_stop=None,  # 用于vllm处理stop有bug
             # remove_content_in_think_pairs=False,        # remove ('<think>', '</think>') 之间的内容
-            # think_pair=config.LLM_Default.think_pairs,
+            # think_pair=llm_protocol.LLM_Default.think_pairs,
             system_prompt=None,
             role_prompt=None,
             audio_string=None,
     ):
         self._vllm_api_get_token_num(query=question)
 
-        # self.temperature = config.LLM_Default.temperature if temperature is None else temperature
-        self.max_new_tokens = config.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
-        clear_history = int(config.LLM_Default.clear_history if clear_history is None else clear_history)
-        self.stream = int(config.LLM_Default.stream if stream is None else stream)
-        # in_stop = config.LLM_Default.stop if in_stop is None else in_stop
+        # self.temperature = llm_protocol.LLM_Default.temperature if temperature is None else temperature
+        self.max_new_tokens = llm_protocol.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
+        clear_history = int(llm_protocol.LLM_Default.clear_history if clear_history is None else clear_history)
+        self.stream = int(llm_protocol.LLM_Default.stream if stream is None else stream)
+        # in_stop = llm_protocol.LLM_Default.stop if in_stop is None else in_stop
 
         # 如果包含语音输入，则question直接改为语音对应的text
         if audio_string:
@@ -1321,11 +1323,11 @@ class LLM_Client():
 class Async_LLM(legacy_Web_Server_Base):
     def __init__(self,
                  question,
-                 url=config.LLM_Default.url,
-                 api_key=config.LLM_Default.api_key,
+                 url=llm_protocol.LLM_Default.url,
+                 api_key=llm_protocol.LLM_Default.api_key,
                  model_id=None,
-                 temperature=config.LLM_Default.temperature,
-                 top_p=config.LLM_Default.top_p,
+                 temperature=llm_protocol.LLM_Default.temperature,
+                 top_p=llm_protocol.LLM_Default.top_p,
                  role_prompt='',
                  extra_suffix='',
                  streamlit=False,
@@ -1497,7 +1499,7 @@ class Async_LLM(legacy_Web_Server_Base):
 
 # 通过多个llm的client，对model进行并发访问，同步返回多个stream
 class Concurrent_LLMs:
-    def __init__(self, in_url=config.LLM_Default.url):
+    def __init__(self, in_url=llm_protocol.LLM_Default.url):
         # def __init__(self, in_url='http://127.0.0.1:8001/v1/'):
         self.prompts = []
         self.role_prompts = []
@@ -2134,7 +2136,7 @@ def base_main():
 
 def reasoning_effort_main():
     llm = LLM_Client(
-        llm_config=config.g_local_gpt_oss_20b_mxfp4,
+        llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
     )
     prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
     llm.ask_prepare(prompt).get_answer_and_sync_print()
