@@ -79,7 +79,7 @@ def status_to_redis(in_status: LLM_Client_Status):
 
 
 class LLM_Client():
-    LLM_SERVER = llm_protocol.LLM_Default.url
+    # LLM_SERVER = llm_protocol.LLM_Default.url
 
     # LLM_SERVER = 'http://127.0.0.1:8001/v1/'
     def __init__(self,
@@ -202,13 +202,13 @@ class LLM_Client():
     #         self.history_list.append({"role": "user", "content": self.role_prompt})
     #         self.history_list.append({"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
 
-    @classmethod
-    def Set_All_LLM_Server(cls, in_url):
-        cls.LLM_SERVER = in_url
-
-    @classmethod
-    def Get_All_LLM_Server(cls):
-        return cls.LLM_SERVER
+    # @classmethod
+    # def Set_All_LLM_Server(cls, in_url):
+    #     cls.LLM_SERVER = in_url
+    #
+    # @classmethod
+    # def Get_All_LLM_Server(cls):
+    #     return cls.LLM_SERVER
 
     def refresh_endpoint(self, in_url, in_key, in_model_id):
         dred(f'refresh url: {in_url}')
