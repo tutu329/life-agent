@@ -158,8 +158,7 @@ class Uploads:
     template_path       :str = uploads_path + 'template/'
     shared_path         :str = uploads_path + 'shared/'
 
-@dataclass
-class Port():
+class Port:
     # frp的port范围
     # 5100-5120
     # 7860-7879
@@ -216,8 +215,7 @@ class Port():
     # sd:int              = 7868  # stable diffusion
     # comfy:int           = 7869  # ComfyUI
 
-@dataclass
-class Domain():
+class Domain:
     # 用于redis、streamlit的ssl证书文件path
     if get_os()=='windows':
         ssl_keyfile:str = 'd:\\models\\powerai.key'
@@ -241,6 +239,8 @@ class Domain():
     # llm_url:str = 'http://192.168.124.33:8001/v1/'
     # redis_server_ip:str = '192.168.124.33'
     # redis_server_port:int = 8010
+
+g_vpn_proxy = "http://127.0.0.1:7890"
 
 def main():
     os = get_os()
