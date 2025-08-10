@@ -2,6 +2,7 @@ import os
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
 from pydantic import BaseModel, Field, ConfigDict
+from uuid import uuid4
 
 import config
 from config import dred, dyellow, dblue, dcyan
@@ -14,8 +15,11 @@ class LLM_Default:
     stream:int              = 1         # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     has_history:int         = 1         # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     history_max_turns:int   = 99999     # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
-    clear_history:int   = 0          # 用于清空history_list, 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
+    clear_history:int   = 0             # 用于ask_prepare()中的清空history_list, 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     api_key:str         = 'empty'
+
+    system_prompt:str   ='You are a helpful assistant.'
+    role_prompt:str     =''
 
     url:str             = f'https://{config.Domain.server_domain}:{config.Port.llm_api1}/v1'
 
@@ -41,6 +45,11 @@ class LLM_Config(BaseModel):
     temperature     :float = LLM_Default.temperature
     top_p           :float = LLM_Default.top_p
     max_new_tokens  :int = LLM_Default.max_new_tokens
+    stream          :bool = bool(LLM_Default.stream)
+    manual_stop     :Optional[List[str]] = None  # 用于vllm处理stop有bug
+
+    system_prompt   :str = LLM_Default.system_prompt
+    role_prompt     :str = LLM_Default.role_prompt
 
     # llm推理强度(用于支持GPT-oss的推理强度选择)
     reasoning_effort:Optional[LLM_Reasoning_Effort] = None
@@ -55,9 +64,33 @@ class LLM_Config(BaseModel):
 
     def __str__(self):
         data = self.model_dump()
-        rtn_str = f'"{self.name}"'.center(80, '-') + '\n'
+        rtn_str = f'llm config "{self.name}"'.center(80, '-') + '\n'
         rtn_str += '\n'.join(f'{k:21}: {v!r}' for k, v in data.items()) + '\n'
-        rtn_str += f'/"{self.name}"'.center(80, '-')
+        rtn_str += f'/llm config "{self.name}"'.center(80, '-')
+        return rtn_str
+
+class LLM_Query_Paras(BaseModel):
+    # query的id(session id)
+    id              :str = Field(default_factory=lambda:str(uuid4()))
+
+    # query相关参数
+    query           :str
+    image_url      :Optional[str] = None
+    clear_history   :bool = bool(LLM_Default.clear_history)
+
+    # 这些config相关参数，若为None，则将在LLM_Client.ask_prepare()中被self.llm_config中参数覆盖
+    temperature     :Optional[float] = None
+    top_p           :Optional[float] = None
+    max_new_tokens  :Optional[int] = None
+    system_prompt   :Optional[str] = None
+    role_prompt     :Optional[str] = None
+    manual_stop     :Optional[List[str]] = None  # 用于vllm处理stop有bug
+
+    def __str__(self):
+        data = self.model_dump()
+        rtn_str = f'llm query "{self.id}"'.center(80, '-') + '\n'
+        rtn_str += '\n'.join(f'{k:16}: {v!r}' for k, v in data.items()) + '\n'
+        rtn_str += f'/llm query "{self.id}"'.center(80, '-')
         return rtn_str
 
 g_local_gpt_oss_20b_mxfp4 = LLM_Config(

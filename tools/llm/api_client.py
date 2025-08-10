@@ -31,7 +31,9 @@ import json
 
 from config import dred, dgreen, dblue, dcyan, dyellow
 import config
+
 import llm_protocol
+from llm_protocol import LLM_Config, LLM_Clear_History_Method, LLM_Query_Paras, LLM_Reasoning_Effort
 
 # DEBUG = True
 DEBUG = False
@@ -1317,66 +1319,37 @@ class legacy_LLM_Client():
         self.response_canceled = True
 
 class LLM_Client():
-    # LLM_SERVER = llm_protocol.LLM_Default.url
     def __init__(self,
-                 history=None,
-                 history_max_turns=config.Global.llm_max_chat_turns,
-                 llm_config=None,
-                 model_id=None,
-                 history_clear_method='pop',
-                 api_key=None,
-                 # api_key='b1ad5dac212f563be4765b646543ca1b',
-                 temperature=llm_protocol.LLM_Default.temperature,
-                 top_p=llm_protocol.LLM_Default.top_p,
-                 # top_p=None,
-                 url=None,
-                 max_new_tokens=None,
+                 # history=None,
+                 # history_max_turns=config.Global.llm_max_chat_turns,
+                 # llm_config=None,
+                 # model_id=None,
+                 # history_clear_method='pop',
+                 # api_key=None,
+                 # # api_key='b1ad5dac212f563be4765b646543ca1b',
+                 # temperature=llm_protocol.LLM_Default.temperature,
+                 # top_p=llm_protocol.LLM_Default.top_p,
+                 # # top_p=None,
+                 # url=None,
+                 # max_new_tokens=None,
+                 llm_config:LLM_Config,
                  print_input=True,
                  print_output=True,
                  ):
-        dprint(f'【LLM_Client】 LLM_Client() inited.')
 
-        history = int(llm_protocol.LLM_Default.has_history if history is None else history)
-        api_key = llm_protocol.LLM_Default.api_key if api_key is None else api_key
-        temperature = llm_protocol.LLM_Default.temperature if temperature is None else temperature
-        url = llm_protocol.LLM_Default.url if url is None else url
-        max_new_tokens = llm_protocol.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
+        self.llm_config = llm_config
+        self.llm_current_query_paras = None
 
-        self.openai = None
-
-        # llm配置
-        self.url = url
-        self.model_id = model_id
-        self.api_key = api_key
-
-        self.temperature = temperature
-        self.top_p = top_p
-        self.max_new_tokens = max_new_tokens
-        self.reasoning_effort = None
-        self.vpn_on = False
+        if llm_config is None:
+            dred(f'【LLM_Client】报错：llm_config为None.')
+            return
 
         self.history_input_tokens_num = 0
         self.input_tokens_num_this_turn = 0
         self.history_output_tokens_num = 0
         self.output_tokens_num_this_turn = 0
 
-        if llm_config:
-            self.url = llm_config.base_url
-            self.model_id = llm_config.llm_model_id
-            self.api_key = llm_config.api_key
-            self.temperature = llm_config.temperature
-            self.top_p = llm_config.top_p
-            self.max_new_tokens = llm_config.max_new_tokens
-            self.reasoning_effort = llm_config.reasoning_effort
-            self.vpn_on = llm_config.vpn_on
-
-        dblue(f'【LLM_Client】base_url={self.url!r}')
-        dblue(f'【LLM_Client】history={history!r}')
-        dblue(f'【LLM_Client】model_id={self.model_id!r}')
-        dblue(f'【LLM_Client】api_key={self.api_key!r}')
-        dblue(f'【LLM_Client】temperature={self.temperature!r}')
-        dblue(f'【LLM_Client】top_p={self.top_p!r}')
-        dblue(f'【LLM_Client】max_new_tokens={self.max_new_tokens!r}')
+        self.openai = None
 
         self.uuid = str(uuid4())
         self.gen = None  # 返回结果的generator
@@ -1386,19 +1359,11 @@ class LLM_Client():
 
         self.system_prompt = config.Global.llm_system_prompt
 
-        # self.system_prompt = '' # 系统提示
-        # self.top_p = top_p
-        # self.top_k = top_k  # 需要回答稳定时，可以不通过调整temperature，直接把top_k设置为1; 官方表示qwen默认的top_k为0即不考虑top_k的影响
-
         self.result_chunk_as_think_chunk = ''  # 非reason模型推理时，获取think输出时，会误将result_chunk当成think_chunk，这里要保存这个chunk，后续交给result
 
         # 记忆相关
         self.history_list = []
-        self.history = history
-        self.history_max_turns = history_max_turns
         self.history_turn_num_now = 0
-
-        self.history_clear_method = history_clear_method  # 'clear' or 'pop'
 
         self.question_last_turn = ''
         self.answer_last_turn = ''
@@ -1412,162 +1377,22 @@ class LLM_Client():
 
         self.remove_content_in_think_pairs = False  # 是否remove ('<think>', '</think>') 之间的内容
 
-        self.status = LLM_Client_Status(
-            uuid=self.uuid,
-            url=self.url,
-            model_id=self.model_id,
-            temperature=self.temperature,
-            max_new_tokens=self.max_new_tokens,
-            has_history=self.history,
-        )
-        status_to_redis(self.status)
-
-        dyellow(f'【LLM_Client】vpn_on={self.vpn_on!r}')
-        dyellow(f'【LLM_Client】system_prompt={self.system_prompt!r}')
-
-    # 动态修改role_prompt
-    # def set_role_prompt(self, in_role_prompt):
-    #     if in_role_prompt=='':
-    #         return
-    #
-    #     self.role_prompt = in_role_prompt
-    #     if self.history_list!=[]:
-    #         self.history_list[0] = {"role": "user", "content": self.role_prompt}
-    #         self.history_list[1] = {"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'}
-    #     else:
-    #         self.history_list.append({"role": "user", "content": self.role_prompt})
-    #         self.history_list.append({"role": "assistant", "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
-
-    # @classmethod
-    # def Set_All_LLM_Server(cls, in_url):
-    #     cls.LLM_SERVER = in_url
-    #
-    # @classmethod
-    # def Get_All_LLM_Server(cls):
-    #     return cls.LLM_SERVER
-
-    def refresh_endpoint(self, in_url, in_key, in_model_id):
-        dred(f'refresh url: {in_url}')
-        dred(f'refresh model id: {in_model_id}')
-        dred(f'refresh api_key: {in_key}')
-        if self.url != in_url or self.model_id != in_model_id or self.api_key != in_key:
-            dred(f'self.url: {self.url}')
-            dred(f'in_url: {in_url}')
-            dred(f'self.model_id: {self.model_id}')
-            dred(f'in_model_id: {in_model_id}')
-
-            dred(f'self.api_key: {self.api_key}')
-            dred(f'in_key: {in_key}')
-            dred(f'refresh_endpoint(): history cleared.')
-            # self.clear_history()
-            self.url = in_url
-            self.model_id = in_model_id
-            self.api_key = in_key
-
-            if self.vpn_on:
-                import httpx
-                http_client = httpx.Client(
-                    proxy=config.g_vpn_proxy)
-                self.openai = OpenAI(
-                    api_key=self.api_key,
-                    base_url=self.url,
-                    http_client=http_client,
-                    # http_client=openai.DefaultHttpxClient(verify=False),    # 用于自建的vllm openai api的ssl访问(https访问)，# 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
-                )
-            else:
-                self.openai = OpenAI(
-                    api_key=self.api_key,
-                    base_url=self.url,
-                    # http_client=openai.DefaultHttpxClient(verify=False),    # 用于自建的vllm openai api的ssl访问(https访问)，# 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
-                )
-            if self.model_id is None or self.model_id == '':
-                try:
-                    self.model_id = self.openai.models.list().data[0].id
-                    dblue(f'【LLM_Client】change model_id to "{self.model_id}"\n')
-                except Exception as e:
-                    dred(f'【LLM_Client异常】refresh_endpoint(): "{e}"')
-                    dred(f'【LLM_Client异常】refresh_endpoint(): 可能是IP或Port设置错误，当前url为: {self.url}')
-                    self.model_id = 'default'
-                    # return False
-
-            dprint(f'【LLM_Client】refresh_endpoint(): {self.url}(model_id: {self.model_id}, api_key: "{self.api_key}")')
-            return True
-        else:
-            return False
-
-    def set_system_prompt(self, in_system_prompt):
-        self.system_prompt = in_system_prompt
-
-        self.status.system_prompt = in_system_prompt
-        # dred(f'--------system_prompt: {in_system_prompt}')
-        status_to_redis(self.status)
-
-    def set_role_prompt(self, in_role_prompt):
-        if in_role_prompt.strip() != '':
-            # role_prompt有内容
-            self.role_prompt = in_role_prompt
-
-            # qwen-72b和qwen-1.8b
-            if sys.platform.startswith('win'):  # win下用的是qwen的openai api
-                # if self.has_role_prompt and len(self.history_list)>0 :
-                #     # 之前已经设置role_prompt
-                #     self.history_list[0] = {"role": "system", "content": self.role_prompt}
-                # else:
-                #     # 之前没有设置role_prompt
-                #     self.history_list.insert(0, {"role": "system", "content": self.role_prompt})
-                #     self.has_role_prompt = True
-
-                # 早期qwen版本或其他llm
-                if self.has_role_prompt and len(self.history_list) > 0:
-                    # 之前已经设置role_prompt
-                    self.history_list[0] = {"role": "user", "content": self.role_prompt}
-                    self.history_list[1] = {"role": "assistant",
-                                            "content": '好的，我明白了，现在就开始，我会严格按照要求来。'}
-                else:
-                    # 之前没有设置role_prompt
-                    self.history_list.insert(0, {"role": "user", "content": self.role_prompt})
-                    self.history_list.insert(1, {"role": "assistant",
-                                                 "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
-                    self.has_role_prompt = True
-            elif sys.platform.startswith('linux'):  # linux下用的是vllm的openai api
-                # 早期qwen版本或其他llm
-                if self.has_role_prompt and len(self.history_list) > 0:
-                    # 之前已经设置role_prompt
-                    self.history_list[0] = {"role": "user", "content": self.role_prompt}
-                    self.history_list[1] = {"role": "assistant",
-                                            "content": '好的，我明白了，现在就开始，我会严格按照要求来。'}
-                else:
-                    # 之前没有设置role_prompt
-                    self.history_list.insert(0, {"role": "user", "content": self.role_prompt})
-                    self.history_list.insert(1, {"role": "assistant",
-                                                 "content": '好的，我明白了，现在就开始，我会严格按照要求来。'})
-                    self.has_role_prompt = True
-        else:
-            # 删除role_prompt
-            if self.has_role_prompt:
-                if len(self.history_list) > 0:
-                    self.history_list.pop(0)
-                if len(self.history_list) > 0:
-                    self.history_list.pop(0)
-                self.has_role_prompt = False
-                self.role_prompt = ''
-
-        self.status.role_prompt = in_role_prompt
-        # dred(f'--------------status: {self.status}')
-        status_to_redis(self.status)
+        self._init_print()
+    def _init_print(self):
+        dblue(self.llm_config)
 
     # 内部openai格式的history
     def __history_add_last_turn_msg(self):
-        if self.history and self.question_last_turn != '':
+        if self.llm_config.has_history and self.question_last_turn != '':
             question = {"role": "user", "content": self.question_last_turn}
             answer = {"role": "assistant", "content": self.answer_last_turn}
             self.history_list.append(question)
             self.history_list.append(answer)
             # pprint(self.history_list)
-            if self.history_turn_num_now < self.history_max_turns:
+            if self.history_turn_num_now < self.llm_config.history_max_turns:
                 self.history_turn_num_now += 1
             else:
-                if self.history_clear_method == 'pop':
+                if self.llm_config.history_clear_method == LLM_Clear_History_Method.POP:
                     dred('======对话轮次超限，记录本轮对话、删除首轮对话======')
                     # for item in self.history_list:
                     #     print(item)
@@ -1579,7 +1404,7 @@ class LLM_Client():
                         # 没有role prompt，则删除第一个对话
                         self.history_list.pop(0)
                         self.history_list.pop(0)
-                elif self.history_clear_method == 'clear':
+                elif self.history_clear_method == LLM_Clear_History_Method.CLEAR:
                     dred('======对话轮次超限，清空记忆======')
                     self.__history_clear()
 
@@ -1591,18 +1416,8 @@ class LLM_Client():
     def __history_clear(self):
 
         self.history_list.clear()
-        # self.has_role_prompt = False
-        self.set_role_prompt(self.role_prompt)
+        # self.set_role_prompt(self.role_prompt)
         self.history_turn_num_now = 0
-
-    # def __history_messages_with_question(self, in_question):
-    #     msg_this_turn = {"role": "user", "content": in_question}
-    #     if self.history:
-    #         msgs = deepcopy(self.history_list)
-    #         msgs.append(msg_this_turn)
-    #         return msgs
-    #     else:
-    #         return [msg_this_turn]
 
     def __history_messages_with_system_and_new_question(
             self,
@@ -1662,27 +1477,9 @@ class LLM_Client():
             self.history_list.pop()
             self.history_turn_num_now -= 1
 
-        # if self.question_last_turn=='':
-        #     # 多次undo
-        #     if self.has_role_prompt:
-        #         reserved_num = 2
-        #     else:
-        #         reserved_num = 0
-        #
-        #     if len(self.history_list)>=reserved_num+2:
-        #         self.history_list.pop()
-        #         self.history_list.pop()
-        # else:
-        #     # 一次undo
-        #     self.question_last_turn=''
-
     def get_retry_generator(self):
         self.undo()
         return self.ask_prepare(self.question_last_turn).get_answer_generator()
-
-        # temp_question_last_turn = self.question_last_turn
-        # self.undo()
-        # self.ask_prepare(temp_question_last_turn).get_answer_and_sync_print()
 
     def get_prompt_tokens(self):
         if self.usage is not None:
@@ -1695,26 +1492,6 @@ class LLM_Client():
             return self.usage['completion_tokens']
         else:
             return 0
-
-    def audio_file_to_text(self, save_file_name):
-        # if len(audio_string) > 0:
-        #     wav_data = base64.b64decode(audio_string)
-        from tools.audio_stt.audio_stt import AudioSTT
-        text = AudioSTT().stt(save_file_name)
-        return text
-
-    def audio_to_wav_file(self, save_file_name, audio_string):
-        if len(audio_string) > 0:
-            wav_data = base64.b64decode(audio_string)
-            file_name = save_file_name
-            channels = 1
-            sample_width = 2
-            frame_rate = 44100
-            with wave.open(file_name, 'wb') as wav_file:
-                wav_file.setnchannels(channels)
-                wav_file.setsampwidth(sample_width)
-                wav_file.setframerate(frame_rate)
-                wav_file.writeframes(wav_data)
 
     def get_input_tokens_num_this_turn(self):
         return self.input_tokens_num_this_turn
@@ -1746,7 +1523,7 @@ class LLM_Client():
 
         # 执行替换
         # re.sub 如果找不到匹配，会原样返回字符串
-        new_url, count = re.subn(pattern, replacement, self.url)
+        new_url, count = re.subn(pattern, replacement, self.llm_config.base_url)
 
         url = new_url
         headers = {
@@ -1759,7 +1536,7 @@ class LLM_Client():
         # 这里我们假设模型是 'default'，您可能需要根据实际情况修改。
         payload = {
             "prompt": query,
-            "model": self.model_id  # <-- 如果需要，请取消此行注释并填入正确的模型名称
+            "model": self.llm_config.llm_model_id  # <-- 如果需要，请取消此行注释并填入正确的模型名称
         }
 
         rtn_data = {
@@ -1799,7 +1576,7 @@ class LLM_Client():
 
                 # 刷新LLM_Client的历史token数量
                 self.input_tokens_num_this_turn = response_data['count']
-                if self.history:
+                if self.llm_config.has_history:
                     self.history_input_tokens_num += response_data['count']
                     # dgreen(f"【LLM_Client】历史输入token数 : {self.history_input_tokens_num}")
                 else:
@@ -1812,244 +1589,127 @@ class LLM_Client():
 
         return rtn_data
 
+    # 这些config相关参数，若为None，则将在LLM_Client.ask_prepare()中被self.llm_config中参数覆盖
+    def _paras_overrided_by_llm_config(self, query_paras:LLM_Query_Paras):
+        query_paras.temperature = self.llm_config.temperature if query_paras.temperature is None else query_paras.temperature
+        query_paras.top_p = self.llm_config.top_p if query_paras.top_p is None else query_paras.top_p
+        query_paras.max_new_tokens = self.llm_config.max_new_tokens if query_paras.max_new_tokens is None else query_paras.max_new_tokens
+        query_paras.system_prompt = self.llm_config.system_prompt if query_paras.system_prompt is None else query_paras.system_prompt
+        query_paras.role_prompt = self.llm_config.role_prompt if query_paras.role_prompt is None else query_paras.role_prompt
+        query_paras.manual_stop = self.llm_config.manual_stop if query_paras.manual_stop is None else query_paras.manual_stop
+
+        return query_paras
+
     # 返回stream(generator)
     def ask_prepare(
             self,
-            question,
-            image_url=None,
-            temperature=None,
-            top_p=None,
-            max_new_tokens=None,
-            # in_top_p=None,
-            clear_history=False,
-            stream=True,
-            retry=False,
-            undo=False,
-            stop=None,
-            manual_stop=None,  # 用于vllm处理stop有bug
-            # remove_content_in_think_pairs=False,        # remove ('<think>', '</think>') 之间的内容
-            # think_pair=llm_protocol.LLM_Default.think_pairs,
-            system_prompt=None,
-            role_prompt=None,
-            audio_string=None,
+            query_paras:LLM_Query_Paras
     ):
-        self._vllm_api_get_token_num(query=question)
+        self._vllm_api_get_token_num(query=query_paras.query)
+        self.llm_current_query_paras = self._paras_overrided_by_llm_config(query_paras)
+        dblue(self.llm_current_query_paras)
 
-        # self.temperature = llm_protocol.LLM_Default.temperature if temperature is None else temperature
-        self.max_new_tokens = llm_protocol.LLM_Default.max_new_tokens if max_new_tokens is None else max_new_tokens
-        clear_history = int(llm_protocol.LLM_Default.clear_history if clear_history is None else clear_history)
-        self.stream = int(llm_protocol.LLM_Default.stream if stream is None else stream)
-        # in_stop = llm_protocol.LLM_Default.stop if in_stop is None else in_stop
-
-        # 如果包含语音输入，则question直接改为语音对应的text
-        if audio_string:
-            self.audio_to_wav_file('temp_stt.wav', audio_string)
-            question = self.audio_file_to_text('temp_stt.wav')
-            dgreen(f'--------------------------语音输入已转为文本---------------------------------')
-            dgreen(f'"{question}"')
-            dgreen(f'-------------------------------------------------------------------------')
-
-        if system_prompt is not None:
-            self.set_system_prompt(system_prompt)
-        if role_prompt is not None:
-            self.set_role_prompt(role_prompt)
+        # if system_prompt is not None:
+        #     self.set_system_prompt(system_prompt)
+        # if role_prompt is not None:
+        #     self.set_role_prompt(role_prompt)
 
         # 如果输入image的path
-        if image_url:
-            image_url = get_image_string_from_url(image_url)
+        # if image_url:
+        #     image_url = get_image_string_from_url(image_url)
 
-        dprint(f'{"-" * 40}输入参数{"-" * 40}')
-        dprint(f'self.url: {self.url!r}')
-        dprint(f'self.history: {self.history!r}')
-        dprint(f'clear_history: {clear_history!r}')
-        dprint(f'self.model_id: {self.model_id!r}')
-        dprint(f'self.api_key: {self.api_key!r}')
-
-        dprint(f'temperature: {temperature!r}')
-        dprint(f'top_p: {top_p!r}')
-        dprint(f'stream: {stream!r}')
-        dprint(f'max_new_tokens: {max_new_tokens!r}')
-        dprint(f'stop: {stop!r}')
-        dprint(f'question: "【{question!r}】"')
-        dprint(f'{"-" * 40}采用参数{"-" * 40}')
-
-        if self.vpn_on:
+        if self.llm_config.vpn_on:
             import httpx
             http_client = httpx.Client(
                 proxy=config.g_vpn_proxy)
             self.openai = OpenAI(
-                api_key=self.api_key,
-                base_url=self.url,
+                api_key=self.llm_config.api_key,
+                base_url=self.llm_config.base_url,
                 http_client=http_client,
                 # http_client=openai.DefaultHttpxClient(verify=False),  # 用于自建的vllm openai api的ssl访问(https访问)， # 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
             )
         else:
             self.openai = OpenAI(
-                api_key=self.api_key,
-                base_url=self.url,
+                api_key=self.llm_config.api_key,
+                base_url=self.llm_config.base_url,
                 # http_client=openai.DefaultHttpxClient(verify=False),  # 用于自建的vllm openai api的ssl访问(https访问)， # 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
             )
         try:
-            if self.model_id is None or self.model_id == '':
+            if self.llm_config.llm_model_id is None or self.llm_config.llm_model_id == '':
                 # print('------------------------------1--------------------------')
-                old_model_id = self.model_id
+                old_model_id = self.llm_config.llm_model_id
                 # print('------------------------------2--------------------------')
                 # print(self.openai.models)
                 # print(self.openai.models.list())
                 # print('------------------------------2.1--------------------------')
-                self.model_id = self.openai.models.list().data[0].id
+                self.llm_config.llm_model_id = self.openai.models.list().data[0].id
                 # print('------------------------------3--------------------------')
-                dblue(f'【LLM_Client】change model_id from "{old_model_id}" to "{self.model_id}"\n')
+                dblue(f'【LLM_Client】change model_id from "{old_model_id}" to "{self.llm_config.llm_model_id}"\n')
         except Exception as e:
             # print('------------------------------4--------------------------')
             print(f'【LLM_Client异常】ask_prepare(): "{e}"')
-            print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.url}')
-            self.model_id = 'wrong'
+            print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.llm_config.url}')
+            self.llm_config.llm_model_id = 'wrong'
             # print('------------------------------5--------------------------')
 
         self.usage = None  # 清空输入和输出的token数量统计
 
-        if not max_new_tokens:
-            max_new_tokens = self.max_new_tokens
-        else:
-            max_new_tokens = max_new_tokens
         self.response_canceled = False
         # self.__history_add_last_turn_msg()
 
-        if clear_history:
+        if self.llm_current_query_paras.clear_history:
             self.__history_clear()
 
-        if type(question) == str:
+        if type(self.llm_current_query_paras.query) == str:
             # 输入仅为question字符串
-            msgs = self.__history_messages_with_system_and_new_question(question=question, image_url=image_url)
-        elif type(question) == list:
-            # 输入为history list([{"role": "user", "content":'xxx'}, ...])
-            msgs = question
+            msgs = self.__history_messages_with_system_and_new_question(question=self.llm_current_query_paras.query, image_url=self.llm_current_query_paras.image_url)
         else:
-            raise Exception(
-                'LLM_Client.ask_prepare(): question格式错误，必须是str或[{"role": "user", "content":"xxx"}, ...]这样的list')
-
-        # ==========================================================
-        # print('发送到LLM的完整提示: ', msgs)
-        # print(f'------------------------------------------------------------------------------------------')
-        if temperature is None:
-            run_temperature = self.temperature
-        else:
-            run_temperature = temperature
-
-        if top_p is None:
-            run_top_p = self.top_p
-        else:
-            run_top_p = top_p
-
-        if self.print_input:
-            if image_url is None:
-                # question为文本
-                dgreen('<User>', end='', flush=True)
-                print(msgs[-1]['content'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, top_p={run_top_p}, {self.input_tokens_num_this_turn}/{self.history_input_tokens_num}tokens)')
-                # dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"))')
-            else:
-                # question为文本和图片
-                dgreen('<User>', end='', flush=True)
-                print(msgs[-1]['content'][0]['text'], end='', flush=True)
-                dgreen(f'</User>(temperature={run_temperature}, top_p={run_top_p}, {self.input_tokens_num_this_turn}/{self.history_input_tokens_num}tokens with image.)')
-                # dgreen(f'</User>(temperature={run_temperature}, think关键字=("{self.think_pair[0]}", "{self.think_pair[1]}"), with image.)')
-
-        if stop is None:
-            # stop = ['<|im_end|>', '<|im_start|>']
-            # stop = ['<|im_end|>', '<|im_start|>', 'assistant', 'Assistant', '<step>']
-            # stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>']
-            stop = None
-        else:
-            # stop = ['<|im_end|>', '<|im_start|>'] + in_stop
-            # stop = ['<|im_end|>', '<|im_start|>', 'assistant', 'Assistant', '<step>'] + in_stop
-            # stop = ['<|im_end|>', '<|im_start|>', '<s>', '</s>', 'human', 'Human', 'assistant', 'Assistant', '<step>'] + in_stop
-            stop = stop
-
-        self.stop = stop
-        self.manual_stop = manual_stop
-
-        dprint(f'{"-" * 80}')
-        # dprint(f'self.openai: {self.openai}')
-        dprint(f'self.model_id: {self.model_id!r}')
-        dprint(f'run_temperature: {run_temperature!r}')
-        dprint(f'run_top_p: {run_top_p!r}')
-        dprint(f'stream: {stream!r}')
-        dprint(f'max_tokens: {max_new_tokens!r}')
-        dprint(f'stop: {stop!r}')
-        dprint(f'messages: {msgs!r}')
-
-        self.status.question = question
-        self.status.model_id = self.model_id
-        self.status.temperature = run_temperature
-        self.status.max_new_tokens = max_new_tokens
-        self.status.stops = stop
-        self.status.system_prompt = self.system_prompt
-        status_to_redis(self.status)
+            raise Exception('LLM_Client.ask_prepare(): query格式错误，必须是str。')
 
         try:
-            if self.reasoning_effort is not None:
+            dyellow(f'【LLM_Client】ask_prepare(): reasoning_effort为{self.llm_config.reasoning_effort}')
+            if self.llm_config.reasoning_effort is not None:
                 gen = self.openai.chat.completions.create(
-                    model=self.model_id,
-                    temperature=run_temperature,
-                    top_p=run_top_p,
-                    # top_k=self.top_k,
-                    # top_p = run_top_p,
+                    model=self.llm_config.llm_model_id,
+                    temperature=self.llm_current_query_paras.temperature,
+                    top_p=self.llm_current_query_paras.top_p,
                     # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
                     messages=msgs,
-                    stream=stream,
+                    stream=self.llm_config.stream,
                     # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    stop=stop,
-                    # stop_token_ids=[151329, 151336, 151338],    # glm9b-chat-1m
-                    # Specifying stop words in streaming output format is not yet supported and is under development.
-
+                    max_tokens=self.llm_current_query_paras.max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    stop=self.llm_current_query_paras.manual_stop,
                     stream_options={"include_usage": True},  # 最新版本openai的要求
-                    extra_body={'reasoning_effort':self.reasoning_effort}
-                    # top_p=0.95,   # 防止过度重复
-                    # top_k=40,     # 复杂数学或代码
-                    # top_k=20,     # 其他类型问题
+                    extra_body={'reasoning_effort':self.llm_config.reasoning_effort}
                 )
             else:
                 gen = self.openai.chat.completions.create(
-                    model=self.model_id,
-                    temperature=run_temperature,
-                    top_p=run_top_p,
-                    # top_k=self.top_k,
-                    # top_p = run_top_p,
+                    model=self.llm_config.llm_model_id,
+                    temperature=self.llm_current_query_paras.temperature,
+                    top_p=self.llm_current_query_paras.top_p,
                     # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
                     messages=msgs,
-                    stream=stream,
+                    stream=self.llm_config.stream,
                     # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    max_tokens=max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    stop=stop,
-                    # stop_token_ids=[151329, 151336, 151338],    # glm9b-chat-1m
-                    # Specifying stop words in streaming output format is not yet supported and is under development.
-
+                    max_tokens=self.llm_current_query_paras.max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                    stop=self.llm_current_query_paras.manual_stop,
                     stream_options={"include_usage": True},  # 最新版本openai的要求
-                    # top_p=0.95,   # 防止过度重复
-                    # top_k=40,     # 复杂数学或代码
-                    # top_k=20,     # 其他类型问题
                 )
-
-            dprint(f'===self.openai.chat.completions.create() invoked.===')
-            dprint(f'{"-" * 80}')
         except Exception as e:
             dred(f'【LLM_Client异常】ask_prepare(): {e!r}(注意：api_key不能设置为"")')
-            self.question_last_turn = question
+            self.question_last_turn = self.llm_current_query_paras.query
             return self
 
         self.gen = gen
 
-        self.question_last_turn = question
+        self.question_last_turn = self.llm_current_query_paras.query
         return self
 
-    def set_thinking_stream_buf(self, output_stream_buf):
-        self.thinking_stream_buf = output_stream_buf
+    # def set_thinking_stream_buf(self, output_stream_buf):
+    #     self.thinking_stream_buf = output_stream_buf
 
-    def set_result_stream_buf(self, result_stream_buf):
-        self.result_stream_buf = result_stream_buf
+    # def set_result_stream_buf(self, result_stream_buf):
+    #     self.result_stream_buf = result_stream_buf
 
     def thinking_stream(self, chunk):
         # if self.thinking_stream_buf:
@@ -2123,205 +1783,6 @@ class LLM_Client():
 
         return result
 
-    # 方式2：返回generator，在合适的时候输出结果
-    # chunk[0] 原始full chunk
-    # chunk[1] think chunk
-    # chunk[2] result chunk
-    # def legacy_get_answer_generator(self):
-    #     answer = ''
-    #     answer_no_partial_stop = ''
-    #     perhaps_stop_string = ''    # 非常重要，用于存放疑似stop的缓冲
-    #
-    #
-    #     answer_no_partial_think_pair = ''
-    #     perhaps_think_pair_string = ''     # 非常重要，用于存放疑似think的缓冲
-    #     thinking_content = ''
-    #     last_thinking_content = ''
-    #
-    #     result_content = ''
-    #     last_result_content = ''
-    #
-    #     try:
-    #         # dprint(f'self.gen: {self.gen}')
-    #         for chunk in self.gen:
-    #             # dprint(f'chunk: {chunk}')
-    #             if self.response_canceled:
-    #                 break
-    #
-    #             # print(f'chunk.choices[0].delta: {chunk.choices[0].delta}')
-    #             # print(f'chunk: {chunk}')
-    #             if hasattr(chunk, 'usage') and chunk.usage is not None:
-    #                 self.usage = {}
-    #                 self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
-    #                 self.usage['total_tokens'] = chunk.usage.total_tokens
-    #                 self.usage['completion_tokens'] = chunk.usage.completion_tokens
-    #
-    #             if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
-    #                 # if hasattr(chunk, 'usage') and chunk.usage is not None:
-    #                 #     print(f'chunk.usage: {chunk.usage}')
-    #                 #     # 输入和输出的token数量统计
-    #                 #     # dred(f'usage = {chunk.usage}')
-    #                 #     # dred(f'type(usage) = {type(chunk.usage)}')
-    #                 #     if type(chunk.usage) is openai.types.completion_usage.CompletionUsage:
-    #                 #         # deepseek API采用openai.types.completion_usage.CompletionUsage: CompletionUsage(completion_tokens=50, prompt_tokens=18, total_tokens=68)
-    #                 #         self.usage = {}
-    #                 #         self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
-    #                 #         self.usage['total_tokens'] = chunk.usage.total_tokens
-    #                 #         self.usage['completion_tokens'] = chunk.usage.completion_tokens
-    #                 #     else:
-    #                 #         # vllm API采用: {'prompt_tokens': 21, 'total_tokens': 38, 'completion_tokens': 17}
-    #                 #         self.usage = chunk.usage
-    #
-    #                 my_chunk = chunk.choices[0].delta.content
-    #                 answer += my_chunk
-    #
-    #                 chunk_output = ''
-    #                 think_chunk_output = ''
-    #                 result_chunk_output = ''
-    #
-    #                 # ----------------------------------1、判断是否有('<think>', '</think>')这样的think pair需要过滤----------------------------------------
-    #                 if True:
-    #                 # if self.remove_content_in_think_pairs:
-    #                     # ----------------------------------需要过滤('<think>', '</think>')之间内容----------------------------------
-    #                     answer_no_partial_think_pair = str_remove_content_in_partial_pairs(answer, self.think_pair)
-    #                     if answer_no_partial_think_pair == answer:
-    #                         # ----------------------------------没有('<think>', '</think>')----------------------------------
-    #                         result_chunk_output = my_chunk
-    #                         # pass
-    #                     else:
-    #                         # ----------------------------------有('<think>', '</think>')----------------------------------
-    #                         if self.think_pair[1] not in answer:
-    #                             # 如果 '</think>' not in answer，也就是还没有输出结论
-    #                             thinking_content = _str_get_content_in_partial_pairs(answer, self.think_pair)
-    #                             think_chunk_output = thinking_content.replace(last_thinking_content, '', 1)    # 只去掉最左边的last_thinking_content
-    #                             last_thinking_content = thinking_content
-    #                         else:
-    #                             # 如果 '</think>' in answer，也就是开始输出结论
-    #                             think_chunk_output = ''
-    #
-    #
-    #                             # 处理result
-    #                             result_content = str_remove_content_in_partial_pairs(answer, self.think_pair)
-    #
-    #                             # print(f'\n-----------answer------------\n"{answer}"')
-    #                             # print(f'--------------------------------------------')
-    #                             # print(f'\n-----------result_content------------\n"{result_content}"')
-    #                             # print(f'--------------------------------------------')
-    #                             # print(f'\n-----------last_result_content------------\n"{last_result_content}"')
-    #                             # print(f'--------------------------------------------')
-    #
-    #                             result_chunk_output = result_content.replace(last_result_content, '', 1)  # 只去掉最左边的last_thinking_content
-    #                             last_result_content = result_content
-    #                             # print(f'\n-----------result_chunk_output------------\n"{result_chunk_output}"')
-    #                             # print(f'--------------------------------------------')
-    #
-    #                         # print(f'\n-------------think_chunk_output-------------\n"{think_chunk_output}"')
-    #                         # print(f'--------------------------------------------')
-    #                 else:
-    #                     # ----------------------------------不需要过滤('<think>', '</think>')之间内容----------------------------------
-    #                     pass
-    #
-    #                 # ----------------------------------2、判断是否有['[观察]']这样的stop----------------------------------------
-    #                 answer_for_stop = ''
-    #                 chunk_for_stop = ''
-    #                 result_chunk_after_stop = ''
-    #
-    #                 answer_for_stop = result_chunk_output
-    #                 chunk_for_stop = result_chunk_output
-    #                 # if self.remove_content_in_think_pairs:
-    #                 #     answer_for_stop = result_chunk_output
-    #                 #     chunk_for_stop = result_chunk_output
-    #                 # else:
-    #                 #     answer_for_stop = answer
-    #                 #     chunk_for_stop = my_chunk
-    #
-    #                 if self.stop:
-    #                     # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
-    #                     answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, self.stop)
-    #                     # answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
-    #
-    #                     # print(f'answer1: {answer}')
-    #                     # print(f'answer2: {answer_no_partial_stop}')
-    #                     if answer_no_partial_stop == answer_for_stop:
-    #                     # if answer_no_partial_stop == answer:
-    #                         # ----------------------------------不是stop标识----------------------------------
-    #                         my_chunk = perhaps_stop_string + my_chunk   # 1、将证实不是stop的字符补在前面
-    #                         perhaps_stop_string = ''                    # 2、清空疑似stop的缓冲
-    #                         # 没partial_stop
-    #                         # print(my_chunk, end='', flush=True)
-    #
-    #                         # yield my_chunk
-    #
-    #                         result_chunk_after_stop = chunk_for_stop
-    #                         # chunk_output = my_chunk
-    #                     else:
-    #                         # ----------------------------------是stop标识----------------------------------
-    #                         # dred(f'===================================================')
-    #                         # dred(f'-------------遇到stop标识: {self.stop}---------------')
-    #                         # dred(f'-------------answer_no_partial_stop: "{answer_no_partial_stop[-20:]}"---------------')
-    #                         # dred(f'-------------answer_for_stop: "{answer_for_stop[-20:]}"---------------')
-    #                         # dred(f'===================================================')
-    #                         perhaps_stop_string += chunk_for_stop #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
-    #                         # perhaps_stop_string += my_chunk #存放疑似stop的缓冲，后面如果证实不是stop，需要补回去
-    #
-    #                         # 有partial_stop
-    #                         # print(f'*{my_chunk}*', end='', flush=True)
-    #
-    #                         # yield ''
-    #
-    #                         result_chunk_after_stop = ''
-    #                         # chunk_output = ''
-    #                 else:
-    #                     # ----------------------------------没有stop----------------------------------
-    #                     # yield my_chunk
-    #
-    #                     result_chunk_after_stop = chunk_for_stop
-    #                     # chunk_output = my_chunk
-    #
-    #                 yield my_chunk, think_chunk_output, result_chunk_after_stop
-    #                 # if self.remove_content_in_think_pairs:
-    #                 #     # 过滤think内容
-    #                 #     yield my_chunk, think_chunk_output, result_chunk_after_stop
-    #                 #     # yield chunk_output, think_chunk_output, result_chunk_output
-    #                 # else:
-    #                 #     # 不过滤think内容
-    #                 #     yield result_chunk_after_stop
-    #                 #     # yield chunk_output
-    #
-    #     except Exception as e:
-    #         dred(f'LLM_Client("{self.url}")连接异常: {e}')
-    #         yield '', '', ''
-    #         # if self.remove_content_in_think_pairs:
-    #         #     # 过滤think内容
-    #         #     yield '', '', ''
-    #         # else:
-    #         #     # 不过滤think内容
-    #         #     yield ''
-    #
-    #     if self.stop:
-    #         self.answer_last_turn = answer_no_partial_stop
-    #     else:
-    #         self.answer_last_turn = answer
-    #
-    #     self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
-    #     # if self.remove_content_in_think_pairs:
-    #     #     # print(f'\n-----------------last1-----------------\n"{self.answer_last_turn}"')
-    #     #     self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
-    #     #     # print(f'-----------------last2-----------------\n"{self.answer_last_turn}"')
-    #     #     # print(f'---------------------------------------')
-    #     # else:
-    #     #     pass
-    #
-    #     # self.answer_last_turn = answer
-    #     self.__history_add_last_turn_msg()
-    #     # self.print_history_and_system()
-    #
-    #     self.status.last_response = answer
-    #     self.status.history_list = self.history_list
-    #     # dred(f'--------------self.last_response: {answer}')
-    #     # dred(f'--------------self.history_list: {self.history_list}')
-    #     # dred(f'--------------status: {self.status}')
-    #     status_to_redis(self.status)
 
     # chunk[0] 原始full chunk
     # chunk[1] think chunk
@@ -2369,7 +1830,7 @@ class LLM_Client():
                     self.usage['completion_tokens'] = chunk.usage.completion_tokens
 
                     self.output_tokens_num_this_turn = self.usage['completion_tokens']
-                    if self.history:
+                    if self.llm_config.has_history:
                         self.history_output_tokens_num += self.usage['completion_tokens']
                     else:
                         self.history_output_tokens_num = self.usage['completion_tokens']
@@ -2425,19 +1886,18 @@ class LLM_Client():
                     #     chunk_for_stop = my_chunk
                     # dred(f'my_chunk: "{my_chunk}"')
 
-                    if self.manual_stop:
+                    if self.llm_current_query_paras.manual_stop:
                         # if self.stop:
                         # 进行stop的增强修正(vllm的stop机制有bug，有时agent中的特殊stop如"观察"无法正确停止)
 
-                        for stop_string in self.manual_stop:
+                        for stop_string in self.llm_current_query_paras.manual_stop:
                             # 如果answer包含stop，退出
                             if stop_string in answer:
                                 # dyellow(f'【stop】遇到stop标识"{stop_string}"，返回，answer="{answer}"')
                                 return my_chunk, think_chunk_output, result_chunk_after_stop
 
                         # answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, ['[观察]'])
-                        answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop,
-                                                                                       self.manual_stop)
+                        answer_no_partial_stop = str_remove_partial_substring_or_right(answer_for_stop, self.llm_current_query_paras.manual_stop)
 
                         # answer_no_partial_stop = str_remove_partial_substring(answer, self.stop)
 
@@ -2500,7 +1960,7 @@ class LLM_Client():
                     #     # yield chunk_output
 
         except Exception as e:
-            dred(f'LLM_Client("{self.url}")连接异常: {e}')
+            dred(f'LLM_Client("{self.llm_config.base_url}")连接异常: {e}')
             yield '', '', ''
             # if self.remove_content_in_think_pairs:
             #     # 过滤think内容
@@ -2526,34 +1986,15 @@ class LLM_Client():
 
         # self.answer_last_turn = answer
         self.__history_add_last_turn_msg()
-        # self.print_history_and_system()
 
-        self.status.last_response = answer
-        self.status.history_list = self.history_list
-        # dred(f'--------------self.last_response: {answer}')
-        # dred(f'--------------self.history_list: {self.history_list}')
-        # dred(f'--------------status: {self.status}')
-        status_to_redis(self.status)
+        # self.status.last_response = answer
+        # self.status.history_list = self.history_list
 
-    # def get_answer_generator(self):
-    #     answer = ''
-    #     for chunk in self.gen:
-    #         if self.response_canceled:
-    #             break
-    #
-    #         if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
-    #             my_chunk = chunk.choices[0].delta.content
-    #             answer += my_chunk
-    #
-    #             yield my_chunk
-    #
-    #     self.answer_last_turn = answer
-    #     self.__history_add_last_turn_msg()
+        # status_to_redis(self.status)
 
     # 取消正在进行的stream
     def cancel_response(self):
         self.response_canceled = True
-
 
 # async的非联网llm调用
 class Async_LLM(legacy_Web_Server_Base):
@@ -3371,12 +2812,23 @@ def base_main():
     # llm.ask_prepare('2+3=').get_answer_and_sync_print()
 
 def reasoning_effort_main():
+    llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
     llm = LLM_Client(
-        llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
+        llm_config=llm_config,
     )
     print(llm_protocol.g_local_gpt_oss_20b_mxfp4)
     prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
-    llm.ask_prepare(prompt).get_answer_and_sync_print()
+    query = LLM_Query_Paras(
+        query=prompt,
+        # temperature=0.77,
+        # top_p=0.88,
+        # max_new_tokens=8000,
+        # system_prompt='hi',
+        # role_prompt='hey',
+        # manual_stop=['[观察]']
+    )
+    llm.ask_prepare(query).get_answer_and_sync_print()
 
 def think_and_result_test():
     llm = LLM_Client(
