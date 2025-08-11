@@ -117,7 +117,17 @@ g_local_qwen3_30b_chat = LLM_Config(
 
 g_local_qwen3_30b_thinking = LLM_Config(
     name = 'local_qwen3_30b_thinking',
-    base_url='https://powerai.cc:8002/v1',
+    base_url='https://powerai.cc:8001/v1',
+    api_key='empty',
+    # llm_model_id='',
+    temperature=0.6,
+    top_p=0.95,
+    max_new_tokens=8192
+)
+
+g_local_qwen3_4b_thinking = LLM_Config(
+    name = 'local_qwen3_4b_thinking',
+    base_url='https://powerai.cc:8001/v1',
     api_key='empty',
     # llm_model_id='',
     temperature=0.6,

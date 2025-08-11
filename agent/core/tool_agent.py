@@ -977,6 +977,7 @@ def main_folder():
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b
         llm_config=llm_protocol.g_online_groq_gpt_oss_120b
+        # llm_config=llm_protocol.g_local_qwen3_4b_thinking
 
         # llm_config=llm_protocol.g_local_qwen3_30b_chat
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking

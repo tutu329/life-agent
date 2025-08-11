@@ -2825,7 +2825,8 @@ def base_main():
     # llm.ask_prepare('2+3=').get_answer_and_sync_print()
 
 def reasoning_effort_main():
-    llm_config = llm_protocol.g_online_groq_gpt_oss_120b
+    llm_config = llm_protocol.g_local_qwen3_4b_thinking
+    # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
     # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_kimi_k2
     # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
