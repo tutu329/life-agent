@@ -1650,7 +1650,7 @@ class LLM_Client():
         except Exception as e:
             # print('------------------------------4--------------------------')
             print(f'【LLM_Client异常】ask_prepare(): "{e}"')
-            print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.llm_config.url}')
+            print(f'【LLM_Client异常】ask_prepare(): 可能是IP或Port设置错误，当前url为: {self.llm_config.base_url}')
             self.llm_config.llm_model_id = 'wrong'
             # print('------------------------------5--------------------------')
 
@@ -2825,8 +2825,10 @@ def base_main():
     # llm.ask_prepare('2+3=').get_answer_and_sync_print()
 
 def reasoning_effort_main():
+    llm_config = llm_protocol.g_online_groq_gpt_oss_120b
+    # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_kimi_k2
-    llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
     # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
     llm = LLM_Client(
         llm_config=llm_config,

@@ -145,3 +145,27 @@ g_online_groq_kimi_k2 = LLM_Config(
     max_new_tokens=8192,
     vpn_on=True
 )
+
+g_online_groq_gpt_oss_20b = LLM_Config(
+    name = 'online_groq_gpt_oss_20b',
+    base_url='https://api.groq.com/openai/v1',
+    api_key=os.getenv("GROQ_API_KEY") or 'empty',
+    llm_model_id='openai/gpt-oss-20b',
+    temperature=0.6,
+    top_p=0.95,
+    max_new_tokens=8192,
+    # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
+    vpn_on=True
+)
+
+g_online_groq_gpt_oss_120b = LLM_Config(
+    name = 'online_groq_gpt_oss_120b',
+    base_url='https://api.groq.com/openai/v1',
+    api_key=os.getenv("GROQ_API_KEY") or 'empty',
+    llm_model_id='openai/gpt-oss-120b',
+    temperature=0.6,
+    top_p=0.95,
+    max_new_tokens=8192,
+    # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
+    vpn_on=True
+)
