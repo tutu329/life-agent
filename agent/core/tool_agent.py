@@ -147,7 +147,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                  tool_agent_experience_json_path='',    # 经验json文件，如果为‘’，就不设置经验
                  # agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
                  # agent_stream_queue_ref:Agent_Stream_Queues=None,  # agent的stream queue，，由multi_agent_server管理
-                 top_agent_id=None,                     # top_agent_id为None时，表明自己即为top agent
+                 # top_agent_id=None,                     # top_agent_id为None时，表明自己即为top agent
                  ):
         Agent_Base.__init__(self, agent_config=agent_config)
         # 初始化Base_Tool实例
