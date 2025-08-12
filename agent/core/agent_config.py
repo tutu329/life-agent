@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
 from config import dred,dyellow,dblue,dcyan,dgreen
 from pydantic import BaseModel, Field, ConfigDict
-from uuid import uuid4
 
 import config
 import llm_protocol
@@ -38,14 +37,17 @@ class Agent_Config(BaseModel):
     # status_stream_buf:Any = None
 
     # agent配置
-    agent_name      :str = 'agent_' + str(uuid4())  # agent的name
-    tool_names      :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
-    exp_json_path   :str = ''                       # 如：'my_2_levels_mas_exp.json'
+    agent_name          :Optional[str] = None           # agent的name
+    tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    exp_json_path       :str = ''                       # 如：'my_2_levels_mas_exp.json'
 
-    llm_config      :LLM_Config = llm_protocol.g_local_gpt_oss_20b_mxfp4
-    # llm_config      :LLM_Config = llm_protocol.g_local_qwen3_30b_chat
-    # llm_config      :LLM_Config = llm_protocol.g_online_groq_kimi_k2
+    llm_config          :LLM_Config = llm_protocol.g_local_gpt_oss_20b_mxfp4
 
+    as_tool_name        :Optional[str] = None  # As_Tool的name，如取: "Folder_Agent_As_Tool"
+    as_tool_description :Optional[str] = None  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
+    has_history         :bool = False
+    tool_agent_experience_json_path     :str = ''  # 经验json文件，如果为‘’，就不设置经验
+    top_agent_id        :Optional[str] = None  # top_agent_id为None时，表明自己即为top agent
 
     # LLM配置
     # base_url        :str = config.LLM_Default.url

@@ -149,8 +149,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                  # agent_stream_queue_ref:Agent_Stream_Queues=None,  # agent的stream queue，，由multi_agent_server管理
                  top_agent_id=None,                     # top_agent_id为None时，表明自己即为top agent
                  ):
-        Agent_Base.__init__(self)
-
+        Agent_Base.__init__(self, agent_config=agent_config)
         # 初始化Base_Tool实例
         # Base_Tool().__init__()
 
@@ -172,20 +171,6 @@ class Tool_Agent(Agent_Base, Base_Tool):
         #     self.stream_queues = self.agent_stream_queues_ref
         # else:
         self.stream_queues = Agent_Stream_Queues()
-
-        # agent属性
-        self.agent_id = str(uuid4())
-
-        # 顶层的agent_id，主要用于多层agents系统中，让top_agent_id<-->connection，而与下层agent_id无关
-        # top_agent_id的形成有2种情况：
-        # 1）多层agents system中，靠parent agent注入
-        # 2）自己即为top agent，则self.top_agent_id=self.agent_id
-        if top_agent_id:
-            # 外部注入了top_agent_id
-            self.top_agent_id = top_agent_id
-        else:
-            # 外部没有注入top_agent_id
-            self.top_agent_id = self.agent_id
 
         if not has_history:
             dyellow('--------------------------------------------------------------------------------------------')
