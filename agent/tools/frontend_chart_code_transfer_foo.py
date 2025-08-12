@@ -3,12 +3,12 @@ from agent.tools.protocol import Action_Result
 # from agent.core.legacy_protocol import Action_Result
 
 class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
-    name='Frontend_Chart_Code_Transfer_Tool'
-    description = \
+    tool_name= 'Frontend_Chart_Code_Transfer_Tool'
+    tool_description = \
 '''本工具将代码传给前端，系统在前端用javascript完成渲染，本工具不会直接给出最终结果。本工具的具体要求包括，
 1)输入：通过参数frontend_chart_code输入javascript程序，程序必须从新的一行顶格开始，编写程序时要一步一步想清楚。
 '''
-    parameters = [
+    tool_parameters = [
         {
             'name': 'frontend_chart_code',
             'type': 'string',

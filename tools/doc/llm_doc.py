@@ -568,7 +568,7 @@ class LLM_Doc():
             node = in_node
 
         node_level = node.node_data.level
-        node_name = node.node_data.name
+        node_name = node.node_data.tool_name
         node_heading = node.node_data.heading
 
         # 获取node文本
@@ -631,7 +631,7 @@ class LLM_Doc():
                 node = in_node
 
             node_level = node.node_data.level
-            node_name = node.node_data.name
+            node_name = node.node_data.tool_name
             node_heading = node.node_data.heading
 
             # 获取node文本

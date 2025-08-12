@@ -6,14 +6,14 @@ from config import Global
 
 
 class Energy_Investment_Plan_Tool(Base_Tool):
-    name='Energy_Investment_Plan_Tool'
-    description='''
+    tool_name= 'Energy_Investment_Plan_Tool'
+    tool_description= '''
 通过"能源投资优化系统"对风光储等能源设施进行基于线性规划的最优投资规模计算的工具.
 所输入参数必须遵循如下要求, 否则转换为dict数据时会失败:
 1)绝对不能增加如#开头的注释.
 2)bool变量必须为true或false, 而不能是True或False.
 '''
-    parameters=[
+    tool_parameters=[
         {
             'name': 'rate',
             'type': 'float',

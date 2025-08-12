@@ -68,8 +68,8 @@ g_prompt_write_chapter_text = \
 '''
 
 class Write_Chapter_Tool(Base_Tool):
-    name = 'Write_Chapter_Tool'
-    description = \
+    tool_name = 'Write_Chapter_Tool'
+    tool_description = \
 '''控制前端Collabora CODE文档编辑器在doc/docx文档中编制章节标题和章节内容的工具。
 <支持的操作>
 "docx_write_chapter_title": 编制docx文档一个章节的标题。
@@ -82,7 +82,7 @@ class Write_Chapter_Tool(Base_Tool):
 1）不要连续调用"docx_write_chapter_title"输出多个标题(如2.1、2.2、2.3)然后再调用"docx_write_chapter_text"编写(如编写2.1、2.2、2.3的内容)。（因为输出是串行的，输出内容无法插入到前面。）
 </注意事项>
 '''
-    parameters = [
+    tool_parameters = [
         # {
         #     'name': 'template_filename',
         #     'type': 'string',

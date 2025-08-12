@@ -7,11 +7,11 @@ from agent.tools.protocol import Data_Set_Info, Action_Result
 # from agent.base_tool import Data_Attached_Tool
 
 class Database_Tool(Base_Tool):
-    name='Database_Tool'
-    description=\
+    tool_name= 'Database_Tool'
+    tool_description=\
 '''本工具，通过表名和字段名，获取数据库中对应数据，并将数据通过push_to_frontend("some_agent_id", "some_var_name")传给前端中。
 '''
-    parameters=[
+    tool_parameters=[
         {
             'name': 'table_name',
             'type': 'string',

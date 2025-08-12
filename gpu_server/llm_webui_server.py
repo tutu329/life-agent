@@ -361,8 +361,8 @@ def bot_clear(history):
 current_file = ''
 def bot_on_upload(history, file):
     global current_file
-    current_file = file.name
-    history = history + [((file.name, '上传文件'), None)]
+    current_file = file.tool_name
+    history = history + [((file.tool_name, '上传文件'), None)]
     print('bot_on_upload, history: ', history)
     return history
 

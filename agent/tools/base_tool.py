@@ -119,9 +119,9 @@ PROMPT_REACT = """<总体要求>
 # ，且必须以'''和'''囊括起来，绝对不能用```或\"\"\"，且代码字符串内部的引号用\"对或用\"\"\"对
 
 class Base_Tool(ABC):
-    name: str
-    description: str
-    parameters: List[Dict]
+    tool_name: str
+    tool_description: str
+    tool_parameters: List[Dict]
 
     def __init__(self):
         pass

@@ -48,7 +48,7 @@ def generate_tool_class_dynamically(
         except Exception as exc:
             # 这里可以做统一的日志或错误包装
             raise RuntimeError(
-                f"[{self.name}] remote call failed: {exc}"
+                f"[{self.tool_name}] remote call failed: {exc}"
             ) from exc
 
     # ---------- 组装类属性 ----------

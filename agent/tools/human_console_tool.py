@@ -3,11 +3,11 @@ from agent.tools.protocol import Action_Result, Tool_Call_Paras
 # from agent.core.legacy_protocol import Action_Result
 
 class Human_Console_Tool(Base_Tool):
-    name='Human_Console_Tool'
-    description=\
+    tool_name= 'Human_Console_Tool'
+    tool_description=\
 '''本工具用于向用户获取反馈信息(当你不清楚用户问题是否完全解决时，就要通过本工具向用户询问，而不是通过直接输出询问用户)。
 '''
-    parameters=[
+    tool_parameters=[
         {
             'name': 'question',
             'type': 'string',

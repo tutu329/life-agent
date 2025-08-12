@@ -11,11 +11,11 @@ from agent.tools.protocol import Action_Result, Tool_Call_Paras
 from utils.folder import get_folder_all_items_string
 
 class Folder_Tool(Base_Tool):
-    name='Folder_Tool'
-    description=\
+    tool_name= 'Folder_Tool'
+    tool_description=\
 '''返回指定文件夹下所有文件和文件夹的名字信息。
 '''
-    parameters=[
+    tool_parameters=[
         {
             'name': 'dir',
             'type': 'string',

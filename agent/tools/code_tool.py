@@ -4,8 +4,8 @@ from utils.extract import legacy_extract_dict_string, extract_code
 from tools.exec_code.exec_python_linux import execute_python_code_in_docker
 
 class Code_Tool(Base_Tool):
-    name='Code_Tool'
-    description=\
+    tool_name= 'Code_Tool'
+    tool_description=\
 '''通过python进行编程的工具，该工具的具体要求包括，
 1)输入：通过参数code输入python程序，程序必须从新的一行顶格开始，编写程序时要一步一步想清楚。
 2)返回：为了获得代码的具体运行结果，代码必须要用print将需要返回的变量打印出来：
@@ -13,7 +13,7 @@ print({
     'name':'返回内容的名称',
     'value':需要返回的所有内容数据都放在这里,
 })'''
-    parameters=[
+    tool_parameters=[
         {
             'name': 'code',
             'type': 'string',

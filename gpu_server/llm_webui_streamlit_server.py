@@ -1257,7 +1257,7 @@ def refresh_file_column(in_widget, in_files, file_uploader_changed=False):
 
             import base64
             file_column_raw_data = {
-                "file_name": [f.name for f in in_files],  # string
+                "file_name": [f.tool_name for f in in_files],  # string
                 "file_type":[f.type for f in in_files],
                 "file_selected": [True for f in in_files],  # bool
                 "file_content": ["data:{mime_type};base64,{base64_string}".format(mime_type=f.type, base64_string=base64.b64encode(f.read()).decode("utf-8")) for f in in_files],    # string of file content
@@ -1271,7 +1271,7 @@ def refresh_file_column(in_widget, in_files, file_uploader_changed=False):
             df_files_info = pd.DataFrame(file_column_raw_data)
 
             for f in in_files:
-                dgreen(f'读取"{f.name}"成功.')
+                dgreen(f'读取"{f.tool_name}"成功.')
                 print(f)
 
             # 存储session数据

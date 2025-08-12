@@ -26,7 +26,7 @@ class Hierarchy_Node:
             members_str.append(k + ': ' + str(getattr(self.node_data, k)))
 
         if hasattr(self.node_data, 'name'):
-            members_str.append('children: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
+            members_str.append('children: [' + ', '.join([child.node_data.tool_name for child in self.children]) + ']')
         return ', '.join(members_str)
 
     def add_child(self, child):
@@ -53,7 +53,7 @@ class Hierarchy_Node:
             return self # 返回所找到的node对象
 
         if self.children:
-            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
+            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.tool_name for child in self.children]) + ']')
         for child in self.children:
             # print('##################################################################################')
             res = child.find_similar_by_head(in_toc_heading_has_index, in_node_name)
@@ -70,11 +70,11 @@ class Hierarchy_Node:
         )
 
         for node in inout_similar_node_list:
-            print(f'node: "{node.node_data.name + " " + node.node_data.heading}"--------')
+            print(f'node: "{node.node_data.tool_name + " " + node.node_data.heading}"--------')
 
     def _find_all_similar_nodes_by_head(self, inout_similar_node_list, in_toc_heading_has_index, in_node_name):
         # ===========将"一次性返回相似度>60的node"，改为"返回子字符串或者模糊相关度大于0的所有node"，然后再问llm选取chapter===========
-        dprint(f'查找节点: {self.node_data.name + " " + self.node_data.heading}')
+        dprint(f'查找节点: {self.node_data.tool_name + " " + self.node_data.heading}')
         # if self.node_data.heading == in_node_name:
 
         # 通常这时已统计判断过self.toc_heading_has_index
@@ -82,15 +82,15 @@ class Hierarchy_Node:
             simi = wratio(self.node_data.heading, in_node_name)
             print(f'--------node: "{self.node_data.heading}"-相似度: {simi}--------')
         else:
-            simi = wratio(self.node_data.name + " " + self.node_data.heading, in_node_name) # 最后发现中文similar比较，"8 投资估算 8.2 投资概算"这样的标题和"8.2 投资概算"比较，不如和“投资概算”比较准确，且需要用wrato而不是simple_match
-            print(f'--------node: "{self.node_data.name + " " + self.node_data.heading}"-相似度: {simi}--------')
+            simi = wratio(self.node_data.tool_name + " " + self.node_data.heading, in_node_name) # 最后发现中文similar比较，"8 投资估算 8.2 投资概算"这样的标题和"8.2 投资概算"比较，不如和“投资概算”比较准确，且需要用wrato而不是simple_match
+            print(f'--------node: "{self.node_data.tool_name + " " + self.node_data.heading}"-相似度: {simi}--------')
 
         if in_node_name.replace('"', '').replace("'", "") in self.node_data.heading or simi > 0 :
             inout_similar_node_list.append(self)
             # return self
 
         if self.children:
-            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
+            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.tool_name for child in self.children]) + ']')
         for child in self.children:
             # print('##################################################################################')
             res = child._find_all_similar_nodes_by_head(inout_similar_node_list, in_toc_heading_has_index, in_node_name)
@@ -98,13 +98,13 @@ class Hierarchy_Node:
                 return res
         return None
     def find(self, in_node_name):
-        dprint(f'查找节点: {self.node_data.name}')
-        if self.node_data.name == in_node_name:
-            dprint(f'--------找到了node: {self.node_data.name}---------')
+        dprint(f'查找节点: {self.node_data.tool_name}')
+        if self.node_data.tool_name == in_node_name:
+            dprint(f'--------找到了node: {self.node_data.tool_name}---------')
             return self # 返回所找到的node对象
 
         if self.children:
-            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.name for child in self.children]) + ']')
+            dprint(f'准备进入子节点: [' + ', '.join([child.node_data.tool_name for child in self.children]) + ']')
         for child in self.children:
             res = child.find(in_node_name)
             if res is not None:
@@ -160,7 +160,7 @@ class Hierarchy_Node:
         else:
             node = in_node
 
-        dprint(f'进入节点{node.node_data.name}')
+        dprint(f'进入节点{node.node_data.tool_name}')
 
         # 处理当前node的数据
         if node.node_data.level > 0:
@@ -191,7 +191,7 @@ class Hierarchy_Node:
                 inout_toc_md_list.append(
                     # f'<font size={10-node.node_data.level}>' + ' ' + '&emsp;'*(node.node_data.level-1) +        # 注意中间那个空格' '必须有。'&emsp;'用于写入硬的空格
                     md_index_head + color_string + blank_str * (node.node_data.level-1) +  # 注意md_index_head的那个空格' '必须有。'&emsp;'用于写入硬的空格
-                    node.node_data.name.strip() + ' ' +
+                    node.node_data.tool_name.strip() + ' ' +
                     node.node_data.heading.strip() + color_string_end
                     # node.node_data.heading.strip() + '</font>'
                 )
@@ -224,10 +224,10 @@ class Hierarchy_Node:
         else:
             node = in_node
 
-        dprint(f'进入节点{node.node_data.name}')
+        dprint(f'进入节点{node.node_data.tool_name}')
 
         # 处理当前node的数据
-        inout_toc_json_list.append(node.node_data.name + ' ' + node.node_data.heading)
+        inout_toc_json_list.append(node.node_data.tool_name + ' ' + node.node_data.heading)
         # inout_toc_json_list.append(node.node_data.heading)
 
         if node.node_data.level < in_max_level:
@@ -258,10 +258,10 @@ class Hierarchy_Node:
         else:
             node = in_node
 
-        dprint(f'进入节点{node.node_data.name}')
+        dprint(f'进入节点{node.node_data.tool_name}')
 
         # 处理当前node的数据
-        inout_toc_json_dict['name'] = node.node_data.name + ' ' + node.node_data.heading
+        inout_toc_json_dict['name'] = node.node_data.tool_name + ' ' + node.node_data.heading
         # inout_toc_json_dict['head'] = node.node_data.heading
         inout_toc_json_dict['ch'] = []
 

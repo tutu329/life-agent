@@ -127,7 +127,7 @@ class DocxOutlineExtractor:
         """获取段落的大纲级别"""
         try:
             if paragraph.style and hasattr(paragraph.style, 'base_style'):
-                style_name = paragraph.style.name
+                style_name = paragraph.style.tool_name
                 if 'Heading' in style_name:
                     # 提取标题级别
                     level_match = re.search(r'(\d+)', style_name)

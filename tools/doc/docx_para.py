@@ -69,7 +69,7 @@ class DocxParser:
                         'type': 'paragraph',
                         'element': para,
                         'text': para.text.strip(),
-                        'style': para.style.name if para.style else None
+                        'style': para.style.tool_name if para.style else None
                     })
 
             elif element.tag.endswith('tbl'):  # 表格
