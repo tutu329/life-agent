@@ -900,6 +900,7 @@ def main_folder():
 
     tools=[Folder_Tool]
     config = Agent_Config(
+        agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_online_groq_kimi_k2
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4

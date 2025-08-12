@@ -64,6 +64,13 @@ class Agent_Config(BaseModel):
     # web_server_stream_log:                 Any = None      # agent日志信息log的stream输出func
     # web_server_stream_tool_client_data:    Any = None      # agent工具调用结果数据的stream输出func
 
+    def __str__(self):
+        data = self.model_dump()
+        rtn_str = f'agent config "{self.agent_name}"'.center(80, '-') + '\n'
+        rtn_str += '\n'.join(f'{k:21}: {v!r}' for k, v in data.items()) + '\n'
+        rtn_str += f'/agent config "{self.agent_name}"'.center(80, '-')
+        return rtn_str
+
 class Agent_As_Tool_Config(BaseModel):
     # agent配置
     tool_names              :List[str]  # 如：['Human_Console_Tool', 'Remote_Folder_Tool']

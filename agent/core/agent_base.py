@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from uuid import uuid4
 
 from agent.core.agent_config import Agent_Config
+from config import dblue
 
 class Agent_Base(ABC):
     def __init__(self, agent_config:Agent_Config):
@@ -25,6 +26,12 @@ class Agent_Base(ABC):
             self.name = agent_config.agent_name
         else:
             self.name = 'agent_' + self.agent_id
+
+        self.agent_config = agent_config
+        self._init_print()
+
+    def _init_print(self):
+        dblue(self.agent_config)
 
     @abstractmethod
     def init(self):
