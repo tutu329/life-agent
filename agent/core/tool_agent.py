@@ -188,9 +188,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
             self.top_agent_id = self.agent_id
 
         if not has_history:
-            dred('--------------------------------------------------------------------------------------------')
-            dred(f'Warning: agent没有设置history!(name:"{self.name}", agent_id:"{self.agent_id}")')
-            dred('--------------------------------------------------------------------------------------------')
+            dyellow('--------------------------------------------------------------------------------------------')
+            dyellow(f'Warning: agent没有设置history!(name:"{self.name}", agent_id:"{self.agent_id}")')
+            dyellow('--------------------------------------------------------------------------------------------')
 
         self.llm = None
         self.agent_config = agent_config
@@ -995,12 +995,12 @@ def main_folder():
     agent.init()
     success = agent.run(query=query)
     dyellow(f'最终输出：\n{agent.final_answer}')
-    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中。')
-    dyellow(f'最终输出：\n{agent.final_answer}')
+    # success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中。')
+    # dyellow(f'最终输出：\n{agent.final_answer}')
 
-    agent.clear_history()
-    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"/home/tutu/demo"下有哪些文件夹')
-    dyellow(f'history cleared. 最终输出：\n{agent.final_answer}')
+    # agent.clear_history()
+    # success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"/home/tutu/demo"下有哪些文件夹')
+    # dyellow(f'history cleared. 最终输出：\n{agent.final_answer}')
 
 def main_table():
     import config
