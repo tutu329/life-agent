@@ -199,6 +199,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
 
+
         # self.temperature = self.agent_config.temperature
         # self.url = self.agent_config.base_url
         # self.api_key = self.agent_config.api_key
