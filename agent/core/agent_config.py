@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
 from config import dred,dyellow,dblue,dcyan,dgreen
 from pydantic import BaseModel, Field, ConfigDict
+from uuid import uuid4
 
 import config
 import llm_protocol
@@ -37,8 +38,9 @@ class Agent_Config(BaseModel):
     # status_stream_buf:Any = None
 
     # agent配置
-    tool_names      :List[str]  # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
-    exp_json_path   :str = ''   # 如：'my_2_levels_mas_exp.json'
+    agent_name      :str = 'agent_' + str(uuid4())  # agent的name
+    tool_names      :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    exp_json_path   :str = ''                       # 如：'my_2_levels_mas_exp.json'
 
     llm_config      :LLM_Config = llm_protocol.g_local_gpt_oss_20b_mxfp4
     # llm_config      :LLM_Config = llm_protocol.g_local_qwen3_30b_chat

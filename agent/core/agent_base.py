@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 
 class Agent_Base(ABC):
     def __init__(self):
-        super().__init__()
+        pass
+        # super().__init__()
 
     @abstractmethod
     def init(self):

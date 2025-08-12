@@ -261,64 +261,6 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self._start_time = None
         self._end_time = None
 
-    # 设置最终结果stream输出的func
-    # def set_stream(self, result_output_func, thinking_output_func, log_output_func, tool_result_data_output_func):
-    #     self.agent_config.web_server_stream_result = result_output_func                        # stream输出的func
-    #     self.agent_config.web_server_stream_thinking = thinking_output_func                    # stream输出的func
-    #     self.agent_config.web_server_stream_log = log_output_func                              # stream输出的func
-    #     self.agent_config.web_server_stream_tool_client_data = tool_result_data_output_func    # stream输出的func
-
-    # 最终结果输出
-    # def output_print(self, in_string):
-    #     if self.output_stream_buf is not None:
-    #         self.output_stream_buf(in_string)
-    #
-    #         if self.output_list is not None:
-    #             self.output_list.append(in_string)
-    #     else:
-    #         pass
-    #         # print(in_string)
-
-    # 中间状态输出
-    # def status_print(self, in_string):
-    #     if self.sstream is not None:
-    #         self.sstream(in_string)
-    #
-    #         if self.status_list is not None:
-    #             self.status_list.append(in_string)
-    #     else:
-    #         pass
-    #         # print(in_string)
-
-    # 最终结果stream输出full_string
-    # def output_result_stream_full_string(self, in_full_response):
-    #     if self.agent_config.web_server_stream_result is not None:
-    #         self.agent_config.web_server_stream_result(in_full_response)
-
-    # 最终结果stream输出chunk，注意：要确保chunk中没有'[最终答复]'或'终答复]'
-    # def output_result_stream_chunk(self, chunk, **kwargs):
-    #     if self.agent_config.web_server_stream_result is not None:
-    #         self.agent_config.web_server_stream_result(chunk, **kwargs)
-
-    # thinking内容的stream输出chunk
-    # def output_thinking_stream_chunk(self, chunk, **kwargs):
-    #     if self.agent_config.web_server_stream_thinking is not None:
-    #         self.agent_config.web_server_stream_thinking(chunk, **kwargs)
-
-    # log内容的stream输出chunk
-    # def output_log_stream_chunk(self, chunk, **kwargs):
-    #     if self.agent_config.web_server_stream_log is not None:
-    #         self.agent_config.web_server_stream_log(chunk, **kwargs)
-
-    # 中间状态stream输出(注意：streamlit的status不支持stream输出，只能打印)
-    # def output_status_stream(self, in_chunk, in_full_response):
-    #     if self.sstream is not None:
-    #         # self.sstream(in_chunk)
-    #         pass
-    #     else:
-    #         pass
-    #         # print(in_chunk, end='', flush=True)
-
     def init(self):
         self._init_agent_data_in_server()
 
