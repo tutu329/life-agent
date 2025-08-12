@@ -148,7 +148,7 @@ class Wechat:
             # 检查会话框是不是选中当前用户
             item_list = self.__dia_list.get_items()
             for item in item_list:
-                if item.is_selected() and item.element_info.name == username:
+                if item.is_selected() and item.element_info.tool_name == username:
                     # 会话选中当前用户
                     result = True
                     break
@@ -186,7 +186,7 @@ class Wechat:
         target_ele = parent_ele.children()[1].children()[0]
         items = target_ele.get_items()
         for item in items:
-            if item.element_info.name == username:
+            if item.element_info.tool_name == username:
                 select_item = item
                 break
         Helper.print("      ------从搜索列表中找到用户------")
@@ -208,7 +208,7 @@ class Wechat:
         Helper.print(f"      查找\"{username}\"的控件")
         select_item = None
         for item in dia_list.get_items():
-            if item.element_info.name == username:
+            if item.element_info.tool_name == username:
                 select_item = item
                 break
         if select_item and select_item.is_visible():
@@ -262,7 +262,7 @@ class Wechat:
                     raise Exception("没有找到当前用户的对话框！")
                 self.__input_title_btn = item_list[0]
         # Helper.print("      input_title_btn element_info.name is " + self.__input_title_btn.element_info.name)
-        if self.__input_title_btn.element_info.name != username:
+        if self.__input_title_btn.element_info.tool_name != username:
             # 如果输入框的标题不是当前用户
             raise Exception("没有找到当前用户的对话框！")
         # Helper.print(f"      \"{username}\"对话框已经找到，查找用户正确！")
@@ -328,7 +328,7 @@ class Wechat:
         if len(dia_list) > 0:
             # 获取List中最后一个控件
             last_item = dia_list[0].get_item(-1)
-            message = last_item.element_info.name
+            message = last_item.element_info.tool_name
             if other_side:
                 # 检测是否为对方的输入
                 btn_list = last_item.descendants(title=username, control_type="Button")

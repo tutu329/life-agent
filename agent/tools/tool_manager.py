@@ -84,9 +84,9 @@ def _server_register_one_tool(
     # 查找tool
     tool_data = Registered_Tool_Data(
         tool_id=tool_id,
-        name=tool_class.name,
-        description=tool_class.description,
-        parameters=tool_class.parameters,
+        name=tool_class.tool_name,
+        description=tool_class.tool_description,
+        parameters=tool_class.tool_parameters,
         tool_class=tool_class,
     )
 
@@ -244,7 +244,7 @@ def _extract_tool_info_from_file(file_path: str, module_name: str) -> Dict[str, 
                     for base in node.bases)):
 
             # 找到继承自 Base_Tool 的类
-            class_name = node.name
+            class_name = node.tool_name
 
             # 提取类属性
             name = None

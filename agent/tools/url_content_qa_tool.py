@@ -7,9 +7,9 @@ from tools.retriever.legacy_search import Bing_Searcher
 from tools.qa.long_content_qa import long_content_qa_concurrently
 
 class Url_Content_QA_Tool(Base_Tool):
-    name='QA_Url_Content_Tool'
-    description='通过提供url就能获取网页内容并对其进行QA问答的工具.'
-    parameters=[
+    tool_name= 'QA_Url_Content_Tool'
+    tool_description= '通过提供url就能获取网页内容并对其进行QA问答的工具.'
+    tool_parameters=[
         {
             'name': 'url',
             'type': 'string',

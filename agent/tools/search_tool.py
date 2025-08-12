@@ -6,9 +6,9 @@ from tools.retriever.search_and_urls import concurrent_search_and_summary_with_f
 from tools.retriever.legacy_search import Bing_Searcher
 
 class Search_Tool(Base_Tool):
-    name='Search_Tool'
-    description='通过搜索引擎对query进行搜索，并根据prompt将搜索结果总结为摘要后返回的工具.'
-    parameters=[
+    tool_name= 'Search_Tool'
+    tool_description= '通过搜索引擎对query进行搜索，并根据prompt将搜索结果总结为摘要后返回的工具.'
+    tool_parameters=[
         {
             'name': 'query',
             'type': 'string',

@@ -155,8 +155,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # Base_Tool().__init__()
 
         # As_Tool属性
-        self.name = as_tool_name
-        self.description = as_tool_description
+        self.tool_name = as_tool_name
+        self.tool_description = as_tool_description
 
         # multi_agent_server管理的状态
         # self.agent_status_ref = agent_status_ref
@@ -189,7 +189,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         if not has_history:
             dyellow('--------------------------------------------------------------------------------------------')
-            dyellow(f'Warning: agent没有设置history!(name:"{self.name}", agent_id:"{self.agent_id}")')
+            dyellow(f'Warning: agent没有设置history!(name:"{self.tool_name}", agent_id:"{self.agent_id}")')
             dyellow('--------------------------------------------------------------------------------------------')
 
         self.llm = None
@@ -231,7 +231,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
             else:
                 # 如果tool_cls是一个class的实例
                 tool_instance = tool_cls
-                tool_name = tool_instance.name
+                tool_name = tool_instance.tool_name
                 self.registered_tool_instances_dict[tool_name] = tool_instance
 
         dblue(f'【Agent(id={self.agent_id})的self.tool_classes】{self.tool_classes}')
@@ -352,19 +352,19 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # 将所有工具转换为{tool_descs}和{tool_names}
         for tool in self.tool_classes:
             # 不论tool是Folder_Tool还是folder_agent_as_tool，都有name和description
-            self.tool_names.append(f"'{tool.name}'")
-            self.tool_descs += '工具名称: ' + tool.name + '\n'
-            self.tool_descs += '工具描述: ' + tool.description + '\n'
+            self.tool_names.append(f"'{tool.tool_name}'")
+            self.tool_descs += '工具名称: ' + tool.tool_name + '\n'
+            self.tool_descs += '工具描述: ' + tool.tool_description + '\n'
             self.tool_descs += '工具参数: [\n'
 
-            dred(f'-----------------------tool.parameters(tool.name="{tool.name}")---------------------------')
+            dred(f'-----------------------tool.tool_parameters(tool.name="{tool.tool_name}")---------------------------')
             dblue(f'tool obj: "{tool}"')
-            if hasattr(tool, 'parameters'):
-                dred(tool.parameters)
-            dred(f'----------------------/tool.parameters(tool.name="{tool.name}")---------------------------')
+            if hasattr(tool, 'tool_parameters'):
+                dred(tool.tool_parameters)
+            dred(f'----------------------/tool.tool_parameters(tool.name="{tool.tool_name}")---------------------------')
             if isinstance(tool, type):
                 # 如果tool是Folder_Tool这样的class，有多个参数
-                for para in tool.parameters:
+                for para in tool.tool_parameters:
                     self.tool_descs += '\t{'
 
                     self.tool_descs += '\t参数名称: ' + para['name'] + ',\n'
@@ -438,7 +438,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
             self.current_query = query or self.query
 
             # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
-            if self.description is None and self.exp:
+            if self.tool_description is None and self.exp:
                 self.current_exp_str = self.exp.query_agent_experience_by_task_info(agent_task_info_string=self.current_query)
                 dyellow(f'----------------------agent查询经验(agent_id="{self.agent_id}")--------------------------------')
                 dyellow(f'用户query: {self.current_query!r}')
@@ -483,7 +483,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     self._parse_final_answer(answer_this_turn)
 
                     # --------------总结经验(agent_as_tool时不总结经验)--------------
-                    if self.description is None and self.exp:
+                    if self.tool_description is None and self.exp:
                         dyellow(f'----------------------本次agent执行得到的经验(agent_id="{self.agent_id}")------------------------')
                         self.exp.summarize_agent_history(agent_history_string=self.agent_tools_description_and_full_history)
                         dyellow(f'"{self.exp.get_all_exp_string()}"')

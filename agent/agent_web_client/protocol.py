@@ -23,17 +23,17 @@ class FastAPI_Remote_Tool_Base():
         self.tool = register_data.tool
         self.path = register_data.path
 
-        self.router = APIRouter(tags=[self.tool.name])
+        self.router = APIRouter(tags=[self.tool.tool_name])
         self._register()
 
     def _register(self) -> None:
         @self.router.post(
-            path=self.path or '/'+self.tool.name,
+            path=self.path or '/'+self.tool.tool_name,
             response_model=Action_Result,
-            summary=self.tool.description
+            summary=self.tool.tool_description
         )
         async def remote_tool(request:Tool_Call_Paras)->Action_Result:
-            path_str = self.path or '/' + self.tool.name
+            path_str = self.path or '/' + self.tool.tool_name
             print(f'path: "{path_str}"')
             return self.tool.call(request)
 

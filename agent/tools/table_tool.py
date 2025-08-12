@@ -243,11 +243,11 @@ def get_decimal_places_and_percentage(number_format):
     return decimal_places, is_percentage
 
 class Table_Tool(Base_Tool):
-    name='Table_Tool'
-    description=\
+    tool_name= 'Table_Tool'
+    tool_description=\
 '''从excel文件中获取表格数据。
 '''
-    parameters=[
+    tool_parameters=[
         {
             'name': 'excel_path',
             'type': 'string',
