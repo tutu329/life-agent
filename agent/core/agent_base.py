@@ -5,8 +5,10 @@ from agent.core.agent_config import Agent_Config
 
 class Agent_Base(ABC):
     def __init__(self, agent_config:Agent_Config):
+        # 1、agent_id
         self.agent_id = str(uuid4())
 
+        # 2、top_agent_id
         # 顶层的agent_id，主要用于多层agents系统中，让top_agent_id<-->connection，而与下层agent_id无关
         # top_agent_id的形成有2种情况：
         # 1）多层agents system中，靠parent agent注入
@@ -17,6 +19,12 @@ class Agent_Base(ABC):
         else:
             # 外部没有注入top_agent_id
             self.top_agent_id = self.agent_id
+
+        # 3、name(或者初始化提供，或者基于agent_id)
+        if agent_config.agent_name:
+            self.name = agent_config.agent_name
+        else:
+            self.name = 'agent_' + self.agent_id
 
     @abstractmethod
     def init(self):

@@ -895,7 +895,7 @@ def main_folder():
         query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
         # query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
-        query = r'我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。'
+        query = r'我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/3/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。'
         # query = r'我叫土土，请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
     tools=[Folder_Tool]
