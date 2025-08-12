@@ -200,13 +200,13 @@ def _get_all_local_tools_data() -> List[Dict[str, Any]]:
                 for name, obj in inspect.getmembers(module, inspect.isclass):
                     # 检查是否是在当前模块中定义的类（不是导入的类）
                     if (obj.__module__ == module_name and
-                            hasattr(obj, 'name') and
-                            hasattr(obj, 'description') and
-                            hasattr(obj, 'parameters')):
+                            hasattr(obj, 'tool_name') and
+                            hasattr(obj, 'tool_description') and
+                            hasattr(obj, 'tool_parameters')):
                         tool_info = {
-                            'name': obj.name,
-                            'description': obj.description,
-                            'parameters': obj.parameters,
+                            'name': obj.tool_name,
+                            'description': obj.tool_description,
+                            'parameters': obj.tool_parameters,
                             'tool_class': obj  # 返回类对象本身，不是实例
                         }
                         tools_info.append(tool_info)

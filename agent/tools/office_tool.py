@@ -14,6 +14,8 @@ from utils.web_socket_manager import get_websocket_manager
 
 from agent.tools.office_tool_uno_command.uno_command import Uno_Command, Uno_Color
 from tools.llm.api_client import LLM_Client
+import llm_protocol
+from llm_protocol import LLM_Query_Paras
 
 from pydantic import BaseModel
 
@@ -360,7 +362,8 @@ class Write_Chapter_Tool(Base_Tool):
 
                 # 选择llm和参数
                 # llm_config = config.g_online_groq_kimi_k2
-                llm_config = config.g_online_deepseek_chat
+                # llm_config = config.g_online_deepseek_chat
+                llm_config = llm_protocol.g_online_deepseek_chat
                 llm = LLM_Client(llm_config=llm_config)
 
                 # question的准备
@@ -376,7 +379,10 @@ class Write_Chapter_Tool(Base_Tool):
                 dblue(f'【Write_Chapter_Tool】question: \n{question!r}')
 
                 # llm输出
-                chunks = llm.ask_prepare(question=question).get_result_generator()
+                query_paras = LLM_Query_Paras(
+                    query=question,
+                )
+                chunks = llm.ask_prepare(query_paras=query_paras).get_result_generator()
                 print('-------------------docx_write_chapter_text-LLM-------------------')
                 content = ''
                 first_chunk = True
