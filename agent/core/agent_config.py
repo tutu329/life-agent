@@ -43,11 +43,13 @@ class Agent_Config(BaseModel):
 
     llm_config          :LLM_Config = llm_protocol.g_local_gpt_oss_20b_mxfp4
 
-    as_tool_name        :Optional[str] = None  # As_Tool的name，如取: "Folder_Agent_As_Tool"
-    as_tool_description :Optional[str] = None  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
     has_history         :bool = False
     tool_agent_experience_json_path     :str = ''  # 经验json文件，如果为‘’，就不设置经验
     top_agent_id        :Optional[str] = None  # top_agent_id为None时，表明自己即为top agent
+
+    # agent_as_tool配置
+    as_tool_name        :Optional[str] = None  # As_Tool的name，如取: "Folder_Agent_As_Tool"
+    as_tool_description :Optional[str] = None  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
 
     # LLM配置
     # base_url        :str = config.LLM_Default.url
