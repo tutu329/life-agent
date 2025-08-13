@@ -141,8 +141,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
                  tool_classes,
                  agent_config:Agent_Config,
                  query=None,                            # 用于as_tool(tool仅query一次)
-                 as_tool_name=None,                     # As_Tool的name，如取: "Folder_Agent_As_Tool"
-                 as_tool_description=None,              # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
+                 # as_tool_name=None,                     # As_Tool的name，如取: "Folder_Agent_As_Tool"
+                 # as_tool_description=None,              # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  has_history = False,
                  tool_agent_experience_json_path='',    # 经验json文件，如果为‘’，就不设置经验
                  # agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
