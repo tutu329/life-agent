@@ -10,6 +10,8 @@ from agent.tools.protocol import Action_Result, Tool_Call_Paras
 # from agent.core.legacy_protocol import Action_Result
 from utils.folder import get_folder_all_items_string
 
+from config import dgreen
+
 class Folder_Tool(Base_Tool):
     tool_name= 'Folder_Tool'
     tool_description=\
@@ -37,7 +39,7 @@ class Folder_Tool(Base_Tool):
     #          callback_last_tool_ctx,
     #          callback_father_agent_exp,
     #          ):
-        print(f'tool_paras_dict: "{tool_call_paras.callback_tool_paras_dict}"')
+        dgreen(f'tool_paras_dict: "{tool_call_paras.callback_tool_paras_dict}"')
         dir = tool_call_paras.callback_tool_paras_dict['dir']
 
         try:

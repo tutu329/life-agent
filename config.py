@@ -47,23 +47,6 @@ def get_hostname():
     hostname = socket.gethostname()
     return hostname
 
-def _dcolor(in_color, *args, **kwargs):
-    print(in_color, end='', flush=True)
-    print(*args, **kwargs)
-    print(Style.RESET_ALL, end='', flush=True)
-
-def dred(*args, **kwargs):
-    _dcolor(Fore.RED, *args, **kwargs)
-def dgreen(*args, **kwargs):
-    _dcolor(Fore.GREEN, *args, **kwargs)
-def dblue(*args, **kwargs):
-    _dcolor(Fore.BLUE, *args, **kwargs)
-def dcyan(*args, **kwargs):
-    _dcolor(Fore.CYAN, *args, **kwargs)
-
-def dyellow(*args, **kwargs):
-    _dcolor(Fore.YELLOW, *args, **kwargs)
-
 # 用于控制prompt长度的参数
 @dataclass
 class Prompt_Limitation():
@@ -79,8 +62,7 @@ class Prompt_Limitation():
 
     concurrent_summary_max_len:int = 1000       # content总结后最大长度(是让llm总结后的长度，llm不一定能完全按要求控制长度)
 
-@dataclass
-class Global():
+class Global:
     line:str = f'{80 * "-"}\n\n'
     llm_max_chat_turns = 200    # 对话超过llm_max_chat_turns轮，则pop最前面的对话
 
@@ -142,17 +124,36 @@ class Global():
     temp_dir = './temp'
     api_dir = './custom_command/t2i/api'
 
+    # app_debug = True
+    app_debug = False
+
     @staticmethod
     def get_work_dir():
         import os
         return os.path.abspath(os.curdir)
 
-@dataclass
+def _dcolor(in_color, *args, **kwargs):
+    if Global.app_debug:
+        print(in_color, end='', flush=True)
+        print(*args, **kwargs)
+        print(Style.RESET_ALL, end='', flush=True)
+
+def dred(*args, **kwargs):
+    _dcolor(Fore.RED, *args, **kwargs)
+def dgreen(*args, **kwargs):
+    _dcolor(Fore.GREEN, *args, **kwargs)
+def dblue(*args, **kwargs):
+    _dcolor(Fore.BLUE, *args, **kwargs)
+def dcyan(*args, **kwargs):
+    _dcolor(Fore.CYAN, *args, **kwargs)
+
+def dyellow(*args, **kwargs):
+    _dcolor(Fore.YELLOW, *args, **kwargs)
+
 class Agent:
     MAX_TRIES:int       = 200   # agent的最大尝试轮次
     TIMEOUT_SECONDS:int = 3600  # agent运行的超时时间
 
-@dataclass
 class Uploads:
     uploads_path        :str = '/home/tutu/server/life-agent-web/uploads/'
     template_path       :str = uploads_path + 'template/'

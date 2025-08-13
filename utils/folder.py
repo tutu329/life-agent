@@ -3,22 +3,24 @@ import sys
 import argparse
 from pathlib import Path
 
+from config import dgreen, dred
+
 # 获取某个文件夹下所有文件和文件夹的名字list，directory可以是绝对路径或相对路径
 def get_folder_all_items_string(directory):
     # 获取当前工作目录
     current_directory = os.getcwd()
     # 打印当前工作目录
-    print(f'【get_folder_files_list()】当前工作目录是："{current_directory}"')
+    dgreen(f'【get_folder_files_list()】当前工作目录是："{current_directory}"')
 
     p = Path(directory)
-    print(f'【get_folder_files_list()】输入的目录是: "{p.absolute()}"')
+    dgreen(f'【get_folder_files_list()】输入的目录是: "{p.absolute()}"')
 
     if not p.exists():
-        print(f"错误：路径 '{directory}' 不存在。")
+        dred(f"错误：路径 '{directory}' 不存在。")
         raise Exception(f"错误：路径 '{directory}' 不存在。")
         # sys.exit(1)
     if not p.is_dir():
-        print(f"错误：路径 '{directory}' 不是一个文件夹。")
+        dred(f"错误：路径 '{directory}' 不是一个文件夹。")
         raise Exception(f"错误：路径 '{directory}' 不是一个文件夹。")
         # sys.exit(1)
 
@@ -43,17 +45,17 @@ def get_folder_files_list(directory, mode='name'):
     # 获取当前工作目录
     current_directory = os.getcwd()
     # 打印当前工作目录
-    print(f'【get_folder_files_list()】当前工作目录是："{current_directory}"')
+    dgreen(f'【get_folder_files_list()】当前工作目录是："{current_directory}"')
 
     p = Path(directory)
-    print(f'【get_folder_files_list()】输入的目录是: "{p.absolute()}"')
+    dgreen(f'【get_folder_files_list()】输入的目录是: "{p.absolute()}"')
 
     if not p.exists():
-        print(f"错误：路径 '{directory}' 不存在。")
+        dred(f"错误：路径 '{directory}' 不存在。")
         raise Exception(f"错误：路径 '{directory}' 不存在。")
         # sys.exit(1)
     if not p.is_dir():
-        print(f"错误：路径 '{directory}' 不是一个文件夹。")
+        dred(f"错误：路径 '{directory}' 不是一个文件夹。")
         raise Exception(f"错误：路径 '{directory}' 不是一个文件夹。")
         # sys.exit(1)
 

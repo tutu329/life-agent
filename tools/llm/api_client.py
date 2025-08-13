@@ -1597,7 +1597,7 @@ class LLM_Client():
             except Exception:
                 err_body = (r.text[:2000] if r is not None and r.text else "")
 
-            print(f"[HTTPError] {status} for {u}\n{err_body}")
+            # print(f"[HTTPError] {status} for {u}\n{err_body}")
 
             dyellow(f'【Warning】可能LLM的API不支持url/tokenize指令。LLM_Client._vllm_api_get_token_num()：[HTTPError] {status} for {u} {err_body}.')
             if status == 404:

@@ -325,7 +325,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         dblue(answer_this_turn)
         dblue(f'/final answer(turn {self.turns_num})'.center(80, '-'))
 
-        print(f'/thinking(turn {self.turns_num})'.center(80, '-'))
+        dgreen(f'/thinking(turn {self.turns_num})'.center(80, '-'))
 
         with open("agent_tools_description_and_full_history.txt", "w", encoding="utf-8") as file:
             file.write(self.agent_tools_description_and_full_history)
@@ -549,7 +549,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # dyellow(self.agent_tools_description_and_full_history)
         # dyellow('----------------------------------/thinking------------------------------------')
         self.turns_num += 1
-        print(f'thinking(turn {self.turns_num})'.center(80, '='))
+        dgreen(f'thinking(turn {self.turns_num})'.center(80, '='))
         # print(f'原始his: {self.agent_desc_and_action_history}', flush=True)
         dred(f'manual_stop: "{self.response_stop}"')
 
@@ -611,7 +611,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
         self.agent_tools_description_and_full_history += '\n' + answer_this_turn
 
-        print(f'/thinking(turn {self.turns_num}, {self.llm.get_history_input_tokens_num()}tokens, id={self.agent_id})'.center(80, '-'))
+        dgreen(f'/thinking(turn {self.turns_num}, {self.llm.get_history_input_tokens_num()}tokens, id={self.agent_id})'.center(80, '-'))
         return answer_this_turn
 
     def action(self, in_answer, context:Query_Agent_Context=None):
@@ -667,9 +667,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
                     # 调用工具
                     # from pprint import pprint
-                    print('---------------------------------agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
-                    print(self.registered_tool_instances_dict)
-                    print('--------------------------------/agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
+                    dgreen('---------------------------------agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
+                    dgreen(self.registered_tool_instances_dict)
+                    dgreen('--------------------------------/agent调用tool时的参数情况：self.registered_tool_instances_dict------------------------------------')
                     # rtn = self.registered_tool_instances_dict[tool_name].call(
                     #     callback_tool_paras_dict=callback_tool_paras_dict,  # 将agent生成的调用tool的参数传给tool
                     #     callback_agent_config=self.agent_config,            # 将agent配置传给tool
@@ -902,31 +902,20 @@ def main_folder():
     config = Agent_Config(
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
-        # llm_config=llm_protocol.g_online_groq_kimi_k2
-        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b
-        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        llm_config=llm_protocol.g_online_groq_kimi_k2,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         has_history=True,
-        # llm_config=llm_protocol.g_local_qwen3_4b_thinking
-
-        # llm_config=llm_protocol.g_local_qwen3_30b_chat
-        # llm_config=llm_protocol.g_local_qwen3_30b_thinking
     )
 
-    # server_register_all_local_tool_on_start()
-    # get_all_registered_tools_class()
-
-
     agent = Tool_Agent(
-        # has_history=True,
         tool_classes=tools,
         agent_config=config
     )
     agent.init()
     success = agent.run(query=query)
     dyellow(f'最终输出：\n{agent.final_answer}')
-    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"file_to_find.txt"在"/home/tutu/demo/3/"文件夹的哪个具体文件夹中。')
-    dyellow(f'最终输出：\n{agent.final_answer}')
+    # success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"file_to_find.txt"在"/home/tutu/demo/3/"文件夹的哪个具体文件夹中。')
+    # dyellow(f'最终输出：\n{agent.final_answer}')
 
     # agent.clear_history()
     # success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"/home/tutu/demo"下有哪些文件夹')

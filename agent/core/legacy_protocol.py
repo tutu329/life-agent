@@ -6,6 +6,8 @@ from uuid import uuid4
 from utils.task import Status
 import threading
 
+from config import dgreen
+
 @dataclass
 class Tool_Info:
     tool_task_id: str                           # 工具所执行任务的id
@@ -72,5 +74,5 @@ def update_tool_context_info(
         )
         _TOOL_CTX_STORE[tool_ctx.tool_info.tool_task_id] = copy.deepcopy(tool_context)
 
-        print(f'------------------updated tool_context-------------------\n{tool_context}')
-        print(f'------------------/updated tool_context-------------------')
+        dgreen(f'------------------updated tool_context-------------------\n{tool_context}')
+        dgreen(f'------------------/updated tool_context-------------------')
