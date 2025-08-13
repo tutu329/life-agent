@@ -932,6 +932,7 @@ def main_folder():
     # success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"/home/tutu/demo"下有哪些文件夹')
     # dyellow(f'history cleared. 最终输出：\n{agent.final_answer}')
 
+
 def main_table():
     import config
     from agent.core.tool_agent import Tool_Agent
