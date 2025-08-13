@@ -138,6 +138,28 @@ def _dcolor(in_color, *args, **kwargs):
         print(*args, **kwargs)
         print(Style.RESET_ALL, end='', flush=True)
 
+def dmagenta(*args, **kwargs):
+    _dcolor(Fore.MAGENTA, *args, **kwargs)
+def dlightblue(*args, **kwargs):
+    _dcolor(Fore.LIGHTBLUE_EX, *args, **kwargs)
+def dlightyellow(*args, **kwargs):
+    _dcolor(Fore.LIGHTYELLOW_EX, *args, **kwargs)
+def dlightwhite(*args, **kwargs):
+    _dcolor(Fore.LIGHTWHITE_EX, *args, **kwargs)
+def dlightcyan(*args, **kwargs):
+    _dcolor(Fore.LIGHTCYAN_EX, *args, **kwargs)
+def dlightmagenta(*args, **kwargs):
+    _dcolor(Fore.LIGHTMAGENTA_EX, *args, **kwargs)
+def dlightred(*args, **kwargs):
+    _dcolor(Fore.LIGHTRED_EX, *args, **kwargs)
+def dlightgreen(*args, **kwargs):
+    _dcolor(Fore.LIGHTGREEN_EX, *args, **kwargs)
+def dlightblack(*args, **kwargs):
+    _dcolor(Fore.LIGHTBLACK_EX, *args, **kwargs)
+def dblack(*args, **kwargs):
+    _dcolor(Fore.BLACK, *args, **kwargs)
+def dwhite(*args, **kwargs):
+    _dcolor(Fore.WHITE, *args, **kwargs)
 def dred(*args, **kwargs):
     _dcolor(Fore.RED, *args, **kwargs)
 def dgreen(*args, **kwargs):
