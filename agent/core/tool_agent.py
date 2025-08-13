@@ -144,7 +144,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                  # as_tool_name=None,                     # As_Tool的name，如取: "Folder_Agent_As_Tool"
                  # as_tool_description=None,              # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
                  # has_history = False,
-                 tool_agent_experience_json_path='',    # 经验json文件，如果为‘’，就不设置经验
+                 # tool_agent_experience_json_path='',    # 经验json文件，如果为‘’，就不设置经验
                  # agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
                  # agent_stream_queue_ref:Agent_Stream_Queues=None,  # agent的stream queue，，由multi_agent_server管理
                  # top_agent_id=None,                     # top_agent_id为None时，表明自己即为top agent
@@ -180,7 +180,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.llm = None
         # self.agent_config = agent_config
         self.has_history = agent_config.has_history
-        self.tool_agent_experience_json_path = tool_agent_experience_json_path
+        self.tool_agent_experience_json_path = agent_config.tool_agent_experience_json_path
 
         self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
 

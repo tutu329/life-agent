@@ -35,7 +35,7 @@ def server_start_and_register_agent(
     query:str,
     agent_config:Agent_Config,
     tool_names:List[str],
-    exp_json_path:str,
+    # exp_json_path:str,
 )->str:     # 返回agent_id
     # agent_id = str(uuid4())
 
@@ -53,7 +53,7 @@ def server_start_and_register_agent(
         agent_config=agent_config,
         # agent_status_ref=agent_status,
         # agent_stream_queue_ref=agent_stream_queue,
-        tool_agent_experience_json_path=exp_json_path,
+        # tool_agent_experience_json_path=exp_json_path,
     )
     agent_id = agent.agent_id
 
@@ -252,7 +252,7 @@ def _server_create_and_registered_agent_as_tool(
         agent_config=agent_config,
         # as_tool_name=agent_as_tool_config.as_tool_name,
         # as_tool_description=agent_as_tool_config.as_tool_description,
-        tool_agent_experience_json_path='',     #agent_as_tool不需要经验，经验由upper agent管理
+        # tool_agent_experience_json_path='',     #agent_as_tool不需要经验，经验由upper agent管理
     ).init()
 
     # 注册agent_as_tool
@@ -391,7 +391,7 @@ def server_start_and_register_2_levels_agents_system(
         agent_config=upper_agent_config,
         # agent_status_ref=upper_agent_status,
         # agent_stream_queue_ref=upper_agent_stream_queue,
-        tool_agent_experience_json_path = upper_agent_config.exp_json_path,
+        # tool_agent_experience_json_path = upper_agent_config.exp_json_path,
     )
     upper_agent_id = upper_agent.agent_id
     dyellow(f'【upper_agent_config.tool_names】{upper_agent_config.tool_names}')
@@ -470,6 +470,7 @@ def main_test_server_start_agent():
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         llm_model_id='deepseek-chat',
+        tool_agent_experience_json_path='agent_started_by_server.json',
         has_history=True
     )
     # query='我叫土土，帮我查询下远程服务器下/home/tutu/models/下有哪些文件'
@@ -477,7 +478,7 @@ def main_test_server_start_agent():
 
     agent_id = server_start_and_register_agent(
         query=query,
-        exp_json_path='agent_started_by_server.json',
+        # exp_json_path='agent_started_by_server.json',
         agent_config=config,
         tool_names=tool_names
     )
@@ -527,12 +528,13 @@ def main_test_2_level2_agents_system():
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         llm_model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        has_history=True,
+        tool_agent_experience_json_path='my_2_levels_mas_exp.json'
     )
     upper_agent_dict = {
         'tool_names':['Human_Console_Tool'],
-        'exp_json_path':'my_2_levels_mas_exp.json',
+        # 'exp_json_path':'my_2_levels_mas_exp.json',
         'agent_config':config,
-        'has_history':True
     }
     lower_agents_as_tool_dict_list = [
         {
