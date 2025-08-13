@@ -143,7 +143,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                  query=None,                            # 用于as_tool(tool仅query一次)
                  # as_tool_name=None,                     # As_Tool的name，如取: "Folder_Agent_As_Tool"
                  # as_tool_description=None,              # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
-                 has_history = False,
+                 # has_history = False,
                  tool_agent_experience_json_path='',    # 经验json文件，如果为‘’，就不设置经验
                  # agent_status_ref:Agent_Status=None,  # agent状态，由multi_agent_server管理
                  # agent_stream_queue_ref:Agent_Stream_Queues=None,  # agent的stream queue，，由multi_agent_server管理
@@ -172,14 +172,14 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # else:
         self.stream_queues = Agent_Stream_Queues()
 
-        if not has_history:
+        if not agent_config.has_history:
             dyellow('--------------------------------------------------------------------------------------------')
             dyellow(f'Warning: agent没有设置history!(name:"{self.tool_name}", agent_id:"{self.agent_id}")')
             dyellow('--------------------------------------------------------------------------------------------')
 
         self.llm = None
         # self.agent_config = agent_config
-        self.has_history = has_history
+        self.has_history = agent_config.has_history
         self.tool_agent_experience_json_path = tool_agent_experience_json_path
 
         self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
@@ -905,7 +905,8 @@ def main_folder():
         # llm_config=llm_protocol.g_online_groq_kimi_k2
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b
-        llm_config=llm_protocol.g_online_groq_gpt_oss_120b
+        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        has_history=True,
         # llm_config=llm_protocol.g_local_qwen3_4b_thinking
 
         # llm_config=llm_protocol.g_local_qwen3_30b_chat
@@ -917,15 +918,15 @@ def main_folder():
 
 
     agent = Tool_Agent(
-        has_history=True,
+        # has_history=True,
         tool_classes=tools,
         agent_config=config
     )
     agent.init()
     success = agent.run(query=query)
     dyellow(f'最终输出：\n{agent.final_answer}')
-    # success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中。')
-    # dyellow(f'最终输出：\n{agent.final_answer}')
+    success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"file_to_find.txt"在"/home/tutu/demo/3/"文件夹的哪个具体文件夹中。')
+    dyellow(f'最终输出：\n{agent.final_answer}')
 
     # agent.clear_history()
     # success = agent.run(query='我刚才告诉你我叫什么？并且告诉我"/home/tutu/demo"下有哪些文件夹')

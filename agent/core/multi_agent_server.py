@@ -48,7 +48,7 @@ def server_start_and_register_agent(
     print(f'class_list: {class_list!r}')
     # class_list = get_all_local_tools_class(tool_names)
     agent = Tool_Agent(
-        has_history=True,
+        # has_history=True,
         tool_classes=class_list,
         agent_config=agent_config,
         # agent_status_ref=agent_status,
@@ -386,7 +386,7 @@ def server_start_and_register_2_levels_agents_system(
 
     # ---------------/构建upper的agent----------------
     upper_agent = Tool_Agent(
-        has_history=True,
+        # has_history=True,
         tool_classes=tool_class_and_tool_instance_list,     # 这里是[Tool_Class1, Tool_Class2, ... , agent_as_tool1, agent_as_tool2, ...]
         agent_config=upper_agent_config,
         # agent_status_ref=upper_agent_status,
@@ -469,7 +469,8 @@ def main_test_server_start_agent():
     config = Agent_Config(
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-        llm_model_id='deepseek-chat'
+        llm_model_id='deepseek-chat',
+        has_history=True
     )
     # query='我叫土土，帮我查询下远程服务器下/home/tutu/models/下有哪些文件'
     query='我叫土土，当前目录./下有哪些文件'
@@ -531,6 +532,7 @@ def main_test_2_level2_agents_system():
         'tool_names':['Human_Console_Tool'],
         'exp_json_path':'my_2_levels_mas_exp.json',
         'agent_config':config,
+        'has_history':True
     }
     lower_agents_as_tool_dict_list = [
         {
