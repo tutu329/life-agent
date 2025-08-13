@@ -154,8 +154,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
         # Base_Tool().__init__()
 
         # As_Tool属性
-        self.tool_name = as_tool_name
-        self.tool_description = as_tool_description
+        self.tool_name = agent_config.as_tool_name
+        self.tool_description = agent_config.as_tool_description
 
         # multi_agent_server管理的状态
         # self.agent_status_ref = agent_status_ref
@@ -178,7 +178,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
             dyellow('--------------------------------------------------------------------------------------------')
 
         self.llm = None
-        self.agent_config = agent_config
+        # self.agent_config = agent_config
         self.has_history = has_history
         self.tool_agent_experience_json_path = tool_agent_experience_json_path
 

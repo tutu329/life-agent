@@ -58,13 +58,15 @@ def main_agent_as_tool():
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         # model_id='deepseek-reasoner',  # 模型指向 DeepSeek-R1-0528
         llm_model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
+        as_tool_name='Folder_Agent_As_Tool',
+        as_tool_description='本工具用于获取文件夹中的文件和文件夹信息'
     )
 
     folder_agent_as_tool = Tool_Agent(
         tool_classes=tools1,
-        agent_config=config,
-        as_tool_name='Folder_Agent_As_Tool',
-        as_tool_description='本工具用于获取文件夹中的文件和文件夹信息',
+        agent_config=config
+        # as_tool_name='Folder_Agent_As_Tool',
+        # as_tool_description='本工具用于获取文件夹中的文件和文件夹信息',
     ).init()
 
     tools2=[Human_Console_Tool, folder_agent_as_tool]

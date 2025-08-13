@@ -242,14 +242,16 @@ def _server_create_and_registered_agent_as_tool(
     agent_config = Agent_Config(
         tool_names=agent_as_tool_config.tool_names,
         exp_json_path=agent_as_tool_config.exp_json_path,
-        llm_config=agent_as_tool_config.llm_config
+        llm_config=agent_as_tool_config.llm_config,
+        as_tool_name=agent_as_tool_config.as_tool_name,
+        as_tool_description=agent_as_tool_config.as_tool_description
     )
     # 生成agent(继承自Base_Tool)的实例
     agent_as_tool = Tool_Agent(
         tool_classes=tools_class_list,
         agent_config=agent_config,
-        as_tool_name=agent_as_tool_config.as_tool_name,
-        as_tool_description=agent_as_tool_config.as_tool_description,
+        # as_tool_name=agent_as_tool_config.as_tool_name,
+        # as_tool_description=agent_as_tool_config.as_tool_description,
         tool_agent_experience_json_path='',     #agent_as_tool不需要经验，经验由upper agent管理
     ).init()
 
