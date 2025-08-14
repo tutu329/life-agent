@@ -2,6 +2,9 @@ from openai import OpenAI, APIError
 import openai_harmony   # pip install openai-harmony
 from openai_harmony import HarmonyError
 
+from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
+from pydantic import BaseModel, Field, ConfigDict
+
 # 安装wcwidth
 # pip install wcwidth
 
@@ -2028,24 +2031,32 @@ class LLM_Client():
     def cancel_response(self):
         self.response_canceled = True
 
+class Async_LLM_Client_Config:
+    pass
+
+class Async_LLM_Client_Status(BaseModel):
+    pass
+
 class Async_LLM_Client():
-    def __init__(self, llm_config:LLM_Config):
+    def __init__(self, llm_config:LLM_Config, async_config:Async_LLM_Client_Config=None):
         self.llm_client = LLM_Client(llm_config=llm_config)
         self.thread = None
 
+        self.async_config:Async_LLM_Client_Config   = async_config
+        self.status:Async_LLM_Client_Status         = None
+
     def ask_prepare(self, query_paras:LLM_Query_Paras):
         self.llm_client.ask_prepare(query_paras=query_paras)
+        self.thread = threading.Thread(target=self._run)
+        self.thread.start()
         return self
 
-    def start(self):
-        self.thread = threading.Thread(target=self.run)
-
     def _run(self):
-        pass
+        self.llm_client.get_answer_and_sync_print()
 
     def wait(self):
-        pass
-
+        # self.thread.join(timeout=100)   # timeout单位为秒
+        self.thread.join()
 
 # async的非联网llm调用
 class Legacy_Async_LLM(legacy_Web_Server_Base):
@@ -2894,24 +2905,14 @@ def async_reasoning_effort_main():
     # llm_config = llm_protocol.g_online_groq_kimi_k2
     # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
     # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
-    llm = LLM_Client(
+    llm = Async_LLM_Client(
         llm_config=llm_config,
     )
     # print(llm_protocol.g_local_gpt_oss_20b_mxfp4)
     # prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
     # prompt = '1+1=？'
-    prompt = '我叫土土'
-    query = LLM_Query_Paras(
-        query=prompt,
-        # temperature=0.77,
-        # top_p=0.88,
-        # max_new_tokens=8000,
-        # system_prompt='hi',
-        # role_prompt='hey',
-        # manual_stop=['[观察]']
-    )
-    llm.ask_prepare(query).get_answer_and_sync_print()
-    llm.ask_prepare(LLM_Query_Paras(query='我刚才告诉你我的名字是什么？')).get_answer_and_sync_print()
+    llm.ask_prepare(LLM_Query_Paras(query='我叫土土')).wait()
+    llm.ask_prepare(LLM_Query_Paras(query='我刚才告诉你我的名字是什么？')).wait()
 
 def think_and_result_test():
     llm = LLM_Client(
