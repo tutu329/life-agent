@@ -2028,8 +2028,22 @@ class LLM_Client():
     def cancel_response(self):
         self.response_canceled = True
 
-class Async_LLM_Client(LLM_Client):
-    def __init__(self):
+class Async_LLM_Client():
+    def __init__(self, llm_config:LLM_Config):
+        self.llm_client = LLM_Client(llm_config=llm_config)
+        self.thread = None
+
+    def ask_prepare(self, query_paras:LLM_Query_Paras):
+        self.llm_client.ask_prepare(query_paras=query_paras)
+        return self
+
+    def start(self):
+        self.thread = threading.Thread(target=self.run)
+
+    def _run(self):
+        pass
+
+    def wait(self):
         pass
 
 # async的非联网llm调用
