@@ -1,3 +1,8 @@
+import time
+import random
+import sys
+
+from colorama import Fore, Style
 from config import dred, dgreen, dcyan, dblue, dyellow, dblack, dwhite, dmagenta, dlightblack, dlightblue, dlightred, dlightgreen, dlightyellow, dlightcyan, dlightwhite, dlightmagenta
 import config
 
@@ -20,7 +25,7 @@ class Todo_List:
 
         self.finished_list[index] = True
 
-    def print_list(self):
+    def print_todo_list(self):
         config.Global.app_debug = True
 
         # 标题
@@ -48,11 +53,6 @@ class Todo_List:
             i += 1
 
         config.Global.app_debug = False
-
-def print_todo_list(title, tode_list, index):
-    config.Global.app_debug = True
-
-    print('   ⎿ ■▪▫□◌●◦□└ ┘┌ ┐─│──')
 
 #
 # ⏺ Write(index.html)
@@ -94,22 +94,81 @@ def print_color():
     dblack('⏺', end='')
     dlightblack('⏺')
 
+def blinking_progress():
+    # print('■▪▫□◌●◦□└ ┘┌ ┐─│──')
+    # 基础星形：
+    # ✦ ✧ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰ ✱ ✲ ✳ ✴ ✵ ✶ ✷ ✸ ✹ ✺ ✻ ✼ ✽ ✾ ✿ ❀ ❁ ❂ ❃ ❄ ❅ ❆ ❇ ❈ ❉ ❊ ❋
+    # 实心星形：
+    # ★ ☆ ✦ ✧ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰
+    # 花形装饰：
+    # ❀ ❁ ❃ ❋ ❅ ❆ ❇ ❈ ❉ ❊ ✿ ✾ ✽ ✼ ✻ ✺ ✹ ✸ ✷ ✶ ✵ ✴ ✳ ✲ ✱
+    # 多角星：
+    # ✢ ✣ ✤ ✥ ✦ ✧ ✨ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰ ✱
 
-if __name__ == "__main__":
-    print_color()
+    # 闪烁字符循环
+    blink_chars = ['✽', '✼', '✻', '✲', '✳', '✢', '✳', '✻']
+    blink_index = 0
 
+    # 省略号循环
+    dots_patterns = ['.', '..', '...']
+    dots_index = 0
+
+    # 等待时的随机word
+    waiting_words = ['Synthesizing', 'Pontificating']
+    waiting_word = random.choice(waiting_words)
+
+    times = 0
+    interval = 0.1  # 秒
+    tokens = 0
+
+    while times <= 1000:
+        # 获取当前闪烁字符和省略号
+        current_char = blink_chars[blink_index % len(blink_chars)]
+        current_dots = dots_patterns[dots_index % len(dots_patterns)]
+
+        # 颜色复位
+        RESET = '\033[0m'
+
+        # 淡粉红色/灰粉色 ANSI码
+        LIGHT_PINK = '\033[38;5;217m'  # 淡粉
+        DUSTY_PINK = '\033[38;5;181m'  # 灰粉
+        PALE_PINK = '\033[38;5;225m'  # 苍白粉
+
+        # 淡灰色 ANSI码
+        LIGHT_GRAY = '\033[37m'  # 亮灰色
+        DARK_GRAY = '\033[90m'  # 暗灰色
+        PALE_GRAY = '\033[38;5;248m'  # 淡灰色
+        DIM_GRAY = '\033[38;5;242m'  # 暗淡灰
+
+        # 清除当前行并打印新内容
+        # ✳ Pontificating… (4s · ↓ 23 tokens · esc to interrupt)
+        sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>4.0f}s · ↓ {tokens} tokens ){RESET}')
+        sys.stdout.flush()
+
+        # 更新
+        blink_index += 1
+        if times % 10 == 0:
+            dots_index += 1
+
+        time.sleep(interval)
+        times += 1
+
+def llm_main():
+    blinking_progress()
+
+def todo_main():
     todo_list = [
         'Create HTML structure for chat page',
         'Add CSS styling for chat interface',
         'Implement JavaScript for chat functionality'
     ]
-
-    # print_todo_list('Update Todos', todo_list, 1)
-
     l = Todo_List(title='Update Todos', todo_list=todo_list)
     l.working(0)
     l.finish(1)
     # l.working(2)
-    l.print_list()
+    l.print_todo_list()
 
-    dgreen('finished.')
+if __name__ == "__main__":
+    print_color()
+    # todo_main()
+    llm_main()
