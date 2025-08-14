@@ -1,10 +1,33 @@
-import time
+import time, threading
 import random
 import sys
+import tiktoken
+
+ENCODING = tiktoken.encoding_for_model("gpt-4")
 
 from colorama import Fore, Style
 from config import dred, dgreen, dcyan, dblue, dyellow, dblack, dwhite, dmagenta, dlightblack, dlightblue, dlightred, dlightgreen, dlightyellow, dlightcyan, dlightwhite, dlightmagenta
 import config
+
+# 颜色复位
+RESET = '\033[0m'
+
+# 淡粉红色/灰粉色 ANSI码
+LIGHT_PINK = '\033[38;5;217m'  # 淡粉
+DUSTY_PINK = '\033[38;5;181m'  # 灰粉
+PALE_PINK = '\033[38;5;225m'  # 苍白粉
+
+# 淡灰色 ANSI码
+LIGHT_GRAY = '\033[37m'  # 亮灰色
+DARK_GRAY = '\033[90m'  # 暗灰色
+PALE_GRAY = '\033[38;5;248m'  # 淡灰色
+DIM_GRAY = '\033[38;5;242m'  # 暗淡灰
+
+LIGHT_WHITE = '\033[97m'  # 明亮白色
+WHITE = '\033[37m'  # 标准白色
+
+LIGHT_BLACK = '\033[90m'    # 明亮黑色
+BLACK = '\033[30m'  # 标准黑色
 
 class Todo_List:
     def __init__(self, title, todo_list):
@@ -69,7 +92,6 @@ class Todo_List:
 # │                                                                                                                     │
 # ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 def print_color():
-    config.Global.app_debug = True
     dwhite('⏺', end='')
     dlightwhite('⏺', end='')
 
@@ -94,7 +116,7 @@ def print_color():
     dblack('⏺', end='')
     dlightblack('⏺')
 
-def blinking_progress():
+def llm_output(result_gen, think_gen=None):
     # print('■▪▫□◌●◦□└ ┘┌ ┐─│──')
     # 基础星形：
     # ✦ ✧ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰ ✱ ✲ ✳ ✴ ✵ ✶ ✷ ✸ ✹ ✺ ✻ ✼ ✽ ✾ ✿ ❀ ❁ ❂ ❃ ❄ ❅ ❆ ❇ ❈ ❉ ❊ ❋
@@ -119,30 +141,38 @@ def blinking_progress():
 
     times = 0
     interval = 0.1  # 秒
-    tokens = 0
 
-    while times <= 1000:
+    result = ''
+    finished = False
+    tokens_num = 0
+
+    def _get_chunk():
+        nonlocal result, finished, tokens_num
+        # 统计thinking的大概token数
+        if think_gen:
+            for chunk in think_gen:
+                tokens_num += len(ENCODING.encode(chunk))
+        # 统计result的大概token数
+        for chunk in result_gen:
+            result += chunk
+            tokens_num += len(ENCODING.encode(chunk))
+
+        finished = True
+
+    t = threading.Thread(target=_get_chunk)
+    t.start()
+
+    while not finished:
+        # print(chunk, end='', flush=True)
+        # result += chunk
+
         # 获取当前闪烁字符和省略号
         current_char = blink_chars[blink_index % len(blink_chars)]
         current_dots = dots_patterns[dots_index % len(dots_patterns)]
 
-        # 颜色复位
-        RESET = '\033[0m'
-
-        # 淡粉红色/灰粉色 ANSI码
-        LIGHT_PINK = '\033[38;5;217m'  # 淡粉
-        DUSTY_PINK = '\033[38;5;181m'  # 灰粉
-        PALE_PINK = '\033[38;5;225m'  # 苍白粉
-
-        # 淡灰色 ANSI码
-        LIGHT_GRAY = '\033[37m'  # 亮灰色
-        DARK_GRAY = '\033[90m'  # 暗灰色
-        PALE_GRAY = '\033[38;5;248m'  # 淡灰色
-        DIM_GRAY = '\033[38;5;242m'  # 暗淡灰
-
         # 清除当前行并打印新内容
         # ✳ Pontificating… (4s · ↓ 23 tokens · esc to interrupt)
-        sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>4.0f}s · ↓ {tokens} tokens ){RESET}')
+        sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num} tokens ){RESET}')
         sys.stdout.flush()
 
         # 更新
@@ -152,9 +182,11 @@ def blinking_progress():
 
         time.sleep(interval)
         times += 1
+    # print(f'\n{WHITE}● {RESET}{LIGHT_BLACK}{result}{RESET}\n')
+    print(f'\n{LIGHT_WHITE}● {RESET}{BLACK}{result.strip()}{RESET}\n')
 
 def llm_main():
-    blinking_progress()
+    llm_output()
 
 def todo_main():
     todo_list = [

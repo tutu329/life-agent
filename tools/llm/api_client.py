@@ -40,6 +40,7 @@ import config
 
 import llm_protocol
 from llm_protocol import LLM_Config, LLM_Clear_History_Method, LLM_Query_Paras, LLM_Reasoning_Effort
+from console import llm_output
 
 # DEBUG = True
 DEBUG = False
@@ -2052,7 +2053,12 @@ class Async_LLM_Client():
         return self
 
     def _run(self):
-        self.llm_client.get_answer_and_sync_print()
+        # self.llm_client.get_answer_and_sync_print()
+        # gen = self.llm_client.get_result_generator()
+        # llm_output(gen)
+        think_gen = self.llm_client.get_think_generator()
+        result_gen = self.llm_client.get_result_generator()
+        llm_output(result_gen, think_gen)
 
     def wait(self):
         # self.thread.join(timeout=100)   # timeout单位为秒
@@ -2899,6 +2905,8 @@ def reasoning_effort_main():
     llm.ask_prepare(query).get_answer_and_sync_print()
 
 def async_reasoning_effort_main():
+    from console import print_color
+    print_color()
     llm_config = llm_protocol.g_local_qwen3_4b_thinking
     # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
     # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
