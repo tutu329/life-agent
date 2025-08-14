@@ -2046,6 +2046,7 @@ class Async_LLM_Client():
     def wait(self):
         pass
 
+
 # async的非联网llm调用
 class Legacy_Async_LLM(legacy_Web_Server_Base):
     def __init__(self,
