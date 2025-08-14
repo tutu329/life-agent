@@ -320,13 +320,13 @@ class Web_Server_Task_Manager():
         return _generate()
 
 def main():
-    from tools.llm.api_client import Async_LLM
+    from tools.llm.api_client import Legacy_Async_LLM
     from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Client_Text_Data
     import json, json5
 
     Web_Server_Task_Manager.g_local_debug = True
 
-    obj = Async_LLM(
+    obj = Legacy_Async_LLM(
         question='你是谁',
         url='https://powerai.cc:8001/v1',
         api_key='empty',

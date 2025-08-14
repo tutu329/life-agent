@@ -32,7 +32,7 @@ from server_manager.web_server_task_manager import Web_Client_Data_Type, Web_Cli
 from utils.image import get_image_string_from_url
 import json
 
-from config import dred, dgreen, dblue, dcyan, dyellow
+from config import dred, dgreen, dblue, dcyan, dyellow, dlightblack
 import config
 
 import llm_protocol
@@ -1407,7 +1407,7 @@ class LLM_Client():
                         # 没有role prompt，则删除第一个对话
                         self.history_list.pop(0)
                         self.history_list.pop(0)
-                elif self.history_clear_method == LLM_Clear_History_Method.CLEAR:
+                elif self.llm_config.history_clear_method == LLM_Clear_History_Method.CLEAR:
                     dred('======对话轮次超限，清空记忆======')
                     self.__history_clear()
 
@@ -1790,16 +1790,16 @@ class LLM_Client():
             if chunk[1]:
                 if not think_started:
                     dyellow('<think>')
-                print(chunk[1], end='', flush=True)
+                dlightblack(chunk[1], end='', flush=True)
                 think_started = True
             if chunk[2]:
                 if not result_started:
                     if think_started:
-                        dyellow('</think>')
-                    dblue('<assistant>', end='', flush=True)
-                print(chunk[2], end='', flush=True)
+                        dyellow(f'\n</think>')
+                    dblue('<assistant>')
+                dlightblack(chunk[2], end='', flush=True)
                 result_started = True
-        dblue(f'</assistant>({self.output_tokens_num_this_turn}/{self.history_output_tokens_num}tokens)')
+        dblue(f'\n</assistant>({self.output_tokens_num_this_turn}/{self.history_output_tokens_num}tokens)')
 
         return result
 
@@ -1849,6 +1849,7 @@ class LLM_Client():
                         self.usage['prompt_tokens'] = chunk.usage.prompt_tokens
                         self.usage['total_tokens'] = chunk.usage.total_tokens
                         self.usage['completion_tokens'] = chunk.usage.completion_tokens
+                        # dred(f'--------------->completion_tokens：{self.usage["completion_tokens"]}')
 
                         self.output_tokens_num_this_turn = self.usage['completion_tokens']
                         if self.llm_config.has_history:
@@ -2027,8 +2028,11 @@ class LLM_Client():
     def cancel_response(self):
         self.response_canceled = True
 
+class Async_LLM_Client():
+    pass
+
 # async的非联网llm调用
-class Async_LLM(legacy_Web_Server_Base):
+class Legacy_Async_LLM(legacy_Web_Server_Base):
     def __init__(self,
                  question,
                  url=llm_protocol.LLM_Default.url,
@@ -2852,8 +2856,35 @@ def reasoning_effort_main():
     llm = LLM_Client(
         llm_config=llm_config,
     )
-    print(llm_protocol.g_local_gpt_oss_20b_mxfp4)
-    prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
+    # print(llm_protocol.g_local_gpt_oss_20b_mxfp4)
+    # prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
+    prompt = '1+1=？'
+    # prompt = '你是谁？'
+    query = LLM_Query_Paras(
+        query=prompt,
+        # temperature=0.77,
+        # top_p=0.88,
+        # max_new_tokens=8000,
+        # system_prompt='hi',
+        # role_prompt='hey',
+        # manual_stop=['[观察]']
+    )
+    llm.ask_prepare(query).get_answer_and_sync_print()
+
+def async_reasoning_effort_main():
+    llm_config = llm_protocol.g_local_qwen3_4b_thinking
+    # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
+    # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
+    # llm_config = llm_protocol.g_online_groq_kimi_k2
+    # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
+    llm = LLM_Client(
+        llm_config=llm_config,
+    )
+    # print(llm_protocol.g_local_gpt_oss_20b_mxfp4)
+    # prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
+    prompt = '1+1=？'
+    # prompt = '你是谁？'
     query = LLM_Query_Paras(
         query=prompt,
         # temperature=0.77,
@@ -2887,7 +2918,7 @@ def think_and_result_test():
 
 
 def async_llm_main():
-    allm = Async_LLM(
+    allm = Legacy_Async_LLM(
         question='你是谁',
         url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
@@ -2911,7 +2942,8 @@ def llm_config_test():
 if __name__ == "__main__":
     # base_main()
 
-    reasoning_effort_main()
+    # reasoning_effort_main()
+    async_reasoning_effort_main()
 
     # llm_config_test()
 

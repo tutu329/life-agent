@@ -1,5 +1,5 @@
 import streamlit as st
-from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Async_LLM
+from tools.llm.api_client import LLM_Client, Concurrent_LLMs, Legacy_Async_LLM
 
 import base64
 import tempfile
@@ -67,7 +67,7 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
     for col in cols:
         i += 1
         suffix = ' ${}^{【local' + f'-{i}' + '】}$ \n\n'
-        async_llm = Async_LLM()
+        async_llm = Legacy_Async_LLM()
         async_llms.append(async_llm)
         async_llm.init(
             col.empty().markdown, 

@@ -7,7 +7,7 @@ import pandas as pd
 
 import config
 from config import dred, dgreen, dblue
-from tools.llm.api_client import LLM_Client, Async_LLM
+from tools.llm.api_client import LLM_Client, Legacy_Async_LLM
 
 from agent.core.tool_agent import Tool_Agent
 from tools.t2i.api_client_comfy import Comfy, Work_Flow_Type
@@ -370,7 +370,7 @@ def async_llm_local_response_concurrently(in_st, in_prompt, in_role_prompt='', i
     for col in cols:
         i += 1
         suffix = ' ${}^{【local' + f'-{i}' + '】}$ \n\n'
-        async_llm = Async_LLM()
+        async_llm = Legacy_Async_LLM()
         async_llms.append(async_llm)
         async_llm.init(
             col.empty().markdown, 

@@ -11,7 +11,7 @@ from server_manager.web_server_task_manager import Web_Server_Task_Manager
 
 from client.office.office_client import Web_Office_Write
 
-from tools.llm.api_client import LLM_Client, Async_LLM
+from tools.llm.api_client import LLM_Client, Legacy_Async_LLM
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS support
@@ -142,7 +142,7 @@ def start_agent_task():
 
                 # ---------------------/特例----------------------
 
-                agent = Async_LLM(
+                agent = Legacy_Async_LLM(
                     question=question,
                     url=base_url,
                     api_key=api_key,
