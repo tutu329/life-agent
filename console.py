@@ -182,7 +182,7 @@ def llm_output(result_gen, think_gen=None):
         # ✳ Pontificating… (4s · ↓ 23 tokens · esc to interrupt)
         buffer += current_chunk.replace('\n', ' ')
         buffer = buffer[-30:]
-        output = f'[thinking:  {buffer:>30}]' if thinking else f'[outputing: {buffer:>30}]'
+        output = f'[thinking:  {buffer}]' if thinking else f'[outputing: {buffer}]'
         sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num:>4.0f} tokens ) {output}{RESET}')
         sys.stdout.flush()
 
