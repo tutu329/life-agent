@@ -140,20 +140,27 @@ def llm_output(result_gen, think_gen=None):
     waiting_word = random.choice(waiting_words)
 
     times = 0
-    interval = 0.1  # 秒
+    interval = 0.05  # 秒
 
     result = ''
     finished = False
     tokens_num = 0
 
+    current_chunk = ''
+    thinking = False
+
     def _get_chunk():
-        nonlocal result, finished, tokens_num
+        nonlocal result, finished, tokens_num, current_chunk, thinking
         # 统计thinking的大概token数
         if think_gen:
             for chunk in think_gen:
+                thinking = True
+                current_chunk = chunk
                 tokens_num += len(ENCODING.encode(chunk))
         # 统计result的大概token数
         for chunk in result_gen:
+            thinking = False
+            current_chunk = chunk
             result += chunk
             tokens_num += len(ENCODING.encode(chunk))
 
@@ -162,6 +169,7 @@ def llm_output(result_gen, think_gen=None):
     t = threading.Thread(target=_get_chunk)
     t.start()
 
+    buffer = ''
     while not finished:
         # print(chunk, end='', flush=True)
         # result += chunk
@@ -172,7 +180,10 @@ def llm_output(result_gen, think_gen=None):
 
         # 清除当前行并打印新内容
         # ✳ Pontificating… (4s · ↓ 23 tokens · esc to interrupt)
-        sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num} tokens ){RESET}')
+        buffer += current_chunk.replace('\n', ' ')
+        buffer = buffer[-30:]
+        output = f'[thinking:  {buffer:>30}]' if thinking else f'[outputing: {buffer:>30}]'
+        sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num:>4.0f} tokens ) {output}{RESET}')
         sys.stdout.flush()
 
         # 更新
@@ -182,6 +193,8 @@ def llm_output(result_gen, think_gen=None):
 
         time.sleep(interval)
         times += 1
+    sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num:>4.0f} tokens ){RESET}')
+    sys.stdout.flush()
     # print(f'\n{WHITE}● {RESET}{LIGHT_BLACK}{result}{RESET}\n')
     print(f'\n{LIGHT_WHITE}● {RESET}{BLACK}{result.strip()}{RESET}\n')
 
