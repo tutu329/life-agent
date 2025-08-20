@@ -1698,6 +1698,13 @@ class LLM_Client():
             if self.llm_config.use_harmony:
                 # https://platform.openai.com/docs/guides/migrate-to-responses
                 if self.llm_config.reasoning_effort is not None:
+                    print(f'temperature: {self.llm_current_query_paras.temperature}')
+                    print(f'top_p: {self.llm_current_query_paras.top_p}')
+                    print(f'instructions: {self.llm_config.system_prompt}')
+                    print(f'input: {msgs}')
+                    print(f'stream: {self.llm_config.stream}')
+                    print(f'max_output_tokens: {self.llm_current_query_paras.max_new_tokens}')
+                    print(f'reasoning: {self.llm_config.reasoning_effort}')
                     gen = self.openai.responses.create(
                         model=self.llm_config.llm_model_id,
                         temperature=self.llm_current_query_paras.temperature,
