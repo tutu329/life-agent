@@ -116,6 +116,9 @@ def print_color():
     dblack('⏺', end='')
     dlightblack('⏺')
 
+def user_output(query):
+    print(f'\n{PALE_GRAY}> {query}{RESET}\n')
+
 def llm_output(result_gen, think_gen=None):
     # print('■▪▫□◌●◦□└ ┘┌ ┐─│──')
     # 基础星形：
