@@ -53,6 +53,7 @@ class LLM_Config(BaseModel):
 
     # llm推理强度(用于支持GPT-oss的推理强度选择)
     reasoning_effort:Optional[LLM_Reasoning_Effort] = None
+    use_harmony     :bool = False   # openai主推的对话/工具调用格式（增强agent能力，且目前vllm的completion接口有bug，必须用harmony格式；GPT-oss模型是在harmony格式上训练的。）
 
     # llm是否通过vpn访问
     vpn_on          :bool = False
@@ -101,7 +102,8 @@ g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     temperature=0.6,
     top_p=0.95,
     max_new_tokens=8192,
-    reasoning_effort=LLM_Reasoning_Effort.HIGH
+    reasoning_effort=LLM_Reasoning_Effort.HIGH,
+    use_harmony=True
     # reasoning_effort=LLM_Reasoning_Effort.LOW
 )
 
@@ -165,6 +167,7 @@ g_online_groq_gpt_oss_20b = LLM_Config(
     top_p=0.95,
     max_new_tokens=8192,
     # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
+    use_harmony=True,
     vpn_on=True
 )
 
@@ -177,5 +180,6 @@ g_online_groq_gpt_oss_120b = LLM_Config(
     top_p=0.95,
     max_new_tokens=8192,
     # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
+    use_harmony=True,
     vpn_on=True
 )

@@ -124,6 +124,7 @@ class Todo_List:
 # │                                                                                                                     │
 # ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 def print_color():
+    tmp_app_debug = config.Global.app_debug
     config.Global.app_debug = True
 
     dwhite('⏺', end='')
@@ -150,7 +151,7 @@ def print_color():
     dblack('⏺', end='')
     dlightblack('⏺')
 
-    config.Global.app_debug = False
+    config.Global.app_debug = tmp_app_debug
 
 def agent_query_output(query):
     print(f'\n{PALE_GRAY}> {query}{RESET}\n')

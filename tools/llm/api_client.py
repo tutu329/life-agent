@@ -1364,7 +1364,7 @@ class LLM_Client():
         self.stop = None  # 用于对vllm的openai api的stop进行过滤
         self.response_canceled = False  # response过程是否被中断
 
-        self.system_prompt = config.Global.llm_system_prompt
+        # self.system_prompt = config.Global.llm_system_prompt
 
         self.result_chunk_as_think_chunk = ''  # 非reason模型推理时，获取think输出时，会误将result_chunk当成think_chunk，这里要保存这个chunk，后续交给result
 
@@ -1432,11 +1432,14 @@ class LLM_Client():
             image_url=None,  # image url或者base64 encoded string，不能是本地文件路径
     ):
         # ===加入system提示===
-        msgs = [{
-            "role": "system",
-            "content": self.system_prompt,
-            # "content": "You are a helpful assistant."
-        }]
+        if self.llm_config.use_harmony:
+            msgs = []
+        else:
+            msgs = [{
+                "role": "system",
+                "content": self.llm_config.system_prompt,
+                # "content": "You are a helpful assistant."
+            }]
 
         if image_url is None:
             # 没有图片
@@ -1466,7 +1469,7 @@ class LLM_Client():
     def print_history_and_system(self):
         # print('\n\t================【LLM_Client】 对话历史================')
         # print(f'system提示: {self.role_prompt}')
-        dgreen(f"\n\tsystem: \t{self.system_prompt}")
+        dgreen(f"\n\tsystem: \t{self.llm_config.system_prompt}")
         for chat in self.history_list:
             content = chat['content'][:50] + '...' if len(chat['content']) > 50 else chat['content']
             dgreen(f"\t{chat['role']}: \t{content}")
@@ -1692,33 +1695,63 @@ class LLM_Client():
 
         try:
             dyellow(f'【LLM_Client】ask_prepare(): reasoning_effort为{self.llm_config.reasoning_effort}')
-            if self.llm_config.reasoning_effort is not None:
-                gen = self.openai.chat.completions.create(
-                    model=self.llm_config.llm_model_id,
-                    temperature=self.llm_current_query_paras.temperature,
-                    top_p=self.llm_current_query_paras.top_p,
-                    # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
-                    messages=msgs,
-                    stream=self.llm_config.stream,
-                    # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    max_tokens=self.llm_current_query_paras.max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    stop=self.llm_current_query_paras.manual_stop,
-                    stream_options={"include_usage": True},  # 最新版本openai的要求
-                    extra_body={'reasoning_effort':self.llm_config.reasoning_effort}
-                )
+            if self.llm_config.use_harmony:
+                # https://platform.openai.com/docs/guides/migrate-to-responses
+                if self.llm_config.reasoning_effort is not None:
+                    gen = self.openai.responses.create(
+                        model=self.llm_config.llm_model_id,
+                        temperature=self.llm_current_query_paras.temperature,
+                        top_p=self.llm_current_query_paras.top_p,
+                        instructions=self.llm_config.system_prompt,
+                        input=msgs,
+                        stream=self.llm_config.stream,
+                        # instructions="你是一个简洁友好的中文助手。",
+                        max_output_tokens=self.llm_current_query_paras.max_new_tokens,
+                        # stop=self.llm_current_query_paras.manual_stop,    # response中取消了stop
+                        # stream_options={"include_usage": True},           # response中取消了stream_options
+                        reasoning={"effort": self.llm_config.reasoning_effort},
+                    )
+                else:
+                    gen = self.openai.responses.create(
+                        model=self.llm_config.llm_model_id,
+                        temperature=self.llm_current_query_paras.temperature,
+                        top_p=self.llm_current_query_paras.top_p,
+                        instructions=self.llm_config.system_prompt,
+                        input=msgs,
+                        stream=self.llm_config.stream,
+                        # instructions="你是一个简洁友好的中文助手。",
+                        max_output_tokens=self.llm_current_query_paras.max_new_tokens,
+                        # stop=self.llm_current_query_paras.manual_stop,    # response中取消了stop
+                        # stream_options={"include_usage": True},           # response中取消了stream_options
+                    )
             else:
-                gen = self.openai.chat.completions.create(
-                    model=self.llm_config.llm_model_id,
-                    temperature=self.llm_current_query_paras.temperature,
-                    top_p=self.llm_current_query_paras.top_p,
-                    # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
-                    messages=msgs,
-                    stream=self.llm_config.stream,
-                    # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    max_tokens=self.llm_current_query_paras.max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
-                    stop=self.llm_current_query_paras.manual_stop,
-                    stream_options={"include_usage": True},  # 最新版本openai的要求
-                )
+                if self.llm_config.reasoning_effort is not None:
+                    gen = self.openai.chat.completions.create(
+                        model=self.llm_config.llm_model_id,
+                        temperature=self.llm_current_query_paras.temperature,
+                        top_p=self.llm_current_query_paras.top_p,
+                        # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
+                        messages=msgs,
+                        stream=self.llm_config.stream,
+                        # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                        max_tokens=self.llm_current_query_paras.max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                        stop=self.llm_current_query_paras.manual_stop,
+                        stream_options={"include_usage": True},  # 最新版本openai的要求
+                        extra_body={'reasoning_effort':self.llm_config.reasoning_effort}
+                    )
+                else:
+                    gen = self.openai.chat.completions.create(
+                        model=self.llm_config.llm_model_id,
+                        temperature=self.llm_current_query_paras.temperature,
+                        top_p=self.llm_current_query_paras.top_p,
+                        # system=self.role_prompt if self.has_role_prompt else "You are a helpful assistant.",  # vllm目前不支持qwen的system这个参数
+                        messages=msgs,
+                        stream=self.llm_config.stream,
+                        # max_new_tokens=max_new_tokens,   # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                        max_tokens=self.llm_current_query_paras.max_new_tokens,  # 目前openai_api未实现（应该是靠models下的配置参数指定）
+                        stop=self.llm_current_query_paras.manual_stop,
+                        stream_options={"include_usage": True},  # 最新版本openai的要求
+                    )
         except Exception as e:
             dred(f'【LLM_Client异常】ask_prepare(): {e!r}(注意：api_key不能设置为"")')
             self.question_last_turn = self.llm_current_query_paras.query
@@ -1866,9 +1899,14 @@ class LLM_Client():
                     #     print(chunk.choices[0].delta)
 
                     # ================================================reasoning_content===================================================
-                    if chunk.choices and hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[
-                        0].delta.reasoning_content:
-                        think_chunk_output = chunk.choices[0].delta.reasoning_content
+                    # chat.completions.create
+                    if ((not self.llm_config.use_harmony) and (chunk.choices and hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[0].delta.reasoning_content)
+                    # responses.create
+                    or (self.llm_config.use_harmony) and (chunk.type and chunk.type == "response.reasoning_text.delta")):
+                        if self.llm_config.use_harmony:
+                            think_chunk_output = chunk.delta
+                        else:
+                            think_chunk_output = chunk.choices[0].delta.reasoning_content
                         # print(f'think_chunk_output: "{think_chunk_output}"')
 
                         my_chunk = think_chunk_output
@@ -1878,7 +1916,10 @@ class LLM_Client():
                         yield my_chunk, think_chunk_output, result_chunk_after_stop
 
                     # =====================================================content========================================================
-                    if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content:
+                    # chat.completions.create
+                    if ((not self.llm_config.use_harmony) and (chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content)
+                    # responses.create
+                    or (self.llm_config.use_harmony) and (chunk.type and chunk.type == "response.output_text.delta")):
                         # if hasattr(chunk, 'usage') and chunk.usage is not None:
                         #     print(f'chunk.usage: {chunk.usage}')
                         #     # 输入和输出的token数量统计
@@ -1895,7 +1936,10 @@ class LLM_Client():
                         #         self.usage = chunk.usage
 
                         # print(chunk.choices[0].delta.content, end='', flush=True)
-                        my_chunk = chunk.choices[0].delta.content
+                        if self.llm_config.use_harmony:
+                            my_chunk = chunk.delta
+                        else:
+                            my_chunk = chunk.choices[0].delta.content
                         answer += my_chunk
 
                         # result_chunk_output = my_chunk
@@ -2670,144 +2714,144 @@ def o1_BoN_all(question, temperature=1.0, n=64):
     return final_answer
 
 
-def o1_steps_search(question, messages, llm_key='empty', prm_key='empty', llm_url='https://powerai.cc:8001/v1',
-                    prm_url='https://powerai.cc:8002/v1',
-                    max_new_tokens=1024, temperature=0.7, n=10,
-                    prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
-    from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
+# def o1_steps_search(question, messages, llm_key='empty', prm_key='empty', llm_url='https://powerai.cc:8001/v1',
+#                     prm_url='https://powerai.cc:8002/v1',
+#                     max_new_tokens=1024, temperature=0.7, n=10,
+#                     prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
+#     from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
+#
+#     # 给prm的response是['assistant step response...', ...].append(res)，然后'\n'.join()
+#     his_responses_list = []
+#     for dict in messages:
+#         if 'role' in dict and dict['role'] == 'assistant':
+#             his_responses_list.append(dict['content'])
+#
+#     dgreen(f'history responses:')
+#     dgreen('\n'.join(his_responses_list))
+#
+#     def message_stream(gen):
+#         for chunk in gen:
+#             if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[
+#                 0].delta.content is not None:
+#                 yield chunk.choices[0].delta.content
+#
+#     res_dict = {}
+#
+#     oai = OpenAI(
+#         api_key=llm_key,
+#         base_url=llm_url,
+#     )
+#     model_id = oai.models.list().data[0].id
+#     messages1 = [
+#         {'role': 'system', 'content': 'You are a helpful assistant.'},
+#         {'role': 'user',
+#          'content': '''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问22元一共可以喝几瓶可乐？'''},
+#         {'role': 'assistant', 'content': '为了解决这个问题，我们可以分步骤来计算。'},
+#         {'role': 'assistant', 'content': '首先，直接用22元购买可乐，不考虑回收空瓶换购的情况。'},
+#         {'role': 'assistant', 'content': '1. **直接购买的可乐数量**：22元直接可以买22瓶可乐。'},
+#         {'role': 'assistant',
+#          'content': '2. **喝完第一轮的可乐后，收集空瓶换购**：喝完22瓶可乐，会得到22个空瓶，用其中的20个空瓶可以换购10瓶新的可乐（因为每2个空瓶可以换1瓶新的可乐）。'},
+#         {'role': 'assistant',
+#          'content': '3. **喝完换购来的可乐后，收集空瓶再次换购**：喝完这10瓶可乐，又会得到10个空瓶，用其中的8个空瓶可以换4瓶新的可乐。'},
+#         {'role': 'assistant',
+#          'content': '4. **重复上述过程**：喝完这4瓶可乐，得到4个空瓶，用其中的4个空瓶再换2瓶新的可乐。接着，喝完这2瓶可乐，得到2个空瓶，用这2个空瓶换1瓶新的可乐。最后，喝完这瓶可乐，再没有足够的空瓶去换新的可乐了。'},
+#         {'role': 'assistant',
+#          'content': '将所有喝到的可乐数量加起来：22（初始购买）+ 10（第一次换购）+ 4（第二次换购）+ 2（第三次换购）+ 1（第四次换购）= 39瓶。'},
+#         {'role': 'assistant', 'content': '因此，22元一共可以喝到39瓶可乐。'},
+#         {'role': 'assistant', 'content': '等一下，'},
+#     ]
+#
+#     def _task(id):
+#         prm = LLM_PRM_Client()
+#         prm.init(prm_model_path=prm_model_path, url=prm_url, api_key=prm_key)
+#
+#         stop = ['\n']
+#         gen = oai.chat.completions.create(
+#             model=model_id,
+#             messages=messages,
+#             temperature=temperature,
+#             stream=True,
+#             max_tokens=max_new_tokens,
+#             stop=stop,
+#         )
+#
+#         res = ''
+#         for chunk in message_stream(gen):
+#             res += chunk
+#
+#         # 给prm的response是['assistant step response...', ...].append(res)，然后'\n'.join()
+#         his_res = '\n'.join(his_responses_list) + '\n' + res
+#         # dgreen(f'history responses:')
+#         # dgreen(f'{res}')
+#
+#         # 获取step_rewards
+#         step_data = Step_Data(problem=question, response=his_res)
+#         step_rewards = prm.get_step_rewards(step_data)
+#
+#         res_dict[id] = {
+#             'response': res,
+#             'step_rewards': step_rewards,
+#             'min_reward': prm.get_min_reward(),
+#             'last_reward': prm.get_last_reward(),
+#             'prod_reward': prm.get_prod_reward(),
+#         }
+#
+#     # 启动callback任务
+#     threads = []
+#     for i in range(n):  # 有10个线程
+#         t = threading.Thread(target=_task, args=(i,))
+#         threads.append(t)
+#         t.start()
+#
+#     # 等待所有任务完成
+#     for t in threads:
+#         t.join()
+#
+#     from utils.string_util import string_right_align
+#     for i in range(n):
+#         s = ' '.join(res_dict[i]['response'][-50:].split('\n'))
+#         rewards_list = [f'{r:.2f}' for r in res_dict[i]['step_rewards']]
+#         # s += f'【{",".join(rewards_list)}】'
+#         s += f'【min: {res_dict[i]["min_reward"]:.2f}】'
+#         s += f'【prod: {res_dict[i]["prod_reward"]:.9f}】'
+#         s += f'【last: {res_dict[i]["last_reward"]:.2f}】'
+#         print(f'[{i}]: "...{string_right_align(s, 180)}"')
+#
+#     # # 返回prod_reward最大的response
+#     # 返回last_reward最大的response
+#     final_result = ''
+#     max_reward = 0
+#     final_id = -1
+#     # for i in range(n):
+#     #     if res_dict[i]["prod_reward"] > max_reward:
+#     #         max_reward = res_dict[i]["prod_reward"]
+#     #         final_id = i
+#     for i in range(n):
+#         if res_dict[i]["last_reward"] > max_reward:
+#             max_reward = res_dict[i]["last_reward"]
+#             final_id = i
+#
+#     final_result = res_dict[final_id]['response']
+#     dred(f'final answer: ')
+#     dred(f'"{final_result}"')
+#
+#     return final_result
 
-    # 给prm的response是['assistant step response...', ...].append(res)，然后'\n'.join()
-    his_responses_list = []
-    for dict in messages:
-        if 'role' in dict and dict['role'] == 'assistant':
-            his_responses_list.append(dict['content'])
 
-    dgreen(f'history responses:')
-    dgreen('\n'.join(his_responses_list))
-
-    def message_stream(gen):
-        for chunk in gen:
-            if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[
-                0].delta.content is not None:
-                yield chunk.choices[0].delta.content
-
-    res_dict = {}
-
-    oai = OpenAI(
-        api_key=llm_key,
-        base_url=llm_url,
-    )
-    model_id = oai.models.list().data[0].id
-    messages1 = [
-        {'role': 'system', 'content': 'You are a helpful assistant.'},
-        {'role': 'user',
-         'content': '''一元钱可以买一瓶可乐，且喝了可乐后，两个空瓶可以免费换一瓶新的可乐，请问22元一共可以喝几瓶可乐？'''},
-        {'role': 'assistant', 'content': '为了解决这个问题，我们可以分步骤来计算。'},
-        {'role': 'assistant', 'content': '首先，直接用22元购买可乐，不考虑回收空瓶换购的情况。'},
-        {'role': 'assistant', 'content': '1. **直接购买的可乐数量**：22元直接可以买22瓶可乐。'},
-        {'role': 'assistant',
-         'content': '2. **喝完第一轮的可乐后，收集空瓶换购**：喝完22瓶可乐，会得到22个空瓶，用其中的20个空瓶可以换购10瓶新的可乐（因为每2个空瓶可以换1瓶新的可乐）。'},
-        {'role': 'assistant',
-         'content': '3. **喝完换购来的可乐后，收集空瓶再次换购**：喝完这10瓶可乐，又会得到10个空瓶，用其中的8个空瓶可以换4瓶新的可乐。'},
-        {'role': 'assistant',
-         'content': '4. **重复上述过程**：喝完这4瓶可乐，得到4个空瓶，用其中的4个空瓶再换2瓶新的可乐。接着，喝完这2瓶可乐，得到2个空瓶，用这2个空瓶换1瓶新的可乐。最后，喝完这瓶可乐，再没有足够的空瓶去换新的可乐了。'},
-        {'role': 'assistant',
-         'content': '将所有喝到的可乐数量加起来：22（初始购买）+ 10（第一次换购）+ 4（第二次换购）+ 2（第三次换购）+ 1（第四次换购）= 39瓶。'},
-        {'role': 'assistant', 'content': '因此，22元一共可以喝到39瓶可乐。'},
-        {'role': 'assistant', 'content': '等一下，'},
-    ]
-
-    def _task(id):
-        prm = LLM_PRM_Client()
-        prm.init(prm_model_path=prm_model_path, url=prm_url, api_key=prm_key)
-
-        stop = ['\n']
-        gen = oai.chat.completions.create(
-            model=model_id,
-            messages=messages,
-            temperature=temperature,
-            stream=True,
-            max_tokens=max_new_tokens,
-            stop=stop,
-        )
-
-        res = ''
-        for chunk in message_stream(gen):
-            res += chunk
-
-        # 给prm的response是['assistant step response...', ...].append(res)，然后'\n'.join()
-        his_res = '\n'.join(his_responses_list) + '\n' + res
-        # dgreen(f'history responses:')
-        # dgreen(f'{res}')
-
-        # 获取step_rewards
-        step_data = Step_Data(problem=question, response=his_res)
-        step_rewards = prm.get_step_rewards(step_data)
-
-        res_dict[id] = {
-            'response': res,
-            'step_rewards': step_rewards,
-            'min_reward': prm.get_min_reward(),
-            'last_reward': prm.get_last_reward(),
-            'prod_reward': prm.get_prod_reward(),
-        }
-
-    # 启动callback任务
-    threads = []
-    for i in range(n):  # 有10个线程
-        t = threading.Thread(target=_task, args=(i,))
-        threads.append(t)
-        t.start()
-
-    # 等待所有任务完成
-    for t in threads:
-        t.join()
-
-    from utils.string_util import string_right_align
-    for i in range(n):
-        s = ' '.join(res_dict[i]['response'][-50:].split('\n'))
-        rewards_list = [f'{r:.2f}' for r in res_dict[i]['step_rewards']]
-        # s += f'【{",".join(rewards_list)}】'
-        s += f'【min: {res_dict[i]["min_reward"]:.2f}】'
-        s += f'【prod: {res_dict[i]["prod_reward"]:.9f}】'
-        s += f'【last: {res_dict[i]["last_reward"]:.2f}】'
-        print(f'[{i}]: "...{string_right_align(s, 180)}"')
-
-    # # 返回prod_reward最大的response
-    # 返回last_reward最大的response
-    final_result = ''
-    max_reward = 0
-    final_id = -1
-    # for i in range(n):
-    #     if res_dict[i]["prod_reward"] > max_reward:
-    #         max_reward = res_dict[i]["prod_reward"]
-    #         final_id = i
-    for i in range(n):
-        if res_dict[i]["last_reward"] > max_reward:
-            max_reward = res_dict[i]["last_reward"]
-            final_id = i
-
-    final_result = res_dict[final_id]['response']
-    dred(f'final answer: ')
-    dred(f'"{final_result}"')
-
-    return final_result
-
-
-def o1_BoN_steps(question, temperature=0.7, n=16, max_tries=10):
-    messages = [
-        {'role': 'system', 'content': 'You are a helpful assistant.'},
-        {'role': 'user', 'content': question},
-
-    ]
-    res = o1_steps_search(question=question, messages=messages, temperature=temperature, n=n)
-
-    for i in range(max_tries):
-        messages.append({'role': 'assistant', 'content': res})
-        res = o1_steps_search(question=question, messages=messages, temperature=temperature, n=n)
-
-    print(f'final_result: {res}')
-    return res
+# def o1_BoN_steps(question, temperature=0.7, n=16, max_tries=10):
+#     messages = [
+#         {'role': 'system', 'content': 'You are a helpful assistant.'},
+#         {'role': 'user', 'content': question},
+#
+#     ]
+#     res = o1_steps_search(question=question, messages=messages, temperature=temperature, n=n)
+#
+#     for i in range(max_tries):
+#         messages.append({'role': 'assistant', 'content': res})
+#         res = o1_steps_search(question=question, messages=messages, temperature=temperature, n=n)
+#
+#     print(f'final_result: {res}')
+#     return res
 
 
 g_prompt = '''你正在编制一份可行性研究报告，请严格按照【输入资料】、【用户要求】和【输出文本要求】，对报告内容进行编制：
@@ -2908,9 +2952,9 @@ def reasoning_effort_main():
 def async_reasoning_effort_main():
     from console import print_color
     print_color()
-    llm_config = llm_protocol.g_local_qwen3_4b_thinking
+    # llm_config = llm_protocol.g_local_qwen3_4b_thinking
+    llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
-    # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_kimi_k2
     # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
     # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
@@ -2920,9 +2964,16 @@ def async_reasoning_effort_main():
     # print(llm_protocol.g_local_gpt_oss_20b_mxfp4)
     # prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
     # prompt = '1+1=？'
-    llm.ask_prepare(LLM_Query_Paras(query='我叫土土')).wait()
-    llm.ask_prepare(LLM_Query_Paras(query='我刚才告诉你我的名字是什么？')).wait()
-
+    query = '<总体要求>\n你的角色：你是智能化系统的流程控制和优化专家。\n你的任务：必须回答【用户问题】，而且系统已经为你准备了【工具集】，你可以调用其中的工具，但要严格根据【工具描述】访问合适的工具。\n你的回复要求：严格根据【回复流程及格式要求】进行回复，要注意，整个回复流程是一个规划和行动迭代的过程，具体包括：\n    1）规划：你根据【用户问题】，且一定要注意【用户经验】的重要性，给出总体解决思路和工具调用规划。\n    2）迭代过程：\n        a）工具调用申请：你根据规划，给出一个工具调用申请（包括工具的具体输入参数）；\n        b）观察(返回工具调用结果)：这一步由系统根据你的工具调用申请，强制执行对应工具，并返回工具调用结果；\n        c）工具调用结果分析：你要严格根据系统返回的工具调用结果，对你之前的工具调用申请参数、甚至规划进行分析和调整；\n        d）最终答复：仅当你觉得返回的结果已经解决【用户问题】时，需要给出【最终答复】\n</总体要求>\n\n<工具集>\n工具名称: Folder_Tool\n工具描述: 返回指定文件夹下所有文件和文件夹的名字信息。\n\n工具参数: [\n\t{\t参数名称: dir,\n\t\t参数类型: string,\n\t\t参数描述: \n本参数为文件夹所在的路径\n,\n\t\t参数是否必需: True,\n\t},\n]\n\n\n</工具集>\n\n<回复流程及格式要求>\n[规划]这里写你关于【用户问题】的总体解决思路和工具调用规划，要调理清晰、逻辑精确。\n\n[工具调用申请]这里你写:\n{\n    \'tool_invoke\':\'no\'或者\'yes\',\n    \'tool_name\':你所要调用的工具的名称,    (注意工具名称必须是这些名称之一 [\'Folder_Tool\'] 。)\n    \'tool_parameters\':{\n        \'para1\' : value1,\n        \'para2\' : value2,   （注意：如果\'value\'值为代码字符串，则代码字符串起始必须换一行顶格，绝对不能有额外缩进。）\n        ... , \n    },\n}\n\n[观察]这里不能由你写，系统会自动在这里写入工具调用结果信息。\n\n###... (这个 思考/工具调用/工具调用的输入/观察 的流程，可以被重复0次或多次，只要你觉得可以给出最终答复，就要结束这个流程，防止不断循环。)\n\n[工具调用结果分析]这里写你的分析和可能的调整，调理一定要清晰。\n\n[最终答复]只有问题已经解决，你才能写这个最终答复，调理一定要清晰。\n\n</回复流程及格式要求>\n\n<用户问题>\n我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。\n</用户问题>\n\n<用户经验>\n\n</用户经验>\n\n现在你开始回复：\n'
+    llm.ask_prepare(LLM_Query_Paras(query=query)).wait()
+    # llm.ask_prepare(LLM_Query_Paras(query='我叫土土')).wait()
+    # llm.ask_prepare(LLM_Query_Paras(query='我刚才告诉你我的名字是什么？')).wait()
+    llm.llm_client.print_history_and_system()
+#	system: 	You are a helpful assistant.
+	# user: 	我叫土土
+	# assistant: 	，土土！很高兴认识你。有什么我可以帮忙的吗？
+	# user: 	我刚才告诉你我的名字是什么？
+	# assistant: 	叫土土。
 def think_and_result_test():
     llm = LLM_Client(
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',  # deepseek官网
