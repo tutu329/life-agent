@@ -29,6 +29,38 @@ WHITE = '\033[37m'  # 标准白色
 LIGHT_BLACK = '\033[90m'    # 明亮黑色
 BLACK = '\033[30m'  # 标准黑色
 
+# 绿色系列 ANSI码
+LIGHT_GREEN = '\033[92m'  # 明亮绿色
+GREEN = '\033[32m'  # 标准绿色
+DARK_GREEN = '\033[38;5;22m'  # 深绿色
+PALE_GREEN = '\033[38;5;120m'  # 淡绿色
+MINT_GREEN = '\033[38;5;156m'  # 薄荷绿
+FOREST_GREEN = '\033[38;5;28m'  # 森林绿
+
+# 红色系列 ANSI码
+LIGHT_RED = '\033[91m'  # 明亮红色
+RED = '\033[31m'  # 标准红色
+DARK_RED = '\033[38;5;88m'  # 深红色
+PALE_RED = '\033[38;5;210m'  # 淡红色
+CRIMSON = '\033[38;5;196m'  # 深红
+MAROON = '\033[38;5;52m'  # 栗色
+
+# 蓝色系列 ANSI码
+LIGHT_BLUE = '\033[94m'  # 明亮蓝色
+BLUE = '\033[34m'  # 标准蓝色
+DARK_BLUE = '\033[38;5;18m'  # 深蓝色
+PALE_BLUE = '\033[38;5;153m'  # 淡蓝色
+SKY_BLUE = '\033[38;5;117m'  # 天蓝色
+NAVY_BLUE = '\033[38;5;17m'  # 海军蓝
+
+# 黄色系列 ANSI码
+LIGHT_YELLOW = '\033[93m'  # 明亮黄色
+YELLOW = '\033[33m'  # 标准黄色
+DARK_YELLOW = '\033[38;5;142m'  # 深黄色
+PALE_YELLOW = '\033[38;5;230m'  # 淡黄色
+GOLD = '\033[38;5;220m'  # 金色
+AMBER = '\033[38;5;214m'  # 琥珀色
+
 class Todo_List:
     def __init__(self, title, todo_list):
         self.title = title
@@ -92,6 +124,8 @@ class Todo_List:
 # │                                                                                                                     │
 # ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 def print_color():
+    config.Global.app_debug = True
+
     dwhite('⏺', end='')
     dlightwhite('⏺', end='')
 
@@ -115,6 +149,27 @@ def print_color():
 
     dblack('⏺', end='')
     dlightblack('⏺')
+
+    config.Global.app_debug = False
+
+def agent_query_output(query):
+    print(f'\n{PALE_GRAY}> {query}{RESET}\n')
+
+def agent_thinking_output(answer):
+    print(f'\n{LIGHT_PINK}> {answer}{RESET}\n')
+
+'''
+⏺ Web Search("MacBook Air M5 release date 2025")
+  ⎿ Found 10 results for "MacBook Air M5 release date 2025"
+'''
+def agent_tool_chosen_output(tool_name):
+    print(f'\n{FOREST_GREEN}> {tool_name}{RESET}\n')
+
+def agent_tool_result_output(action_result):
+    print(f'\n{PALE_BLUE}> {action_result}{RESET}\n')
+
+def agent_finished_output(final_answer):
+    print(f'\n{DARK_GRAY}> {final_answer}{RESET}\n')
 
 def user_output(query):
     print(f'\n{PALE_GRAY}> {query}{RESET}\n')
@@ -201,9 +256,6 @@ def llm_output(result_gen, think_gen=None):
     # print(f'\n{WHITE}● {RESET}{LIGHT_BLACK}{result}{RESET}\n')
     print(f'\n{LIGHT_WHITE}● {RESET}{BLACK}{result.strip()}{RESET}\n')
 
-def llm_main():
-    llm_output()
-
 def todo_main():
     todo_list = [
         'Create HTML structure for chat page',
@@ -219,4 +271,3 @@ def todo_main():
 if __name__ == "__main__":
     print_color()
     # todo_main()
-    llm_main()

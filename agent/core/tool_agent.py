@@ -35,6 +35,7 @@ from agent.tools.protocol import Tool_Call_Paras
 
 import llm_protocol
 from llm_protocol import LLM_Config, LLM_Query_Paras
+from console import agent_query_output, agent_thinking_output, agent_finished_output, agent_tool_chosen_output, agent_tool_result_output
 
 from utils.fastapi_server import GeneratorDone
 
@@ -363,6 +364,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self._run_before()
         try:
             self.current_query = query or self.query
+            agent_query_output(self.current_query)
 
             # -----------------------根据query获取experience(agent_as_tool时不提供经验)-------------------------
             if self.tool_description is None and self.exp:
@@ -393,6 +395,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
                 # 1、思考
                 answer_this_turn = self.thinking()
+                agent_thinking_output(answer_this_turn)
                 # dred(f'-------------tool_just_outputed = "{self.tool_paras_just_outputed}"----------------------')
                 # if (self.__finished_keyword in answer_this_turn) and (self.tool_paras_just_outputed==False):    # 同时要求tool_paras_just_outputed为False才意味着结束，是用于避免刚输出tool参数、还没调用tool并观察结果，就因为输出了[最终答复]直接退出、没调用工具。
                 #     self._parse_final_answer(answer_this_turn)
@@ -419,6 +422,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     dgreen(f'--------------------已获得[最终答复]且无tool调用，正常退出.----------------------------')
 
                     # ----------------run()结束-------------------
+                    agent_finished_output(self.final_answer)
                     self._run_after(success=True)
                     # self.status.finished = True
                     return True
@@ -601,7 +605,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
         if not answer_this_turn.strip():
             import sys
             dyellow('-----------------------------------thinking answer-------------------------------------------')
-            dred('answer_this_turn完全为空，请检查大模型的api是否有问题（如官网deepseek r1模型会出现回复为空的情况、vllm推理GPT-oss模型也有该情况）。程序退出！')
+            dred('answer_this_turn完全为空，请检查大模型的api是否有问题（如官网deepseek r1模型会出现回复为空的情况、vllm推理或groq推理的GPT-oss-20b模型也有该情况）。程序退出！日志见"agent_last_output.txt"')
+            with open("agent_last_output.txt", "w", encoding="utf-8") as file:
+                file.write(self.agent_tools_description_and_full_history)
             dyellow('-----------------------------------thinking answer-------------------------------------------')
             sys.exit(1)
 
@@ -627,6 +633,11 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 in_answer.pop()
             in_answer = ''.join(in_answer)
             # print(f'in_answer2: {in_answer}')
+
+            # print(f'-------------in_answer--------------')
+            # print(f'{in_answer}')
+            # print(f'-------------in_answer--------------')
+
             tool_name = Base_Tool.extract_tool_name_from_answer(in_answer)
             if isinstance(tool_name, list) and (self.__finished_keyword in in_answer):
                 # 注意：LLM有时候输出[最终答复]时，仍会调用工具，此时调用工具是正确做法。
@@ -640,6 +651,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 # print(in_thoughts)
                 # print(f'-----------------------------thoughts-----------------------------')
                 dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
+                agent_tool_chosen_output(tool_name)
 
                 if self.registered_tool_instances_dict.get(tool_name):
                     dred(f'-------------tool_just_outputed changed to "True"----------------------')
@@ -655,6 +667,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     # dict_string = legacy_extract_dict_string(in_answer)
                     # dict = json5.loads(dict_string)
                     dict = extract_tool_dict(in_answer)
+
                     callback_tool_paras_dict = dict['tool_parameters']
 
                     # 调用工具前，创建tool_ctx(生成tool_task_id，并用于存放后续可能的dataset_info)
@@ -788,6 +801,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 # dblue(f'/action_result(turn {self.turns_num})'.center(80, '-'))
 
                 dgreen(f'/action(turn {self.turns_num})'.center(80, '-'))
+                agent_tool_result_output(action_result)
                 return action_result
             elif isinstance(tool_name, list):
                 # 返回了list，是['error', 'error info']这样的结构
@@ -895,7 +909,7 @@ def main_folder():
         query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
         # query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
     else:
-        query = r'我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/3/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。'
+        query = r'我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。'
         # query = r'我叫土土，请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
     tools=[Folder_Tool]
@@ -903,8 +917,8 @@ def main_folder():
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_online_groq_kimi_k2,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         has_history=True,
     )
 
