@@ -166,8 +166,8 @@ g_online_groq_gpt_oss_20b = LLM_Config(
     temperature=0.6,
     top_p=0.95,
     max_new_tokens=8192,
-    # reasoning_effort=LLM_Reasoning_Effort.LOW, # groq似乎不支持reasoning_effort
-    reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
+    reasoning_effort=LLM_Reasoning_Effort.LOW, # groq似乎不支持reasoning_effort
+    # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
     use_harmony=True,
     vpn_on=True
 )
@@ -181,6 +181,7 @@ g_online_groq_gpt_oss_120b = LLM_Config(
     top_p=0.95,
     max_new_tokens=8192,
     # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
+    reasoning_effort=LLM_Reasoning_Effort.LOW, # groq似乎不支持reasoning_effort
     use_harmony=True,
     vpn_on=True
 )
