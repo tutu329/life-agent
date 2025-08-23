@@ -40,7 +40,7 @@ import config
 
 import llm_protocol
 from llm_protocol import LLM_Config, LLM_Clear_History_Method, LLM_Query_Paras, LLM_Reasoning_Effort
-from console import llm_output, user_output
+from console import llm_output, llm_user_output
 
 # DEBUG = True
 DEBUG = False
@@ -875,7 +875,7 @@ class Async_LLM_Client():
         # self.llm_client.get_answer_and_sync_print()
         # gen = self.llm_client.get_result_generator()
         # llm_output(gen)
-        user_output(self.llm_client.llm_current_query_paras.query)
+        llm_user_output(self.llm_client.llm_current_query_paras.query)
         think_gen = self.llm_client.get_think_generator()
         result_gen = self.llm_client.get_result_generator()
         llm_output(result_gen, think_gen)
