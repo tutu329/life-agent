@@ -904,7 +904,7 @@ def main_folder():
     from agent.tools.tool_manager import server_register_all_local_tool_on_start
     from agent.tools.tool_manager import get_all_registered_tools_class
 
-    print(f'os: "{config.get_os()}"')
+    # print(f'os: "{config.get_os()}"')
     if config.get_os()=='windows':
         query = r'请告诉我"file_to_find.txt"在"d:\demo\"文件夹的哪个具体文件夹中'
         # query = r'请告诉我"file_to_find.txt"在"y:\demo\"文件夹的哪个具体文件夹中'
