@@ -651,7 +651,6 @@ class Tool_Agent(Agent_Base, Base_Tool):
                 # print(in_thoughts)
                 # print(f'-----------------------------thoughts-----------------------------')
                 dblue(f'【tool_name: "{tool_name}"】'.center(40, '-'))
-                agent_tool_chosen_output(tool_name)
 
                 if self.registered_tool_instances_dict.get(tool_name):
                     dred(f'-------------tool_just_outputed changed to "True"----------------------')
@@ -669,6 +668,8 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     dict = extract_tool_dict(in_answer)
 
                     callback_tool_paras_dict = dict['tool_parameters']
+
+                    agent_tool_chosen_output(tool_name=tool_name, tool_paras=callback_tool_paras_dict)
 
                     # 调用工具前，创建tool_ctx(生成tool_task_id，并用于存放后续可能的dataset_info)
                     tool_ctx = create_tool_ctx()
@@ -918,7 +919,8 @@ def main_folder():
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_online_groq_kimi_k2,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        llm_config=llm_protocol.g_local_qwen3_30b_chat,
         has_history=True,
     )
 

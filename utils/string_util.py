@@ -5,6 +5,19 @@ from wcwidth import wcswidth
 import config
 from config import dred, dblue, dyellow, dcyan, dgreen
 
+def get_string_preview(string: str, preview_width: int=78) -> str:
+    # print(f'string len: {len(string)}')
+    if len(string)-5 > preview_width:
+        # 显示：preview_width*3/4 + ... + preview_width/4
+        string_preview = string[:(preview_width-5)//4*3] + ' ... ' + string[-(preview_width-5)//4:]
+    elif len(string) <= preview_width:
+        string_preview = string
+    else:
+        string_preview = string[:preview_width] + '...'
+
+    # print(string)
+    # print(string_preview)
+    return string_preview
 
 def string_right_align(text, width):
     padding = width - wcswidth(text)

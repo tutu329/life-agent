@@ -5,7 +5,7 @@ import tiktoken
 
 ENCODING = tiktoken.encoding_for_model("gpt-4")
 
-from colorama import Fore, Style
+from utils.string_util import get_string_preview
 from config import dred, dgreen, dcyan, dblue, dyellow, dblack, dwhite, dmagenta, dlightblack, dlightblue, dlightred, dlightgreen, dlightyellow, dlightcyan, dlightwhite, dlightmagenta
 import config
 
@@ -154,26 +154,37 @@ def print_color():
     config.Global.app_debug = tmp_app_debug
 
 def agent_query_output(query):
-    print(f'\n{PALE_GRAY}> {query}{RESET}\n')
+    # print(f'\n{PALE_GRAY}> {query}{RESET}\n')
+    query = query.strip().replace('\n', ' ')
+    print(f'{PALE_GRAY}> {get_string_preview(query)}{RESET}')
 
-def agent_thinking_output(answer):
-    print(f'\n{LIGHT_PINK}> {answer}{RESET}\n')
+def agent_thinking_output(answer, output_thinking=False):
+    if not output_thinking:
+        return
+
+    answer = answer.strip().replace('\n', ' ')
+    print(f'{LIGHT_GRAY}⏺ {get_string_preview(answer)}{RESET}')
 
 '''
 ⏺ Web Search("MacBook Air M5 release date 2025")
   ⎿ Found 10 results for "MacBook Air M5 release date 2025"
 '''
-def agent_tool_chosen_output(tool_name):
-    print(f'\n{FOREST_GREEN}> {tool_name}{RESET}\n')
+def agent_tool_chosen_output(tool_name, tool_paras):
+    tool_paras_list = []
+    for k,v in tool_paras.items():
+        tool_paras_list.append(f'{k!r}:{v!r}')
+    tool_paras_string = ', '.join(tool_paras_list)
+
+    print(f'{LIGHT_GRAY}⏺ {RESET}{CRIMSON}{tool_name.strip()}{RESET}{MAROON}({tool_paras_string}){RESET}')
 
 def agent_tool_result_output(action_result):
-    print(f'\n{PALE_BLUE}> {action_result}{RESET}\n')
+    print(f'{PALE_BLUE}  ⎿ {action_result.strip()!r}{RESET}')
 
 def agent_finished_output(final_answer):
-    print(f'\n{DARK_GRAY}> {final_answer}{RESET}\n')
+    print(f'{DARK_GRAY}> {final_answer.strip()!r}{RESET}')
 
 def user_output(query):
-    print(f'\n{PALE_GRAY}> {query}{RESET}\n')
+    print(f'{PALE_GRAY}> {query.strip()!r}{RESET}')
 
 def llm_output(result_gen, think_gen=None):
     # print('■▪▫□◌●◦□└ ┘┌ ┐─│──')
