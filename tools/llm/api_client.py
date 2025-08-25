@@ -1727,7 +1727,8 @@ def reasoning_effort_main():
 def async_reasoning_effort_main():
     from console import print_color
     print_color()
-    llm_config = llm_protocol.g_local_qwen3_30b_chat
+    # llm_config = llm_protocol.g_local_qwen3_30b_chat
+    llm_config = llm_protocol.g_online_deepseek_chat
     # llm_config = llm_protocol.g_local_qwen3_4b_thinking
     # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
