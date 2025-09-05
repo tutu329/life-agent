@@ -216,21 +216,21 @@ def llm_output(result_gen, think_gen=None):
     finished = False
     tokens_num = 0
 
-    current_chunk = ''
+    current_full_string = ''
     thinking = False
 
     def _get_chunk():
-        nonlocal result, finished, tokens_num, current_chunk, thinking
+        nonlocal result, finished, tokens_num, current_full_string, thinking
         # 统计thinking的大概token数
         if think_gen:
             for chunk in think_gen:
                 thinking = True
-                current_chunk = chunk
+                current_full_string += chunk
                 tokens_num += len(ENCODING.encode(chunk))
         # 统计result的大概token数
         for chunk in result_gen:
             thinking = False
-            current_chunk = chunk
+            current_full_string += chunk
             result += chunk
             tokens_num += len(ENCODING.encode(chunk))
 
@@ -250,9 +250,13 @@ def llm_output(result_gen, think_gen=None):
 
         # 清除当前行并打印新内容
         # ✳ Pontificating… (4s · ↓ 23 tokens · esc to interrupt)
-        buffer += current_chunk.replace('\n', ' ')
+        # buffer += current_chunk
+        buffer = current_full_string.replace('\n', ' ')
         buffer = buffer[-30:]
+        # print(f'current_full_string: "{current_full_string}"')
+        # print(f'buffer: "{buffer}"')
         output = f'[thinking:  {buffer}]' if thinking else f'[outputing: {buffer}]'
+        # print(current_full_string, end='', flush=True)
         sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num:>4.0f} tokens ) {output}{RESET}')
         sys.stdout.flush()
 
@@ -263,7 +267,7 @@ def llm_output(result_gen, think_gen=None):
 
         time.sleep(interval)
         times += 1
-    sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num:>4.0f} tokens ){RESET}')
+    sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num:>4.0f} tokens ){RESET}{" "*80}')
     sys.stdout.flush()
     # print(f'\n{WHITE}● {RESET}{LIGHT_BLACK}{result}{RESET}\n')
     print(f'\n{LIGHT_WHITE}● {RESET}{BLACK}{result.strip()}{RESET}\n')

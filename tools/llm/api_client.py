@@ -233,6 +233,7 @@ class LLM_Client():
         dgreen(f"\n\tsystem: \t{self.llm_config.system_prompt}")
         for chat in self.history_list:
             content = chat['content'][:50] + '...' if len(chat['content']) > 50 else chat['content']
+            content = content.replace('\n', ' ')
             dgreen(f"\t{chat['role']}: \t{content}")
         # print('\t==================【LLM_Client】 =====================')
 
@@ -1727,6 +1728,7 @@ def reasoning_effort_main():
 def async_reasoning_effort_main():
     from console import print_color
     print_color()
+    # llm_config = llm_protocol.g_local_qwen3_30b_thinking
     # llm_config = llm_protocol.g_local_qwen3_30b_chat
     llm_config = llm_protocol.g_online_deepseek_chat
     # llm_config = llm_protocol.g_local_qwen3_4b_thinking
@@ -1741,8 +1743,9 @@ def async_reasoning_effort_main():
     # print(llm_protocol.g_local_gpt_oss_20b_mxfp4)
     # prompt = '桌子上有16张扑克牌:红桃2、6，黑桃2、5、K，草花3、5、8、9、Q，方块A、5、6、7、K。从这16张牌中拱出一张牌并把这张牌的点数告诉x先生，把这张牌的花色告诉Y先生。这时，问x先生和Y先生:你们能从已知的点数或花色中推知这张牌是什么牌吗?x先生:我不知道这张牌。Y先生:我知道你不知道这张牌。x先生:现在我知道这张牌了。丫先生:我也知道了。问，这张牌是多少?'
     # prompt = '1+1=？'
-    query = '<总体要求>\n你的角色：你是智能化系统的流程控制和优化专家。\n你的任务：必须回答【用户问题】，而且系统已经为你准备了【工具集】，你可以调用其中的工具，但要严格根据【工具描述】访问合适的工具。\n你的回复要求：严格根据【回复流程及格式要求】进行回复，要注意，整个回复流程是一个规划和行动迭代的过程，具体包括：\n    1）规划：你根据【用户问题】，且一定要注意【用户经验】的重要性，给出总体解决思路和工具调用规划。\n    2）迭代过程：\n        a）工具调用申请：你根据规划，给出一个工具调用申请（包括工具的具体输入参数）；\n        b）观察(返回工具调用结果)：这一步由系统根据你的工具调用申请，强制执行对应工具，并返回工具调用结果；\n        c）工具调用结果分析：你要严格根据系统返回的工具调用结果，对你之前的工具调用申请参数、甚至规划进行分析和调整；\n        d）最终答复：仅当你觉得返回的结果已经解决【用户问题】时，需要给出【最终答复】\n</总体要求>\n\n<工具集>\n工具名称: Folder_Tool\n工具描述: 返回指定文件夹下所有文件和文件夹的名字信息。\n\n工具参数: [\n\t{\t参数名称: dir,\n\t\t参数类型: string,\n\t\t参数描述: \n本参数为文件夹所在的路径\n,\n\t\t参数是否必需: True,\n\t},\n]\n\n\n</工具集>\n\n<回复流程及格式要求>\n[规划]这里写你关于【用户问题】的总体解决思路和工具调用规划，要调理清晰、逻辑精确。\n\n[工具调用申请]这里你写:\n{\n    \'tool_invoke\':\'no\'或者\'yes\',\n    \'tool_name\':你所要调用的工具的名称,    (注意工具名称必须是这些名称之一 [\'Folder_Tool\'] 。)\n    \'tool_parameters\':{\n        \'para1\' : value1,\n        \'para2\' : value2,   （注意：如果\'value\'值为代码字符串，则代码字符串起始必须换一行顶格，绝对不能有额外缩进。）\n        ... , \n    },\n}\n\n[观察]这里不能由你写，系统会自动在这里写入工具调用结果信息。\n\n###... (这个 思考/工具调用/工具调用的输入/观察 的流程，可以被重复0次或多次，只要你觉得可以给出最终答复，就要结束这个流程，防止不断循环。)\n\n[工具调用结果分析]这里写你的分析和可能的调整，调理一定要清晰。\n\n[最终答复]只有问题已经解决，你才能写这个最终答复，调理一定要清晰。\n\n</回复流程及格式要求>\n\n<用户问题>\n我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。\n</用户问题>\n\n<用户经验>\n\n</用户经验>\n\n现在你开始回复：\n'
-    llm.ask_prepare(LLM_Query_Paras(query=query)).wait()
+    # query = '<总体要求>\n你的角色：你是智能化系统的流程控制和优化专家。\n你的任务：必须回答【用户问题】，而且系统已经为你准备了【工具集】，你可以调用其中的工具，但要严格根据【工具描述】访问合适的工具。\n你的回复要求：严格根据【回复流程及格式要求】进行回复，要注意，整个回复流程是一个规划和行动迭代的过程，具体包括：\n    1）规划：你根据【用户问题】，且一定要注意【用户经验】的重要性，给出总体解决思路和工具调用规划。\n    2）迭代过程：\n        a）工具调用申请：你根据规划，给出一个工具调用申请（包括工具的具体输入参数）；\n        b）观察(返回工具调用结果)：这一步由系统根据你的工具调用申请，强制执行对应工具，并返回工具调用结果；\n        c）工具调用结果分析：你要严格根据系统返回的工具调用结果，对你之前的工具调用申请参数、甚至规划进行分析和调整；\n        d）最终答复：仅当你觉得返回的结果已经解决【用户问题】时，需要给出【最终答复】\n</总体要求>\n\n<工具集>\n工具名称: Folder_Tool\n工具描述: 返回指定文件夹下所有文件和文件夹的名字信息。\n\n工具参数: [\n\t{\t参数名称: dir,\n\t\t参数类型: string,\n\t\t参数描述: \n本参数为文件夹所在的路径\n,\n\t\t参数是否必需: True,\n\t},\n]\n\n\n</工具集>\n\n<回复流程及格式要求>\n[规划]这里写你关于【用户问题】的总体解决思路和工具调用规划，要调理清晰、逻辑精确。\n\n[工具调用申请]这里你写:\n{\n    \'tool_invoke\':\'no\'或者\'yes\',\n    \'tool_name\':你所要调用的工具的名称,    (注意工具名称必须是这些名称之一 [\'Folder_Tool\'] 。)\n    \'tool_parameters\':{\n        \'para1\' : value1,\n        \'para2\' : value2,   （注意：如果\'value\'值为代码字符串，则代码字符串起始必须换一行顶格，绝对不能有额外缩进。）\n        ... , \n    },\n}\n\n[观察]这里不能由你写，系统会自动在这里写入工具调用结果信息。\n\n###... (这个 思考/工具调用/工具调用的输入/观察 的流程，可以被重复0次或多次，只要你觉得可以给出最终答复，就要结束这个流程，防止不断循环。)\n\n[工具调用结果分析]这里写你的分析和可能的调整，调理一定要清晰。\n\n[最终答复]只有问题已经解决，你才能写这个最终答复，调理一定要清晰。\n\n</回复流程及格式要求>\n\n<用户问题>\n我叫土土，请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，要仔细搜索其子文件夹。\n</用户问题>\n\n<用户经验>\n\n</用户经验>\n\n现在你开始回复：\n'
+    # llm.ask_prepare(LLM_Query_Paras(query=query)).wait()
+    llm.ask_prepare(LLM_Query_Paras(query='写一首简单的现代诗，关于爱情')).wait()
     # llm.ask_prepare(LLM_Query_Paras(query='我叫土土')).wait()
     # llm.ask_prepare(LLM_Query_Paras(query='我刚才告诉你我的名字是什么？')).wait()
     llm.llm_client.print_history_and_system()
