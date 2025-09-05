@@ -3,6 +3,7 @@ from pprint import pprint
 import httpx, os, json
 
 # 关于vllm api允许gpt-oss模型在thinking中调用built-in工具：
+# pip install gpt-oss(gpt-oss>=0.0.5，需python3.12)
 # $ export PYTHON_EXECUTION_BACKEND=dangerously_use_uv
 # $ vllm serve openai/gpt-oss-20b --async-scheduling --tool-server demo
 
