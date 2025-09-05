@@ -102,7 +102,8 @@ def llm_tool_call():
 
         # input='我叫土土，帮我写一首简短的爱情诗',
         # input='请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中',
-        input='今天杭州天气如何？',
+        # input='今天杭州天气如何？',
+        input='计算一下1234/4567等于多少，保留10位小数',
         # input = query,
 
         tools=tools,
@@ -133,59 +134,23 @@ def llm_tool_call():
             elif item.type == 'reasoning':
                 print(f'{"text":>10}: {item.content[0]["text"]!r}')
                 print(f'{"status":>10}: {item.status!r}')
+            elif item.type == 'message':
+                print(f'{"role":>10}: {item.role!r}')
+                print(f'{"text":>10}: {item.content[0].text!r}')
+                print(f'{"status":>10}: {item.status!r}')
             print(f'---------------------/item{count}------------------------')
 
     def get_weather(city: str):
         # 这里替换为真实实现
         return {"city": city, "temperature_c": 23, "status": "sunny"}
 
-    print(f'调用工具: "get_weather()"，结果为:')
-    print(get_weather(**tool_args))
-
-
-    # for chunk in gen:
-    #     print(f'chunk: "{chunk}"')
-    #     if (chunk.type and chunk.type == "response.reasoning_text.delta"):
-    #         if not thinking_started:
-    #             print('\n【thinking】')
-    #             thinking_started = True
-    #         print(f'{chunk.delta}', end='', flush=True)
-    #     elif (chunk.type and chunk.type == "response.output_text.delta"):
-    #         if not result_started:
-    #             print('\n\n【result】')
-    #             result_started = True
-    #         print(f'{chunk.delta}', end='', flush=True)
-
-    #     elif (chunk.type and chunk.type in ("function_call", "tool_call") ):
-    #         print('tool invoded.')
-    # print()
+    if tool_args:
+        print(f'调用工具: "get_weather()"，结果为:')
+        print(get_weather(**tool_args))
 
 if __name__ == "__main__":
     # llm_simple()
     llm_tool_call()
-
-# from openai import OpenAI
-# import json
-# import pprint
-
-# # 如走你内网 vLLM 网关，保持这样
-# client = OpenAI(base_url="http://10.0.10.6:28001/v1", api_key="EMPTY")
-# # 如直连官方：client = OpenAI()
-
-# # ✅ Responses 的“扁平”工具定义
-# tools = [
-#     {
-#         "type": "function",
-#         "name": "get_weather",
-#         "description": "Get current weather in a given city",
-#         "parameters": {
-#             "type": "object",
-#             "properties": {"city": {"type": "string"}},
-#             "required": ["city"],
-#             "additionalProperties": False,
-#         },
-#     }
-# ]
 
 # # 1) 用户输入（Harmony/Responses：input 里放消息，用户文本用 input_text）
 # input_msgs = [
@@ -197,58 +162,3 @@ if __name__ == "__main__":
 #     }
 # ]
 
-# # 2) 第一次调用：让模型决定是否调用工具
-# resp = client.responses.create(
-#     model="gpt-oss-20b",
-#     input=input_msgs,
-#     tools=tools,
-#     tool_choice="auto",
-# )
-
-# print('[resp]')
-# pprint.pprint(resp)
-# print()
-
-# # 工具调用提取（兼容不同服务端返回）
-# def collect_function_calls(r):
-#     calls = []
-#     for item in getattr(r, "output", []) or []:
-#         if getattr(item, "type", None) in ("function_call", "tool_call"):
-#             calls.append(item)
-#     return calls
-
-# calls = collect_function_calls(resp)
-
-# print('[calls]')
-# pprint.pprint(calls )
-# print()
-
-# # 如果模型直接给出答案（无工具调用）
-# if not calls and getattr(resp, "output_text", None):
-#     print(resp.output_text)
-# else:
-#     # 3) 本地实现工具
-#     def get_weather(city: str):
-#         # 这里替换为真实实现
-#         return {"city": city, "temperature_c": 23, "status": "sunny"}
-
-#     # 4) 把每个工具结果作为一个“function_call_output”条目追加到 input 列表
-#     for call in calls:
-#         name = getattr(call, "name", None)
-#         call_id = getattr(call, "call_id", None) or getattr(call, "id", None)
-#         args = getattr(call, "arguments", {}) or {}
-#         if isinstance(args, str):
-#             args = json.loads(args)
-
-#         result = get_weather(**args)
-
-#         print('[result]')
-#         pprint.pprint(result)
-#         print()
-
-#         # ❗不要用 role:"tool"；用独立条目 function_call_output
-#         input_msgs.append({
-#             "type": "function_call_output",
-#             "call_id": call_id,
-#             "output": json.dumps(result),
-#         })
