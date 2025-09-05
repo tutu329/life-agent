@@ -2,6 +2,9 @@ from openai import OpenAI, APIError
 from pprint import pprint
 import httpx, os, json
 
+# 关于vllm api允许gpt-oss模型在thinking中调用built-in工具：
+# $ export PYTHON_EXECUTION_BACKEND=UV
+# $ vllm serve openai/gpt-oss-20b --async-scheduling --tool-server demo
 
 # stream方式的llm调用
 def llm_simple():
