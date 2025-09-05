@@ -3,7 +3,7 @@ from pprint import pprint
 import httpx, os, json
 
 # 关于vllm api允许gpt-oss模型在thinking中调用built-in工具：
-# $ export PYTHON_EXECUTION_BACKEND=UV
+# $ export PYTHON_EXECUTION_BACKEND=dangerously_use_uv
 # $ vllm serve openai/gpt-oss-20b --async-scheduling --tool-server demo
 
 # stream方式的llm调用
