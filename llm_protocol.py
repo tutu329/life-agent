@@ -102,9 +102,9 @@ g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     temperature=0.6,
     top_p=0.95,
     max_new_tokens=8192,
-    reasoning_effort=LLM_Reasoning_Effort.HIGH,
-    use_harmony=True
-    # reasoning_effort=LLM_Reasoning_Effort.LOW
+    use_harmony=True,
+    # reasoning_effort=LLM_Reasoning_Effort.HIGH,
+    reasoning_effort=LLM_Reasoning_Effort.LOW,
 )
 
 g_local_qwen3_30b_chat = LLM_Config(
