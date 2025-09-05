@@ -257,7 +257,9 @@ def llm_output(result_gen, think_gen=None):
         # print(f'buffer: "{buffer}"')
         output = f'[thinking:  {buffer}]' if thinking else f'[outputing: {buffer}]'
         # print(current_full_string, end='', flush=True)
-        sys.stdout.write(f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num:>4.0f} tokens ) {output}{RESET}')
+        output_str = f'\r{LIGHT_PINK}{current_char} {waiting_word}{current_dots:<4}{PALE_GRAY}({times * interval:>3.0f}s · ↓ {tokens_num:>4.0f} tokens ) {output}{RESET}     '
+        sys.stdout.write(output_str)
+        # print(f'len: ({len(output_str)})')
         sys.stdout.flush()
 
         # 更新
