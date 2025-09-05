@@ -127,7 +127,7 @@ class LLM_Client():
 
         # self.system_prompt = config.Global.llm_system_prompt
 
-        self.result_chunk_as_think_chunk = ''  # 非reason模型推理时，获取think输出时，会误将result_chunk当成think_chunk，这里要保存这个chunk，后续交给result
+        self.first_result_chunk_consumed = ''  # 非reason模型推理时，获取think输出时，会误将result_chunk当成think_chunk，这里要保存这个chunk，后续交给result
 
         # 记忆相关
         self.history_list = []
@@ -154,6 +154,7 @@ class LLM_Client():
         if self.llm_config.has_history and self.question_last_turn != '':
             question = {"role": "user", "content": self.question_last_turn}
             answer = {"role": "assistant", "content": self.answer_last_turn}
+            # dyellow(f'answer_last_turn: "{self.answer_last_turn}"')
             self.history_list.append(question)
             self.history_list.append(answer)
             # pprint(self.history_list)
@@ -177,8 +178,7 @@ class LLM_Client():
                     self.__history_clear()
 
     def delete_history(self):
-        dred(
-            f'----------------------------------------------------clear_history() invoked!----------------------------------------------------')
+        dred(f'----------------------------------------------------clear_history() invoked!----------------------------------------------------')
         self.__history_clear()
 
     def __history_clear(self):
@@ -232,9 +232,11 @@ class LLM_Client():
         # print(f'system提示: {self.role_prompt}')
         dgreen(f"\n\tsystem: \t{self.llm_config.system_prompt}")
         for chat in self.history_list:
+            # content0 = chat['content']
             content = chat['content'][:50] + '...' if len(chat['content']) > 50 else chat['content']
             content = content.replace('\n', ' ')
             dgreen(f"\t{chat['role']}: \t{content}")
+            # dgreen(f"\t{chat['role']}0: \t{content0}")
         # print('\t==================【LLM_Client】 =====================')
 
     # Undo: 删除上一轮对话
@@ -562,7 +564,7 @@ class LLM_Client():
             result_chunk = chunk[2]
             if result_chunk:
                 # 说明不是reason模型
-                self.result_chunk_as_think_chunk = result_chunk
+                self.first_result_chunk_consumed = result_chunk
                 return None
             if think_chunk:
                 think_started = True
@@ -573,15 +575,17 @@ class LLM_Client():
                 return None
 
     def get_result_generator(self):
-        if self.result_chunk_as_think_chunk:
+        if self.first_result_chunk_consumed:
             # 把误将result_chunk当成think_chunk的chunk还给result
-            yield self.result_chunk_as_think_chunk
+            # dyellow(f'first result chunk: "{self.result_chunk_as_think_chunk}"')
+            yield self.first_result_chunk_consumed
 
         for chunk in self.get_answer_generator():
             full_chunk = chunk[0]
             think_chunk = chunk[1]
             result_chunk = chunk[2]
             # self.result_stream(result_chunk)
+            # dyellow(f'other result chunk: "{result_chunk}"')
             yield result_chunk
 
     def get_answer_and_sync_print(self):
@@ -716,7 +720,16 @@ class LLM_Client():
                             my_chunk = chunk.delta
                         else:
                             my_chunk = chunk.choices[0].delta.content
-                        answer += my_chunk
+                        # dred(f'---------------------------')
+                        # dred(f'answer old: "{answer}"')
+                        if self.first_result_chunk_consumed:
+                            # 将get_think_generator中消费的result chunk补上
+                            answer += self.first_result_chunk_consumed + my_chunk
+                            self.first_result_chunk_consumed = ''
+                        else:
+                            answer += my_chunk
+                        # dred(f'answer my_chunk: "{my_chunk}"')
+                        # dred(f'answer new: "{answer}"')
 
                         # result_chunk_output = my_chunk
 
@@ -827,8 +840,10 @@ class LLM_Client():
 
         if self.stop:
             self.answer_last_turn = answer_no_partial_stop
+            # dblue(f'answer_no_partial_stop: "{answer_no_partial_stop}"')
         else:
             self.answer_last_turn = answer
+            # dblue(f'answer: "{answer}"')
 
         # self.answer_last_turn = str_remove_content_in_partial_pairs(self.answer_last_turn, self.think_pair)
 
@@ -1316,130 +1331,130 @@ def main2():
 
 
 # 控制台并发stream的测试
-def _console_asks(stdscr, prompt, temperature, max_new_tokens):
-    from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
-    prm = LLM_PRM_Client()
-    prm.init()
-
-    def _user_callback(win_data):
-        thread_id = win_data.thread_id
-        output = win_data.output_buf
-        win_obj = win_data.win_obj
-
-        llm = LLM_Client(
-            api_key='empty',
-            url='https://powerai.cc:8001/v1',
-            # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
-            # url='https://api.deepseek.com/v1',
-        )
-
-        # gen = llm.ask_prepare('写一首长诗', temperature=temperature, max_new_tokens=1000).get_answer_generator()
-        gen = llm.ask_prepare(question=prompt, temperature=temperature,
-                              max_new_tokens=max_new_tokens).get_answer_generator()
-        # gen = llm.ask_prepare('选取一首李白的诗，将诗的名字返回给我', temperature=temperature, max_new_tokens=200).get_answer_generator()
-
-        res = ''
-        caption = f' temperature={temperature:.1f}'
-        for chunk in gen:
-            res += chunk
-            output(content=res, caption=caption)
-
-        # 获取step_rewards
-        step_data = Step_Data(problem=prompt, response=res)
-        step_rewards = prm.get_step_rewards(step_data)
-
-        # 输出step_rewards信息
-        rewards_list = [f'{r:.2f}' for r in step_rewards]
-        res += f'[{",".join(rewards_list)}]'
-        output(content=res, caption=caption)
-
-        # while True:
-        #     content = f'这是window[{win_obj.thread_id}], 时间: {time.strftime("%H:%M:%S")}'
-        #     win_obj.output_buf(content)
-        #     time.sleep(0.1)
-
-    from tools.console.windows import Console_Windows
-    console = Console_Windows()
-    console.init(stdscr=stdscr, user_callback=_user_callback)
-    console.start()
+# def _console_asks(stdscr, prompt, temperature, max_new_tokens):
+#     from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
+#     prm = LLM_PRM_Client()
+#     prm.init()
+#
+#     def _user_callback(win_data):
+#         thread_id = win_data.thread_id
+#         output = win_data.output_buf
+#         win_obj = win_data.win_obj
+#
+#         llm = LLM_Client(
+#             api_key='empty',
+#             url='https://powerai.cc:8001/v1',
+#             # api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+#             # url='https://api.deepseek.com/v1',
+#         )
+#
+#         # gen = llm.ask_prepare('写一首长诗', temperature=temperature, max_new_tokens=1000).get_answer_generator()
+#         gen = llm.ask_prepare(question=prompt, temperature=temperature,
+#                               max_new_tokens=max_new_tokens).get_answer_generator()
+#         # gen = llm.ask_prepare('选取一首李白的诗，将诗的名字返回给我', temperature=temperature, max_new_tokens=200).get_answer_generator()
+#
+#         res = ''
+#         caption = f' temperature={temperature:.1f}'
+#         for chunk in gen:
+#             res += chunk
+#             output(content=res, caption=caption)
+#
+#         # 获取step_rewards
+#         step_data = Step_Data(problem=prompt, response=res)
+#         step_rewards = prm.get_step_rewards(step_data)
+#
+#         # 输出step_rewards信息
+#         rewards_list = [f'{r:.2f}' for r in step_rewards]
+#         res += f'[{",".join(rewards_list)}]'
+#         output(content=res, caption=caption)
+#
+#         # while True:
+#         #     content = f'这是window[{win_obj.thread_id}], 时间: {time.strftime("%H:%M:%S")}'
+#         #     win_obj.output_buf(content)
+#         #     time.sleep(0.1)
+#
+#     from tools.console.windows import Console_Windows
+#     console = Console_Windows()
+#     console.init(stdscr=stdscr, user_callback=_user_callback)
+#     console.start()
 
 
 # 通过PRM筛选并发采样结果
-def ask_with_prm(question, llm_key='empty', prm_key='empty', llm_url='https://powerai.cc:8001/v1',
-                 prm_url='https://powerai.cc:8002/v1',
-                 max_new_tokens=1024, temperature=0.7, n=10,
-                 prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
-    from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
-    prm = LLM_PRM_Client()
-    prm.init(prm_model_path=prm_model_path, url=prm_url, api_key=prm_key)
-
-    res_dict = {}
-
-    dgreen(f'ask_with_prm()已启动，n_sample={n}')
-
-    def _task(id):
-        llm = LLM_Client(api_key=llm_key, url=llm_url)
-        gen = llm.ask_prepare(question=question, temperature=temperature,
-                              max_new_tokens=max_new_tokens).get_answer_generator()
-        res = ''
-        for chunk in gen:
-            res += chunk
-
-        # 获取step_rewards
-        step_data = Step_Data(problem=question, response=res)
-        step_rewards = prm.get_step_rewards(step_data)
-
-        # 存储当前id下的response
-        res_dict[id] = {
-            'response': res,
-            'step_rewards': step_rewards,
-            'min_reward': prm.get_min_reward(),
-            'last_reward': prm.get_last_reward(),
-            'prod_reward': prm.get_prod_reward(),
-        }
-
-    # 启动callback任务
-    threads = []
-    for i in range(n):  # 有10个线程
-        t = threading.Thread(target=_task, args=(i,))
-        threads.append(t)
-        t.start()
-
-    # 等待所有任务完成
-    for t in threads:
-        t.join()
-
-    # 显示每一个id下的response和step_rewards
-    dgreen(f'ask_with_prm()完成，n_sample={n}')
-
-    from utils.string_util import string_right_align
-    for i in range(n):
-        s = ' '.join(res_dict[i]['response'][-50:].split('\n'))
-        rewards_list = [f'{r:.2f}' for r in res_dict[i]['step_rewards']]
-        # s += f'【{",".join(rewards_list)}】'
-        s += f'【min: {res_dict[i]["min_reward"]:.2f}】'
-        s += f'【prod: {res_dict[i]["prod_reward"]:.9f}】'
-        s += f'【last: {res_dict[i]["last_reward"]:.2f}】'
-        print(f'[{i}]: "...{string_right_align(s, 160)}"')
-
-    # # 返回prod_reward最大的response
-    # 返回last_reward最大的response
-    final_result = ''
-    max_reward = 0
-    final_id = -1
-    # for i in range(n):
-    #     if res_dict[i]["prod_reward"] > max_reward:
-    #         max_reward = res_dict[i]["prod_reward"]
-    #         final_id = i
-    for i in range(n):
-        if res_dict[i]["last_reward"] > max_reward:
-            max_reward = res_dict[i]["last_reward"]
-            final_id = i
-
-    final_result = res_dict[final_id]['response']
-    final_result_tail = {' '.join(final_result.split('\n'))}
-    dgreen(f'final answer: "{final_result_tail}"')
-    return final_result
+# def ask_with_prm(question, llm_key='empty', prm_key='empty', llm_url='https://powerai.cc:8001/v1',
+#                  prm_url='https://powerai.cc:8002/v1',
+#                  max_new_tokens=1024, temperature=0.7, n=10,
+#                  prm_model_path='/home/tutu/models/Skywork-o1-Open-PRM-Qwen-2.5-7B'):
+#     from tools.llm.api_prm_client import LLM_PRM_Client, Step_Data
+#     prm = LLM_PRM_Client()
+#     prm.init(prm_model_path=prm_model_path, url=prm_url, api_key=prm_key)
+#
+#     res_dict = {}
+#
+#     dgreen(f'ask_with_prm()已启动，n_sample={n}')
+#
+#     def _task(id):
+#         llm = LLM_Client(api_key=llm_key, url=llm_url)
+#         gen = llm.ask_prepare(question=question, temperature=temperature,
+#                               max_new_tokens=max_new_tokens).get_answer_generator()
+#         res = ''
+#         for chunk in gen:
+#             res += chunk
+#
+#         # 获取step_rewards
+#         step_data = Step_Data(problem=question, response=res)
+#         step_rewards = prm.get_step_rewards(step_data)
+#
+#         # 存储当前id下的response
+#         res_dict[id] = {
+#             'response': res,
+#             'step_rewards': step_rewards,
+#             'min_reward': prm.get_min_reward(),
+#             'last_reward': prm.get_last_reward(),
+#             'prod_reward': prm.get_prod_reward(),
+#         }
+#
+#     # 启动callback任务
+#     threads = []
+#     for i in range(n):  # 有10个线程
+#         t = threading.Thread(target=_task, args=(i,))
+#         threads.append(t)
+#         t.start()
+#
+#     # 等待所有任务完成
+#     for t in threads:
+#         t.join()
+#
+#     # 显示每一个id下的response和step_rewards
+#     dgreen(f'ask_with_prm()完成，n_sample={n}')
+#
+#     from utils.string_util import string_right_align
+#     for i in range(n):
+#         s = ' '.join(res_dict[i]['response'][-50:].split('\n'))
+#         rewards_list = [f'{r:.2f}' for r in res_dict[i]['step_rewards']]
+#         # s += f'【{",".join(rewards_list)}】'
+#         s += f'【min: {res_dict[i]["min_reward"]:.2f}】'
+#         s += f'【prod: {res_dict[i]["prod_reward"]:.9f}】'
+#         s += f'【last: {res_dict[i]["last_reward"]:.2f}】'
+#         print(f'[{i}]: "...{string_right_align(s, 160)}"')
+#
+#     # # 返回prod_reward最大的response
+#     # 返回last_reward最大的response
+#     final_result = ''
+#     max_reward = 0
+#     final_id = -1
+#     # for i in range(n):
+#     #     if res_dict[i]["prod_reward"] > max_reward:
+#     #         max_reward = res_dict[i]["prod_reward"]
+#     #         final_id = i
+#     for i in range(n):
+#         if res_dict[i]["last_reward"] > max_reward:
+#             max_reward = res_dict[i]["last_reward"]
+#             final_id = i
+#
+#     final_result = res_dict[final_id]['response']
+#     final_result_tail = {' '.join(final_result.split('\n'))}
+#     dgreen(f'final answer: "{final_result_tail}"')
+#     return final_result
 
 
 def console_asks(prompt, temperature, max_new_tokens=8192):
@@ -1730,10 +1745,10 @@ def async_reasoning_effort_main():
     print_color()
     # llm_config = llm_protocol.g_local_qwen3_30b_thinking
     # llm_config = llm_protocol.g_local_qwen3_30b_chat
-    llm_config = llm_protocol.g_online_deepseek_chat
+    # llm_config = llm_protocol.g_online_deepseek_chat
     # llm_config = llm_protocol.g_local_qwen3_4b_thinking
     # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
-    # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
+    llm_config = llm_protocol.g_online_groq_gpt_oss_120b
     # llm_config = llm_protocol.g_online_groq_kimi_k2
     # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
     # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
