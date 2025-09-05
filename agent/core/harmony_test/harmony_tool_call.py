@@ -97,29 +97,30 @@ def llm_tool_call():
 
 
     tools = [
-        {"type": "code_interpreter", "container": {"type": "auto"}},
-        # {
-        #     "type": "function",
-        #     "name": "get_weather",
-        #     "description": "Get current weather in a given city",
-        #     "parameters": {
-        #         "type": "object",
-        #         "properties": {"city": {"type": "string"}},
-        #         "required": ["city"],
-        #         "additionalProperties": False,
-        #     },
-        # },
-        # {
-        #     "type": "function",
-        #     "name": "Folder_Tool",
-        #     "description": "获取当前目录下的子文件夹清单和文件清单",
-        #     "parameters": {
-        #         "type": "object",
-        #         "properties": {"path": {"type": "string"}},
-        #         "required": ["path"],
-        #         "additionalProperties": False,
-        #     },
-        # }
+        # {"type": "python", "container": {"type": "auto"}},
+        # {"type": "code_interpreter", "container": {"type": "auto"}},
+        {
+            "type": "function",
+            "name": "get_weather",
+            "description": "Get current weather in a given city",
+            "parameters": {
+                "type": "object",
+                "properties": {"city": {"type": "string"}},
+                "required": ["city"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "Folder_Tool",
+            "description": "获取当前目录下的子文件夹清单和文件清单",
+            "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string"}},
+                "required": ["path"],
+                "additionalProperties": False,
+            },
+        }
     ]
 
     res = client.responses.create(
@@ -131,8 +132,9 @@ def llm_tool_call():
 
         # input='我叫土土，帮我写一首简短的爱情诗',
         # input='请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中',
-        # input='今天杭州天气如何？',
-        input='计算一下1234/4567等于多少，保留10位小数',
+        input='今天杭州天气如何？',
+        # input='Multiply 64548*15151 using builtin python interpreter.',
+        # input='计算一下1234/4567等于多少，保留10位小数',
         # input = query,
 
         tools=tools,
@@ -167,6 +169,7 @@ def llm_tool_call():
     thinking_started = False
     result_started = False
     tool_args = None
+    tool_name = ''
 
     if res.output:
         print(f'res: "{res.output}"')
@@ -177,6 +180,7 @@ def llm_tool_call():
             print(f'{"type":>10}: {item.type!r}')
             if item.type in ('function_call', 'tool_call'):
                 tool_args = json.loads(item.arguments)
+                tool_name = item.name
                 print(f'{"arguments":>10}: {item.arguments!r}')
                 print(f'{"call_id":>10}: {item.call_id!r}')
                 print(f'{"name":>10}: {item.name!r}')
@@ -195,8 +199,9 @@ def llm_tool_call():
         return {"city": city, "temperature_c": 23, "status": "sunny"}
 
     if tool_args:
-        print(f'调用工具: "get_weather()"，结果为:')
-        print(get_weather(**tool_args))
+        print(f'调用工具"{tool_name}"，参数为: {tool_args!r}')
+        if tool_name == 'get_weather':
+            print(get_weather(**tool_args))
 
 if __name__ == "__main__":
     # llm_simple()
