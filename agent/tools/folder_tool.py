@@ -32,9 +32,9 @@ class Folder_Tool(Base_Tool):
     tool_parameters={
         'type':'object',
         'properties':{
-            'dir': {'type': 'string', 'description': '本参数为文件夹所在的路径'},
+            'path': {'type': 'string', 'description': '文件夹所在的路径'},
         },
-        'required': ['dir'],
+        'required': ['path'],
         'additionalProperties': False,
     }
 
@@ -50,7 +50,7 @@ class Folder_Tool(Base_Tool):
     #          callback_father_agent_exp,
     #          ):
         dgreen(f'tool_paras_dict: "{tool_call_paras.callback_tool_paras_dict}"')
-        dir = tool_call_paras.callback_tool_paras_dict['dir']
+        dir = tool_call_paras.callback_tool_paras_dict['path']
 
         try:
             # 调用工具

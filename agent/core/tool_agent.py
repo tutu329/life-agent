@@ -376,6 +376,9 @@ class Tool_Agent(Agent_Base, Base_Tool):
                     for required_name in tool.tool_parameters['required']:
                         if required_name == name:
                             self.tool_descs += '\t\t参数是否必需: True,\n'
+                            break
+                    else:
+                        self.tool_descs += '\t\t参数是否必需: False,\n'
 
                     self.tool_descs += '\t},'
             else:
@@ -976,6 +979,8 @@ def main2():
 
 def main_folder():
     import config
+    from pprint import pprint
+
     from agent.core.tool_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
     from agent.core.agent_config import Agent_Config
@@ -991,6 +996,10 @@ def main_folder():
         # query = r'我叫土土，请告诉我"./"文件夹里有哪些文件，不作任何解释，直接输出结果'
 
     tools=[Folder_Tool]
+    print(f'--------------------工具"{Folder_Tool.tool_name}"的参数--------------------')
+    pprint(Folder_Tool.get_tool_param_dict())
+    print(f'-------------------/工具"{Folder_Tool.tool_name}"的参数--------------------')
+
     config = Agent_Config(
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],

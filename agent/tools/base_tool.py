@@ -172,15 +172,7 @@ class Base_Tool(ABC):
             "name": cls.tool_name,
             "description": cls.tool_description,
             "strict": True,  # 让模型严格遵循 JSON Schema
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "city": {"type": "string", "description": "City name"},
-                    "unit": {"type": "string", "description": "temperature unit", "enum": ["c", "f"]},
-                },
-                "required": ["city"],
-                "additionalProperties": False,
-            },
+            "parameters": cls.tool_parameters,
         }
         return tool_param_dict
 
