@@ -234,11 +234,11 @@ def llm_tool_call(last_answer=''):
                 pprint(item.model_dump(), sort_dicts=False, width=120)
                 print(f'------------------/【item{count}】ResponseReasoningItem---------------------')
             elif isinstance(item, ResponseOutputMessage):
-                print(f'-------------------【item{count}】ResponseOutputMessage---------------------')
-                pprint(item.model_dump(), sort_dicts=False, width=120)
+                # print(f'-------------------【item{count}】ResponseOutputMessage---------------------')
+                # pprint(item.model_dump(), sort_dicts=False, width=120)
                 message_result = item.content[0].text
                 result_type = item.content[0].type
-                print(f'------------------/【item{count}】ResponseOutputMessage---------------------')
+                # print(f'------------------/【item{count}】ResponseOutputMessage---------------------')
             else:
                 print(f'------------------------【item{count}】other item---------------------------')
                 pprint(item.model_dump(), sort_dicts=False, width=120)
@@ -265,12 +265,305 @@ def llm_tool_call(last_answer=''):
 
     return '工具调用结果为：' + json.dumps(tool_result) + '\n' + f'分析结果为：{message_result!r}'
 
+g_tool_call_result_list = []
+g_tools_without_plan_str = ''
+
+def tool_call_agent(last_tool_result=None):
+    global g_tool_call_result_list, g_tools_without_plan_str
+
+    from agent.tools.base_tool import PROMPT_TOOL_CALL
+    from copy import deepcopy
+
+    http_client = httpx.Client(proxy="http://127.0.0.1:7890")
+    client = OpenAI(
+        api_key=os.getenv("GROQ_API_KEY") or 'empty',
+        base_url='https://api.groq.com/openai/v1',
+        http_client=http_client,
+    )
+
+    tools = [
+        {
+            "type": "function",
+            "name": "plan_tool",
+            "description": "根据用户要求，对后续工具调用进行总体规划和优化。",
+            "strict": True,  # 让模型严格遵循 JSON Schema
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_query": {"type": "string", "description": "用户需求"},
+                },
+                "required": ['user_query'],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "add_tool",
+            "description": "计算两个数的和",
+            "strict": True,  # 让模型严格遵循 JSON Schema
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "a": {"type": "number", "description": "a"},
+                    "b": {"type": "number", "description": "b"},
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "sub_tool",
+            "description": "计算两个数的差",
+            "strict": True,  # 让模型严格遵循 JSON Schema
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "a": {"type": "number", "description": "a"},
+                    "b": {"type": "number", "description": "b"},
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "multiple_tool",
+            "description": "计算两个数的积",
+            "strict": True,  # 让模型严格遵循 JSON Schema
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "a": {"type": "number", "description": "a"},
+                    "b": {"type": "number", "description": "b"},
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "div_tool",
+            "description": "计算两个数相除",
+            "strict": True,  # 让模型严格遵循 JSON Schema
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "a": {"type": "number", "description": "a"},
+                    "b": {"type": "number", "description": "b"},
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        Folder_Tool.get_tool_param_dict(),
+    ]
+
+    tools_without_plan = deepcopy(tools)
+    tools_without_plan.pop(0)  # 去掉plan_tool后，将所有tool描述交给plan_tool
+    g_tools_without_plan_str = json.dumps(tools_without_plan)
+    # print(f'-------------------------------g_tools_without_plan_str---------------------------------------')
+    # for item in tools_without_plan:
+    #     print(item)
+    # print(f'------------------------------/g_tools_without_plan_str---------------------------------------')
+
+    input = '请告诉我234+45*56-6/7等于多少' # 2753.142857
+    # input = '请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，并且告诉我1+1=？'
+    if last_tool_result is None:
+        g_tool_call_result_list = []
+    else:
+        g_tool_call_result_list.append(last_tool_result)
+
+    PROMPT_TOOL_CALL = PROMPT_TOOL_CALL.format(
+        tool_call_result_list='\n'.join(g_tool_call_result_list),
+        query=input,
+        user_experience='',
+    )
+
+    # print(f'------------------------------------------------------PROMPT_TOOL_CALL------------------------------------------------------------------------')
+    # print(PROMPT_TOOL_CALL)
+    # print(f'-----------------------------------------------------/PROMPT_TOOL_CALL------------------------------------------------------------------------')
+
+    res = client.responses.create(
+        # model='gpt-oss-20b-mxfp4',
+        # model='openai/gpt-oss-20b',
+        model='openai/gpt-oss-120b',
+        temperature=0.6,
+        top_p=0.95,
+        instructions='You are a helpful assistant.',
+        input=PROMPT_TOOL_CALL,
+
+        tools=tools,
+        tool_choice="auto",
+        parallel_tool_calls=False,
+        stream=False,
+
+        max_output_tokens=8192,
+        # reasoning={"effort": 'high'},
+        # reasoning={"effort": 'medium'},
+        reasoning={"effort": 'low'},
+    )
+
+    tool_args = None
+    tool_name = ''
+
+    message_result = ''
+    result_type = ''
+
+    if res.output:
+        count = 0
+        for item in res.output:
+            # print(f'【item{count}】 "{item}"')
+            count += 1
+
+        count = 0
+        for item in res.output:
+            if isinstance(item, ResponseFunctionToolCall):
+                # print(f'------------------【item{count}】ResponseFunctionToolCall-------------------')
+                # pprint(item.model_dump(), sort_dicts=False, width=120)
+                if item.type in ('function_call', 'tool_call'):
+                    tool_args = json.loads(item.arguments)
+                    tool_name = item.name
+                # print(f'-----------------/【item{count}】ResponseFunctionToolCall-------------------')
+            elif isinstance(item, ResponseReasoningItem):
+                pass
+                # print(f'-------------------【item{count}】ResponseReasoningItem---------------------')
+                # pprint(item.model_dump(), sort_dicts=False, width=120)
+                # print(f'------------------/【item{count}】ResponseReasoningItem---------------------')
+            elif isinstance(item, ResponseOutputMessage):
+                print(f'-------------------【item{count}】ResponseOutputMessage---------------------')
+                pprint(item.model_dump(), sort_dicts=False, width=120)
+                message_result = item.content[0].text
+                result_type = item.content[0].type
+                print(f'------------------/【item{count}】ResponseOutputMessage---------------------')
+            else:
+                print(f'------------------------【item{count}】other item---------------------------')
+                pprint(item.model_dump(), sort_dicts=False, width=120)
+                print(f'-----------------------/【item{count}】other item---------------------------')
+            count += 1
+
+    def get_weather(city: str, unit: str = 'c') -> dict:
+        return {"city": city, "temperature_c": 23, "unit": unit, "status": "sunny"}
+
+    def plan_tool(user_query) -> dict:
+        global g_tools_without_plan_str
+
+        http_client = httpx.Client(proxy="http://127.0.0.1:7890")
+        p = OpenAI(
+            api_key=os.getenv("GROQ_API_KEY") or 'empty',
+            base_url='https://api.groq.com/openai/v1',
+            http_client=http_client,
+        )
+
+        query = f'{g_tools_without_plan_str}\n，以上是可以供你调用的工具情况，请根据用户需求({user_query})，制定具体和优化的调用计划。'
+        # print('--------------------------------plan query----------------------------------------')
+        # print(query)
+        # print('-------------------------------/plan query----------------------------------------')
+
+        res = client.responses.create(
+            # model='gpt-oss-20b-mxfp4',
+            # model='openai/gpt-oss-20b',
+            model='openai/gpt-oss-120b',
+            temperature=0.6,
+            top_p=0.95,
+            instructions='You are a helpful assistant.',
+            input=query,
+            stream=False,
+            max_output_tokens=8192,
+            # reasoning={"effort": 'high'},
+            # reasoning={"effort": 'medium'},
+            reasoning={"effort": 'low'},
+        )
+        result = ''
+        # print(f'----------------------------------plan结果--------------------------------------------')
+        for item in res.output:
+            # print(item)
+            if isinstance(item, ResponseOutputMessage):
+                result = item.content[0].text
+        # print(f'---------------------------------/plan结果--------------------------------------------')
+
+        # plan = '根据四则运算的规则，先后调用加减乘除的计算工具。'
+        return {"plan_tool的调用结果：": result}
+        # return {"plan_tool的调用结果：": plan, "user_query":user_query, "工具描述：": g_tools_without_plan_str}
+
+    def add_tool(a, b) -> dict:
+        return {"add_tool的调用结果：": a+b, "输入：": f'{a}, {b}'}
+
+    def sub_tool(a, b) -> dict:
+        return {"sub_tool的调用结果：": a-b, "输入：": f'{a}, {b}'}
+
+    def multiple_tool(a, b) -> dict:
+        return {"multiple_tool的调用结果：": a*b, "输入：": f'{a}, {b}'}
+
+    def div_tool(a, b) -> dict:
+        return {"div_tool的调用结果：": a/b, "输入：": f'{a}, {b}'}
+
+    tool_result = ''
+    # print('----------------------tool_name--------------------------')
+    # print(tool_name)
+    # print(tool_args)
+    # print('---------------------/tool_name--------------------------')
+    if tool_name:
+        # print(f'\n------------------------【调用工具】---------------------------')
+        # print(f'调用工具"{tool_name}"，参数为: {tool_args!r}')
+        if tool_name == 'get_weather':
+            tool_result = get_weather(**tool_args)
+            print(tool_result)
+        elif tool_name == 'add_tool':
+            tool_result = add_tool(**tool_args)
+            print(tool_result)
+        elif tool_name == 'sub_tool':
+            tool_result = sub_tool(**tool_args)
+            print(tool_result)
+        elif tool_name == 'multiple_tool':
+            tool_result = multiple_tool(**tool_args)
+            print(tool_result)
+        elif tool_name == 'div_tool':
+            tool_result = div_tool(**tool_args)
+            print(tool_result)
+        elif tool_name == 'plan_tool':
+            tool_result = plan_tool(**tool_args)
+            print(tool_result)
+        # print(f'-----------------------/【调用工具】---------------------------')
+
+    if message_result:
+        print(f'\n------------------------【输出结果】(type: {result_type})---------------------------')
+        print(message_result)
+        print(f'-----------------------/【输出结果】---------------------------')
+
+    return '工具调用结果为：' + json.dumps(tool_result) + '\n' + f'分析结果为：{message_result!r}'
 
 if __name__ == "__main__":
     # llm_simple()
-    res = llm_tool_call()
+    # res = llm_tool_call()
+    # print(res)
+    # llm_tool_call(res)
+    res = tool_call_agent()
+    # print('---------------------------res---------------------------------')
+    # print(res)
+    # print('--------------------------/res---------------------------------')
+
+    res = tool_call_agent(last_tool_result=res)
+    # print('---------------------------res---------------------------------')
+    # print(res)
+    # print('--------------------------/res---------------------------------')
+
+    res = tool_call_agent(last_tool_result=res)
+    # print('---------------------------res---------------------------------')
+    # print(res)
+    # print('--------------------------/res---------------------------------')
+
+    res = tool_call_agent(last_tool_result=res)
+    # print('---------------------------res---------------------------------')
+    # print(res)
+    # print('--------------------------/res---------------------------------')
+
+    res = tool_call_agent(last_tool_result=res)
+    print('---------------------------res---------------------------------')
     print(res)
-    llm_tool_call(res)
+    print('--------------------------/res---------------------------------')
+
+
 
 # # 1) 用户输入（Harmony/Responses：input 里放消息，用户文本用 input_text）
 # input_msgs = [
