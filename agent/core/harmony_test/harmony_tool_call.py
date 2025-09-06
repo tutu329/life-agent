@@ -487,7 +487,6 @@ def tool_call_agent(last_tool_result=None):
     )
 
     # ----------------------------response格式构建history-------------------------------
-
     # return await self._client.responses.create(
     #     previous_response_id=self._non_null_or_not_given(previous_response_id),
     #     conversation=self._non_null_or_not_given(conversation_id),
@@ -573,7 +572,6 @@ def tool_call_agent(last_tool_result=None):
     #
     # 在_run_impl.py第621行，SDK调用str(result)将工具返回值转换为字符串：
     # raw_item = ItemHelpers.tool_call_output_item(tool_run.tool_call, str(result))
-
     # ---------------------------/response格式构建history-------------------------------
 
     tool_args = None
