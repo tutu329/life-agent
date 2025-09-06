@@ -281,21 +281,84 @@ def tool_call_agent(last_tool_result=None):
         http_client=http_client,
     )
 
+    # tools_with_plan = [
+    #     {
+    #         "type": "function",
+    #         "name": "plan_tool",
+    #         "description": "根据用户要求，对后续工具调用进行总体规划和优化。",
+    #         "strict": True,  # 让模型严格遵循 JSON Schema
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "user_query": {"type": "string", "description": "用户需求"},
+    #             },
+    #             "required": ['user_query'],
+    #             "additionalProperties": False,
+    #         },
+    #     },
+    #     {
+    #         "type": "function",
+    #         "name": "add_tool",
+    #         "description": "计算两个数的和",
+    #         "strict": True,  # 让模型严格遵循 JSON Schema
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "a": {"type": "number", "description": "a"},
+    #                 "b": {"type": "number", "description": "b"},
+    #             },
+    #             "required": [],
+    #             "additionalProperties": False,
+    #         },
+    #     },
+    #     {
+    #         "type": "function",
+    #         "name": "sub_tool",
+    #         "description": "计算两个数的差",
+    #         "strict": True,  # 让模型严格遵循 JSON Schema
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "a": {"type": "number", "description": "a"},
+    #                 "b": {"type": "number", "description": "b"},
+    #             },
+    #             "required": [],
+    #             "additionalProperties": False,
+    #         },
+    #     },
+    #     {
+    #         "type": "function",
+    #         "name": "multiple_tool",
+    #         "description": "计算两个数的积",
+    #         "strict": True,  # 让模型严格遵循 JSON Schema
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "a": {"type": "number", "description": "a"},
+    #                 "b": {"type": "number", "description": "b"},
+    #             },
+    #             "required": [],
+    #             "additionalProperties": False,
+    #         },
+    #     },
+    #     {
+    #         "type": "function",
+    #         "name": "div_tool",
+    #         "description": "计算两个数相除",
+    #         "strict": True,  # 让模型严格遵循 JSON Schema
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "a": {"type": "number", "description": "a"},
+    #                 "b": {"type": "number", "description": "b"},
+    #             },
+    #             "required": [],
+    #             "additionalProperties": False,
+    #         },
+    #     },
+    #     Folder_Tool.get_tool_param_dict(),
+    # ]
     tools = [
-        {
-            "type": "function",
-            "name": "plan_tool",
-            "description": "根据用户要求，对后续工具调用进行总体规划和优化。",
-            "strict": True,  # 让模型严格遵循 JSON Schema
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "user_query": {"type": "string", "description": "用户需求"},
-                },
-                "required": ['user_query'],
-                "additionalProperties": False,
-            },
-        },
         {
             "type": "function",
             "name": "add_tool",
@@ -617,8 +680,8 @@ def main_tool_call_agent():
     print('--------------------------/res---------------------------------')
 
 if __name__ == "__main__":
-    # main_tool_call_agent()
-    main_agent_sdk()
+    main_tool_call_agent()
+    # main_agent_sdk()
 
 
 
