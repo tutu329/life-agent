@@ -6,6 +6,8 @@ from pprint import pprint
 import httpx, os, json
 from sympy.testing.tests.test_code_quality import message_func_is
 
+from agent.tools.folder_tool import Folder_Tool
+
 
 # 关于vllm api允许gpt-oss模型在thinking中调用built-in工具：
 # pip install gpt-oss(gpt-oss>=0.0.5，需python3.12)
@@ -154,20 +156,21 @@ def llm_tool_call(last_answer=''):
                 "additionalProperties": False,
             },
         },
-        {
-            "type": "function",
-            "name": "Folder_Tool",
-            "description": "获取当前目录下的子文件夹清单和文件清单",
-            "strict": True,  # 让模型严格遵循 JSON Schema
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "文件夹的路径"},
-                },
-                "required": ["path"],
-                "additionalProperties": False,
-            },
-        }
+        Folder_Tool.get_tool_param_dict(),
+        # {
+        #     "type": "function",
+        #     "name": "Folder_Tool",
+        #     "description": "获取当前目录下的子文件夹清单和文件清单",
+        #     "strict": True,  # 让模型严格遵循 JSON Schema
+        #     "parameters": {
+        #         "type": "object",
+        #         "properties": {
+        #             "path": {"type": "string", "description": "文件夹的路径"},
+        #         },
+        #         "required": ["path"],
+        #         "additionalProperties": False,
+        #     },
+        # }
     ]
 
     # input='我叫土土，帮我写一首简短的爱情诗'
