@@ -38,8 +38,6 @@ class Folder_Tool(Base_Tool):
         'additionalProperties': False,
     }
 
-
-
     def __init__(self):
         pass
 
