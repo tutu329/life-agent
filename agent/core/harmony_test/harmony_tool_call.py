@@ -512,6 +512,66 @@ def tool_call_agent(last_tool_result=None):
     #     **extra_args,
     # )
 
+    # 第一次调用后的历史（Responses API格式）：
+    # {
+    #     "instructions": "You are a helpful agent.",
+    #     "input": [
+    #         {
+    #             "role": "user",
+    #             "content": "What's the weather in Tokyo?"
+    #         },
+    #         {
+    #             "type": "message",
+    #             "role": "assistant",
+    #             "content": [
+    #                 {
+    #                     "type": "output_text",
+    #                     "text": "I'll check the weather in Tokyo."
+    #                 }
+    #             ]
+    #         },
+    #         {
+    #             "type": "function_call",
+    #             "call_id": "call_456",
+    #             "name": "get_weather",
+    #             "arguments": "{\"city\": \"Tokyo\"}"
+    #         },
+    #         {
+    #             "type": "function_call_output",
+    #             "call_id": "call_456",
+    #             "output": "Weather(city='Tokyo', temperature_range='14-20C', conditions='Sunny')"
+    #         }
+    #     ]
+    # }
+
+    # 1、关于arguments的引号转义：注意该引号转义，要生成带转义引号的JSON字符串
+    # arguments_string = json.dumps({"city": "Tokyo"})
+    # 当这个字符串被放入JSON中时，会自动转义
+    # final_json = {
+    #     "type": "function_call",
+    #     "arguments": arguments_string
+    # }
+    #
+    # print(json.dumps(final_json))
+    # 输出：{"type": "function_call", "arguments": "{\"city\": \"Tokyo\"}"}
+
+    # 2、关于output的"Weather(...)"：是用了pydantic，然后str(Weather对象)即可
+    # from pydantic import BaseModel
+    #
+    # class Weather(BaseModel):
+    #     city: str
+    #     temperature_range: str
+    #     conditions: str
+    #
+    # @function_tool
+    # def get_weather(city: str) -> Weather:
+    #     """Get the current weather information for a specified city."""
+    #     print("[debug] get_weather called")
+    #     return Weather(city=city, temperature_range="14-20C", conditions="Sunny with wind.")
+    #
+    # 在_run_impl.py第621行，SDK调用str(result)将工具返回值转换为字符串：
+    # raw_item = ItemHelpers.tool_call_output_item(tool_run.tool_call, str(result))
+
     tool_args = None
     tool_name = ''
 
