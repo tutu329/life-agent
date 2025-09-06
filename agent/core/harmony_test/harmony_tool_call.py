@@ -1,4 +1,6 @@
 from openai import OpenAI, APIError
+from openai.types.responses import ResponseReasoningItem, ResponseFunctionToolCall, ResponseOutputMessage
+
 from pprint import pprint
 import httpx, os, json
 
@@ -126,13 +128,16 @@ def llm_tool_call():
     res = client.responses.create(
         # model='gpt-oss-20b-mxfp4',
         model='openai/gpt-oss-20b',
+        # model='openai/gpt-oss-120b',
         temperature=0.6,
         top_p=0.95,
         instructions='You are a helpful assistant.',
 
         # input='我叫土土，帮我写一首简短的爱情诗',
-        # input='请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中',
-        input='今天杭州天气如何？',
+        input='告诉我1+1=？并且告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中',
+        # input='请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，并且告诉我1+1=？',
+        # input='告诉我1+1=？',
+        # input='今天杭州天气如何？',
         # input='Multiply 64548*15151 using builtin python interpreter.',
         # input='计算一下1234/4567等于多少，保留10位小数',
         # input = query,
@@ -150,37 +155,56 @@ def llm_tool_call():
     tool_args = None
     tool_name = ''
 
+    result = ''
+    result_type = ''
+
     if res.output:
-        print(f'res: "{res.output}"')
         count = 0
         for item in res.output:
+            print(f'【item{count}】 "{item}"')
             count += 1
-            print(f'----------------------item{count}------------------------')
-            print(f'{"type":>10}: {item.type!r}')
-            if item.type in ('function_call', 'tool_call'):
-                tool_args = json.loads(item.arguments)
-                tool_name = item.name
-                print(f'{"arguments":>10}: {item.arguments!r}')
-                print(f'{"call_id":>10}: {item.call_id!r}')
-                print(f'{"name":>10}: {item.name!r}')
-                print(f'{"status":>10}: {item.status!r}')
-            elif item.type == 'reasoning':
-                print(f'{"text":>10}: {item.content[0]["text"]!r}')
-                print(f'{"status":>10}: {item.status!r}')
-            elif item.type == 'message':
-                print(f'{"role":>10}: {item.role!r}')
-                print(f'{"text":>10}: {item.content[0].text!r}')
-                print(f'{"status":>10}: {item.status!r}')
-            print(f'---------------------/item{count}------------------------')
+
+        count = 0
+        for item in res.output:
+            if isinstance(item, ResponseFunctionToolCall):
+                print(f'------------------【item{count}】ResponseFunctionToolCall-------------------')
+                pprint(item.model_dump(), sort_dicts=False, width=120)
+                if item.type in ('function_call', 'tool_call'):
+                    tool_args = json.loads(item.arguments)
+                    tool_name = item.name
+                print(f'-----------------/【item{count}】ResponseFunctionToolCall-------------------')
+            elif isinstance(item, ResponseReasoningItem):
+                print(f'-------------------【item{count}】ResponseReasoningItem---------------------')
+                pprint(item.model_dump(), sort_dicts=False, width=120)
+                print(f'------------------/【item{count}】ResponseReasoningItem---------------------')
+            elif isinstance(item, ResponseOutputMessage):
+                print(f'-------------------【item{count}】ResponseOutputMessage---------------------')
+                pprint(item.model_dump(), sort_dicts=False, width=120)
+                result = item.content[0].text
+                result_type = item.content[0].type
+                print(f'------------------/【item{count}】ResponseOutputMessage---------------------')
+            else:
+                print(f'------------------------【item{count}】other item---------------------------')
+                pprint(item.model_dump(), sort_dicts=False, width=120)
+                print(f'-----------------------/【item{count}】other item---------------------------')
+            count += 1
 
     def get_weather(city: str):
         # 这里替换为真实实现
         return {"city": city, "temperature_c": 23, "status": "sunny"}
 
     if tool_args:
+        print(f'\n------------------------【调用工具】---------------------------')
         print(f'调用工具"{tool_name}"，参数为: {tool_args!r}')
         if tool_name == 'get_weather':
             print(get_weather(**tool_args))
+        print(f'-----------------------/【调用工具】---------------------------')
+
+    if result:
+        print(f'\n------------------------【输出结果】(type: {result_type})---------------------------')
+        print(result)
+        print(f'-----------------------/【输出结果】---------------------------')
+
 
 if __name__ == "__main__":
     # llm_simple()
