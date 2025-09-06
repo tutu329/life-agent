@@ -1,3 +1,6 @@
+import asyncio
+from pathlib import Path
+
 from openai import OpenAI, APIError
 from openai.types.responses import ResponseReasoningItem, ResponseFunctionToolCall, ResponseOutputMessage
 from openai.types.responses import ToolParam, FunctionToolParam
@@ -662,6 +665,56 @@ def main_agent_sdk():
 
     asyncio.run(agent_main())
 
+async def main_mcp():
+    import asyncio, os
+    from pathlib import Path
+    from agents import Agent
+    from agents.run_context import RunContextWrapper
+    from agents.mcp import MCPServerStdio
+
+    node_dir = Path.home() / ".nvm/versions/node/v24.6.0"
+    node = node_dir / "bin/node"
+    server_js = node_dir / "lib/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js"
+
+    # 允许访问的目录：先用当前工作目录，确保一定存在
+    allowed_dir = str(Path.cwd())
+    print("Using node:", node)
+    print("Server js:", server_js)
+    print("Allowed dir exists:", os.path.isdir(allowed_dir), allowed_dir)
+
+    # 若你更想指定某个固定目录，可把 allowed_dir 换成那个路径
+    async with MCPServerStdio(
+        params={
+            "command": str(node),
+            "args": [str(server_js), allowed_dir],
+        },
+        cache_tools_list=True,
+        name="filesystem",
+    ) as server:
+        run_context = RunContextWrapper(context=None)
+        agent = Agent(name="test", instructions="test")
+        # tools = await server.list_tools(run_context, agent)
+        # tools = await server.list_tools(run_context=run_context, agent=agent)
+        # print("Tools:", [t.name for t in tools])
+
+        tools = await server.list_tools()
+        print([t.name for t in tools])
+
+        # 在现有 async with MCPServerStdio(...) as server: 代码块里追加
+        # 列目录
+        resp = await server.call_tool("list_directory", {"path": "."})
+        print("list_directory result:", getattr(resp, "content", None) or getattr(resp, "structured_content", None))
+
+        # 读文本
+        resp = await server.call_tool("read_text_file", {"path": "README.md"})
+        print("read_text_file result:", getattr(resp, "content", None) or getattr(resp, "structured_content", None))
+
+    # agent = Agent(
+    #     name="Assistant",
+    #     instructions="Use the tools to achieve the task",
+    #     mcp_servers=[mcp_server_1, mcp_server_2]
+    # )
+
 def main_tool_call_agent():
     # llm_simple()
     # res = llm_tool_call()
@@ -680,8 +733,9 @@ def main_tool_call_agent():
     print('--------------------------/res---------------------------------')
 
 if __name__ == "__main__":
-    main_tool_call_agent()
+    # main_tool_call_agent()
     # main_agent_sdk()
+    asyncio.run(main_mcp())
 
 
 
