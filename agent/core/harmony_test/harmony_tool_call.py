@@ -18,74 +18,74 @@ from agent.tools.folder_tool import Folder_Tool
 # $ vllm serve openai/gpt-oss-20b --async-scheduling --tool-server demo
 
 # stream方式的llm调用
-def llm_simple():
-    print('started...')
-
-    http_client = httpx.Client(proxy="http://127.0.0.1:7890")
-
-    client = OpenAI(
-        api_key='empty',
-        base_url='http://powerai.cc:18002/v1',
-    )
-    gen = client.responses.create(
-        model='gpt-oss-20b-mxfp4',
-        temperature=1.0,
-        # temperature=0.6,
-        top_p=1.0,
-        # top_p=0.95,
-        instructions='You are a helpful assistant.',
-
-        # input='我叫土土，帮我写一首简短的爱情诗',
-        # input = query,
-        input='今天杭州天气如何？',
-        stream=True,
-
-        max_output_tokens=8192,
-        reasoning={"effort": 'low'},
-    )
-
-    # client = OpenAI(
-    #     api_key=os.getenv("GROQ_API_KEY") or 'empty',
-    #     base_url='https://api.groq.com/openai/v1',
-    #     http_client=http_client,
-    #     # http_client=openai.DefaultHttpxClient(verify=False),  # 用于自建的vllm openai api的ssl访问(https访问)， # 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
-    # )
-    #
-    # gen = client.responses.create(
-    #     model='openai/gpt-oss-20b',
-    #     # model='openai/gpt-oss-120b',
-    #     temperature=0.6,
-    #     top_p=0.95,
-    #     instructions='You are a helpful assistant.',
-    #
-    #     # input='我叫土土，帮我写一首简短的爱情诗',
-    #     # input = query,
-    #     input='今天杭州天气如何？',
-    #     stream=True,
-    #
-    #     max_output_tokens=8192,
-    #     reasoning={"effort": 'low'},
-    # )
-
-    thinking_started = False
-    result_started = False
-
-    for chunk in gen:
-        # print(f'chunk: "{chunk}"')
-        if (chunk.type and chunk.type == "response.reasoning_text.delta"):
-            if not thinking_started:
-                print('\n【thinking】')
-                thinking_started = True
-            print(f'{chunk.delta}', end='', flush=True)
-        elif (chunk.type and chunk.type == "response.output_text.delta"):
-            if not result_started:
-                print('\n\n【result】')
-                result_started = True
-            print(f'{chunk.delta}', end='', flush=True)
-
-        elif (chunk.type and chunk.type in ("function_call", "tool_call")):
-            print('tool invoded.')
-    print()
+# def llm_simple():
+#     print('started...')
+#
+#     http_client = httpx.Client(proxy="http://127.0.0.1:7890")
+#
+#     client = OpenAI(
+#         api_key='empty',
+#         base_url='http://powerai.cc:18002/v1',
+#     )
+#     gen = client.responses.create(
+#         model='gpt-oss-20b-mxfp4',
+#         temperature=1.0,
+#         # temperature=0.6,
+#         top_p=1.0,
+#         # top_p=0.95,
+#         instructions='You are a helpful assistant.',
+#
+#         # input='我叫土土，帮我写一首简短的爱情诗',
+#         # input = query,
+#         input='今天杭州天气如何？',
+#         stream=True,
+#
+#         max_output_tokens=8192,
+#         reasoning={"effort": 'low'},
+#     )
+#
+#     # client = OpenAI(
+#     #     api_key=os.getenv("GROQ_API_KEY") or 'empty',
+#     #     base_url='https://api.groq.com/openai/v1',
+#     #     http_client=http_client,
+#     #     # http_client=openai.DefaultHttpxClient(verify=False),  # 用于自建的vllm openai api的ssl访问(https访问)， # 阿里云购买了正式证书（可以是免费的）后，即可开启verify，也就是去掉本行
+#     # )
+#     #
+#     # gen = client.responses.create(
+#     #     model='openai/gpt-oss-20b',
+#     #     # model='openai/gpt-oss-120b',
+#     #     temperature=0.6,
+#     #     top_p=0.95,
+#     #     instructions='You are a helpful assistant.',
+#     #
+#     #     # input='我叫土土，帮我写一首简短的爱情诗',
+#     #     # input = query,
+#     #     input='今天杭州天气如何？',
+#     #     stream=True,
+#     #
+#     #     max_output_tokens=8192,
+#     #     reasoning={"effort": 'low'},
+#     # )
+#
+#     thinking_started = False
+#     result_started = False
+#
+#     for chunk in gen:
+#         # print(f'chunk: "{chunk}"')
+#         if (chunk.type and chunk.type == "response.reasoning_text.delta"):
+#             if not thinking_started:
+#                 print('\n【thinking】')
+#                 thinking_started = True
+#             print(f'{chunk.delta}', end='', flush=True)
+#         elif (chunk.type and chunk.type == "response.output_text.delta"):
+#             if not result_started:
+#                 print('\n\n【result】')
+#                 result_started = True
+#             print(f'{chunk.delta}', end='', flush=True)
+#
+#         elif (chunk.type and chunk.type in ("function_call", "tool_call")):
+#             print('tool invoded.')
+#     print()
 
 
 # 非stream方式的tool_call调用（harmony的tool call调用不支持stream）
@@ -466,8 +466,8 @@ def tool_call_agent(last_tool_result=None):
 
     res = client.responses.create(
         # model='gpt-oss-20b-mxfp4',
-        # model='openai/gpt-oss-20b',
-        model='openai/gpt-oss-120b',
+        model='openai/gpt-oss-20b',
+        # model='openai/gpt-oss-120b',
         # temperature=0.6,
         temperature=1.0,
         # top_p=0.95,
@@ -634,8 +634,8 @@ def tool_call_agent(last_tool_result=None):
 
         res = client.responses.create(
             # model='gpt-oss-20b-mxfp4',
-            # model='openai/gpt-oss-20b',
-            model='openai/gpt-oss-120b',
+            model='openai/gpt-oss-20b',
+            # model='openai/gpt-oss-120b',
             temperature=1.0,
             # temperature=0.6,
             top_p=1.0,
