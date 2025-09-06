@@ -706,7 +706,7 @@ async def main_mcp():
         print("list_directory result:", getattr(resp, "content", None) or getattr(resp, "structured_content", None))
 
         # 读文本
-        resp = await server.call_tool("read_text_file", {"path": "README.md"})
+        resp = await server.call_tool("read_text_file", {"path": "harmony_tool_call.py"})
         print("read_text_file result:", getattr(resp, "content", None) or getattr(resp, "structured_content", None))
 
     # agent = Agent(
