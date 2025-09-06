@@ -118,6 +118,24 @@ PROMPT_REACT = """<总体要求>
 
 # ，且必须以'''和'''囊括起来，绝对不能用```或\"\"\"，且代码字符串内部的引号用\"对或用\"\"\"对
 
+
+#     tool_name= 'Folder_Tool'
+#     tool_description=\
+# '''返回指定文件夹下所有文件和文件夹的名字信息。
+# '''
+#     tool_parameters=[
+#         {
+#             'name': 'dir',
+#             'type': 'string',
+#             'description': \
+# '''
+# 本参数为文件夹所在的路径
+# ''',
+#             'required': 'True',
+#         },
+#     ]
+
+
 class Base_Tool(ABC):
     tool_name: str
     tool_description: str
@@ -145,6 +163,26 @@ class Base_Tool(ABC):
     #         callback_last_tool_ctx:Tool_Context,    # 上一个tool的上下文context(包含tool_task_id和可能的dataset_info)
     # ):
         pass
+
+    # 将Tool类转为openai的tool参数
+    @classmethod
+    def get_tool_param_dict(cls):
+        tool_param_dict = {
+            "type": "function",
+            "name": cls.tool_name,
+            "description": cls.tool_description,
+            "strict": True,  # 让模型严格遵循 JSON Schema
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"},
+                    "unit": {"type": "string", "description": "temperature unit", "enum": ["c", "f"]},
+                },
+                "required": ["city"],
+                "additionalProperties": False,
+            },
+        }
+        return tool_param_dict
 
     @classmethod
     def extract_tool_name_from_answer(cls, in_answer):

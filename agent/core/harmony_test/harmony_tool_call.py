@@ -136,6 +136,39 @@ def llm_tool_call(last_answer=''):
             },
         }
     ]
+    tools = [
+        # {"type": "python", "container": {"type": "auto"}},
+        # {"type": "code_interpreter", "container": {"type": "auto"}},
+        {
+            "type": "function",
+            "name": "get_weather",
+            "description": "Get current weather in a given city",
+            "strict": True,  # 让模型严格遵循 JSON Schema
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"},
+                    "unit": {"type": "string", "description": "temperature unit", "enum": ["c", "f"]},
+                },
+                "required": ["city"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "Folder_Tool",
+            "description": "获取当前目录下的子文件夹清单和文件清单",
+            "strict": True,  # 让模型严格遵循 JSON Schema
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "文件夹的路径"},
+                },
+                "required": ["path"],
+                "additionalProperties": False,
+            },
+        }
+    ]
 
     # input='我叫土土，帮我写一首简短的爱情诗'
     input = '告诉我杭州天气如何，并且告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中'

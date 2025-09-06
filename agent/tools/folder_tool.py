@@ -17,17 +17,29 @@ class Folder_Tool(Base_Tool):
     tool_description=\
 '''返回指定文件夹下所有文件和文件夹的名字信息。
 '''
-    tool_parameters=[
-        {
-            'name': 'dir',
-            'type': 'string',
-            'description': \
-'''
-本参数为文件夹所在的路径
-''',
-            'required': 'True',
+#     legacy_tool_parameters=[
+#         {
+#             'name': 'dir',
+#             'type': 'string',
+#             'description': \
+# '''
+# 本参数为文件夹所在的路径
+# ''',
+#             'required': 'True',
+#         },
+#     ]
+
+    tool_parameters={
+        'type':'object',
+        'properties':{
+            'dir': {'type': 'string', 'description': '本参数为文件夹所在的路径'},
         },
-    ]
+        'required': ['dir'],
+        'additionalProperties': False,
+    }
+
+
+
     def __init__(self):
         pass
 

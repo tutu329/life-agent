@@ -247,6 +247,79 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self._start_time = None
         self._end_time = None
 
+    # def legacy_init(self):
+    #     self._init_agent_data_in_server()
+    #
+    #     # self.llm = LLM_Client(
+    #     #     url=self.url,
+    #     #     api_key=self.api_key,
+    #     #     model_id=self.model_id,
+    #     #     temperature=self.temperature,
+    #     #     history=False,
+    #     #     print_input=False,
+    #     #     max_new_tokens=config.LLM_Default.max_new_tokens
+    #     # )
+    #
+    #     self.agent_config.llm_config.has_history = False
+    #     self.llm = LLM_Client(
+    #         llm_config=self.agent_config.llm_config,
+    #     )
+    #     # self.agent_tools_description_and_full_history = PROMPT_REACT
+    #
+    #     # 初始化experience
+    #     if self.tool_agent_experience_json_path:
+    #         self.exp = Agent_Experience(
+    #             exp_json_file_path=self.tool_agent_experience_json_path,
+    #             llm = self.llm,
+    #             agent_id=self.agent_id,
+    #         )
+    #         # dyellow(f'----------------------agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
+    #         # dyellow(f"成功载入来自{self.tool_agent_experience_json_path!r}的经验")
+    #         # dyellow(f'---------------------/agent经验系统成功初始化(agent_id="{self.agent_id}")------------------------')
+    #
+    #     # 将所有工具转换为{tool_descs}和{tool_names}
+    #     for tool in self.tool_classes:
+    #         # 不论tool是Folder_Tool还是folder_agent_as_tool，都有name和description
+    #         self.tool_names.append(f"'{tool.tool_name}'")
+    #         self.tool_descs += '工具名称: ' + tool.tool_name + '\n'
+    #         self.tool_descs += '工具描述: ' + tool.tool_description + '\n'
+    #         self.tool_descs += '工具参数: [\n'
+    #
+    #         dred(f'-----------------------tool.tool_parameters(tool.name="{tool.tool_name}")---------------------------')
+    #         dblue(f'tool obj: "{tool}"')
+    #         if hasattr(tool, 'tool_parameters'):
+    #             dred(tool.tool_parameters)
+    #         dred(f'----------------------/tool.tool_parameters(tool.name="{tool.tool_name}")---------------------------')
+    #         if isinstance(tool, type):
+    #             # 如果tool是Folder_Tool这样的class，有多个参数
+    #             for para in tool.tool_parameters:
+    #                 self.tool_descs += '\t{'
+    #
+    #                 self.tool_descs += '\t参数名称: ' + para['name'] + ',\n'
+    #                 self.tool_descs += '\t\t参数类型: ' + para['type'] + ',\n'
+    #                 self.tool_descs += '\t\t参数描述: ' + para['description'] + ',\n'
+    #                 self.tool_descs += '\t\t参数是否必需: ' + para['required'] + ',\n'
+    #
+    #                 self.tool_descs += '\t},'
+    #         else:
+    #             # 如果tool是folder_agent_as_tool这样的实例，只有1个"自然语言指令"参数
+    #             self.tool_descs += '\t{'
+    #
+    #             self.tool_descs += '\t参数名称: ' + '自然语言指令' + ',\n'
+    #             self.tool_descs += '\t\t参数类型: ' + 'string' + ',\n'
+    #             self.tool_descs += '\t\t参数描述: ' + '本参数即为交给本工具的指令，由于是将agent当做tool用，因此输入自然语言指令即可' + ',\n'
+    #             self.tool_descs += '\t\t参数是否必需: ' + 'True' + ',\n'
+    #
+    #             self.tool_descs += '\t},'
+    #
+    #         self.tool_descs += '\n]\n\n'
+    #
+    #     self.tool_names = ','.join(self.tool_names)
+    #
+    #     # self.agent_tools_description_and_full_history = self. agent_tools_description_and_full_history.format(tool_descs=self.tool_descs, tool_names=self.tool_names, query=self.query)
+    #
+    #     return self
+
     def init(self):
         self._init_agent_data_in_server()
 
@@ -292,13 +365,17 @@ class Tool_Agent(Agent_Base, Base_Tool):
             dred(f'----------------------/tool.tool_parameters(tool.name="{tool.tool_name}")---------------------------')
             if isinstance(tool, type):
                 # 如果tool是Folder_Tool这样的class，有多个参数
-                for para in tool.tool_parameters:
+                for name, param in tool.tool_parameters['properties'].items():
                     self.tool_descs += '\t{'
 
-                    self.tool_descs += '\t参数名称: ' + para['name'] + ',\n'
-                    self.tool_descs += '\t\t参数类型: ' + para['type'] + ',\n'
-                    self.tool_descs += '\t\t参数描述: ' + para['description'] + ',\n'
-                    self.tool_descs += '\t\t参数是否必需: ' + para['required'] + ',\n'
+                    self.tool_descs += '\t参数名称: ' + name + ',\n'
+                    self.tool_descs += '\t\t参数类型: ' + param['type'] + ',\n'
+                    self.tool_descs += '\t\t参数描述: ' + param['description'] + ',\n'
+
+                    # self.tool_descs += '\t\t参数是否必需: ' + para['required'] + ',\n'
+                    for required_name in tool.tool_parameters['required']:
+                        if required_name == name:
+                            self.tool_descs += '\t\t参数是否必需: True,\n'
 
                     self.tool_descs += '\t},'
             else:
