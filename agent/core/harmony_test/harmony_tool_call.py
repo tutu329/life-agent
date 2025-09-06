@@ -3,6 +3,8 @@ from openai.types.responses import ResponseReasoningItem, ResponseFunctionToolCa
 
 from pprint import pprint
 import httpx, os, json
+from sympy.testing.tests.test_code_quality import message_func_is
+
 
 # 关于vllm api允许gpt-oss模型在thinking中调用built-in工具：
 # pip install gpt-oss(gpt-oss>=0.0.5，需python3.12)
@@ -79,8 +81,10 @@ def llm_simple():
 
 
 # 非stream方式的tool_call调用（harmony的tool call调用不支持stream）
-def llm_tool_call():
-    print('started...')
+def llm_tool_call(last_answer=''):
+    print('\n====================================================')
+    print('=====================【started】=====================')
+    print('====================================================\n')
 
     http_client = httpx.Client(proxy="http://127.0.0.1:7890")
 
@@ -125,22 +129,28 @@ def llm_tool_call():
         }
     ]
 
+    # input='我叫土土，帮我写一首简短的爱情诗'
+    input = '告诉我杭州天气如何，并且告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中'
+    # input='请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，并且告诉我1+1=？'
+    # input='告诉我1+1=？'
+    # input='今天杭州天气如何？'
+    # input='Multiply 64548*15151 using builtin python interpreter.'
+    # input='计算一下1234/4567等于多少，保留10位小数'
+    # input = query
+
+    input = last_answer + '\n' + input
+    print('---------------------input--------------------')
+    print(input)
+    print('--------------------/input--------------------\n')
+
     res = client.responses.create(
         # model='gpt-oss-20b-mxfp4',
-        model='openai/gpt-oss-20b',
-        # model='openai/gpt-oss-120b',
+        # model='openai/gpt-oss-20b',
+        model='openai/gpt-oss-120b',
         temperature=0.6,
         top_p=0.95,
         instructions='You are a helpful assistant.',
-
-        # input='我叫土土，帮我写一首简短的爱情诗',
-        input='告诉我1+1=？并且告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中',
-        # input='请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，并且告诉我1+1=？',
-        # input='告诉我1+1=？',
-        # input='今天杭州天气如何？',
-        # input='Multiply 64548*15151 using builtin python interpreter.',
-        # input='计算一下1234/4567等于多少，保留10位小数',
-        # input = query,
+        input=input,
 
         tools=tools,
         tool_choice="auto",
@@ -155,7 +165,7 @@ def llm_tool_call():
     tool_args = None
     tool_name = ''
 
-    result = ''
+    message_result = ''
     result_type = ''
 
     if res.output:
@@ -180,7 +190,7 @@ def llm_tool_call():
             elif isinstance(item, ResponseOutputMessage):
                 print(f'-------------------【item{count}】ResponseOutputMessage---------------------')
                 pprint(item.model_dump(), sort_dicts=False, width=120)
-                result = item.content[0].text
+                message_result = item.content[0].text
                 result_type = item.content[0].type
                 print(f'------------------/【item{count}】ResponseOutputMessage---------------------')
             else:
@@ -193,22 +203,28 @@ def llm_tool_call():
         # 这里替换为真实实现
         return {"city": city, "temperature_c": 23, "status": "sunny"}
 
+    tool_result = ''
     if tool_args:
         print(f'\n------------------------【调用工具】---------------------------')
         print(f'调用工具"{tool_name}"，参数为: {tool_args!r}')
         if tool_name == 'get_weather':
-            print(get_weather(**tool_args))
+            tool_result = get_weather(**tool_args)
+            print(tool_result)
         print(f'-----------------------/【调用工具】---------------------------')
 
-    if result:
+    if message_result:
         print(f'\n------------------------【输出结果】(type: {result_type})---------------------------')
-        print(result)
+        print(message_result)
         print(f'-----------------------/【输出结果】---------------------------')
+
+    return '工具调用结果为：' + json.dumps(tool_result) + '\n' + f'分析结果为：{message_result!r}'
 
 
 if __name__ == "__main__":
     # llm_simple()
-    llm_tool_call()
+    res = llm_tool_call()
+    print(res)
+    llm_tool_call(res)
 
 # # 1) 用户输入（Harmony/Responses：input 里放消息，用户文本用 input_text）
 # input_msgs = [
