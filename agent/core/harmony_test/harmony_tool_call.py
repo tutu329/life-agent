@@ -485,6 +485,7 @@ def tool_call_agent(last_tool_result=None):
         # reasoning={"effort": 'medium'},
         reasoning={"effort": 'low'},
     )
+
     # ----------------------------response格式构建history-------------------------------
 
     # return await self._client.responses.create(
