@@ -29,8 +29,10 @@ def llm_simple():
     )
     gen = client.responses.create(
         model='gpt-oss-20b-mxfp4',
-        temperature=0.6,
-        top_p=0.95,
+        temperature=1.0,
+        # temperature=0.6,
+        top_p=1.0,
+        # top_p=0.95,
         instructions='You are a helpful assistant.',
 
         # input='我叫土土，帮我写一首简短的爱情诗',
@@ -195,8 +197,10 @@ def llm_tool_call(last_answer=''):
         # model='gpt-oss-20b-mxfp4',
         model='openai/gpt-oss-20b',
         # model='openai/gpt-oss-120b',
-        temperature=0.6,
-        top_p=0.95,
+        temperature=1.0,
+        # temperature=0.6,
+        top_p=1.0,
+        # top_p=0.95,
         instructions='You are a helpful assistant.',
         input=input,
 
@@ -266,7 +270,8 @@ def llm_tool_call(last_answer=''):
         print(message_result)
         print(f'-----------------------/【输出结果】---------------------------')
 
-    return '工具调用结果为：' + json.dumps(tool_result) + '\n' + f'分析结果为：{message_result!r}'
+    return '工具调用结果为：' + json.dumps(tool_result) + '\n'
+    # return '工具调用结果为：' + json.dumps(tool_result) + '\n' + f'分析结果为：{message_result!r}'
 
 g_tool_call_result_list = []
 g_tools_without_plan_str = ''
@@ -442,8 +447,15 @@ def tool_call_agent(last_tool_result=None):
     else:
         g_tool_call_result_list.append(last_tool_result)
 
+    tool_call_result_str = ''
+    count = 0
+    for item in g_tool_call_result_list:
+        count += 1
+        tool_call_result_str += f'第{count}次工具调用，' + item
+
     PROMPT_TOOL_CALL = PROMPT_TOOL_CALL.format(
-        tool_call_result_list='\n'.join(g_tool_call_result_list),
+        tool_call_result_list=tool_call_result_str,
+        # tool_call_result_list='\n'.join(g_tool_call_result_list),
         query=input,
         user_experience='',
     )
@@ -454,10 +466,12 @@ def tool_call_agent(last_tool_result=None):
 
     res = client.responses.create(
         # model='gpt-oss-20b-mxfp4',
-        model='openai/gpt-oss-20b',
-        # model='openai/gpt-oss-120b',
-        temperature=0.6,
-        top_p=0.95,
+        # model='openai/gpt-oss-20b',
+        model='openai/gpt-oss-120b',
+        # temperature=0.6,
+        temperature=1.0,
+        # top_p=0.95,
+        top_p=1.0,
         instructions='You are a helpful assistant.',
         input=PROMPT_TOOL_CALL,
 
@@ -530,10 +544,12 @@ def tool_call_agent(last_tool_result=None):
 
         res = client.responses.create(
             # model='gpt-oss-20b-mxfp4',
-            model='openai/gpt-oss-20b',
-            # model='openai/gpt-oss-120b',
-            temperature=0.6,
-            top_p=0.95,
+            # model='openai/gpt-oss-20b',
+            model='openai/gpt-oss-120b',
+            temperature=1.0,
+            # temperature=0.6,
+            top_p=1.0,
+            # top_p=0.95,
             instructions='You are a helpful assistant.',
             input=query,
             stream=False,
@@ -599,7 +615,8 @@ def tool_call_agent(last_tool_result=None):
         print(message_result)
         print(f'-----------------------/【输出结果】---------------------------')
 
-    return '工具调用结果为：' + json.dumps(tool_result) + '\n' + f'分析结果为：{message_result!r}'
+    return '工具调用结果为：' + json.dumps(tool_result) + '\n'
+    # return '工具调用结果为：' + json.dumps(tool_result) + '\n' + f'分析结果为：{message_result!r}'
 
 def main_agent_sdk():
     # uv pip install openai-agents
@@ -733,9 +750,9 @@ def main_tool_call_agent():
     print('--------------------------/res---------------------------------')
 
 if __name__ == "__main__":
-    # main_tool_call_agent()
+    main_tool_call_agent()
     # main_agent_sdk()
-    asyncio.run(main_mcp())
+    # asyncio.run(main_mcp())
 
 
 
