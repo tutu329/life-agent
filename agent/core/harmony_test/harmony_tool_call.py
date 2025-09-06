@@ -190,8 +190,8 @@ def llm_tool_call(last_answer=''):
 
     res = client.responses.create(
         # model='gpt-oss-20b-mxfp4',
-        # model='openai/gpt-oss-20b',
-        model='openai/gpt-oss-120b',
+        model='openai/gpt-oss-20b',
+        # model='openai/gpt-oss-120b',
         temperature=0.6,
         top_p=0.95,
         instructions='You are a helpful assistant.',
@@ -367,7 +367,9 @@ def tool_call_agent(last_tool_result=None):
     #     print(item)
     # print(f'------------------------------/g_tools_without_plan_str---------------------------------------')
 
-    input = '请告诉我234+45*56-6/7等于多少' # 2753.142857
+    # input = '请告诉我234+45*56-6/7等于多少' # 2753.142857
+    input = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算' # 2753.142857
+    # input = '请告诉我45346+3486*3344-235644/34等于多少' # 2753.142857
     # input = '请告诉我"file_to_find.txt"在"/home/tutu/demo/"文件夹的哪个具体文件夹中，并且告诉我1+1=？'
     if last_tool_result is None:
         g_tool_call_result_list = []
@@ -386,8 +388,8 @@ def tool_call_agent(last_tool_result=None):
 
     res = client.responses.create(
         # model='gpt-oss-20b-mxfp4',
-        # model='openai/gpt-oss-20b',
-        model='openai/gpt-oss-120b',
+        model='openai/gpt-oss-20b',
+        # model='openai/gpt-oss-120b',
         temperature=0.6,
         top_p=0.95,
         instructions='You are a helpful assistant.',
@@ -462,8 +464,8 @@ def tool_call_agent(last_tool_result=None):
 
         res = client.responses.create(
             # model='gpt-oss-20b-mxfp4',
-            # model='openai/gpt-oss-20b',
-            model='openai/gpt-oss-120b',
+            model='openai/gpt-oss-20b',
+            # model='openai/gpt-oss-120b',
             temperature=0.6,
             top_p=0.95,
             instructions='You are a helpful assistant.',
@@ -533,35 +535,90 @@ def tool_call_agent(last_tool_result=None):
 
     return '工具调用结果为：' + json.dumps(tool_result) + '\n' + f'分析结果为：{message_result!r}'
 
-if __name__ == "__main__":
+def main_agent_sdk():
+    # uv pip install openai-agents
+    #
+    import asyncio
+    from openai import AsyncOpenAI
+    from agents import Agent, Runner, function_tool, OpenAIResponsesModel, set_tracing_disabled
+
+    set_tracing_disabled(True)
+
+    @function_tool
+    def get_weather(city: str) -> str:
+        print(f"[debug] getting weather for {city}")
+        return f"The weather in {city} is sunny."
+
+    @function_tool
+    def add_tool(a, b) -> dict:
+        print(f'add_tool调用了')
+        return {"add_tool的调用结果：": a+b, "输入：": f'{a}, {b}'}
+
+    @function_tool
+    def sub_tool(a, b) -> dict:
+        print(f'sub_tool调用了')
+        return {"sub_tool的调用结果：": a-b, "输入：": f'{a}, {b}'}
+
+    @function_tool
+    def multiple_tool(a, b) -> dict:
+        print(f'multiple_tool调用了')
+        return {"multiple_tool的调用结果：": a*b, "输入：": f'{a}, {b}'}
+
+    @function_tool
+    def div_tool(a, b) -> dict:
+        print(f'div_tool调用了')
+        return {"div_tool的调用结果：": a/b, "输入：": f'{a}, {b}'}
+
+    http_client = httpx.AsyncClient(proxies="http://127.0.0.1:7890")
+    async def agent_main():
+        agent = Agent(
+            name="Assistant",
+            instructions="You are a helpful assistant.",
+            # instructions="You only respond in haikus.",
+            model=OpenAIResponsesModel(
+                model="openai/gpt-oss-20b",
+                # model="openai/gpt-oss-120b",
+                openai_client=AsyncOpenAI(
+                    api_key=os.getenv("GROQ_API_KEY") or 'empty',
+                    base_url='https://api.groq.com/openai/v1',
+                    http_client=http_client,
+                ),
+            ),  # ← 这里需要这个逗号
+            # tools=[],
+            # tools=[get_weather, add_tool, sub_tool],
+            # tools=[add_tool, sub_tool],
+            tools=[add_tool, sub_tool, multiple_tool, div_tool],
+        )
+
+        result = await Runner.run(agent, "请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算")
+        # result = await Runner.run(agent, "请告诉我2356/3567等于多少，保留10位小数，要调用工具计算，不能直接心算")
+        # result = await Runner.run(agent, "请告诉我45346+3486*3344-235644/34等于多少，用调用工具计算，不能直接心算")
+        # result = await Runner.run(agent, "请告诉我234+45*56-6/7等于多少")
+        # result = await Runner.run(agent, "What's the weather in Tokyo?")
+        print(result.final_output)  # 如果版本不对，可试试 result.final_output_text
+
+    asyncio.run(agent_main())
+
+def main_tool_call_agent():
     # llm_simple()
     # res = llm_tool_call()
     # print(res)
     # llm_tool_call(res)
     res = tool_call_agent()
-    # print('---------------------------res---------------------------------')
-    # print(res)
-    # print('--------------------------/res---------------------------------')
-
     res = tool_call_agent(last_tool_result=res)
-    # print('---------------------------res---------------------------------')
-    # print(res)
-    # print('--------------------------/res---------------------------------')
-
     res = tool_call_agent(last_tool_result=res)
-    # print('---------------------------res---------------------------------')
-    # print(res)
-    # print('--------------------------/res---------------------------------')
-
     res = tool_call_agent(last_tool_result=res)
-    # print('---------------------------res---------------------------------')
-    # print(res)
-    # print('--------------------------/res---------------------------------')
-
+    res = tool_call_agent(last_tool_result=res)
+    res = tool_call_agent(last_tool_result=res)
+    res = tool_call_agent(last_tool_result=res)
     res = tool_call_agent(last_tool_result=res)
     print('---------------------------res---------------------------------')
     print(res)
     print('--------------------------/res---------------------------------')
+
+if __name__ == "__main__":
+    # main_tool_call_agent()
+    main_agent_sdk()
 
 
 
