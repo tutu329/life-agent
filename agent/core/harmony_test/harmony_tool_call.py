@@ -1,5 +1,6 @@
 from openai import OpenAI, APIError
 from openai.types.responses import ResponseReasoningItem, ResponseFunctionToolCall, ResponseOutputMessage
+from openai.types.responses import ToolParam, FunctionToolParam
 
 from pprint import pprint
 import httpx, os, json
@@ -82,9 +83,9 @@ def llm_simple():
 
 # 非stream方式的tool_call调用（harmony的tool call调用不支持stream）
 def llm_tool_call(last_answer=''):
-    print('\n====================================================')
-    print('=====================【started】=====================')
-    print('====================================================\n')
+    print('\n============================================================================================================')
+    print('=================================================【started】=================================================')
+    print('============================================================================================================\n')
 
     http_client = httpx.Client(proxy="http://127.0.0.1:7890")
 
@@ -109,9 +110,13 @@ def llm_tool_call(last_answer=''):
             "type": "function",
             "name": "get_weather",
             "description": "Get current weather in a given city",
+            "strict": True,  # 让模型严格遵循 JSON Schema
             "parameters": {
                 "type": "object",
-                "properties": {"city": {"type": "string"}},
+                "properties": {
+                    "city": {"type": "string", "description": "City name"},
+                    "unit": {"type": "string", "description": "temperature unit", "enum": ["c", "f"]},
+                },
                 "required": ["city"],
                 "additionalProperties": False,
             },
@@ -120,9 +125,12 @@ def llm_tool_call(last_answer=''):
             "type": "function",
             "name": "Folder_Tool",
             "description": "获取当前目录下的子文件夹清单和文件清单",
+            "strict": True,  # 让模型严格遵循 JSON Schema
             "parameters": {
                 "type": "object",
-                "properties": {"path": {"type": "string"}},
+                "properties": {
+                    "path": {"type": "string", "description": "文件夹的路径"},
+                },
                 "required": ["path"],
                 "additionalProperties": False,
             },
@@ -154,6 +162,7 @@ def llm_tool_call(last_answer=''):
 
         tools=tools,
         tool_choice="auto",
+        parallel_tool_calls=False,
         stream=False,
 
         max_output_tokens=8192,
@@ -199,9 +208,9 @@ def llm_tool_call(last_answer=''):
                 print(f'-----------------------/【item{count}】other item---------------------------')
             count += 1
 
-    def get_weather(city: str):
+    def get_weather(city: str, unit: str = 'c') -> dict:
         # 这里替换为真实实现
-        return {"city": city, "temperature_c": 23, "status": "sunny"}
+        return {"city": city, "temperature_c": 23, "unit": unit, "status": "sunny"}
 
     tool_result = ''
     if tool_args:
