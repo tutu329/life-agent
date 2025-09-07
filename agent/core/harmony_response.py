@@ -143,6 +143,7 @@ class Response_Request(BaseModel):
     instructions    :str =  'You are a helpful agent.'  # 注意这里用了'agent'
     input           :str | List[Dict[str, Any]]
     tools           :List[Tool_Request]
+    previous_response_id    :Optional[str] = None    # 上一次openai.response.create()返回的res.id
     tool_choice     :str = 'auto'
     parallel_tool_calls :bool = False
     stream          :bool = False
@@ -157,6 +158,7 @@ class Response_Result(BaseModel):
     other_item              :Any = None
 
     # 工具调用结果
+    previous_response_id    :str    # 上一次openai.response.create()返回的res.id
     tool_call_result        :str = ''
 
 class Response_LLM_Client:
@@ -188,10 +190,10 @@ class Response_LLM_Client:
         # dpprint(res.model_dump())
         # dprint('-----------------------------/Response---------------------------------------')
 
-        response_result = Response_Result()
+        response_result = Response_Result(previous_response_id = res.id)
 
         dprint()
-        dprint('==========================================Response Items==========================================')
+        dprint(f'==========================================Response Items(res id: "{res.id}")==========================================')
         if res.output:
             for item in res.output:
                 if isinstance(item, ResponseFunctionToolCall):
@@ -373,7 +375,11 @@ def main_response_llm_client(model):
         model=model,
         input=input,
         tools=tools,
+        # previous_response_id=responses_result.previous_response_id,   # Groq API不支持previous_response_id，也就是不支持server端缓存历史
     )
+    dprint('-------------------------------response_request----------------------------------')
+    dpprint(response_request.model_dump())
+    dprint('------------------------------/response_request----------------------------------')
     responses_result = client.responses_create(request=response_request)
 
 if __name__ == "__main__":
