@@ -157,7 +157,7 @@ class Response_Result(BaseModel):
     other_item              :Any = None
 
     # 工具调用结果
-    tool_call_result        :Any = ''
+    tool_call_result        :str = ''
 
 class Response_LLM_Client:
     def __init__(self, client: OpenAI):
@@ -184,9 +184,9 @@ class Response_LLM_Client:
 
     def _responses_result(self, res:Response):
         # dprint(res)
-        dprint('------------------------------Response---------------------------------------')
-        dpprint(res.model_dump())
-        dprint('-----------------------------/Response---------------------------------------')
+        # dprint('------------------------------Response---------------------------------------')
+        # dpprint(res.model_dump())
+        # dprint('-----------------------------/Response---------------------------------------')
 
         response_result = Response_Result()
 
@@ -212,8 +212,8 @@ class Response_LLM_Client:
                     dprint(item)
                     dprint('----------------------------/ResponseOutputMessage-------------------------------------')
                     dprint()
-                    if item.content and 'text' in item.content[0]:
-                        response_result.output = item.content[0]['text']
+                    if item.content and item.content[0].text:
+                        response_result.output = item.content[0].text
                 else:
                     dprint('----------------------------------other item-------------------------------------------')
                     dprint(item)
@@ -244,7 +244,7 @@ class Response_LLM_Client:
                     dprint('---------/tool_call-------------')
                     func_rtn = func['func'](**args)
 
-                    response_result.tool_call_result = func_rtn
+                    response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
                     dprint('-----------------responses_result(工具调用后)-----------------')
                     dpprint(response_result.model_dump())
                     dprint('----------------/responses_result(工具调用后)-----------------')
@@ -275,7 +275,7 @@ def main_response_request_pprint():
 
     dpprint(response_request.model_dump())
 
-def main_response_llm_client():
+def main_response_llm_client(model):
     add_tool = Tool_Request(
         name='add_tool',
         description='加法计算工具',
@@ -283,11 +283,12 @@ def main_response_llm_client():
             properties={
                 'a': Tool_Property(type='number', description='加数'),
                 'b': Tool_Property(type='number', description='被加数'),
-                'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b, unit: {"result": a + b, "unit": unit}
+        func=lambda a, b: {"result": a + b}
+        # func=lambda a, b, unit: {"result": a + b, "unit": unit}
     )
     sub_tool = Tool_Request(
         name='sub_tool',
@@ -296,11 +297,12 @@ def main_response_llm_client():
             properties={
                 'a': Tool_Property(type='number', description='减数'),
                 'b': Tool_Property(type='number', description='被减数'),
-                'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b, unit: {"result": a - b, "unit": unit}
+        func=lambda a, b: {"result": a - b}
+        # func=lambda a, b, unit: {"result": a - b, "unit": unit}
     )
     mul_tool = Tool_Request(
         name='mul_tool',
@@ -309,11 +311,12 @@ def main_response_llm_client():
             properties={
                 'a': Tool_Property(type='number', description='乘数'),
                 'b': Tool_Property(type='number', description='被乘数'),
-                'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b, unit: {"result": a * b, "unit": unit}
+        func=lambda a, b: {"result": a * b}
+        # func=lambda a, b, unit: {"result": a * b, "unit": unit}
     )
     div_tool = Tool_Request(
         name='div_tool',
@@ -322,11 +325,12 @@ def main_response_llm_client():
             properties={
                 'a': Tool_Property(type='number', description='除数'),
                 'b': Tool_Property(type='number', description='被除数'),
-                'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b, unit: {"result": a / b, "unit": unit}
+        func=lambda a, b: {"result": a / b}
+        # func=lambda a, b, unit: {"result": a / b, "unit": unit}
     )
     # tools = []
     # tools = [div_tool]
@@ -347,21 +351,26 @@ def main_response_llm_client():
 
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     response_request = Response_Request(
-        model='openai/gpt-oss-20b',
+        model=model,
         input=query,
         tools=tools,
     )
     responses_result = client.responses_create(request=response_request)
 
-    dprint(responses_result.function_tool_call)
+    dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
     input = [
-        {'role':'user', 'content':query},
+        {'type':'message', 'role':'user', 'content': [{'type': 'input_text', 'text': query}]},
         {'type':'function_call', **responses_result.function_tool_call},
         {'type':'function_call_output', 'call_id':responses_result.function_tool_call['call_id'], 'output':responses_result.tool_call_result},
+        # {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': '继续'}]},
     ]
+    # input = '你是谁'
+    dprint()
+    dprint('-------------------------------input----------------------------------')
     dpprint(input)
+    dprint('------------------------------/input----------------------------------')
     response_request = Response_Request(
-        model='openai/gpt-oss-20b',
+        model=model,
         input=input,
         tools=tools,
     )
@@ -369,4 +378,5 @@ def main_response_llm_client():
 
 if __name__ == "__main__":
     # main_response_request_pprint()
-    main_response_llm_client()
+    main_response_llm_client(model='openai/gpt-oss-120b')
+    # main_response_llm_client(model='openai/gpt-oss-20b')
