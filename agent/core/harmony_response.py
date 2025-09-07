@@ -364,6 +364,7 @@ def main_response_llm_client(model):
         {'type':'message', 'role':'user', 'content': [{'type': 'input_text', 'text': query}]},
         {'type':'function_call', **responses_result.function_tool_call},
         {'type':'function_call_output', 'call_id':responses_result.function_tool_call['call_id'], 'output':responses_result.tool_call_result},
+        # {'type':'message', 'role':'assistant', 'content': '2356 除以 3567 的结果约为 **0.6605**（四舍五入到小数点后四位）。'},
         # {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': '继续'}]},
     ]
     # input = '你是谁'
@@ -377,9 +378,9 @@ def main_response_llm_client(model):
         tools=tools,
         # previous_response_id=responses_result.previous_response_id,   # Groq API不支持previous_response_id，也就是不支持server端缓存历史
     )
-    dprint('-------------------------------response_request----------------------------------')
-    dpprint(response_request.model_dump())
-    dprint('------------------------------/response_request----------------------------------')
+    # dprint('-------------------------------response_request----------------------------------')
+    # dpprint(response_request.model_dump())
+    # dprint('------------------------------/response_request----------------------------------')
     responses_result = client.responses_create(request=response_request)
 
 if __name__ == "__main__":
