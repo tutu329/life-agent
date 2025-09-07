@@ -591,12 +591,12 @@ def tool_call_agent(last_tool_result=None):
         count = 0
         for item in res.output:
             if isinstance(item, ResponseFunctionToolCall):
-                # print(f'------------------【item{count}】ResponseFunctionToolCall-------------------')
-                # pprint(item.model_dump(), sort_dicts=False, width=120)
+                print(f'------------------【item{count}】ResponseFunctionToolCall-------------------')
+                pprint(item.model_dump(), sort_dicts=False, width=120)
                 if item.type in ('function_call', 'tool_call'):
                     tool_args = json.loads(item.arguments)
                     tool_name = item.name
-                # print(f'-----------------/【item{count}】ResponseFunctionToolCall-------------------')
+                print(f'-----------------/【item{count}】ResponseFunctionToolCall-------------------')
             elif isinstance(item, ResponseReasoningItem):
                 pass
                 # print(f'-------------------【item{count}】ResponseReasoningItem---------------------')
