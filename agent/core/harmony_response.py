@@ -2,7 +2,7 @@ from openai import OpenAI, APIError
 from openai.types.responses import Response, ResponseReasoningItem, ResponseFunctionToolCall, ResponseOutputMessage
 from openai.types.responses import ToolParam, FunctionToolParam
 
-from typing import List, Dict, Any, Type, Literal, Optional
+from typing import List, Dict, Any, Type, Literal, Optional, Callable
 from pydantic import BaseModel, Field, ConfigDict
 
 import json
@@ -82,6 +82,12 @@ class Tool_Request(BaseModel):
     strict          :bool = True
     parameters      :Tool_Parameters
 
+    # 所调用的函数
+    # 仅在本地使用，不参与 JSON 序列化
+    func        : Optional[Callable] = Field(default=None, exclude=True, repr=False)
+
+    # 允许 pydantic 接受 Callable 等任意类型（否则有些版本会抱怨）
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 # --------------------------------response请求参数示例---------------------------------
 # res = client.responses.create(
 #     model='openai/gpt-oss-20b',
@@ -144,20 +150,39 @@ class Response_Request(BaseModel):
     reasoning       :Dict = Field(default_factory=lambda: {"effort": 'low'})
 
 class Response_Result(BaseModel):
+    # 返回内容
     reasoning               :str = ''
     output                  :str = ''
-    function_tool_call      :str = '' # {'tool_name':'...', 'tool_args','...'}
+    function_tool_call      :Dict[str, Any] = None # {'arguments': '{"a":2356,"b":3567,"unit":"meter"}', 'call_id': 'fc_cfaf81b5-7aec-457f-b745-59b8aee69648', 'name': 'div_tool'}
     other_item              :Any = None
+
+    # 工具调用结果
+    tool_call_result        :Any = ''
 
 class Response_LLM_Client:
     def __init__(self, client: OpenAI):
         self.client = client
+        self.funcs = [] # [{'name':'...', 'func':func}]
 
-    def responses_create(self, request:Response_Request):
+    def responses_create(self, request:Response_Request)->Response_Result:
         res = self.client.responses.create(**request.model_dump(exclude_none=True))
-        return res
+        response_result = self._responses_result(res)
 
-    def responses_result(self, res:Response):
+        # ----------------------注册tool func-------------------------
+        for tool in request.tools:
+            func_dict = {
+                'name' : tool.name,
+                'func' : tool.func,
+            }
+            self.funcs.append(func_dict)
+        # ---------------------/注册tool func-------------------------
+
+        # 调用tool
+        response_result = self._call_tool(response_result)
+
+        return response_result
+
+    def _responses_result(self, res:Response):
         # dprint(res)
         dprint('------------------------------Response---------------------------------------')
         dpprint(res.model_dump())
@@ -174,7 +199,7 @@ class Response_LLM_Client:
                     dprint(item)
                     dprint('--------------------------/ResponseFunctionToolCall------------------------------------')
                     dprint()
-                    response_result.function_tool_call = json.dumps(item.model_dump(exclude={'id', 'status', 'type'}), ensure_ascii=False)
+                    response_result.function_tool_call = item.model_dump(exclude={'id', 'status', 'type'})
                 elif isinstance(item, ResponseReasoningItem):
                     dprint('-----------------------------ResponseReasoningItem-------------------------------------')
                     dprint(item)
@@ -196,7 +221,34 @@ class Response_LLM_Client:
                     dprint()
                     response_result.other_item = item
         dprint('=========================================/Response Items==========================================')
+
+        dprint()
+        dprint('---------------------------------response result------------------------------------')
+        dpprint(response_result.model_dump())
+        dprint('--------------------------------/response result------------------------------------')
+
         return response_result
+
+    def _call_tool(self, response_result:Response_Result)->Response_Result:
+        tool_call = response_result.function_tool_call
+        if tool_call and 'name' in tool_call:
+            tool_name = tool_call['name']
+            dprint(f'tool_name = "{tool_name}"')
+
+            for func in self.funcs:
+                if tool_name == func['name']:
+                    dprint('----------tool_call-------------')
+                    dprint(tool_call)
+                    args = json.loads(tool_call['arguments'])
+                    dprint(f'args: {args!r}')
+                    dprint('---------/tool_call-------------')
+                    func_rtn = func['func'](**args)
+
+                    response_result.tool_call_result = func_rtn
+                    dprint('-----------------responses_result(工具调用后)-----------------')
+                    dpprint(response_result.model_dump())
+                    dprint('----------------/responses_result(工具调用后)-----------------')
+                    return response_result
 
 def main_response_request_pprint():
     input = '你是谁？'
@@ -235,6 +287,7 @@ def main_response_llm_client():
             },
             required=['a', 'b'],
         ),
+        func=lambda a, b, unit: {"result": a + b, "unit": unit}
     )
     sub_tool = Tool_Request(
         name='sub_tool',
@@ -247,6 +300,7 @@ def main_response_llm_client():
             },
             required=['a', 'b'],
         ),
+        func=lambda a, b, unit: {"result": a - b, "unit": unit}
     )
     mul_tool = Tool_Request(
         name='mul_tool',
@@ -259,6 +313,7 @@ def main_response_llm_client():
             },
             required=['a', 'b'],
         ),
+        func=lambda a, b, unit: {"result": a * b, "unit": unit}
     )
     div_tool = Tool_Request(
         name='div_tool',
@@ -271,6 +326,7 @@ def main_response_llm_client():
             },
             required=['a', 'b'],
         ),
+        func=lambda a, b, unit: {"result": a / b, "unit": unit}
     )
     # tools = []
     # tools = [div_tool]
@@ -284,26 +340,32 @@ def main_response_llm_client():
         http_client=http_client,
     )
 
-    input = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    # -------------打印输入参数--------------
+    # dpprint(response_request.model_dump())
+
+    client = Response_LLM_Client(client=client)
+
+    query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    response_request = Response_Request(
+        model='openai/gpt-oss-20b',
+        input=query,
+        tools=tools,
+    )
+    responses_result = client.responses_create(request=response_request)
+
+    dprint(responses_result.function_tool_call)
+    input = [
+        {'role':'user', 'content':query},
+        {'type':'function_call', **responses_result.function_tool_call},
+        {'type':'function_call_output', 'call_id':responses_result.function_tool_call['call_id'], 'output':responses_result.tool_call_result},
+    ]
+    dpprint(input)
     response_request = Response_Request(
         model='openai/gpt-oss-20b',
         input=input,
         tools=tools,
     )
-
-    # -------------打印输入参数--------------
-    # dpprint(response_request.model_dump())
-
-
-    client = Response_LLM_Client(client=client)
-    res = client.responses_create(request=response_request)
-    responses_result = client.responses_result(res=res)
-
-    dprint()
-    dprint('---------------------------------response result------------------------------------')
-    dpprint(responses_result.model_dump())
-    dprint('--------------------------------/response result------------------------------------')
-
+    responses_result = client.responses_create(request=response_request)
 
 if __name__ == "__main__":
     # main_response_request_pprint()
