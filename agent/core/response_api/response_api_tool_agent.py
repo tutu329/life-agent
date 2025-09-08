@@ -46,20 +46,24 @@ class Response_API_Tool_Agent:
 
             for func in self.response_llm_client.funcs:
                 if tool_name == func['name']:
-                    args = json.loads(tool_call['arguments'])
+                    try:
+                        args = json.loads(tool_call['arguments'])
 
-                    func_rtn = func['func'](**args)
-                    response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+                        func_rtn = func['func'](**args)
+                        response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
 
-                    tool_call_result_item = {
-                        "type": "function_call_output",
-                        "call_id": tool_call['call_id'],
-                        "output": json.dumps({tool_call['name']: response_result.tool_call_result})
-                    }
+                        tool_call_result_item = {
+                            "type": "function_call_output",
+                            "call_id": tool_call['call_id'],
+                            "output": json.dumps({tool_call['name']: response_result.tool_call_result})
+                        }
 
-                    self.response_llm_client.history_input_list.append(tool_call_result_item)
+                        self.response_llm_client.history_input_list.append(tool_call_result_item)
 
-                    return response_result
+                        return response_result
+                    except Exception as e:
+                        response_result.output = e
+                        return response_result
 
         return response_result
 
