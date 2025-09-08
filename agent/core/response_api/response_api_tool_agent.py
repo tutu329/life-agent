@@ -4,6 +4,9 @@ from llm_protocol import LLM_Config
 from agent.tools.protocol import Tool_Call_Paras
 from tools.llm.response_api_client import Response_LLM_Client, Tool_Request, Tool_Parameters, Tool_Property, Response_Request
 
+from agent.core.protocol import Query_Agent_Context
+from agent.tools.protocol import Tool_Call_Paras
+
 from config import dred, dgreen, dblue, dyellow, dcyan
 
 class Response_API_Tool_Agent:
@@ -20,8 +23,8 @@ class Response_API_Tool_Agent:
             input=query,
             tools=tools,
         )
-
         responses_result = self.response_llm_client.responses_create(request=response_request)
+        responses_result = self.response_llm_client.legacy_call_tool(responses_result)
 
         while not hasattr(responses_result, 'output') or responses_result.output=='' :
             response_request = Response_Request(
@@ -31,6 +34,7 @@ class Response_API_Tool_Agent:
                 tools=tools,
             )
             responses_result = self.response_llm_client.responses_create(request=response_request)
+            responses_result = self.response_llm_client.legacy_call_tool(responses_result)
 
             if responses_result.output != '':
                 dgreen('-----------------------------------最终结果---------------------------------------------')

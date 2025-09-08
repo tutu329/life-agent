@@ -809,11 +809,11 @@ async def main_mcp():
 
         # 在现有 async with MCPServerStdio(...) as server: 代码块里追加
         # 列目录
-        resp = await server.call_tool("list_directory", {"path": "."})
+        resp = await server.legacy_call_tool("list_directory", {"path": "."})
         print("list_directory result:", getattr(resp, "content", None) or getattr(resp, "structured_content", None))
 
         # 读文本
-        resp = await server.call_tool("read_text_file", {"path": "response_tool_call.py"})
+        resp = await server.legacy_call_tool("read_text_file", {"path": "response_tool_call.py"})
         print("read_text_file result:", getattr(resp, "content", None) or getattr(resp, "structured_content", None))
 
     # agent = Agent(

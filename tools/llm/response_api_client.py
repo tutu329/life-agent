@@ -276,7 +276,7 @@ class Response_LLM_Client:
         # ---------------------/注册tool func-------------------------
 
         # 调用tool
-        response_result = self._call_tool(response_result)
+        # response_result = self.call_tool(response_result)
 
         return response_result
 
@@ -335,7 +335,9 @@ class Response_LLM_Client:
 
         return response_result
 
-    def _call_tool(self, response_result:Response_Result)->Response_Result:
+    # -------------------存在问题-------------------
+    # call_tool()不宜放在life-agent.tools.llm.Response_LLM_Client里，而应在life-agent.agent.core的Response_API_Tool_Agent里
+    def legacy_call_tool(self, response_result:Response_Result)->Response_Result:
         tool_call = response_result.function_tool_call
         if tool_call and 'name' in tool_call:
             tool_name = tool_call['name']
@@ -483,6 +485,7 @@ def main_response_llm_client():
         tools=tools,
     )
     responses_result = client.responses_create(request=response_request)
+    responses_result = client.legacy_call_tool(responses_result)
 
     dprint(f'responses_result.output: {responses_result.output!r}')
     # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
@@ -495,6 +498,7 @@ def main_response_llm_client():
             tools=tools,
         )
         responses_result = client.responses_create(request=response_request)
+        responses_result = client.legacy_call_tool(responses_result)
         dprint(f'responses_result: {responses_result!r}')
 
         if responses_result.output != '':
