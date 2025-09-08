@@ -8,6 +8,9 @@ from pydantic import BaseModel, Field, ConfigDict
 import json
 from pprint import pprint
 
+import llm_protocol
+from llm_protocol import LLM_Config
+import config
 from config import dred, dgreen, dblue, dyellow, dcyan
 
 DEBUG = True
@@ -164,21 +167,35 @@ class Response_Result(BaseModel):
     tool_call_result        :str = ''
 
 class Response_LLM_Client:
-    def __init__(self, client: OpenAI):
-        self.client = client
+    def __init__(self, llm_config:LLM_Config):
+    # def __init__(self, client: OpenAI):
+        self.llm_config = llm_config
+        self.openai = None
         self.funcs = []                 # [{'name':'...', 'func':func}]
 
         # input_list相关
         self.history_input_list = None  # 历史input_list(用于多轮的tool call)
 
     # 将Response_LLM_Client当作agent用(用tool call)
-    def agent_init(self):
-        pass
+    def init(self):
+        if self.llm_config.vpn_on:
+            import httpx
+            http_client = httpx.Client(proxy=config.g_vpn_proxy)
+            self.openai = OpenAI(
+                api_key=self.llm_config.api_key,
+                base_url=self.llm_config.base_url,
+                http_client=http_client,
+            )
+        else:
+            self.openai = OpenAI(
+                api_key=self.llm_config.api_key,
+                base_url=self.llm_config.base_url,
+            )
 
     # 将Response_LLM_Client当作agent用(用tool call)
-    def agent_run(self, model, query, tools) -> str:
+    def agent_run(self, query, tools) -> str:
         response_request = Response_Request(
-            model=model,
+            model=self.llm_config.llm_model_id,
             input=query,
             tools=tools,
         )
@@ -189,7 +206,7 @@ class Response_LLM_Client:
             response_request = Response_Request(
                 instructions=query,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
                 # instructions='继续调用工具直到完成user的任务',
-                model=model,
+                model=self.llm_config.llm_model_id,
                 tools=tools,
             )
             responses_result = self.responses_create(request=response_request)
@@ -210,7 +227,7 @@ class Response_LLM_Client:
         # 判断是否有history_input
         if self.history_input_list is None:
             # 第一次responses.create
-            res = self.client.responses.create(**request.model_dump(exclude_none=True))
+            res = self.openai.responses.create(**request.model_dump(exclude_none=True))
             dprint('=================================input_list===================================')
             dprint(f'{request.input!r}')
             dprint('================================/input_list===================================')
@@ -225,7 +242,7 @@ class Response_LLM_Client:
             for item in self.history_input_list:
                 dblue(item)
             dblue('================================/input_list===================================')
-            res = self.client.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
+            res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
         # -----------------------------/responses.create请求------------------------------
 
         # input_list相关
@@ -493,7 +510,7 @@ def main_response_llm_client(model):
             dgreen('-----------------------------------最终结果---------------------------------------------')
             break
 
-def main_response_agent(model):
+def main_response_agent():
     add_tool = Tool_Request(
         name='add_tool',
         description='加法计算工具',
@@ -571,12 +588,12 @@ def main_response_agent(model):
 
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
 
-    client = Response_LLM_Client(client=client)
-    client.agent_init()
-    client.agent_run(model=model, query=query, tools=tools)
+    client = Response_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    client.init()
+    client.agent_run(query=query, tools=tools)
 
 if __name__ == "__main__":
     # main_response_request_pprint()
     # main_response_llm_client(model='openai/gpt-oss-120b')
     # main_response_llm_client(model='openai/gpt-oss-20b')
-    main_response_agent(model='openai/gpt-oss-20b')
+    main_response_agent()
