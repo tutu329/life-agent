@@ -146,6 +146,12 @@ class LLM_Client():
         self.remove_content_in_think_pairs = False  # 是否remove ('<think>', '</think>') 之间的内容
 
         self._init_print()
+
+    def refresh_endpoint(self, url, api_key, model_id):
+        self.llm_config.base_url = url
+        self.llm_config.api_key = api_key
+        self.llm_config.llm_model_id = model_id
+
     def _init_print(self):
         dblue(self.llm_config)
 

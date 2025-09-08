@@ -6,6 +6,7 @@ import pandas as pd
 # from streamlit_file_browser import st_file_browser
 
 import config
+import llm_protocol
 from config import dred, dgreen, dblue
 from tools.llm.api_client import LLM_Client, Legacy_Async_LLM
 
@@ -176,20 +177,26 @@ def llm_init():
     # dblue(f'"{LLM_Client.Get_All_LLM_Server()}"')
 
     # 初始化 mem_llm
-    mem_llm = LLM_Client(
-        url=config.Domain.llm_url,
-        api_key=config.Global.llm_key,
-        model_id=config.Global.llm_model,
-        history=True,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
-        print_input=False,
-    )
-    draw_llm = LLM_Client(
-        url=config.Domain.llm_url,
-        api_key=config.Global.llm_key,
-        model_id=config.Global.llm_model,
-        history=False,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
-        print_input=False,
-    )
+    from llm_protocol import LLM_Config
+    llm_config = LLM_Config()
+    mem_llm = LLM_Client(llm_config)
+    # mem_llm = LLM_Client(
+    #     url=config.Domain.llm_url,
+    #     api_key=config.Global.llm_key,
+    #     model_id=config.Global.llm_model,
+    #     history=True,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
+    #     print_input=False,
+    # )
+    llm_config1 = LLM_Config()
+    llm_config1.has_history = False
+    draw_llm = LLM_Client(llm_config1)
+    # draw_llm = LLM_Client(
+    #     url=config.Domain.llm_url,
+    #     api_key=config.Global.llm_key,
+    #     model_id=config.Global.llm_model,
+    #     history=False,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
+    #     print_input=False,
+    # )
     # mem_llm = LLM_Client(
     #     history=history,  # 这里打开llm的history，对话历史与streamlit显示的内容区分开
     #     print_input=False,
@@ -948,7 +955,7 @@ def ask_llm(prompt, paras):
     else:
         # =================================local llm=================================
         all_prompt = role_prompt
-        mem_llm.set_role_prompt(all_prompt)
+        # mem_llm.set_role_prompt(all_prompt)
 
         if url_prompt:
             # 如果填了url
@@ -1042,15 +1049,24 @@ def ask_llm(prompt, paras):
             image_url = paras['file_column_raw_data']["file_content"][0]
 
         print(f'image_url: "{image_url}"')
-        gen = mem_llm.ask_prepare(
-            question=prompt,
+        from llm_protocol import LLM_Query_Paras
+        query_paras = LLM_Query_Paras(
+            query=prompt,
             image_url=image_url,
             temperature=st.session_state.session_data['paras']['local_llm_temperature'],
             max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
             system_prompt=system_prompt,
-            # remove_content_in_think_pairs=use_think_model,
-            # remove_content_in_think_pairs=True,
-        ).get_answer_generator()
+        )
+        gen = mem_llm.ask_prepare(query_paras).get_answer_generator()
+        # gen = mem_llm.ask_prepare(
+        #     question=prompt,
+        #     image_url=image_url,
+        #     temperature=st.session_state.session_data['paras']['local_llm_temperature'],
+        #     max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
+        #     system_prompt=system_prompt,
+        #     # remove_content_in_think_pairs=use_think_model,
+        #     # remove_content_in_think_pairs=True,
+        # ).get_answer_generator()
 
 
         wait_first_token = True
