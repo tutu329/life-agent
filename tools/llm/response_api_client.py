@@ -171,6 +171,40 @@ class Response_LLM_Client:
         # input_list相关
         self.history_input_list = None  # 历史input_list(用于多轮的tool call)
 
+    # 将Response_LLM_Client当作agent用(用tool call)
+    def agent_init(self):
+        pass
+
+    # 将Response_LLM_Client当作agent用(用tool call)
+    def agent_run(self, model, query, tools) -> str:
+        response_request = Response_Request(
+            model=model,
+            input=query,
+            tools=tools,
+        )
+
+        responses_result = self.responses_create(request=response_request)
+
+        while not hasattr(responses_result, 'output') or responses_result.output=='' :
+            response_request = Response_Request(
+                instructions=query,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+                # instructions='继续调用工具直到完成user的任务',
+                model=model,
+                tools=tools,
+            )
+            responses_result = self.responses_create(request=response_request)
+
+            if responses_result.output != '':
+                dprint('-----------------------------------最终结果---------------------------------------------')
+                dprint(responses_result.output)
+                dprint('-----------------------------------最终结果---------------------------------------------')
+                dgreen('-----------------------------------最终结果---------------------------------------------')
+                dgreen(responses_result.output)
+                dgreen('-----------------------------------最终结果---------------------------------------------')
+                break
+
+        return responses_result.output
+
     def responses_create(self, request:Response_Request)->Response_Result:
         # ------------------------------responses.create请求------------------------------
         # 判断是否有history_input
@@ -418,7 +452,7 @@ def main_response_llm_client(model):
 
     import httpx, os
     http_client = httpx.Client(proxy="http://127.0.0.1:7890")
-    client = OpenAI(
+    openai_client = OpenAI(
         api_key=os.getenv("GROQ_API_KEY") or 'empty',
         base_url='https://api.groq.com/openai/v1',
         http_client=http_client,
@@ -427,7 +461,7 @@ def main_response_llm_client(model):
     # -------------打印输入参数--------------
     # dpprint(response_request.model_dump())
 
-    client = Response_LLM_Client(client=client)
+    client = Response_LLM_Client(client=openai_client)
 
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     response_request = Response_Request(
@@ -459,7 +493,90 @@ def main_response_llm_client(model):
             dgreen('-----------------------------------最终结果---------------------------------------------')
             break
 
+def main_response_agent(model):
+    add_tool = Tool_Request(
+        name='add_tool',
+        description='加法计算工具',
+        parameters=Tool_Parameters(
+            properties={
+                'a': Tool_Property(type='number', description='加数'),
+                'b': Tool_Property(type='number', description='被加数'),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+            },
+            required=['a', 'b'],
+        ),
+        func=lambda a, b: {"result": a + b}
+        # func=lambda a, b, unit: {"result": a + b, "unit": unit}
+    )
+    sub_tool = Tool_Request(
+        name='sub_tool',
+        description='减法计算工具',
+        parameters=Tool_Parameters(
+            properties={
+                'a': Tool_Property(type='number', description='减数'),
+                'b': Tool_Property(type='number', description='被减数'),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+            },
+            required=['a', 'b'],
+        ),
+        func=lambda a, b: {"result": a - b}
+        # func=lambda a, b, unit: {"result": a - b, "unit": unit}
+    )
+    mul_tool = Tool_Request(
+        name='mul_tool',
+        description='乘法计算工具',
+        parameters=Tool_Parameters(
+            properties={
+                'a': Tool_Property(type='number', description='乘数'),
+                'b': Tool_Property(type='number', description='被乘数'),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+            },
+            required=['a', 'b'],
+        ),
+        func=lambda a, b: {"result": a * b}
+        # func=lambda a, b, unit: {"result": a * b, "unit": unit}
+    )
+    div_tool = Tool_Request(
+        name='div_tool',
+        description='除法计算工具',
+        parameters=Tool_Parameters(
+            properties={
+                'a': Tool_Property(type='number', description='除数'),
+                'b': Tool_Property(type='number', description='被除数'),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+            },
+            required=['a', 'b'],
+        ),
+        func=lambda a, b: {"result": a / b}
+        # func=lambda a, b, unit: {"result": a / b, "unit": unit}
+    )
+
+    # from agent.tools.folder_tool import Folder_Tool
+    # fold_tool = Folder_Tool.get_tool_param_dict()
+
+    # tools = []
+    # tools = [div_tool]
+    tools = [add_tool, sub_tool, mul_tool, div_tool]
+
+    import httpx, os
+    http_client = httpx.Client(proxy="http://127.0.0.1:7890")
+    client = OpenAI(
+        api_key=os.getenv("GROQ_API_KEY") or 'empty',
+        base_url='https://api.groq.com/openai/v1',
+        http_client=http_client,
+    )
+
+    # -------------打印输入参数--------------
+    # dpprint(response_request.model_dump())
+
+    query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+
+    client = Response_LLM_Client(client=client)
+    client.agent_init()
+    client.agent_run(model=model, query=query, tools=tools)
+
 if __name__ == "__main__":
     # main_response_request_pprint()
     # main_response_llm_client(model='openai/gpt-oss-120b')
-    main_response_llm_client(model='openai/gpt-oss-20b')
+    # main_response_llm_client(model='openai/gpt-oss-20b')
+    main_response_agent(model='openai/gpt-oss-20b')
