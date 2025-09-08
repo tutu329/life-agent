@@ -62,7 +62,8 @@ class Response_API_Tool_Agent:
 
                         return response_result
                     except Exception as e:
-                        response_result.output = e
+                        response_result.error = e
+                        # response_result.tool_call_result = e
                         return response_result
 
         return response_result
@@ -72,8 +73,18 @@ class Response_API_Tool_Agent:
             model=self.llm_config.llm_model_id,
             input=query,
             tools=tools,
+
+            temperature=self.llm_config.temperature,
+            top_p=self.llm_config.top_p,
+            max_output_tokens=self.llm_config.max_new_tokens,
+            reasoning={"effort": self.llm_config.reasoning_effort},
         )
-        responses_result = self.response_llm_client.responses_create(request=response_request)
+
+        responses_result = Response_Result()
+        try:
+            responses_result = self.response_llm_client.responses_create(request=response_request)
+        except Exception as e:
+            responses_result.error = e
 
         tool_call_paras = None
         # tool_call_paras = Tool_Call_Paras(
@@ -94,8 +105,18 @@ class Response_API_Tool_Agent:
                 # instructions='继续调用工具直到完成user的任务',
                 model=self.llm_config.llm_model_id,
                 tools=tools,
+
+                temperature=self.llm_config.temperature,
+                top_p=self.llm_config.top_p,
+                max_output_tokens=self.llm_config.max_new_tokens,
+                reasoning={"effort": self.llm_config.reasoning_effort},
             )
-            responses_result = self.response_llm_client.responses_create(request=response_request)
+
+            try:
+                responses_result = self.response_llm_client.responses_create(request=response_request)
+            except Exception as e:
+                responses_result.error = e
+                continue
 
             tool_call_paras = None
             # tool_call_paras = Tool_Call_Paras(
@@ -185,8 +206,8 @@ def main_response_agent():
 
     # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_qwen3_30b_thinking)
     agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4)
-    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_120b)
     # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_120b)
     agent.init()
     agent.run(query=query, tools=tools)
 

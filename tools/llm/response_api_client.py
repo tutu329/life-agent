@@ -163,8 +163,10 @@ class Response_Result(BaseModel):
     other_item              :Any = None
 
     # 工具调用结果
-    previous_response_id    :str    # 上一次openai.response.create()返回的res.id
+    previous_response_id    :str = None    # 上一次openai.response.create()返回的res.id
     tool_call_result        :str = ''
+
+    error                   :str = ''
 
 class Response_LLM_Client:
     def __init__(self, llm_config:LLM_Config):
@@ -244,6 +246,10 @@ class Response_LLM_Client:
             for item in self.history_input_list:
                 dblue(item)
             dblue('================================/input_list===================================')
+            dyellow('=================================request===================================')
+            for item in request:
+                dyellow(f'{item}')
+            dyellow('================================/request===================================')
             res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
         # -----------------------------/responses.create请求------------------------------
 
@@ -361,12 +367,22 @@ class Response_LLM_Client:
                     dprint('----------history_input_list.append(tool_call_result_item)-------------')
                     # dprint(tool_call)
                     # dprint(response_result.tool_call_result)
-                    tool_call_result_item = {
-                        "type": "function_call_output",
-                        "call_id": tool_call['call_id'],
-                        "output": json.dumps({tool_call['name']: response_result.tool_call_result})
-                        # "output": {tool_call['name']: response_result.tool_call_result}
-                    }
+                    if response_result.error:
+                        tool_call_result_item = {
+                            "type": "function_call_output",
+                            "call_id": tool_call['call_id'],
+                            "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
+                            "error": response_result.error,
+                            # "output": {tool_call['name']: response_result.tool_call_result}
+                        }
+                    else:
+                        tool_call_result_item = {
+                            "type": "function_call_output",
+                            "call_id": tool_call['call_id'],
+                            "output": json.dumps({tool_call['name']: response_result.tool_call_result})
+                            # "output": {tool_call['name']: response_result.tool_call_result}
+                        }
+
                     dprint(tool_call_result_item)
                     dprint('---------/history_input_list.append(tool_call_result_item)-------------')
                     self.history_input_list.append(tool_call_result_item)
