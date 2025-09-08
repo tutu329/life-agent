@@ -1,6 +1,6 @@
 import datetime
 from tools.t2i.api_client_stable_diffusion import *
-from tools.llm.api_client_qwen_openai import *
+from tools.llm.bak.api_client_qwen_openai import *
 
 class Helper:
     """
@@ -71,7 +71,7 @@ class EleNotFoundError(Exception):
     """
     pass
 
-import time
+
 import pyautogui
 from pywinauto.findwindows import ElementNotFoundError
 

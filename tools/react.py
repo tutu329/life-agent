@@ -9,7 +9,6 @@
 #
 
 import json
-import os
 
 import json5
 # import torch
@@ -261,7 +260,7 @@ def test():
         response, history = llm_with_plugin(prompt=query, history=history, list_of_plugin_info=tools)
         print(f"Qwen's Response:\n{response}\n")
 
-from tools.llm.api_client_qwen_openai import *
+from tools.llm.bak.api_client_qwen_openai import *
 def main():
     llm = LLM_Qwen(history=True, history_max_turns=20, history_clear_method='pop')
 
