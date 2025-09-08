@@ -104,8 +104,8 @@ g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     max_new_tokens=8192,
     use_harmony=True,
     # reasoning_effort=LLM_Reasoning_Effort.HIGH,
-    reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
-    # reasoning_effort=LLM_Reasoning_Effort.LOW,
+    # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
+    reasoning_effort=LLM_Reasoning_Effort.LOW,
 )
 
 g_local_qwen3_30b_chat = LLM_Config(
@@ -170,6 +170,7 @@ g_online_groq_gpt_oss_20b = LLM_Config(
     # top_p=0.95,
     max_new_tokens=8192,
     reasoning_effort=LLM_Reasoning_Effort.LOW, # groq似乎不支持reasoning_effort
+    # reasoning_effort=LLM_Reasoning_Effort.MEDIUM, # groq似乎不支持reasoning_effort
     # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
     use_harmony=True,
     vpn_on=True
