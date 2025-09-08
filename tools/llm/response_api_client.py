@@ -571,17 +571,7 @@ def main_response_agent():
     # from agent.tools.folder_tool import Folder_Tool
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
-    # tools = []
-    # tools = [div_tool]
     tools = [add_tool, sub_tool, mul_tool, div_tool]
-
-    import httpx, os
-    http_client = httpx.Client(proxy="http://127.0.0.1:7890")
-    client = OpenAI(
-        api_key=os.getenv("GROQ_API_KEY") or 'empty',
-        base_url='https://api.groq.com/openai/v1',
-        http_client=http_client,
-    )
 
     # -------------打印输入参数--------------
     # dpprint(response_request.model_dump())
