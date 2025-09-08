@@ -438,7 +438,7 @@ def main_response_llm_client(model):
 
     while not hasattr(responses_result, 'output') or responses_result.output=='' :
         response_request = Response_Request(
-            instructions=query,
+            instructions=query, # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
             # instructions='继续调用工具直到完成user的任务',
             model=model,
             tools=tools,
