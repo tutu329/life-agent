@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field, ConfigDict
 import json
 from pprint import pprint
 
+from config import dred, dgreen, dblue, dyellow, dcyan
+
 DEBUG = True
 # DEBUG = False
 
@@ -141,7 +143,7 @@ class Response_Request(BaseModel):
     temperature     :float = 1.0
     top_p           :float = 1.0
     instructions    :str =  'You are a helpful agent.'  # 注意这里用了'agent'
-    input           :str | List[Dict[str, Any]]
+    input           :str | List[Dict[str, Any]] = None  # 非第一次responses.create时为None，并在Response_LLM_Client里采用history_input_list
     tools           :List[Tool_Request]
     previous_response_id    :Optional[str] = None    # 上一次openai.response.create()返回的res.id
     tool_choice     :str = 'auto'
@@ -164,14 +166,55 @@ class Response_Result(BaseModel):
 class Response_LLM_Client:
     def __init__(self, client: OpenAI):
         self.client = client
-        self.funcs = [] # [{'name':'...', 'func':func}]
+        self.funcs = []                 # [{'name':'...', 'func':func}]
+
+        # input_list相关
+        self.history_input_list = None  # 历史input_list(用于多轮的tool call)
 
     def responses_create(self, request:Response_Request)->Response_Result:
-        res = self.client.responses.create(**request.model_dump(exclude_none=True))
+        # ------------------------------responses.create请求------------------------------
+        # 判断是否有history_input
+        if self.history_input_list is None:
+            # 第一次responses.create
+            res = self.client.responses.create(**request.model_dump(exclude_none=True))
+            dprint('=================================input_list===================================')
+            dprint(f'{request.input!r}')
+            dprint('================================/input_list===================================')
+            dblue('=================================input_list===================================')
+            dblue(f'{request.input!r}')
+            dblue('================================/input_list===================================')
+        else:
+            # 非第一次responses.create
+            # request.input = self.history_input_list
+            del request.input   # 解决pydantic无法序列化response.output对象的问题
+            dblue('=================================input_list===================================')
+            for item in self.history_input_list:
+                dblue(item)
+            dblue('================================/input_list===================================')
+            res = self.client.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
+        # -----------------------------/responses.create请求------------------------------
+
+        # input_list相关
+        # 如果是第一次responses_create
+        if self.history_input_list is None:
+            self.history_input_list = request.input if isinstance(request.input, list) else [
+                {
+                    "type": "message",
+                    "role": "user",
+                    # "content": request.input,
+                    "content": [{"type": "input_text", "text": request.input}],
+                }
+            ]
+
+        # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
+        self.history_input_list += res.output
+
         response_result = self._responses_result(res)
 
         # ----------------------注册tool func-------------------------
+        self.funcs = [] # 要先清除之前的tools
         for tool in request.tools:
+            # dred(tool)
             func_dict = {
                 'name' : tool.name,
                 'func' : tool.func,
@@ -244,12 +287,35 @@ class Response_LLM_Client:
                     args = json.loads(tool_call['arguments'])
                     dprint(f'args: {args!r}')
                     dprint('---------/tool_call-------------')
+
+                    # ------------------调用tool------------------
                     func_rtn = func['func'](**args)
+                    # -----------------/调用tool------------------
 
                     response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+                    # history_input_list末尾添加tool调用结果
+
+                    dprint('----------history_input_list.append(tool_call_result_item)-------------')
+                    # dprint(tool_call)
+                    # dprint(response_result.tool_call_result)
+                    tool_call_result_item = {
+                        "type": "function_call_output",
+                        "call_id": tool_call['call_id'],
+                        "output": json.dumps({tool_call['name']: response_result.tool_call_result})
+                        # "output": {tool_call['name']: response_result.tool_call_result}
+                    }
+                    dprint(tool_call_result_item)
+                    dprint('---------/history_input_list.append(tool_call_result_item)-------------')
+                    self.history_input_list.append(tool_call_result_item)
+
                     dprint('-----------------responses_result(工具调用后)-----------------')
                     dpprint(response_result.model_dump())
                     dprint('----------------/responses_result(工具调用后)-----------------')
+
+                    dgreen('-----------------responses_result(工具调用后)-----------------\n{')
+                    for k,v in response_result.model_dump().items():
+                        dgreen(f'\t {k!r}:{v!r}')
+                    dgreen('}\n----------------/responses_result(工具调用后)-----------------')
                     return response_result
 
 def main_response_request_pprint():
@@ -359,22 +425,24 @@ def main_response_llm_client(model):
     )
     responses_result = client.responses_create(request=response_request)
 
-    dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
-    input = [
-        {'type':'message', 'role':'user', 'content': [{'type': 'input_text', 'text': query}]},
-        {'type':'function_call', **responses_result.function_tool_call},
-        {'type':'function_call_output', 'call_id':responses_result.function_tool_call['call_id'], 'output':responses_result.tool_call_result},
-        # {'type':'message', 'role':'assistant', 'content': '2356 除以 3567 的结果约为 **0.6605**（四舍五入到小数点后四位）。'},
-        # {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': '继续'}]},
-    ]
+    # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
+
+
+    # input = [
+    #     {'type':'message', 'role':'user', 'content': [{'type': 'input_text', 'text': query}]},
+    #     {'type':'function_call', **responses_result.function_tool_call},
+    #     {'type':'function_call_output', 'call_id':responses_result.function_tool_call['call_id'], 'output':responses_result.tool_call_result},
+    #     # {'type':'message', 'role':'assistant', 'content': '2356 除以 3567 的结果约为 **0.6605**（四舍五入到小数点后四位）。'},
+    #     # {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': '继续'}]},
+    # ]
     # input = '你是谁'
-    dprint()
-    dprint('-------------------------------input----------------------------------')
-    dpprint(input)
-    dprint('------------------------------/input----------------------------------')
+    # dprint()
+    # dprint('-------------------------------input----------------------------------')
+    # dpprint(input)
+    # dprint('------------------------------/input----------------------------------')
     response_request = Response_Request(
+        instructions='继续调用工具直到完成user的任务',
         model=model,
-        input=input,
         tools=tools,
         # previous_response_id=responses_result.previous_response_id,   # Groq API不支持previous_response_id，也就是不支持server端缓存历史
     )
@@ -385,5 +453,5 @@ def main_response_llm_client(model):
 
 if __name__ == "__main__":
     # main_response_request_pprint()
-    main_response_llm_client(model='openai/gpt-oss-120b')
-    # main_response_llm_client(model='openai/gpt-oss-20b')
+    # main_response_llm_client(model='openai/gpt-oss-120b')
+    main_response_llm_client(model='openai/gpt-oss-20b')
