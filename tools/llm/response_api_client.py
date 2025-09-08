@@ -295,6 +295,7 @@ class Response_LLM_Client:
                     dprint(item)
                     dprint('--------------------------/ResponseFunctionToolCall------------------------------------')
                     dprint()
+                    # {'arguments': '{"a":22,"b":33}', 'call_id': 'fc_6b305c5f-2fc6-4a5b-9559-b909da57de2f', 'name': 'mul_tool'}
                     response_result.function_tool_call = item.model_dump(exclude={'id', 'status', 'type'})
                 elif isinstance(item, ResponseReasoningItem):
                     dprint('-----------------------------ResponseReasoningItem-------------------------------------')
@@ -402,7 +403,7 @@ def main_response_request_pprint():
 
     dpprint(response_request.model_dump())
 
-def main_response_llm_client(model):
+def main_response_llm_client():
     add_tool = Tool_Request(
         name='add_tool',
         description='加法计算工具',
@@ -467,22 +468,15 @@ def main_response_llm_client(model):
     # tools = [div_tool]
     tools = [add_tool, sub_tool, mul_tool, div_tool]
 
-    import httpx, os
-    http_client = httpx.Client(proxy="http://127.0.0.1:7890")
-    openai_client = OpenAI(
-        api_key=os.getenv("GROQ_API_KEY") or 'empty',
-        base_url='https://api.groq.com/openai/v1',
-        http_client=http_client,
-    )
-
     # -------------打印输入参数--------------
     # dpprint(response_request.model_dump())
 
-    client = Response_LLM_Client(client=openai_client)
+    client = Response_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    client.init()
 
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     response_request = Response_Request(
-        model=model,
+        model=client.llm_config.llm_model_id,
         input=query,
         tools=tools,
     )
@@ -495,7 +489,7 @@ def main_response_llm_client(model):
         response_request = Response_Request(
             instructions=query, # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
             # instructions='继续调用工具直到完成user的任务',
-            model=model,
+            model=client.llm_config.llm_model_id,
             tools=tools,
         )
         responses_result = client.responses_create(request=response_request)
@@ -585,5 +579,5 @@ def main_response_agent():
 if __name__ == "__main__":
     # main_response_request_pprint()
     # main_response_llm_client(model='openai/gpt-oss-120b')
-    # main_response_llm_client(model='openai/gpt-oss-20b')
-    main_response_agent()
+    main_response_llm_client()
+    # main_response_agent()
