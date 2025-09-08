@@ -250,7 +250,7 @@ class Response_LLM_Client:
                     dprint(item)
                     dprint('----------------------------/ResponseReasoningItem-------------------------------------')
                     dprint()
-                    if item.content and 'text' in item.content[0]:
+                    if 'content' in item and item.content and 'text' in item.content[0]:
                         response_result.reasoning = item.content[0]['text']
                 elif isinstance(item, ResponseOutputMessage):
                     dprint('-----------------------------ResponseOutputMessage-------------------------------------')
@@ -317,6 +317,7 @@ class Response_LLM_Client:
                         dgreen(f'\t {k!r}:{v!r}')
                     dgreen('}\n----------------/responses_result(工具调用后)-----------------')
                     return response_result
+        return response_result
 
 def main_response_request_pprint():
     input = '你是谁？'
@@ -425,31 +426,27 @@ def main_response_llm_client(model):
     )
     responses_result = client.responses_create(request=response_request)
 
+    dprint(f'responses_result.output: {responses_result.output!r}')
     # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
 
+    while responses_result.output=='' or not 'output' in responses_result.output:
+        response_request = Response_Request(
+            instructions=query,
+            # instructions='继续调用工具直到完成user的任务',
+            model=model,
+            tools=tools,
+        )
+        responses_result = client.responses_create(request=response_request)
+        dprint(f'responses_result: {responses_result!r}')
 
-    # input = [
-    #     {'type':'message', 'role':'user', 'content': [{'type': 'input_text', 'text': query}]},
-    #     {'type':'function_call', **responses_result.function_tool_call},
-    #     {'type':'function_call_output', 'call_id':responses_result.function_tool_call['call_id'], 'output':responses_result.tool_call_result},
-    #     # {'type':'message', 'role':'assistant', 'content': '2356 除以 3567 的结果约为 **0.6605**（四舍五入到小数点后四位）。'},
-    #     # {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': '继续'}]},
-    # ]
-    # input = '你是谁'
-    # dprint()
-    # dprint('-------------------------------input----------------------------------')
-    # dpprint(input)
-    # dprint('------------------------------/input----------------------------------')
-    response_request = Response_Request(
-        instructions='继续调用工具直到完成user的任务',
-        model=model,
-        tools=tools,
-        # previous_response_id=responses_result.previous_response_id,   # Groq API不支持previous_response_id，也就是不支持server端缓存历史
-    )
-    # dprint('-------------------------------response_request----------------------------------')
-    # dpprint(response_request.model_dump())
-    # dprint('------------------------------/response_request----------------------------------')
-    responses_result = client.responses_create(request=response_request)
+        if responses_result.output != '':
+            dprint('-----------------------------------最终结果---------------------------------------------')
+            dprint(responses_result.output)
+            dprint('-----------------------------------最终结果---------------------------------------------')
+            dgreen('-----------------------------------最终结果---------------------------------------------')
+            dgreen(responses_result.output)
+            dgreen('-----------------------------------最终结果---------------------------------------------')
+            break
 
 if __name__ == "__main__":
     # main_response_request_pprint()
