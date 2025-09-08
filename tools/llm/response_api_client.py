@@ -193,7 +193,9 @@ class Response_LLM_Client:
             )
 
     # 将Response_LLM_Client当作agent用(用tool call)
-    def agent_run(self, query, tools) -> str:
+    # ---------------存在问题---------------
+    # agent_run()不宜放在life-agent.tools.llm.Response_LLM_Client里，而应在life-agent.agent.core里
+    def legacy_agent_run(self, query, tools) -> str:
         response_request = Response_Request(
             model=self.llm_config.llm_model_id,
             input=query,
@@ -574,7 +576,7 @@ def main_response_agent():
 
     client = Response_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
     client.init()
-    client.agent_run(query=query, tools=tools)
+    client.legacy_agent_run(query=query, tools=tools)
 
 if __name__ == "__main__":
     # main_response_request_pprint()
