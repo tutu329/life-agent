@@ -2,7 +2,7 @@
 import llm_protocol
 from llm_protocol import LLM_Config
 from agent.tools.protocol import Tool_Call_Paras
-from tools.llm.response_api_client import Response_LLM_Client, Tool_Request, Tool_Parameters, Tool_Property, Response_Request
+from tools.llm.response_api_client import Response_LLM_Client, Response_Result, Tool_Request, Tool_Parameters, Tool_Property, Response_Request
 
 from agent.core.protocol import Query_Agent_Context
 from agent.tools.protocol import Tool_Call_Paras
@@ -16,6 +16,12 @@ class Response_API_Tool_Agent:
 
     def init(self):
         self.response_llm_client.init()
+
+    def _call_tool(self,
+                   response_result:Response_Result, # response_api的调用结果
+                   tool_call_paras:Tool_Call_Paras, # agent调度的上下文
+                   ):
+        pass
 
     def run(self, query, tools):
         response_request = Response_Request(
