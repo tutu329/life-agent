@@ -408,6 +408,10 @@ def main_response_llm_client(model):
         func=lambda a, b: {"result": a / b}
         # func=lambda a, b, unit: {"result": a / b, "unit": unit}
     )
+
+    # from agent.tools.folder_tool import Folder_Tool
+    # fold_tool = Folder_Tool.get_tool_param_dict()
+
     # tools = []
     # tools = [div_tool]
     tools = [add_tool, sub_tool, mul_tool, div_tool]

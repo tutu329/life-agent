@@ -209,6 +209,7 @@ class Base_Tool(ABC):
             "description": cls.tool_description,
             "strict": True,  # 让模型严格遵循 JSON Schema
             "parameters": cls.tool_parameters,
+            # "func": cls.call,
         }
         return tool_param_dict
 
