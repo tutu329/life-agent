@@ -249,8 +249,15 @@ class Response_LLM_Client:
                     dprint('-----------------------------ResponseReasoningItem-------------------------------------')
                     dprint(item)
                     dprint('----------------------------/ResponseReasoningItem-------------------------------------')
+
+                    dblue('-----------------------------ResponseReasoningItem-------------------------------------')
+                    dblue(item)
+                    if hasattr(item, "content") and item.content and 'text' in item.content[0]:
+                        dblue(item.content[0]['text'])
+                    dblue('----------------------------/ResponseReasoningItem-------------------------------------')
+
                     dprint()
-                    if 'content' in item and item.content and 'text' in item.content[0]:
+                    if hasattr(item, "content") and item.content and 'text' in item.content[0]:
                         response_result.reasoning = item.content[0]['text']
                 elif isinstance(item, ResponseOutputMessage):
                     dprint('-----------------------------ResponseOutputMessage-------------------------------------')
@@ -429,7 +436,7 @@ def main_response_llm_client(model):
     dprint(f'responses_result.output: {responses_result.output!r}')
     # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
 
-    while responses_result.output=='' or not 'output' in responses_result.output:
+    while not hasattr(responses_result, 'output') or responses_result.output=='' :
         response_request = Response_Request(
             instructions=query,
             # instructions='继续调用工具直到完成user的任务',
