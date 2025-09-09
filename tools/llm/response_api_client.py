@@ -226,9 +226,42 @@ class Response_LLM_Client:
 
         return responses_result.output
 
+    def history_input_add_tool_call_result_item(self, call_id, output, error):
+        tool_call_result_item = {
+            "type": "function_call_output",
+            "call_id": call_id,
+            "output": output,
+            "error": error
+        }
+        self.history_input_list.append(tool_call_result_item)
+
+    def history_input_add_output_item(self, output):
+        output_item = {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "input_text", "text": output}],
+        }
+        self.history_input_list.append(output_item)
+
+    # agent在一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage等清除
+    # 否则agent第二轮run时，server会报validation errors for ValidatorIterator之类的错误
+    def history_input_clear_after_this_run(self):
+        # dyellow(f'history input before: {self.history_input_list}')
+        self.history_input_list[:] = [
+            item for item in self.history_input_list
+            if isinstance(item, dict) and item['type'] =='message'
+        ]
+        # dyellow(f'history input after: {self.history_input_list}')
+
     def responses_create(self, request:Response_Request)->Response_Result:
         # ------------------------------responses.create请求------------------------------
         # 判断是否有history_input
+        # dyellow('------------------------self.history_input_list--------------------------------')
+        # if isinstance(self.history_input_list, list):
+        #     for item in self.history_input_list:
+        #         dyellow(item)
+        # dyellow('-----------------------/self.history_input_list--------------------------------')
+        # dyellow('-----------------------1--------------------------------')
         if self.history_input_list is None:
             # 第一次responses.create
             request.input = request.instructions
@@ -251,7 +284,14 @@ class Response_LLM_Client:
             # for item in request:
             #     dyellow(f'{item}')
             # dyellow('================================/request===================================')
-            res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
+            # dyellow('-----------------------21--------------------------------')
+            # dpprint(request.model_dump(exclude_none=True))
+            # dpprint(self.history_input_list)
+            try:
+                res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
+            except Exception as e:
+                dred(e)
+            # dyellow('-----------------------22--------------------------------')
         # -----------------------------/responses.create请求------------------------------
 
         # input_list相关

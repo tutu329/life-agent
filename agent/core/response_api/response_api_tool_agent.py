@@ -84,14 +84,15 @@ class Response_API_Tool_Agent:
                         else:
                             response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
 
-                        tool_call_result_item = {
-                            "type": "function_call_output",
-                            "call_id": tool_call['call_id'],
-                            "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
-                            "error": response_result.error
-                        }
+                        # tool_call_result_item = {
+                        #     "type": "function_call_output",
+                        #     "call_id": tool_call['call_id'],
+                        #     "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
+                        #     "error": response_result.error
+                        # }
 
-                        self.response_llm_client.history_input_list.append(tool_call_result_item)
+                        self.response_llm_client.history_input_add_tool_call_result_item(call_id=tool_call['call_id'], output=json.dumps({tool_call['name']: response_result.tool_call_result}), error=response_result.error)
+                        # self.response_llm_client.history_input_list.append(tool_call_result_item)
 
                         return response_result
                     except Exception as e:
@@ -107,6 +108,11 @@ class Response_API_Tool_Agent:
 
     def _run_after(self):
         self.agent_status.finished = True
+
+        # --------------------------------
+        # 一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage清除
+        # 否则server会报validation errors for ValidatorIterator的错误
+        self.response_llm_client.history_input_clear_after_this_run()
 
         dgreen('-----------------------------------最终结果---------------------------------------------')
         dgreen(self.agent_status.final_answer)
@@ -163,6 +169,8 @@ class Response_API_Tool_Agent:
                 # dred(f'function_tool_call为空2, responses_result.output:{responses_result.output!r}')
                 if self.final_answer_flag in responses_result.output:
                     self.agent_status.final_answer = responses_result.output.replace(self.final_answer_flag, '').strip()
+
+                    self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
                     self._run_after()
                     return self.agent_status
                 else:
@@ -189,6 +197,8 @@ class Response_API_Tool_Agent:
                 continue
 
         self.agent_status.final_answer = responses_result.output.replace(self.final_answer_flag, '').strip()
+
+        self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
         self._run_after()
         return self.agent_status
 
@@ -271,7 +281,10 @@ def main_response_agent():
 
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
+    # agent.run(query=query, tools=tools)
+    agent.run(query='你好，我的名字是土土', tools=tools)
     agent.run(query=query, tools=tools)
+    agent.run(query='你还记得我的名字是什么吗？还有之前file_to_find.txt在哪里找到的来着？', tools=tools)
 
 if __name__ == "__main__":
     main_response_agent()
