@@ -344,60 +344,60 @@ class Response_LLM_Client:
 
     # -------------------存在问题-------------------
     # call_tool()不宜放在life-agent.tools.llm.Response_LLM_Client里，而应在life-agent.agent.core的Response_API_Tool_Agent里
-    def legacy_call_tool(self, response_result:Response_Result)->Response_Result:
-        tool_call = response_result.function_tool_call
-        if tool_call and 'name' in tool_call:
-            tool_name = tool_call['name']
-            dprint(f'tool_name = "{tool_name}"')
-
-            for func in self.funcs:
-                if tool_name == func['name']:
-                    dprint('----------tool_call-------------')
-                    dprint(tool_call)
-                    args = json.loads(tool_call['arguments'])
-                    dprint(f'args: {args!r}')
-                    dprint('---------/tool_call-------------')
-
-                    # ------------------调用tool------------------
-                    func_rtn = func['func'](**args)
-                    # -----------------/调用tool------------------
-
-                    response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
-                    # history_input_list末尾添加tool调用结果
-
-                    dprint('----------history_input_list.append(tool_call_result_item)-------------')
-                    # dprint(tool_call)
-                    # dprint(response_result.tool_call_result)
-                    if response_result.error:
-                        tool_call_result_item = {
-                            "type": "function_call_output",
-                            "call_id": tool_call['call_id'],
-                            "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
-                            "error": response_result.error,
-                            # "output": {tool_call['name']: response_result.tool_call_result}
-                        }
-                    else:
-                        tool_call_result_item = {
-                            "type": "function_call_output",
-                            "call_id": tool_call['call_id'],
-                            "output": json.dumps({tool_call['name']: response_result.tool_call_result})
-                            # "output": {tool_call['name']: response_result.tool_call_result}
-                        }
-
-                    dprint(tool_call_result_item)
-                    dprint('---------/history_input_list.append(tool_call_result_item)-------------')
-                    self.history_input_list.append(tool_call_result_item)
-
-                    dprint('-----------------responses_result(工具调用后)-----------------')
-                    dpprint(response_result.model_dump())
-                    dprint('----------------/responses_result(工具调用后)-----------------')
-
-                    dgreen('-----------------responses_result(工具调用后)-----------------\n{')
-                    for k,v in response_result.model_dump().items():
-                        dgreen(f'\t {k!r}:{v!r}')
-                    dgreen('}\n----------------/responses_result(工具调用后)-----------------')
-                    return response_result
-        return response_result
+    # def legacy_call_tool(self, response_result:Response_Result)->Response_Result:
+    #     tool_call = response_result.function_tool_call
+    #     if tool_call and 'name' in tool_call:
+    #         tool_name = tool_call['name']
+    #         dprint(f'tool_name = "{tool_name}"')
+    #
+    #         for func in self.funcs:
+    #             if tool_name == func['name']:
+    #                 dprint('----------tool_call-------------')
+    #                 dprint(tool_call)
+    #                 args = json.loads(tool_call['arguments'])
+    #                 dprint(f'args: {args!r}')
+    #                 dprint('---------/tool_call-------------')
+    #
+    #                 # ------------------调用tool------------------
+    #                 func_rtn = func['func'](**args)
+    #                 # -----------------/调用tool------------------
+    #
+    #                 response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+    #                 # history_input_list末尾添加tool调用结果
+    #
+    #                 dprint('----------history_input_list.append(tool_call_result_item)-------------')
+    #                 # dprint(tool_call)
+    #                 # dprint(response_result.tool_call_result)
+    #                 if response_result.error:
+    #                     tool_call_result_item = {
+    #                         "type": "function_call_output",
+    #                         "call_id": tool_call['call_id'],
+    #                         "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
+    #                         "error": response_result.error,
+    #                         # "output": {tool_call['name']: response_result.tool_call_result}
+    #                     }
+    #                 else:
+    #                     tool_call_result_item = {
+    #                         "type": "function_call_output",
+    #                         "call_id": tool_call['call_id'],
+    #                         "output": json.dumps({tool_call['name']: response_result.tool_call_result})
+    #                         # "output": {tool_call['name']: response_result.tool_call_result}
+    #                     }
+    #
+    #                 dprint(tool_call_result_item)
+    #                 dprint('---------/history_input_list.append(tool_call_result_item)-------------')
+    #                 self.history_input_list.append(tool_call_result_item)
+    #
+    #                 dprint('-----------------responses_result(工具调用后)-----------------')
+    #                 dpprint(response_result.model_dump())
+    #                 dprint('----------------/responses_result(工具调用后)-----------------')
+    #
+    #                 dgreen('-----------------responses_result(工具调用后)-----------------\n{')
+    #                 for k,v in response_result.model_dump().items():
+    #                     dgreen(f'\t {k!r}:{v!r}')
+    #                 dgreen('}\n----------------/responses_result(工具调用后)-----------------')
+    #                 return response_result
+    #     return response_result
 
 def main_response_request_pprint():
     input = '你是谁？'
