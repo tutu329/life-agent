@@ -231,6 +231,7 @@ class Response_LLM_Client:
         # 判断是否有history_input
         if self.history_input_list is None:
             # 第一次responses.create
+            request.input = request.instructions
             res = self.openai.responses.create(**request.model_dump(exclude_none=True))
             dprint('=================================input_list===================================')
             dprint(f'{request.input!r}')

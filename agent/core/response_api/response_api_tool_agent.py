@@ -120,45 +120,6 @@ class Response_API_Tool_Agent:
         dblue(query_with_final_answer_flag)
         dblue(f'------------------------------/query_with_final_answer_flag-------------------------------')
 
-        # response_request = Response_Request(
-        #     model=self.llm_config.llm_model_id,
-        #     input=query_with_final_answer_flag,
-        #     tools=tools,
-        #
-        #     temperature=self.llm_config.temperature,
-        #     top_p=self.llm_config.top_p,
-        #     max_output_tokens=self.llm_config.max_new_tokens,
-        #     reasoning={"effort": self.llm_config.reasoning_effort},
-        # )
-        #
-        # responses_result = Response_Result()
-        # try:
-        #     responses_result = self.response_llm_client.responses_create(request=response_request)
-        # except Exception as e:
-        #     responses_result.error = e
-        #     dred(f'【Response_API_Tool_Agent.run()】responses_result.error: {e!r}')
-        #
-        # # tool_call_paras = None
-        #
-        # # 有时候没有调用工具，直接output
-        # if not responses_result.function_tool_call:
-        #     # dred(f'function_tool_call为空1, responses_result.output:{responses_result.output!r}')
-        #     self.agent_status.final_answer = responses_result.output
-        #     self._run_after()
-        #     return self.agent_status
-        #
-        # tool_call_paras = Tool_Call_Paras(
-        #     callback_top_agent_id=self.top_agent_id,
-        #     callback_tool_paras_dict=json.loads(responses_result.function_tool_call['arguments']),
-        #     callback_agent_config=self.agent_config,
-        #     callback_agent_id=self.agent_id,
-        #     # callback_last_tool_ctx=last_tool_ctx,
-        #     # callback_client_ctx=context,
-        #     callback_father_agent_exp=self.current_exp_str
-        # )
-        # responses_result = self._call_tool(responses_result, tool_call_paras)
-        # # responses_result = self.response_llm_client.legacy_call_tool(responses_result)
-
         agent_err_count = 0
         agent_count = 0
 
@@ -176,7 +137,7 @@ class Response_API_Tool_Agent:
 
             response_request = Response_Request(
                 instructions=query_with_final_answer_flag,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
-                input=query_with_final_answer_flag,
+                # input=query_with_final_answer_flag,       # 第一次请求input用query，第二次及以后的请求，input实际用了self.history_input_list
                 # instructions='继续调用工具直到完成user的任务',
                 model=self.llm_config.llm_model_id,
                 tools=tools,
