@@ -238,7 +238,7 @@ def main_response_agent():
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b: {"result": a + b}
+        func=lambda a, b, **kwargs: {"result": a + b}
         # func=lambda a, b, unit: {"result": a + b, "unit": unit}
     )
     sub_tool = Tool_Request(
@@ -252,7 +252,7 @@ def main_response_agent():
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b: {"result": a - b}
+        func=lambda a, b, **kwargs: {"result": a - b}
         # func=lambda a, b, unit: {"result": a - b, "unit": unit}
     )
     mul_tool = Tool_Request(
@@ -266,7 +266,7 @@ def main_response_agent():
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b: {"result": a * b}
+        func=lambda a, b, **kwargs: {"result": a * b}
         # func=lambda a, b, unit: {"result": a * b, "unit": unit}
     )
     div_tool = Tool_Request(
@@ -280,7 +280,7 @@ def main_response_agent():
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b: {"result": a / b}
+        func=lambda a, b, **kwargs: {"result": a / b}
         # func=lambda a, b, unit: {"result": a / b, "unit": unit}
     )
 
@@ -302,8 +302,8 @@ def main_response_agent():
         has_history=True,
     )
 
-    query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，搜索所有子文件夹直到找到'
-    # query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    # query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，搜索所有子文件夹直到找到'
+    query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
 
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
