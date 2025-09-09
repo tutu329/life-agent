@@ -23,7 +23,7 @@ def dpprint(*args, **kwargs):
         pprint(*args, **kwargs)
 
 class Response_API_Tool_Agent:
-    def __init__(self, llm_config:LLM_Config):
+    def __init__(self, llm_config:LLM_Config, agent_run_max_retry=20):
         self.llm_config = llm_config
         self.response_llm_client = Response_LLM_Client(self.llm_config)
 
@@ -31,6 +31,8 @@ class Response_API_Tool_Agent:
         self.agent_config = None
         self.agent_id = None
         self.current_exp_str = None
+
+        self.agent_run_max_retry = agent_run_max_retry
 
     def init(self):
         self.response_llm_client.init()
@@ -106,7 +108,13 @@ class Response_API_Tool_Agent:
         responses_result = self._call_tool(responses_result, tool_call_paras)
         # responses_result = self.response_llm_client.legacy_call_tool(responses_result)
 
+        count = 0
         while not hasattr(responses_result, 'output') or responses_result.output=='' :
+            count += 1
+            if count >= self.agent_run_max_retry:
+                dred(f'【Response_API_Tool_Agent.run()】调用次数超出agent_run_max_retry({self.agent_run_max_retry})，退出循环.')
+                break
+
             response_request = Response_Request(
                 instructions=query,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
                 # instructions='继续调用工具直到完成user的任务',
@@ -213,8 +221,8 @@ def main_response_agent():
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
 
     # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_qwen3_30b_thinking)
-    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4)
-    agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4)
+    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
     # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_120b)
     agent.init()
     agent.run(query=query, tools=tools)
