@@ -213,8 +213,8 @@ def main_response_agent():
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
 
     # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_qwen3_30b_thinking)
-    agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4)
-    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4)
+    agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
     # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_120b)
     agent.init()
     agent.run(query=query, tools=tools)
