@@ -42,20 +42,25 @@ class Response_API_Tool_Agent:
         tool_call = response_result.function_tool_call
         if tool_call and 'name' in tool_call:
             tool_name = tool_call['name']
-            dprint(f'tool_name = "{tool_name}"')
 
             for func in self.response_llm_client.funcs:
-                if tool_name == func['name']:
+                if func['name'] in tool_name:   # vllm的response api有时候会出错，如：'name': 'div_tool<|channel|>json' 而不是 'name': 'div_tool'
+                # if tool_name == func['name']:
                     try:
                         args = json.loads(tool_call['arguments'])
 
                         func_rtn = func['func'](**args)
+                        dprint('-----------------------------工具调用结果-------------------------------')
+                        dprint(f'tool_name = "{tool_name}"')
+                        dprint(func_rtn)
+                        dprint('----------------------------/工具调用结果-------------------------------')
                         response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
 
                         tool_call_result_item = {
                             "type": "function_call_output",
                             "call_id": tool_call['call_id'],
-                            "output": json.dumps({tool_call['name']: response_result.tool_call_result})
+                            "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
+                            "error": response_result.error
                         }
 
                         self.response_llm_client.history_input_list.append(tool_call_result_item)
@@ -64,6 +69,7 @@ class Response_API_Tool_Agent:
                     except Exception as e:
                         response_result.error = e
                         # response_result.tool_call_result = e
+                        dred(f'【Response_API_Tool_Agent._call_tool()】responses_result.error: {e!r}')
                         return response_result
 
         return response_result
@@ -85,6 +91,7 @@ class Response_API_Tool_Agent:
             responses_result = self.response_llm_client.responses_create(request=response_request)
         except Exception as e:
             responses_result.error = e
+            dred(f'【Response_API_Tool_Agent.run()】responses_result.error: {e!r}')
 
         tool_call_paras = None
         # tool_call_paras = Tool_Call_Paras(
@@ -116,6 +123,7 @@ class Response_API_Tool_Agent:
                 responses_result = self.response_llm_client.responses_create(request=response_request)
             except Exception as e:
                 responses_result.error = e
+                dred(f'【Response_API_Tool_Agent.run()】responses_result.error: {e!r}. continue')
                 continue
 
             tool_call_paras = None

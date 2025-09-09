@@ -246,10 +246,10 @@ class Response_LLM_Client:
             for item in self.history_input_list:
                 dblue(item)
             dblue('================================/input_list===================================')
-            dyellow('=================================request===================================')
-            for item in request:
-                dyellow(f'{item}')
-            dyellow('================================/request===================================')
+            # dyellow('=================================request===================================')
+            # for item in request:
+            #     dyellow(f'{item}')
+            # dyellow('================================/request===================================')
             res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
         # -----------------------------/responses.create请求------------------------------
 
