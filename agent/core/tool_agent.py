@@ -439,7 +439,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
     def run(self,
             query=None,
             context:Query_Agent_Context=None,
-            in_max_retry=config.Agent.MAX_TRIES
+            in_max_retry=config.Agent.MAX_RETRY
             ):
         self._run_before()
         try:

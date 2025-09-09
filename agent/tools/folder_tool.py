@@ -41,14 +41,8 @@ class Folder_Tool(Base_Tool):
     def __init__(self):
         pass
 
-    def call(self, tool_call_paras:Tool_Call_Paras):
-    # def call(self,
-    #          callback_tool_paras_dict,
-    #          callback_agent_config,
-    #          callback_agent_id,
-    #          callback_last_tool_ctx,
-    #          callback_father_agent_exp,
-    #          ):
+    @classmethod
+    def class_call(cls, tool_call_paras:Tool_Call_Paras, **kwargs):
         dgreen(f'tool_paras_dict: "{tool_call_paras.callback_tool_paras_dict}"')
         dir = tool_call_paras.callback_tool_paras_dict['path']
 
@@ -56,6 +50,7 @@ class Folder_Tool(Base_Tool):
             # 调用工具
             # files_str = get_folder_files_info_string(directory=dir, mode='name')
             items_str = safe_encode(get_folder_all_items_string(directory=dir))
+            items_str = '该文件夹下的子文件夹和文件的具体情况为：' + items_str
             # files_str = get_folder_files_info_string(directory=dir, mode='basename')
         except Exception as e:
             items_str = f'报错: {e!r}'
@@ -64,6 +59,33 @@ class Folder_Tool(Base_Tool):
         action_result = Action_Result(result=items_str)
         # action_result = items_str
         return action_result
+
+    def call(self, tool_call_paras:Tool_Call_Paras, **kwargs):
+        return Folder_Tool.class_call(tool_call_paras=tool_call_paras, **kwargs)
+
+    # def call(self, tool_call_paras:Tool_Call_Paras, **kwargs):
+    # # def call(self,
+    # #          callback_tool_paras_dict,
+    # #          callback_agent_config,
+    # #          callback_agent_id,
+    # #          callback_last_tool_ctx,
+    # #          callback_father_agent_exp,
+    # #          ):
+    #     dgreen(f'tool_paras_dict: "{tool_call_paras.callback_tool_paras_dict}"')
+    #     dir = tool_call_paras.callback_tool_paras_dict['path']
+    #
+    #     try:
+    #         # 调用工具
+    #         # files_str = get_folder_files_info_string(directory=dir, mode='name')
+    #         items_str = safe_encode(get_folder_all_items_string(directory=dir))
+    #         # files_str = get_folder_files_info_string(directory=dir, mode='basename')
+    #     except Exception as e:
+    #         items_str = f'报错: {e!r}'
+    #
+    #     # 调用工具后，结果作为action_result返回
+    #     action_result = Action_Result(result=items_str)
+    #     # action_result = items_str
+    #     return action_result
 
 def main_folder():
     import config

@@ -1,14 +1,16 @@
-
+import config
 import llm_protocol
 from llm_protocol import LLM_Config
 from agent.tools.protocol import Tool_Call_Paras
 from tools.llm.response_api_client import Response_LLM_Client, Response_Result, Tool_Request, Tool_Parameters, Tool_Property, Response_Request
 
-from agent.core.protocol import Query_Agent_Context
-from agent.tools.protocol import Tool_Call_Paras
+from agent.core.agent_config import Agent_Config
+from agent.core.protocol import Query_Agent_Context, Agent_Status
+from agent.tools.protocol import Tool_Call_Paras, Action_Result
 
 from config import dred, dgreen, dblue, dyellow, dcyan
 from pprint import pprint
+from uuid import uuid4
 import json
 
 DEBUG = True
@@ -23,16 +25,33 @@ def dpprint(*args, **kwargs):
         pprint(*args, **kwargs)
 
 class Response_API_Tool_Agent:
-    def __init__(self, llm_config:LLM_Config, agent_run_max_retry=20):
-        self.llm_config = llm_config
+    def __init__(self,
+                 agent_config:Agent_Config,
+                 agent_max_retry=config.Agent.MAX_RETRY,
+                 agent_max_error_retry=config.Agent.MAX_ERROR_RETRY
+                 ):
+        self.llm_config = agent_config.llm_config
         self.response_llm_client = Response_LLM_Client(self.llm_config)
+        self.agent_config = agent_config
 
-        self.top_agent_id = None
-        self.agent_config = None
-        self.agent_id = None
-        self.current_exp_str = None
+        # 自己的id
+        self.agent_id = str(uuid4())
+        # 多层agent体系中的顶层agent的id
+        self.top_agent_id = self.agent_config.top_agent_id if self.agent_config.top_agent_id else self.agent_id
 
-        self.agent_run_max_retry = agent_run_max_retry
+        # 经验
+        self.current_exp_str = ''
+
+        # agent最大出错次数
+        self.agent_max_error_retry = agent_max_error_retry
+        # agent最大次数
+        self.agent_max_retry = agent_max_retry
+
+        self.agent_status = Agent_Status()
+
+        self.final_answer_flag = '【任务完成】'
+        self.decide_final_answer_prompt = f'当完成任务时，请输出"{self.final_answer_flag}"，否则系统无法判断何时结束任务。'
+
 
     def init(self):
         self.response_llm_client.init()
@@ -51,12 +70,19 @@ class Response_API_Tool_Agent:
                     try:
                         args = json.loads(tool_call['arguments'])
 
-                        func_rtn = func['func'](**args)
+                        # -----------------------------工具调用-----------------------------
+                        # tool_call_paras.callback_tool_paras_dict = args
+                        func_rtn = func['func'](tool_call_paras=tool_call_paras, **args)
+                        # ----------------------------/工具调用-----------------------------
+
                         dprint('-----------------------------工具调用结果-------------------------------')
                         dprint(f'tool_name = "{tool_name}"')
                         dprint(func_rtn)
                         dprint('----------------------------/工具调用结果-------------------------------')
-                        response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+                        if isinstance(func_rtn, Action_Result):
+                            response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
+                        else:
+                            response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
 
                         tool_call_result_item = {
                             "type": "function_call_output",
@@ -76,47 +102,81 @@ class Response_API_Tool_Agent:
 
         return response_result
 
+    def _run_before(self):
+        pass
+
+    def _run_after(self):
+        self.agent_status.finished = True
+
+        dgreen('-----------------------------------最终结果---------------------------------------------')
+        dgreen(self.agent_status.final_answer)
+        dgreen('-----------------------------------最终结果---------------------------------------------')
+
     def run(self, query, tools):
-        response_request = Response_Request(
-            model=self.llm_config.llm_model_id,
-            input=query,
-            tools=tools,
+        self._run_before()
 
-            temperature=self.llm_config.temperature,
-            top_p=self.llm_config.top_p,
-            max_output_tokens=self.llm_config.max_new_tokens,
-            reasoning={"effort": self.llm_config.reasoning_effort},
-        )
+        query_with_final_answer_flag = query + '\n' + self.decide_final_answer_prompt
+        dblue(f'-------------------------------query_with_final_answer_flag-------------------------------')
+        dblue(query_with_final_answer_flag)
+        dblue(f'------------------------------/query_with_final_answer_flag-------------------------------')
 
-        responses_result = Response_Result()
-        try:
-            responses_result = self.response_llm_client.responses_create(request=response_request)
-        except Exception as e:
-            responses_result.error = e
-            dred(f'【Response_API_Tool_Agent.run()】responses_result.error: {e!r}')
-
-        tool_call_paras = None
+        # response_request = Response_Request(
+        #     model=self.llm_config.llm_model_id,
+        #     input=query_with_final_answer_flag,
+        #     tools=tools,
+        #
+        #     temperature=self.llm_config.temperature,
+        #     top_p=self.llm_config.top_p,
+        #     max_output_tokens=self.llm_config.max_new_tokens,
+        #     reasoning={"effort": self.llm_config.reasoning_effort},
+        # )
+        #
+        # responses_result = Response_Result()
+        # try:
+        #     responses_result = self.response_llm_client.responses_create(request=response_request)
+        # except Exception as e:
+        #     responses_result.error = e
+        #     dred(f'【Response_API_Tool_Agent.run()】responses_result.error: {e!r}')
+        #
+        # # tool_call_paras = None
+        #
+        # # 有时候没有调用工具，直接output
+        # if not responses_result.function_tool_call:
+        #     # dred(f'function_tool_call为空1, responses_result.output:{responses_result.output!r}')
+        #     self.agent_status.final_answer = responses_result.output
+        #     self._run_after()
+        #     return self.agent_status
+        #
         # tool_call_paras = Tool_Call_Paras(
         #     callback_top_agent_id=self.top_agent_id,
-        #     callback_tool_paras_dict=responses_result.function_tool_call['arguments'],
+        #     callback_tool_paras_dict=json.loads(responses_result.function_tool_call['arguments']),
         #     callback_agent_config=self.agent_config,
         #     callback_agent_id=self.agent_id,
         #     # callback_last_tool_ctx=last_tool_ctx,
         #     # callback_client_ctx=context,
         #     callback_father_agent_exp=self.current_exp_str
         # )
-        responses_result = self._call_tool(responses_result, tool_call_paras)
-        # responses_result = self.response_llm_client.legacy_call_tool(responses_result)
+        # responses_result = self._call_tool(responses_result, tool_call_paras)
+        # # responses_result = self.response_llm_client.legacy_call_tool(responses_result)
 
-        count = 0
+        agent_err_count = 0
+        agent_count = 0
+
+        responses_result = Response_Result()
+
         while not hasattr(responses_result, 'output') or responses_result.output=='' :
-            count += 1
-            if count >= self.agent_run_max_retry:
-                dred(f'【Response_API_Tool_Agent.run()】调用次数超出agent_run_max_retry({self.agent_run_max_retry})，退出循环.')
+            agent_count += 1
+            if agent_err_count >= self.agent_max_error_retry:
+                dred(f'【Response_API_Tool_Agent.run()】出错次数超出agent_max_error_retry({self.agent_max_error_retry})，退出循环.')
+                break
+
+            if agent_count >= self.agent_max_retry:
+                dred(f'【Response_API_Tool_Agent.run()】调用次数超出agent_max_retry({self.agent_max_retry})，退出循环.')
                 break
 
             response_request = Response_Request(
-                instructions=query,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+                instructions=query_with_final_answer_flag,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+                input=query_with_final_answer_flag,
                 # instructions='继续调用工具直到完成user的任务',
                 model=self.llm_config.llm_model_id,
                 tools=tools,
@@ -130,33 +190,41 @@ class Response_API_Tool_Agent:
             try:
                 responses_result = self.response_llm_client.responses_create(request=response_request)
             except Exception as e:
+                agent_err_count += 1
                 responses_result.error = e
                 dred(f'【Response_API_Tool_Agent.run()】responses_result.error: {e!r}. continue')
                 continue
 
-            tool_call_paras = None
-            # tool_call_paras = Tool_Call_Paras(
-            #     callback_top_agent_id=self.top_agent_id,
-            #     callback_tool_paras_dict=responses_result.function_tool_call['arguments'],
-            #     callback_agent_config=self.agent_config,
-            #     callback_agent_id=self.agent_id,
-            #     # callback_last_tool_ctx=last_tool_ctx,
-            #     # callback_client_ctx=context,
-            #     callback_father_agent_exp=self.current_exp_str
-            # )
+            # tool_call_paras = None
+
+            # 有时候没有调用工具，直接output
+            if not responses_result.function_tool_call:
+                # dred(f'function_tool_call为空2, responses_result.output:{responses_result.output!r}')
+                if self.final_answer_flag in responses_result.output:
+                    self.agent_status.final_answer = responses_result.output
+                    self._run_after()
+                    return self.agent_status
+                else:
+                    continue
+
+            tool_call_paras = Tool_Call_Paras(
+                callback_top_agent_id=self.top_agent_id,
+                callback_tool_paras_dict=json.loads(responses_result.function_tool_call['arguments']),
+                callback_agent_config=self.agent_config,
+                callback_agent_id=self.agent_id,
+                # callback_last_tool_ctx=last_tool_ctx,
+                # callback_client_ctx=context,
+                callback_father_agent_exp=self.current_exp_str
+            )
             responses_result = self._call_tool(responses_result, tool_call_paras)
             # responses_result = self.response_llm_client.legacy_call_tool(responses_result)
 
             if responses_result is None:
                 continue
 
-            if responses_result.output != '':
-                dgreen('-----------------------------------最终结果---------------------------------------------')
-                dgreen(responses_result.output)
-                dgreen('-----------------------------------最终结果---------------------------------------------')
-                break
-
-        return responses_result.output
+        self.agent_status.final_answer = responses_result.output
+        self._run_after()
+        return self.agent_status
 
 def main_response_agent():
     add_tool = Tool_Request(
@@ -216,14 +284,28 @@ def main_response_agent():
         # func=lambda a, b, unit: {"result": a / b, "unit": unit}
     )
 
-    tools = [add_tool, sub_tool, mul_tool, div_tool]
 
-    query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    from agent.tools.folder_tool import Folder_Tool
+    fold_tool = Folder_Tool.get_tool_param_dict()
 
-    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_qwen3_30b_thinking)
-    agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4)
-    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
-    # agent = Response_API_Tool_Agent(llm_config=llm_protocol.g_online_groq_gpt_oss_120b)
+    # dred(f'fold_tool: \n{fold_tool}')
+
+    tools = [fold_tool, add_tool, sub_tool, mul_tool, div_tool]
+
+    agent_config = Agent_Config(
+        agent_name = 'agent for search folder',
+        tool_names=['Folder_Tool'],
+        # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
+        has_history=True,
+    )
+
+    query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，搜索所有子文件夹直到找到'
+    # query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+
+    agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
     agent.run(query=query, tools=tools)
 

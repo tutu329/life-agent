@@ -173,7 +173,8 @@ def dyellow(*args, **kwargs):
     _dcolor(Fore.YELLOW, *args, **kwargs)
 
 class Agent:
-    MAX_TRIES:int       = 200   # agent的最大尝试轮次
+    MAX_RETRY:int       = 200   # agent的最大尝试轮次
+    MAX_ERROR_RETRY:int = 20    # agent的最大错误尝试轮次
     TIMEOUT_SECONDS:int = 3600  # agent运行的超时时间
 
 class Uploads:
