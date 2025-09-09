@@ -216,6 +216,11 @@ class Response_API_Tool_Agent:
                 # callback_client_ctx=context,
                 callback_father_agent_exp=self.current_exp_str
             )
+
+            dyellow('-----------------------------tool_call_paras----------------------------------')
+            for item in tool_call_paras:
+                dyellow(item)
+            dyellow('----------------------------/tool_call_paras----------------------------------')
             responses_result = self._call_tool(responses_result, tool_call_paras)
             # responses_result = self.response_llm_client.legacy_call_tool(responses_result)
 
@@ -232,8 +237,8 @@ def main_response_agent():
         description='加法计算工具',
         parameters=Tool_Parameters(
             properties={
-                'a': Tool_Property(type='number', description='加数'),
-                'b': Tool_Property(type='number', description='被加数'),
+                'a': Tool_Property(type='number', description='参数1'),
+                'b': Tool_Property(type='number', description='参数2'),
                 # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
             },
             required=['a', 'b'],
@@ -246,8 +251,8 @@ def main_response_agent():
         description='减法计算工具',
         parameters=Tool_Parameters(
             properties={
-                'a': Tool_Property(type='number', description='减数'),
-                'b': Tool_Property(type='number', description='被减数'),
+                'a': Tool_Property(type='number', description='参数1'),
+                'b': Tool_Property(type='number', description='参数2'),
                 # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
             },
             required=['a', 'b'],
@@ -260,8 +265,8 @@ def main_response_agent():
         description='乘法计算工具',
         parameters=Tool_Parameters(
             properties={
-                'a': Tool_Property(type='number', description='乘数'),
-                'b': Tool_Property(type='number', description='被乘数'),
+                'a': Tool_Property(type='number', description='参数1'),
+                'b': Tool_Property(type='number', description='参数2'),
                 # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
             },
             required=['a', 'b'],
@@ -274,8 +279,8 @@ def main_response_agent():
         description='除法计算工具',
         parameters=Tool_Parameters(
             properties={
-                'a': Tool_Property(type='number', description='除数'),
-                'b': Tool_Property(type='number', description='被除数'),
+                'a': Tool_Property(type='number', description='参数1'),
+                'b': Tool_Property(type='number', description='参数2'),
                 # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
             },
             required=['a', 'b'],
@@ -284,11 +289,8 @@ def main_response_agent():
         # func=lambda a, b, unit: {"result": a / b, "unit": unit}
     )
 
-
     from agent.tools.folder_tool import Folder_Tool
     fold_tool = Folder_Tool.get_tool_param_dict()
-
-    # dred(f'fold_tool: \n{fold_tool}')
 
     tools = [fold_tool, add_tool, sub_tool, mul_tool, div_tool]
 
