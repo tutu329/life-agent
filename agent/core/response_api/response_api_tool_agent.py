@@ -201,7 +201,7 @@ class Response_API_Tool_Agent:
             if not responses_result.function_tool_call:
                 # dred(f'function_tool_call为空2, responses_result.output:{responses_result.output!r}')
                 if self.final_answer_flag in responses_result.output:
-                    self.agent_status.final_answer = responses_result.output
+                    self.agent_status.final_answer = responses_result.output.replace(self.final_answer_flag, '').strip()
                     self._run_after()
                     return self.agent_status
                 else:
@@ -222,7 +222,7 @@ class Response_API_Tool_Agent:
             if responses_result is None:
                 continue
 
-        self.agent_status.final_answer = responses_result.output
+        self.agent_status.final_answer = responses_result.output.replace(self.final_answer_flag, '').strip()
         self._run_after()
         return self.agent_status
 
