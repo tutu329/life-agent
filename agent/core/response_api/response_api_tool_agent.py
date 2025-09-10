@@ -69,8 +69,8 @@ class Response_API_Tool_Agent:
 
         self.agent_status = Agent_Status()
 
-        self.final_answer_flag = '【任务完成】'
-        self.decide_final_answer_prompt = f'当完成任务时，请输出"{self.final_answer_flag}"，否则系统无法判断何时结束任务。'
+        # self.final_answer_flag = '【任务完成】'
+        # self.decide_final_answer_prompt = f'当完成任务时，请输出"{self.final_answer_flag}"，否则系统无法判断何时结束任务。'
 
 
     def init(self):
@@ -145,7 +145,7 @@ class Response_API_Tool_Agent:
     def run(self, query, tools):
         self._run_before()
 
-        query_with_final_answer_flag = query + '\n' + self.decide_final_answer_prompt
+        # query_with_final_answer_flag = query + '\n' + self.decide_final_answer_prompt
         # dblue(f'-------------------------------query_with_final_answer_flag-------------------------------')
         # dblue(query_with_final_answer_flag)
         # dblue(f'------------------------------/query_with_final_answer_flag-------------------------------')
@@ -179,7 +179,7 @@ class Response_API_Tool_Agent:
             )
 
             try:
-                query = query_with_final_answer_flag
+                # query = query_with_final_answer_flag
 
                 new_run = False
                 if self.agent_status.finished_one_run:
@@ -197,15 +197,20 @@ class Response_API_Tool_Agent:
 
             # 有时候没有调用工具，直接output
             if not responses_result.function_tool_call:
-                # dred(f'function_tool_call为空2, responses_result.output:{responses_result.output!r}')
-                if self.final_answer_flag in responses_result.output:
-                    self.agent_status.final_answer = responses_result.output.replace(self.final_answer_flag, '').strip()
-
-                    self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
-                    self._run_after()
-                    return self.agent_status
-                else:
-                    continue
+                self.agent_status.final_answer = responses_result.output.strip()
+                self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
+                self._run_after()
+                return self.agent_status
+            # if not responses_result.function_tool_call:
+            #     # dred(f'function_tool_call为空2, responses_result.output:{responses_result.output!r}')
+            #     if self.final_answer_flag in responses_result.output:
+            #         self.agent_status.final_answer = responses_result.output.replace(self.final_answer_flag, '').strip()
+            #
+            #         self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
+            #         self._run_after()
+            #         return self.agent_status
+            #     else:
+            #         continue
 
             tool_call_paras = Tool_Call_Paras(
                 callback_top_agent_id=self.top_agent_id,
@@ -227,7 +232,7 @@ class Response_API_Tool_Agent:
             if responses_result is None:
                 continue
 
-        self.agent_status.final_answer = responses_result.output.replace(self.final_answer_flag, '').strip()
+        self.agent_status.final_answer = responses_result.output.strip()
 
         self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
         self._run_after()
@@ -300,8 +305,8 @@ def main_response_agent():
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
     )
