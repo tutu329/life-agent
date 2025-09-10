@@ -16,6 +16,7 @@
 #             "output": "Weather(city='Tokyo', temperature_range='14-20C', conditions='Sunny')"
 #         }
 # 4、response.create()中，在res输出output(asistant的text输出）后，需要一个新的{'role': 'user', 'content': ...}开启下一轮对话或工具调用任务
+# 5、response.create()连接调用工具完成任务后会输出output，此时若继续调用response.create()进行新一轮run，似乎必须将input历史中的ResponseReasoningItem、ResponseFunctionToolCall、ResponseOutputMessage等清除，不然会报错
 
 import config
 import llm_protocol
@@ -179,10 +180,12 @@ class Response_API_Tool_Agent:
 
             try:
                 query = query_with_final_answer_flag
+
                 new_run = False
                 if self.agent_status.finished_one_run:
                     new_run = True
                     self.agent_status.finished_one_run = False
+
                 responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
             except Exception as e:
                 agent_err_count += 1
@@ -297,8 +300,8 @@ def main_response_agent():
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
     )
