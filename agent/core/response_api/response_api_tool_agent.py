@@ -286,9 +286,9 @@ def main_response_agent():
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
     # agent.run(query=query, tools=tools)
-    # agent.run(query='你好，我的名字是土土', tools=tools)
+    agent.run(query='你好，我的名字是土土', tools=tools)
     agent.run(query=query, tools=tools)
-    # agent.run(query='你还记得我的名字是什么吗？还有之前file_to_find.txt在哪里找到的来着？', tools=tools)
+    agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，但具体位置我忘记了，告诉我具体是在哪里找到，不用重新调用工具搜索', tools=tools)
 
 if __name__ == "__main__":
     main_response_agent()
