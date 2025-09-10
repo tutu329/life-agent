@@ -146,7 +146,7 @@ class Response_Request(BaseModel):
     temperature     :float = 1.0
     top_p           :float = 1.0
     instructions    :str =  'You are a helpful agent.'  # 注意这里用了'agent'
-    input           :str | List[Dict[str, Any]] = None  # 非第一次responses.create时为None，并在Response_LLM_Client里采用history_input_list
+    # input           :str | List[Dict[str, Any]] = None  # 非第一次responses.create时为None，并在Response_LLM_Client里采用history_input_list
     tools           :List[Tool_Request]
     previous_response_id    :Optional[str] = None    # 上一次openai.response.create()返回的res.id
     tool_choice     :str = 'auto'
@@ -257,13 +257,13 @@ class Response_LLM_Client:
         ]
         # dyellow(f'history input after: {self.history_input_list}')
 
-    def responses_create(self, request:Response_Request, new_run)->Response_Result:
+    def responses_create(self, query, request:Response_Request, new_run)->Response_Result:
         # 第一次responses.create
         if self.history_input_list is None:
             self.history_input_list = [
                 {
                     "role": "user",
-                    "content": request.instructions,
+                    "content": query,
                 }
             ]
             # self.history_input_list = [
@@ -279,7 +279,7 @@ class Response_LLM_Client:
                 self.history_input_list += [
                     {
                         "role": "user",
-                        "content": request.instructions,
+                        "content": query,
                     }
                 ]
                 # self.history_input_list += [

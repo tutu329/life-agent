@@ -146,7 +146,7 @@ class Response_API_Tool_Agent:
                 break
 
             response_request = Response_Request(
-                instructions=query_with_final_answer_flag,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+                # instructions=query_with_final_answer_flag,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
                 # input=query_with_final_answer_flag,       # 第一次请求input用query，第二次及以后的请求，input实际用了self.history_input_list
                 # instructions='继续调用工具直到完成user的任务',
                 model=self.llm_config.llm_model_id,
@@ -159,11 +159,12 @@ class Response_API_Tool_Agent:
             )
 
             try:
+                query = query_with_final_answer_flag
                 new_run = False
                 if self.agent_status.finished_one_run:
                     new_run = True
                     self.agent_status.finished_one_run = False
-                responses_result = self.response_llm_client.responses_create(request=response_request, new_run=new_run)
+                responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
             except Exception as e:
                 agent_err_count += 1
                 responses_result.error = e
