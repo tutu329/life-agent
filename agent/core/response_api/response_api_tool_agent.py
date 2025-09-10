@@ -122,9 +122,9 @@ class Response_API_Tool_Agent:
         self._run_before()
 
         query_with_final_answer_flag = query + '\n' + self.decide_final_answer_prompt
-        dblue(f'-------------------------------query_with_final_answer_flag-------------------------------')
-        dblue(query_with_final_answer_flag)
-        dblue(f'------------------------------/query_with_final_answer_flag-------------------------------')
+        # dblue(f'-------------------------------query_with_final_answer_flag-------------------------------')
+        # dblue(query_with_final_answer_flag)
+        # dblue(f'------------------------------/query_with_final_answer_flag-------------------------------')
 
         agent_err_count = 0
         agent_count = 0

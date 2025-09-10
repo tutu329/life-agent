@@ -266,9 +266,9 @@ class Response_LLM_Client:
             ]
 
 
-        dblue('===================================request.instructions====================================')
-        dblue(request.instructions)
-        dblue('==================================/request.instructions====================================')
+        dyellow('===================================request.instructions====================================')
+        dyellow(request.instructions)
+        dyellow('==================================/request.instructions====================================')
 
         dblue('=================================self.history_input_list===================================')
         for item in self.history_input_list:
