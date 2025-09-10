@@ -15,7 +15,7 @@
 #             "call_id": "call_456",
 #             "output": "Weather(city='Tokyo', temperature_range='14-20C', conditions='Sunny')"
 #         }
-# 4、response.create()中，在res输出output(asistant的text输出）后，需要一个新的{'role': 'user', 'content': ...}开启下一轮对话或工具调用任务
+# 4、response.create()中，在res输出output(assistant的text输出）后，需要一个新的{'role': 'user', 'content': ...}开启下一轮对话或工具调用任务
 # 5、response.create()连续调用工具完成任务后会输出output，此时若继续调用response.create()进行新一轮run，似乎必须将input历史中的ResponseReasoningItem、ResponseFunctionToolCall、ResponseOutputMessage等清除，不然会报错
 
 import config
