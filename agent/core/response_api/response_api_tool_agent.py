@@ -269,9 +269,9 @@ def main_response_agent():
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
-        llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
+        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
     )
 
@@ -282,9 +282,9 @@ def main_response_agent():
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
     # agent.run(query=query, tools=tools)
-    agent.run(query='你好，我的名字是土土', tools=tools)
+    # agent.run(query='你好，我的名字是土土', tools=tools)
     agent.run(query=query, tools=tools)
-    agent.run(query='你还记得我的名字是什么吗？还有之前file_to_find.txt在哪里找到的来着？', tools=tools)
+    # agent.run(query='你还记得我的名字是什么吗？还有之前file_to_find.txt在哪里找到的来着？', tools=tools)
 
 if __name__ == "__main__":
     main_response_agent()

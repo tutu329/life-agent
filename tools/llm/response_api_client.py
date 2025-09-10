@@ -254,62 +254,39 @@ class Response_LLM_Client:
         # dyellow(f'history input after: {self.history_input_list}')
 
     def responses_create(self, request:Response_Request)->Response_Result:
-        # ------------------------------responses.create请求------------------------------
-        # 判断是否有history_input
-        # dyellow('------------------------self.history_input_list--------------------------------')
-        # if isinstance(self.history_input_list, list):
-        #     for item in self.history_input_list:
-        #         dyellow(item)
-        # dyellow('-----------------------/self.history_input_list--------------------------------')
-        # dyellow('-----------------------1--------------------------------')
+        # 第一次responses.create
         if self.history_input_list is None:
-            # 第一次responses.create
-            request.input = request.instructions
-            res = self.openai.responses.create(**request.model_dump(exclude_none=True))
-            dprint('=================================input_list===================================')
-            dprint(f'{request.input!r}')
-            dprint('================================/input_list===================================')
-            dblue('=================================input_list===================================')
-            dblue(f'{request.input!r}')
-            dblue('================================/input_list===================================')
-        else:
-            # 非第一次responses.create
-            # request.input = self.history_input_list
-            del request.input   # 解决pydantic无法序列化response.output对象的问题
-            dblue('=================================input_list===================================')
-            for item in self.history_input_list:
-                dblue(item)
-            dblue('================================/input_list===================================')
-            # dyellow('=================================request===================================')
-            # for item in request:
-            #     dyellow(f'{item}')
-            # dyellow('================================/request===================================')
-            # dyellow('-----------------------21--------------------------------')
-            # dpprint(request.model_dump(exclude_none=True))
-            # dpprint(self.history_input_list)
-            try:
-                res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
-            except Exception as e:
-                dred(e)
-            # dyellow('-----------------------22--------------------------------')
-        # -----------------------------/responses.create请求------------------------------
-
-        # input_list相关
-        # 如果是第一次responses_create
-        if self.history_input_list is None:
-            self.history_input_list = request.input if isinstance(request.input, list) else [
+            self.history_input_list = [
                 {
                     "type": "message",
                     "role": "user",
                     # "content": request.input,
-                    "content": [{"type": "input_text", "text": request.input}],
+                    "content": [{"type": "input_text", "text": request.instructions}],
                 }
             ]
 
-        # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
-        self.history_input_list += res.output
+        dblue('===================================request.instructions====================================')
+        dblue(request.instructions)
+        dblue('==================================/request.instructions====================================')
+        dblue('=================================self.history_input_list===================================')
+        for item in self.history_input_list:
+            dblue(item)
+        dblue('================================/self.history_input_list===================================')
 
-        response_result = self._responses_result(res)
+        res = None
+        response_result = None
+        try:
+            res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
+        except Exception as e:
+            dred(e)
+
+        # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
+        if res:
+            self.history_input_list += res.output
+            response_result = self._responses_result(res)
+        else:
+            dred(f'【Response_LLM_Client.responses_create】Warning: responses.create()返回失败.')
+
 
         # ----------------------注册tool func-------------------------
         self.funcs = [] # 要先清除之前的tools
