@@ -91,7 +91,11 @@ class Response_API_Tool_Agent:
                         #     "error": response_result.error
                         # }
 
-                        self.response_llm_client.history_input_add_tool_call_result_item(call_id=tool_call['call_id'], output=json.dumps({tool_call['name']: response_result.tool_call_result}), error=response_result.error)
+                        self.response_llm_client.history_input_add_tool_call_result_item(
+                            call_id=tool_call['call_id'],
+                            output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
+                            error=response_result.error
+                        )
                         # self.response_llm_client.history_input_list.append(tool_call_result_item)
 
                         return response_result
@@ -269,8 +273,8 @@ def main_response_agent():
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
     )
