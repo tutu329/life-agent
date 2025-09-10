@@ -235,31 +235,37 @@ class Response_LLM_Client:
 
         try:
             # --------------------------response转chatml--------------------------
-            del request.instructions
-            del request.previous_response_id
-            del request.tool_choice
-            del request.parallel_tool_calls
+            request = request.model_dump()
+            # request = request.model_dump(exclude_none=True)
+            dcyan(f'response request: {request}')
 
-            request['max_tokens'] = request.max_output_tokens
-            del request.max_output_tokens
+            request.pop('instructions')
+            request.pop('previous_response_id')
+            request.pop('tool_choice')
+            request.pop('parallel_tool_calls')
+
+            request['max_tokens'] = request['max_output_tokens']
+            request.pop('max_output_tokens')
 
             request['functions'] = []
-            del request.tools
+            request.pop('tools')
 
-            request['stream_options'] = {"include_usage": request.stream}
-            del request.stream
+            # request['stream_options'] = {"include_usage": request['stream']}
+            # request.pop('stream')
 
-            request['extra_body'] = {'reasoning_effort':request.reasoning['effort']}
-            del request.reasoning
+            request['extra_body'] = {'reasoning_effort':request['reasoning']['effort']}
+            request.pop('reasoning')
+
+            dcyan(f'chatml request: {request}')
             # -------------------------/response转chatml--------------------------
 
-            res = self.openai.chat.completions.create(messages=self.history_input_list, **request.model_dump(exclude_none=True))
+            res = self.openai.chat.completions.create(messages=self.history_input_list, **request)
         except Exception as e:
             dred(e)
 
-            dyellow('===================================chatml.choices[0].message.content====================================')
-            dyellow(res.choices[0].message.content)
-            dyellow('==================================/chatml.choices[0].message.content====================================')
+        dyellow('===================================chatml.choices[0].message.content====================================')
+        dyellow(res.choices[0].message.content)
+        dyellow('==================================/chatml.choices[0].message.content====================================')
 
     def responses_create(self, query, request:Response_Request, new_run)->Response_Result:
         # 第一次responses.create
