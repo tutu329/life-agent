@@ -267,12 +267,14 @@ class Response_LLM_Client:
             def tools_from_response_to_chatml(request):
                 if hasattr(request, 'tools'):
                     for tool_dict in request.tools:
+                        dyellow(tool_dict)
+                    for tool_dict in request.tools:
                         dgreen(f'tool_dict: {tool_dict}')
                         response_tool_dict = deepcopy(tool_dict)
                         del response_tool_dict.__dict__['type']
 
-                        tool_dict.function = response_tool_dict
-                        tool_dict.type = 'function'
+                        tool_dict.function = deepcopy(response_tool_dict)
+                        # tool_dict.type = 'function'
 
                         del tool_dict.__dict__['description']
                         del tool_dict.__dict__['name']
@@ -282,7 +284,8 @@ class Response_LLM_Client:
                         # tool_dict.pop('name')
                         # tool_dict.pop('parameters')
                         # tool_dict.pop('strict')
-
+                    for tool_dict in request.tools:
+                        dyellow(tool_dict)
             # completions.create()下的tools
             # tools = [{
             #     "type": "function",
