@@ -171,7 +171,6 @@ class Response_API_Tool_Agent:
                 # instructions='继续调用工具直到完成user的任务',
                 model=self.llm_config.llm_model_id,
                 tools=tools,
-
                 temperature=self.llm_config.temperature,
                 top_p=self.llm_config.top_p,
                 max_output_tokens=self.llm_config.max_new_tokens,
@@ -186,8 +185,10 @@ class Response_API_Tool_Agent:
                     new_run = True
                     self.agent_status.finished_one_run = False
 
-                responses_result = self.response_llm_client.chatml_create(query=query, request=response_request, new_run=new_run)
-                # responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
+                dred(tools)
+                # responses_result = self.response_llm_client.chatml_create(query=query, request=response_request, new_run=new_run)
+                responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
+                # dpprint(responses_result.model_dump())
             except Exception as e:
                 agent_err_count += 1
                 responses_result.error = e
@@ -305,8 +306,8 @@ def main_response_agent():
     agent_config = Agent_Config(
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
-        llm_config=llm_protocol.g_local_qwen3_30b_thinking,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
@@ -320,8 +321,8 @@ def main_response_agent():
     agent.init()
     # agent.run(query=query, tools=tools)
 
-    agent.run(query='你好，我的名字是土土', tools=tools)
-    # agent.run(query=query, tools=tools)
+    # agent.run(query='你好，我的名字是土土', tools=tools)
+    agent.run(query=query, tools=tools)
     # agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到', tools=tools)
 
     # agent.run(query='你好，我的名字是土土', tools=tools)

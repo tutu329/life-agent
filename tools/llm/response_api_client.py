@@ -213,6 +213,8 @@ class Response_LLM_Client:
         # dyellow(f'history input after: {self.history_input_list}')
 
     def chatml_create(self, query, request:Response_Request, new_run)->Response_Result:
+        dred(request.tools)
+        dred(request)
         if self.history_input_list is None:
             self.history_input_list = [
                 {"role": "system", "content": request.instructions},
@@ -237,6 +239,8 @@ class Response_LLM_Client:
 
         try:
             # --------------------------response转chatml--------------------------
+            dred(request)
+            dred(request.tools)
             request = request.model_dump()
             # request = request.model_dump(exclude_none=True)
             dcyan(f'response request: {request}')
@@ -302,11 +306,12 @@ class Response_LLM_Client:
             dpprint(request['tools'][0])
             dyellow('----------/chatml tool[0]------------')
 
-            # request['stream_options'] = {"include_usage": request['stream']}
-            # request.pop('stream')
-
             request['extra_body'] = {'reasoning_effort':request['reasoning']['effort']}
             request.pop('reasoning')
+
+
+            # request['stream_options'] = {"include_usage": request['stream']}
+            # request.pop('stream')
 
             dcyan(f'chatml request: {request}')
             # -------------------------/response转chatml--------------------------
@@ -319,6 +324,7 @@ class Response_LLM_Client:
         dyellow('response: ', res)
 
         content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else ''
+        content = content.strip()
         dyellow('content: ', content.replace('\n', ' '))
 
         if hasattr(res.choices[0].message, 'reasoning_content'):
@@ -332,21 +338,52 @@ class Response_LLM_Client:
             tool_name = res.choices[0].message.tool_calls[0].function.name
         else:
             tool_arguments = ''
-        tool_name = ''
+            tool_name = ''
         dyellow('tool_arguments: ', tool_arguments)
         dyellow('tool_name: ', tool_name)
 
         # dyellow(res.choices[0].message.content)
         dyellow('==================================/chatml.choices[0].message====================================')
 
+        tool_call_error = ''
+        if reasoning_content:
+            self.history_input_list += [
+                {"role": "assistant", "content": reasoning_content}
+            ]
+        elif content:
+            self.history_input_list += [
+                {"role": "assistant", "content": content}
+            ]
+        else:
+            dred(f'【Response_LLM_Client.chatml_create】Warning: chatml.create()返回失败.')
 
-        # if res:
-        #     self.history_input_list += res.output
-        #     response_result = self._responses_result(res)
-        # else:
-        #     dred(f'【Response_LLM_Client.responses_create】Warning: responses.create()返回失败.')
+        responses_result = Response_Result(
+            reasoning = reasoning_content,
+            output = content,
+            function_tool_call = {'arguments': tool_arguments, 'call_id': '', 'name': tool_name},
+            error=tool_call_error
+        )
+
+        dyellow('==================================1111111====================================')
+        # ----------------------注册tool func-------------------------
+        self.funcs = []  # 要先清除之前的tools
+        for tool in request['tools']:
+            dyellow(tool)
+            # dred(tool)
+            func_dict = {
+                'name': tool['function']['name'],
+                'func': tool['func'],
+            }
+            self.funcs.append(func_dict)
+        # ---------------------/注册tool func-------------------------
+        dyellow('==================================2222222====================================')
+
+        return responses_result
+
 
     def responses_create(self, query, request:Response_Request, new_run)->Response_Result:
+        dred(request.tools)
+        dred(request)
         # 第一次responses.create
         if self.history_input_list is None:
             self.history_input_list = [
