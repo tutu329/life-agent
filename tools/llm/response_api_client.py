@@ -315,10 +315,30 @@ class Response_LLM_Client:
         except Exception as e:
             dred(f'【Response_LLM_Client.chatml_create】Error: {e!r}')
 
-        dyellow('===================================chatml.choices[0].message.content====================================')
-        dpprint(res.choices[0])
+        dyellow('===================================chatml.choices[0].message====================================')
+        dyellow('response: ', res)
+
+        content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else ''
+        dyellow('content: ', content.replace('\n', ' '))
+
+        if hasattr(res.choices[0].message, 'reasoning_content'):
+            reasoning_content = res.choices[0].message.reasoning_content
+        else:
+            reasoning_content = ''
+        dyellow('reasoning_content: ', reasoning_content.replace('\n', ' '))
+
+        if hasattr(res.choices[0].message, 'tool_calls') and res.choices[0].message.tool_calls:
+            tool_arguments = res.choices[0].message.tool_calls[0].function.arguments
+            tool_name = res.choices[0].message.tool_calls[0].function.name
+        else:
+            tool_arguments = ''
+        tool_name = ''
+        dyellow('tool_arguments: ', tool_arguments)
+        dyellow('tool_name: ', tool_name)
+
         # dyellow(res.choices[0].message.content)
-        dyellow('==================================/chatml.choices[0].message.content====================================')
+        dyellow('==================================/chatml.choices[0].message====================================')
+
 
         # if res:
         #     self.history_input_list += res.output
