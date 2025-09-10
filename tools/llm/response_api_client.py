@@ -13,6 +13,8 @@ from llm_protocol import LLM_Config
 import config
 from config import dred, dgreen, dblue, dyellow, dcyan
 
+from copy import deepcopy
+
 DEBUG = True
 # DEBUG = False
 
@@ -150,34 +152,34 @@ class Response_LLM_Client:
     # 将Response_LLM_Client当作agent用(用tool call)
     # ---------------存在问题---------------
     # agent_run()不宜放在life-agent.tools.llm.Response_LLM_Client里，而应在life-agent.agent.core里
-    def legacy_agent_run(self, query, tools) -> str:
-        response_request = Response_Request(
-            model=self.llm_config.llm_model_id,
-            input=query,
-            tools=tools,
-        )
-
-        responses_result = self.responses_create(request=response_request)
-
-        while not hasattr(responses_result, 'output') or responses_result.output=='' :
-            response_request = Response_Request(
-                instructions=query,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
-                # instructions='继续调用工具直到完成user的任务',
-                model=self.llm_config.llm_model_id,
-                tools=tools,
-            )
-            responses_result = self.responses_create(request=response_request)
-
-            if responses_result.output != '':
-                dprint('-----------------------------------最终结果---------------------------------------------')
-                dprint(responses_result.output)
-                dprint('-----------------------------------最终结果---------------------------------------------')
-                dgreen('-----------------------------------最终结果---------------------------------------------')
-                dgreen(responses_result.output)
-                dgreen('-----------------------------------最终结果---------------------------------------------')
-                break
-
-        return responses_result.output
+    # def legacy_agent_run(self, query, tools) -> str:
+    #     response_request = Response_Request(
+    #         model=self.llm_config.llm_model_id,
+    #         input=query,
+    #         tools=tools,
+    #     )
+    #
+    #     responses_result = self.responses_create(request=response_request)
+    #
+    #     while not hasattr(responses_result, 'output') or responses_result.output=='' :
+    #         response_request = Response_Request(
+    #             instructions=query,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    #             # instructions='继续调用工具直到完成user的任务',
+    #             model=self.llm_config.llm_model_id,
+    #             tools=tools,
+    #         )
+    #         responses_result = self.responses_create(request=response_request)
+    #
+    #         if responses_result.output != '':
+    #             dprint('-----------------------------------最终结果---------------------------------------------')
+    #             dprint(responses_result.output)
+    #             dprint('-----------------------------------最终结果---------------------------------------------')
+    #             dgreen('-----------------------------------最终结果---------------------------------------------')
+    #             dgreen(responses_result.output)
+    #             dgreen('-----------------------------------最终结果---------------------------------------------')
+    #             break
+    #
+    #     return responses_result.output
 
     def history_input_add_tool_call_result_item(self, call_id, output, error):
         tool_call_result_item = {
@@ -247,8 +249,58 @@ class Response_LLM_Client:
             request['max_tokens'] = request['max_output_tokens']
             request.pop('max_output_tokens')
 
-            request['functions'] = []
-            request.pop('tools')
+            dyellow('-------------response tool[0]--------------')
+            dpprint(request['tools'][0])
+            dyellow('------------/response tool[0]--------------')
+            def tools_from_response_to_chatml(request):
+                if 'tools' in request:
+                    for tool_dict in request['tools']:
+                        response_tool_dict = deepcopy(tool_dict)
+                        response_tool_dict.pop('type')
+                        tool_dict['function'] = response_tool_dict
+                        tool_dict['type'] = 'function'
+                        tool_dict.pop('description')
+                        tool_dict.pop('name')
+                        tool_dict.pop('parameters')
+                        tool_dict.pop('strict')
+
+            # completions.create()下的tools
+            # tools = [{
+            #     "type": "function",
+            #     "function": {
+            #         "name": "get_weather",
+            #         "description": "Get current temperature for a given location.",
+            #         "parameters": {
+            #             "type": "object",
+            #             "properties": {
+            #                 "location": {
+            #                     "type": "string",
+            #                     "description": "City and country e.g. Bogotá, Colombia"
+            #                 }
+            #             },
+            #             "required": ["location"],
+            #             "additionalProperties": False
+            #         },
+            #         "strict": True
+            #     }
+            # }]
+
+            # response.create()下的tool
+            # {'description': '返回指定文件夹下所有文件和文件夹的名字信息。\n',
+            #  'name': 'Folder_Tool',
+            #  'parameters': {'additionalProperties': False,
+            #                 'properties': {'path': {'description': '文件夹所在的路径',
+            #                                         'enum': None,
+            #                                         'type': 'string'}},
+            #                 'required': ['path'],
+            #                 'type': 'object'},
+            #  'strict': True,
+            #  'type': 'function'}
+
+            tools_from_response_to_chatml(request=request)
+            dyellow('-----------chatml tool[0]------------')
+            dpprint(request['tools'][0])
+            dyellow('----------/chatml tool[0]------------')
 
             # request['stream_options'] = {"include_usage": request['stream']}
             # request.pop('stream')
@@ -261,11 +313,18 @@ class Response_LLM_Client:
 
             res = self.openai.chat.completions.create(messages=self.history_input_list, **request)
         except Exception as e:
-            dred(e)
+            dred(f'【Response_LLM_Client.chatml_create】Error: {e!r}')
 
         dyellow('===================================chatml.choices[0].message.content====================================')
-        dyellow(res.choices[0].message.content)
+        dpprint(res.choices[0])
+        # dyellow(res.choices[0].message.content)
         dyellow('==================================/chatml.choices[0].message.content====================================')
+
+        # if res:
+        #     self.history_input_list += res.output
+        #     response_result = self._responses_result(res)
+        # else:
+        #     dred(f'【Response_LLM_Client.responses_create】Warning: responses.create()返回失败.')
 
     def responses_create(self, query, request:Response_Request, new_run)->Response_Result:
         # 第一次responses.create
@@ -315,7 +374,7 @@ class Response_LLM_Client:
         try:
             res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
         except Exception as e:
-            dred(e)
+            dred(f'【Response_LLM_Client.responses_create】Error: {e!r}')
 
         # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
         if res:
