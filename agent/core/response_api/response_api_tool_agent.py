@@ -311,7 +311,7 @@ def main_response_agent():
         has_history=True,
     )
 
-    query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，搜索所有子文件夹直到找到'
+    query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件'
     # query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     # query = '你是谁？'
 

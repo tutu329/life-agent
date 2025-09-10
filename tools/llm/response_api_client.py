@@ -210,6 +210,9 @@ class Response_LLM_Client:
         ]
         # dyellow(f'history input after: {self.history_input_list}')
 
+    def chatml_create(self, query, request:Response_Request, new_run)->Response_Result:
+        pass
+
     def responses_create(self, query, request:Response_Request, new_run)->Response_Result:
         # 第一次responses.create
         if self.history_input_list is None:
