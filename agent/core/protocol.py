@@ -10,7 +10,7 @@ class Agent_Status(BaseModel):
 
     # paused      :bool = False     # pause似乎不需要，cancel机制即可
 
-    finished        :bool = False
+    finished_one_run        :bool = False
     task_success    :bool = False   #任务是否有效完成
 
     final_answer    :str = ''

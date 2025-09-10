@@ -237,10 +237,14 @@ class Response_LLM_Client:
 
     def history_input_add_output_item(self, output):
         output_item = {
-            "type": "message",
             "role": "assistant",
-            "content": [{"type": "input_text", "text": output}],
+            "content": output,
         }
+        # output_item = {
+        #     "type": "message",
+        #     "role": "assistant",
+        #     "content": [{"type": "input_text", "text": output}],
+        # }
         self.history_input_list.append(output_item)
 
     # agent在一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage等清除
@@ -249,21 +253,44 @@ class Response_LLM_Client:
         # dyellow(f'history input before: {self.history_input_list}')
         self.history_input_list[:] = [
             item for item in self.history_input_list
-            if isinstance(item, dict) and item['type'] =='message'
+            if isinstance(item, dict) and ('type'in item and item['type'] =='message' or 'role' in item)
         ]
         # dyellow(f'history input after: {self.history_input_list}')
 
-    def responses_create(self, request:Response_Request)->Response_Result:
+    def responses_create(self, request:Response_Request, new_run)->Response_Result:
         # 第一次responses.create
         if self.history_input_list is None:
             self.history_input_list = [
                 {
-                    "type": "message",
                     "role": "user",
-                    # "content": request.input,
-                    "content": [{"type": "input_text", "text": request.instructions}],
+                    "content": request.instructions,
                 }
             ]
+            # self.history_input_list = [
+            #     {
+            #         "type": "message",
+            #         "role": "user",
+            #         # "content": request.input,
+            #         "content": [{"type": "input_text", "text": request.instructions}],
+            #     }
+            # ]
+        else:
+            if new_run:
+                self.history_input_list += [
+                    {
+                        "role": "user",
+                        "content": request.instructions,
+                    }
+                ]
+                # self.history_input_list += [
+                #     {
+                #         "type": "message",
+                #         "role": "user",
+                #         # "content": request.input,
+                #         "content": [{"type": "input_text", "text": request.instructions}],
+                #     }
+                # ]
+
 
 
         dyellow('===================================request.instructions====================================')

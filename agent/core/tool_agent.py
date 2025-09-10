@@ -432,7 +432,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
 
     # 每一次run之后都要正确设置状态
     def _run_after(self, success):
-        self.status.finished = True
+        self.status.finished_one_run = True
         self.status.task_success = success
 
 

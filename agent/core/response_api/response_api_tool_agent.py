@@ -111,7 +111,7 @@ class Response_API_Tool_Agent:
         pass
 
     def _run_after(self):
-        self.agent_status.finished = True
+        self.agent_status.finished_one_run = True
 
         # --------------------------------
         # 一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage清除
@@ -159,7 +159,11 @@ class Response_API_Tool_Agent:
             )
 
             try:
-                responses_result = self.response_llm_client.responses_create(request=response_request)
+                new_run = False
+                if self.agent_status.finished_one_run:
+                    new_run = True
+                    self.agent_status.finished_one_run = False
+                responses_result = self.response_llm_client.responses_create(request=response_request, new_run=new_run)
             except Exception as e:
                 agent_err_count += 1
                 responses_result.error = e
@@ -286,9 +290,13 @@ def main_response_agent():
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
     # agent.run(query=query, tools=tools)
+
     agent.run(query='你好，我的名字是土土', tools=tools)
     agent.run(query=query, tools=tools)
     agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，但具体位置我忘记了，告诉我具体是在哪里找到，不用重新调用工具搜索', tools=tools)
+
+    # agent.run(query='你好，我的名字是土土', tools=tools)
+    # agent.run(query='你还记得我的名字是什么吗？', tools=tools)
 
 if __name__ == "__main__":
     main_response_agent()
