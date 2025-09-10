@@ -9,9 +9,13 @@
 #         "content": [{"type": "input_text", "text": '你好，我的名字是土土'}],
 #       }
 # 2、response.create()中，instructions对应completions.create中的system prompt
-# 3、response.create()中，调用工具后，直接input += res.output，并作为新的input输入即可进行连续工具调用
+# 3、response.create()中，调用工具后，直接input += res.output，且input.append下述特定格式的tool result后，并将其作为新的input输入即可进行连续工具调用
+#         {
+#             "type": "function_call_output",
+#             "call_id": "call_456",
+#             "output": "Weather(city='Tokyo', temperature_range='14-20C', conditions='Sunny')"
+#         }
 # 4、response.create()中，在res输出output(asistant的text输出）后，需要一个新的{'role': 'user', 'content': ...}开启下一轮对话或工具调用任务
-
 
 import config
 import llm_protocol
