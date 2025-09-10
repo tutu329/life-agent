@@ -1,3 +1,18 @@
+# --------------------------------openai的harmony response接口的主要特性--------------------------------
+# 1、response.create()中，input对应completions.create中的messages，且必须为下述格式：
+#       {'role': 'user', 'content': '你好，我的名字是土土'}
+#       {'role': 'assistant', 'content': '你好，土土！请告诉我需要我帮你完成什么任务。祝你愉快！'}
+#   注意下述"type": "message"起始的格式是错误的，llm无法把其当作有效上下文，但又不报错
+#       {
+#         "type": "message",
+#         "role": "user",
+#         "content": [{"type": "input_text", "text": '你好，我的名字是土土'}],
+#       }
+# 2、response.create()中，instructions对应completions.create中的system prompt
+# 3、response.create()中，调用工具后，直接input += res.output，并作为新的input输入即可进行连续工具调用
+# 4、response.create()中，在res输出output(asistant的text输出）后，需要一个新的{'role': 'user', 'content': ...}开启下一轮对话或工具调用任务
+
+
 import config
 import llm_protocol
 from llm_protocol import LLM_Config
