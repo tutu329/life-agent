@@ -185,9 +185,9 @@ class Response_API_Tool_Agent:
                     new_run = True
                     self.agent_status.finished_one_run = False
 
-                dred(tools)
-                # responses_result = self.response_llm_client.chatml_create(query=query, request=response_request, new_run=new_run)
-                responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
+                # dred(tools)
+                responses_result = self.response_llm_client.chatml_create(query=query, request=response_request, new_run=new_run)
+                # responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
                 # dpprint(responses_result.model_dump())
             except Exception as e:
                 agent_err_count += 1
@@ -306,8 +306,8 @@ def main_response_agent():
     agent_config = Agent_Config(
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
-        # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        llm_config=llm_protocol.g_local_qwen3_30b_thinking,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
