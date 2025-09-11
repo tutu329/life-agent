@@ -120,6 +120,7 @@ class Response_API_Tool_Agent:
                             output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
                             error=response_result.error
                         )
+                        agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
                         # self.response_llm_client.history_input_list.append(tool_call_result_item)
 
                         return response_result
@@ -127,6 +128,7 @@ class Response_API_Tool_Agent:
                         response_result.error = e
                         # response_result.tool_call_result = e
                         dred(f'【Response_API_Tool_Agent._call_tool()】responses_result.error: {e!r}')
+                        agent_tool_result_output(response_result.error)
                         return response_result
 
         return response_result
@@ -145,7 +147,8 @@ class Response_API_Tool_Agent:
         dgreen('-----------------------------------最终结果---------------------------------------------')
         dgreen(self.agent_status.final_answer)
         dgreen('-----------------------------------最终结果---------------------------------------------')
-        agent_tool_result_output(self.agent_status.final_answer)
+        # print(f'final: {self.agent_status.final_answer}')
+        agent_finished_output(self.agent_status.final_answer)
 
     def run(self, query, tools):
         self._run_before(query)

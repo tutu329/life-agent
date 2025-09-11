@@ -179,13 +179,17 @@ def agent_tool_chosen_output(tool_name, tool_paras):
         tool_paras_list.append(f'{k!r}:{v!r}')
     tool_paras_string = ', '.join(tool_paras_list)
 
+    tool_paras_string = tool_paras_string.replace("\n", " ").strip()
+
     print(f'{LIGHT_GRAY}⏺ {CRIMSON}{tool_name.strip()}{LIGHT_BLACK}({tool_paras_string}){RESET}')
 
 def agent_tool_result_output(action_result):
-    print(f'{LIGHT_BLACK}  ⎿ {action_result.strip()!r}{RESET}')
+    action_result = action_result.replace("\n", " ").strip()
+    print(f'{LIGHT_BLACK}  ⎿ {action_result}{RESET}')
 
 def agent_finished_output(final_answer):
-    print(f'{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer.strip()!r}{RESET}')
+    final_answer = final_answer.replace("\n", " ").strip()
+    print(f'{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer.strip()}{RESET}')
 
 def llm_user_output(query):
     print(f'{PALE_GRAY}> {query.strip()!r}{RESET}')
