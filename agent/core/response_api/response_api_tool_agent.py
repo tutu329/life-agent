@@ -153,6 +153,17 @@ class Response_API_Tool_Agent:
         agent_err_count = 0
         agent_count = 0
 
+        response_request = Response_Request(
+            # instructions=query_with_final_answer_flag,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+            # input=query_with_final_answer_flag,       # 第一次请求input用query，第二次及以后的请求，input实际用了self.history_input_list
+            # instructions='继续调用工具直到完成user的任务',
+            model=self.llm_config.llm_model_id,
+            tools=tools,
+            temperature=self.llm_config.temperature,
+            top_p=self.llm_config.top_p,
+            max_output_tokens=self.llm_config.max_new_tokens,
+            reasoning={"effort": self.llm_config.reasoning_effort},
+        )
         responses_result = Response_Result()
 
         while not hasattr(responses_result, 'output') or responses_result.output=='' :
@@ -164,18 +175,6 @@ class Response_API_Tool_Agent:
             if agent_count >= self.agent_max_retry:
                 dred(f'【Response_API_Tool_Agent.run()】调用次数超出agent_max_retry({self.agent_max_retry})，退出循环.')
                 break
-
-            response_request = Response_Request(
-                # instructions=query_with_final_answer_flag,  # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
-                # input=query_with_final_answer_flag,       # 第一次请求input用query，第二次及以后的请求，input实际用了self.history_input_list
-                # instructions='继续调用工具直到完成user的任务',
-                model=self.llm_config.llm_model_id,
-                tools=tools,
-                temperature=self.llm_config.temperature,
-                top_p=self.llm_config.top_p,
-                max_output_tokens=self.llm_config.max_new_tokens,
-                reasoning={"effort": self.llm_config.reasoning_effort},
-            )
 
             try:
                 # query = query_with_final_answer_flag
