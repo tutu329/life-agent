@@ -58,6 +58,9 @@ class LLM_Config(BaseModel):
     # llm是否通过vpn访问
     vpn_on          :bool = False
 
+    # response接口还是chatml接口
+    chatml          :bool = False   # False表示为response接口
+
     # llm在对话层面的参数
     has_history         :bool = bool(LLM_Default.has_history)
     history_max_turns   :int = LLM_Default.history_max_turns
@@ -106,6 +109,7 @@ g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     # reasoning_effort=LLM_Reasoning_Effort.HIGH,
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
     reasoning_effort=LLM_Reasoning_Effort.LOW,
+    chatml=False,
 )
 
 g_local_qwen3_30b_chat = LLM_Config(
@@ -115,6 +119,7 @@ g_local_qwen3_30b_chat = LLM_Config(
     llm_model_id='Qwen3-30B-A3B-Instruct-2507',
     temperature=0.7,
     top_p=0.8,
+    chatml=True,
     max_new_tokens=8192
 )
 
@@ -125,6 +130,7 @@ g_local_qwen3_30b_thinking = LLM_Config(
     llm_model_id='Qwen3-30B-A3B-Thinking-2507',
     temperature=0.6,
     top_p=0.95,
+    chatml=True,
     max_new_tokens=8192
 )
 
@@ -135,6 +141,7 @@ g_local_qwen3_4b_thinking = LLM_Config(
     # llm_model_id='',
     temperature=0.6,
     top_p=0.95,
+    chatml=True,
     max_new_tokens=8192
 )
 
@@ -145,6 +152,7 @@ g_online_deepseek_chat = LLM_Config(
     llm_model_id='deepseek-chat',
     temperature=0.6,
     top_p=0.95,
+    chatml=True,
     max_new_tokens=8192
 )
 
@@ -156,6 +164,7 @@ g_online_groq_kimi_k2 = LLM_Config(
     temperature=0.6,
     top_p=0.95,
     max_new_tokens=8192,
+    chatml=True,
     vpn_on=True
 )
 
@@ -173,6 +182,7 @@ g_online_groq_gpt_oss_20b = LLM_Config(
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM, # groq似乎不支持reasoning_effort
     # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
     use_harmony=True,
+    chatml=False,
     vpn_on=True
 )
 
@@ -189,5 +199,6 @@ g_online_groq_gpt_oss_120b = LLM_Config(
     # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
     reasoning_effort=LLM_Reasoning_Effort.LOW, # groq似乎不支持reasoning_effort
     use_harmony=True,
+    chatml=False,
     vpn_on=True
 )

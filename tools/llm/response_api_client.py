@@ -184,12 +184,20 @@ class Response_LLM_Client:
     #     return responses_result.output
 
     def history_input_add_tool_call_result_item(self, call_id, output, error):
-        tool_call_result_item = {
-            "type": "function_call_output",
-            "call_id": call_id,
-            "output": output,
-            "error": error
-        }
+        if not self.llm_config.chatml:
+            # response接口
+            tool_call_result_item = {
+                "type": "function_call_output",
+                "call_id": call_id,
+                "output": output,
+                "error": error
+            }
+        else:
+            # chatml接口
+            tool_call_result_item = {
+                "role": "tool",
+                "content": f'tool call result: "{output}", tool call error: "{error}".',
+            }
         self.history_input_list.append(tool_call_result_item)
 
     def history_input_add_output_item(self, output):
@@ -278,6 +286,52 @@ class Response_LLM_Client:
 
             return request
 
+    def _copy_request_and_modify_from_response_to_chatml(self, request):
+        request = deepcopy(request)
+
+        # --------------------------response转chatml--------------------------
+        # dred(request)
+        # dred(request.tools)
+        # request = request.model_dump()
+        # request = request.model_dump(exclude_none=True)
+        dcyan(f'response request: {request}')
+
+        del request.__dict__['instructions']
+        del request.__dict__['previous_response_id']
+        del request.__dict__['tool_choice']
+        del request.__dict__['parallel_tool_calls']
+
+        request.max_tokens = request.max_output_tokens
+        del request.__dict__['max_output_tokens']
+
+        # request.pop('instructions')
+        # request.pop('previous_response_id')
+        # request.pop('tool_choice')
+        # request.pop('parallel_tool_calls')
+
+        # request['max_tokens'] = request['max_output_tokens']
+        # request.pop('max_output_tokens')
+
+        dyellow('-------------response tool[0]--------------')
+        dpprint(request.tools[0])
+        dyellow('------------/response tool[0]--------------')
+
+        request = self.tools_from_response_to_chatml(request=request)
+        dyellow('-----------chatml tool[0]------------')
+        dpprint(request.tools[0])
+        dyellow('----------/chatml tool[0]------------')
+
+        request.extra_body = {'reasoning_effort': request.reasoning['effort']}
+        del request.__dict__['reasoning']
+        # request.pop('reasoning')
+
+        # request['stream_options'] = {"include_usage": request['stream']}
+        # request.pop('stream')
+
+        dcyan(f'chatml request: {request}')
+
+        return request
+
     def chatml_create(self, query, request:Response_Request, new_run)->Response_Result:
         if self.history_input_list is None:
             self.history_input_list = [
@@ -290,6 +344,7 @@ class Response_LLM_Client:
                     {"role": "user", "content": query}
                 ]
         dyellow('===================================request.instructions====================================')
+        dyellow(request)
         dyellow(request.instructions)
         dyellow('==================================/request.instructions====================================')
 
@@ -302,50 +357,14 @@ class Response_LLM_Client:
         response_result = None
 
         try:
-            # --------------------------response转chatml--------------------------
-            # dred(request)
-            # dred(request.tools)
-            # request = request.model_dump()
-            # request = request.model_dump(exclude_none=True)
-            dcyan(f'response request: {request}')
-
-            del request.__dict__['instructions']
-            del request.__dict__['previous_response_id']
-            del request.__dict__['tool_choice']
-            del request.__dict__['parallel_tool_calls']
-
-            request.max_tokens = request.max_output_tokens
-            del request.__dict__['max_output_tokens']
-
-            # request.pop('instructions')
-            # request.pop('previous_response_id')
-            # request.pop('tool_choice')
-            # request.pop('parallel_tool_calls')
-
-            # request['max_tokens'] = request['max_output_tokens']
-            # request.pop('max_output_tokens')
-
-            dyellow('-------------response tool[0]--------------')
-            dpprint(request.tools[0])
-            dyellow('------------/response tool[0]--------------')
-
-            request = self.tools_from_response_to_chatml(request=request)
-            dyellow('-----------chatml tool[0]------------')
-            dpprint(request.tools[0])
-            dyellow('----------/chatml tool[0]------------')
-
-            request.extra_body = {'reasoning_effort':request.reasoning['effort']}
-            del request.__dict__['reasoning']
-            # request.pop('reasoning')
-
-
-            # request['stream_options'] = {"include_usage": request['stream']}
-            # request.pop('stream')
-
-            dcyan(f'chatml request: {request}')
+            chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
             # -------------------------/response转chatml--------------------------
 
-            res = self.openai.chat.completions.create(messages=self.history_input_list, **request.model_dump(exclude_none=True))
+            dblue('----------------------------self.history_input_list-------------------------------')
+            for item in self.history_input_list:
+                dblue(item)
+            dblue('---------------------------/self.history_input_list-------------------------------')
+            res = self.openai.chat.completions.create(messages=self.history_input_list, **chatml_request.model_dump(exclude_none=True))
         except Exception as e:
             dred(f'【Response_LLM_Client.chatml_create】Error: {e!r}')
 
@@ -396,7 +415,7 @@ class Response_LLM_Client:
         dyellow('==================================1111111====================================')
         # ----------------------注册tool func-------------------------
         self.funcs = []  # 要先清除之前的tools
-        for tool in request.tools:
+        for tool in chatml_request.tools:
             dred(tool)
             for item in tool:
                 dyellow(item)

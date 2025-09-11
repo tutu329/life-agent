@@ -53,7 +53,7 @@ class Tool_Call_Paras(BaseModel):
     """
     Tool_Call_Paras类，agent调用tool时，传递给tool的参数
     """
-    callback_tool_paras_dict    :Dict[str, Any]                 # 如：{'file_path': './', 'xx':'xx', ...}
+    callback_tool_paras_dict    :Optional[Dict[str, Any]] = None# 如：{'file_path': './', 'xx':'xx', ...}
     callback_agent_config       :Agent_Config                   # base_url、api_key、model_id、temperature等
     callback_top_agent_id       :str                            # 顶层的agent_id，主要用于多层agents系统中，让top_agent_id<-->connection，而与下层agent_id无关
     callback_agent_id           :str                            # 如：str(uuid4())

@@ -145,6 +145,8 @@ class Response_API_Tool_Agent:
     def run(self, query, tools):
         self._run_before()
 
+        use_chatml = self.response_llm_client.llm_config.chatml
+
         # query_with_final_answer_flag = query + '\n' + self.decide_final_answer_prompt
         # dblue(f'-------------------------------query_with_final_answer_flag-------------------------------')
         # dblue(query_with_final_answer_flag)
@@ -185,8 +187,10 @@ class Response_API_Tool_Agent:
                     self.agent_status.finished_one_run = False
 
                 # dred(tools)
-                responses_result = self.response_llm_client.chatml_create(query=query, request=response_request, new_run=new_run)
-                # responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
+                if use_chatml:
+                    responses_result = self.response_llm_client.chatml_create(query=query, request=response_request, new_run=new_run)
+                else:
+                    responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
                 # dpprint(responses_result.model_dump())
             except Exception as e:
                 agent_err_count += 1
@@ -212,10 +216,13 @@ class Response_API_Tool_Agent:
             #         return self.agent_status
             #     else:
             #         continue
-
+            if use_chatml:
+                tool_params_dict = json.loads(responses_result.function_tool_call['arguments']) if responses_result.function_tool_call['arguments'] else None
+            else:
+                tool_params_dict = json.loads(responses_result.function_tool_call['arguments'])
             tool_call_paras = Tool_Call_Paras(
                 callback_top_agent_id=self.top_agent_id,
-                callback_tool_paras_dict=json.loads(responses_result.function_tool_call['arguments']),
+                callback_tool_paras_dict=tool_params_dict,
                 callback_agent_config=self.agent_config,
                 callback_agent_id=self.agent_id,
                 # callback_last_tool_ctx=last_tool_ctx,
