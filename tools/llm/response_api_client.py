@@ -216,29 +216,37 @@ class Response_LLM_Client:
 
     def tools_from_response_to_chatml(self, request):
         # -----------------response.create()下的tool-----------------
-        # {'description': '返回指定文件夹下所有文件和文件夹的名字信息。\n',
-        #  'name': 'Folder_Tool',
-        #  'parameters': {'additionalProperties': False,
-        #                 'properties': {'path': {'description': '文件夹所在的路径',
-        #                                         'enum': None,
-        #                                         'type': 'string'}},
-        #                 'required': ['path'],
-        #                 'type': 'object'},
-        #  'strict': True,
-        #  'type': 'function'}
+        # {
+        #   'type': 'function',
+        #   'name': 'Folder_Tool',
+        #   'description': '返回指定文件夹下所有文件和文件夹的名字信息。',
+        #   'parameters': {
+        #       'type': 'object',
+        #       'properties': {
+        #           'path': {
+        #               'description': '文件夹所在的路径',
+        #               'enum': None,
+        #               'type': 'string'
+        #           }
+        #       },
+        #       'required': ['path'],
+        #       'additionalProperties': False
+        #   },
+        #   'strict': True
+        # }
 
         # -----------------completions.create()下的tools-----------------
-        # tools = [{
+        # {
         #     "type": "function",
         #     "function": {
-        #         "name": "get_weather",
-        #         "description": "Get current temperature for a given location.",
+        #         "name": "Folder_Tool",
+        #         "description": "返回指定文件夹下所有文件和文件夹的名字信息。",
         #         "parameters": {
         #             "type": "object",
         #             "properties": {
-        #                 "location": {
+        #                 "path": {
         #                     "type": "string",
-        #                     "description": "City and country e.g. Bogotá, Colombia"
+        #                     "description": "文件夹所在的路径"
         #                 }
         #             },
         #             "required": ["location"],
@@ -246,27 +254,25 @@ class Response_LLM_Client:
         #         },
         #         "strict": True
         #     }
-        # }]
+        # }
 
         if hasattr(request, 'tools'):
             for tool_dict in request.tools:
                 dyellow(tool_dict)
+
             for tool_dict in request.tools:
                 dgreen(f'tool_dict: {tool_dict}')
-                response_tool_dict = deepcopy(tool_dict)
-                del response_tool_dict.__dict__['type']
 
-                tool_dict.function = deepcopy(response_tool_dict)
-                # tool_dict.type = 'function'
+                # 1、将response tool除type外的部分装到新的chatml tool中
+                response_tool = deepcopy(tool_dict)
+                del response_tool.__dict__['type']
+                tool_dict.function = deepcopy(response_tool)
 
-                del tool_dict.__dict__['description']
                 del tool_dict.__dict__['name']
+                del tool_dict.__dict__['description']
                 del tool_dict.__dict__['parameters']
                 del tool_dict.__dict__['strict']
-                # tool_dict.pop('description')
-                # tool_dict.pop('name')
-                # tool_dict.pop('parameters')
-                # tool_dict.pop('strict')
+
             for tool_dict in request.tools:
                 dyellow(tool_dict)
 
