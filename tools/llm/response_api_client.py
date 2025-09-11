@@ -197,7 +197,8 @@ class Response_LLM_Client:
             # chatml接口
             tool_call_result_item = {
                 "role": "tool",
-                "content": f'tool call arguments: "{arguments}", tool call result: "{output}", tool call error: "{error}".',
+                "content": f'tool call result: "{output}", tool call error: "{error}".',
+                # "content": f'tool call arguments: "{arguments}", tool call result: "{output}", tool call error: "{error}".',
             }
         self.history_input_list.append(tool_call_result_item)
 
