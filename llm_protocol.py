@@ -105,7 +105,6 @@ g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     temperature=1.0,
     top_p=1.0,
     max_new_tokens=8192,
-    use_harmony=True,
     # reasoning_effort=LLM_Reasoning_Effort.HIGH,
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
     reasoning_effort=LLM_Reasoning_Effort.LOW,
@@ -122,10 +121,9 @@ g_local_gpt_oss_20b_mxfp4_lmstudio = LLM_Config(
     # temperature=0.6,
     # top_p=0.95,
     max_new_tokens=8192,
-    use_harmony=False,
-    # reasoning_effort=LLM_Reasoning_Effort.HIGH,
+    reasoning_effort=LLM_Reasoning_Effort.HIGH,
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
-    reasoning_effort=LLM_Reasoning_Effort.LOW,
+    # reasoning_effort=LLM_Reasoning_Effort.LOW,
     chatml=True,
 )
 

@@ -199,7 +199,7 @@ class LLM_Client():
             image_url=None,  # image url或者base64 encoded string，不能是本地文件路径
     ):
         # ===加入system提示===
-        if self.llm_config.use_harmony:
+        if not self.llm_config.chatml:
             msgs = []
         else:
             msgs = [{
@@ -467,7 +467,7 @@ class LLM_Client():
 
         try:
             dyellow(f'【LLM_Client】ask_prepare(): reasoning_effort为{self.llm_config.reasoning_effort}')
-            if self.llm_config.use_harmony:
+            if not self.llm_config.chatml:
                 dblue(f'before openai.responses.create, temperature: {self.llm_current_query_paras.temperature}')
                 dblue(f'before openai.responses.create, top_p: {self.llm_current_query_paras.top_p}')
                 dblue(f'before openai.responses.create, instructions: {self.llm_config.system_prompt}')
@@ -688,10 +688,10 @@ class LLM_Client():
 
                     # ================================================reasoning_content===================================================
                     # chat.completions.create
-                    if ((not self.llm_config.use_harmony) and (chunk.choices and hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[0].delta.reasoning_content)
+                    if (self.llm_config.chatml and (chunk.choices and hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[0].delta.reasoning_content)
                     # responses.create
-                    or (self.llm_config.use_harmony) and (chunk.type and chunk.type == "response.reasoning_text.delta")):
-                        if self.llm_config.use_harmony:
+                    or (not self.llm_config.chatml) and (chunk.type and chunk.type == "response.reasoning_text.delta")):
+                        if not self.llm_config.chatml:
                             think_chunk_output = chunk.delta
                         else:
                             think_chunk_output = chunk.choices[0].delta.reasoning_content
@@ -705,9 +705,9 @@ class LLM_Client():
 
                     # =====================================================content========================================================
                     # chat.completions.create
-                    if ((not self.llm_config.use_harmony) and (chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content)
+                    if (self.llm_config.chatml and (chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content)
                     # responses.create
-                    or (self.llm_config.use_harmony) and (chunk.type and chunk.type == "response.output_text.delta")):
+                    or (not self.llm_config.chatml) and (chunk.type and chunk.type == "response.output_text.delta")):
                         # if hasattr(chunk, 'usage') and chunk.usage is not None:
                         #     print(f'chunk.usage: {chunk.usage}')
                         #     # 输入和输出的token数量统计
@@ -724,7 +724,7 @@ class LLM_Client():
                         #         self.usage = chunk.usage
 
                         # print(chunk.choices[0].delta.content, end='', flush=True)
-                        if self.llm_config.use_harmony:
+                        if not self.llm_config.chatml:
                             my_chunk = chunk.delta
                         else:
                             my_chunk = chunk.choices[0].delta.content
@@ -1751,11 +1751,11 @@ def reasoning_effort_main():
 def async_reasoning_effort_main():
     from console import print_color
     print_color()
-    llm_config = llm_protocol.g_local_qwen3_30b_thinking
+    # llm_config = llm_protocol.g_local_qwen3_30b_thinking
     # llm_config = llm_protocol.g_local_qwen3_30b_chat
     # llm_config = llm_protocol.g_online_deepseek_chat
     # llm_config = llm_protocol.g_local_qwen3_4b_thinking
-    # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
+    llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
     # llm_config = llm_protocol.g_online_groq_kimi_k2
     # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4

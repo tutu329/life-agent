@@ -210,7 +210,11 @@ class Response_API_Tool_Agent:
 
             # 有时候没有调用工具，直接output
             if not responses_result.function_tool_call:
-                self.agent_status.final_answer = responses_result.output.strip()
+                if responses_result.output:
+                    self.agent_status.final_answer = responses_result.output.strip()
+                else:
+                    self.agent_status.final_answer = responses_result.output
+
                 self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
                 self._run_after()
                 return self.agent_status
