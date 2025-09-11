@@ -312,8 +312,8 @@ def main_response_agent():
     agent_config = Agent_Config(
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
-        llm_config=llm_protocol.g_local_qwen3_30b_thinking,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
@@ -327,9 +327,9 @@ def main_response_agent():
     agent.init()
     # agent.run(query=query, tools=tools)
 
-    # agent.run(query='你好，我的名字是土土', tools=tools)
+    agent.run(query='你好，我的名字是土土', tools=tools)
     agent.run(query=query, tools=tools)
-    # agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到', tools=tools)
+    agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到', tools=tools)
 
     # agent.run(query='你好，我的名字是土土', tools=tools)
     # agent.run(query='你还记得我的名字是什么吗？', tools=tools)
