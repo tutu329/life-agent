@@ -33,8 +33,8 @@ from pprint import pprint
 from uuid import uuid4
 import json
 
-DEBUG = True
-# DEBUG = False
+# DEBUG = True
+DEBUG = False
 
 def dprint(*args, **kwargs):
     if DEBUG:

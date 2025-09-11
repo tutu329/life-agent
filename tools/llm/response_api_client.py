@@ -15,8 +15,8 @@ from config import dred, dgreen, dblue, dyellow, dcyan
 
 from copy import deepcopy
 
-DEBUG = True
-# DEBUG = False
+# DEBUG = True
+DEBUG = False
 
 def dprint(*args, **kwargs):
     if DEBUG:
