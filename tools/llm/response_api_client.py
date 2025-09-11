@@ -367,10 +367,10 @@ class Response_LLM_Client:
             chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
             # -------------------------/response转chatml--------------------------
 
-            dblue('----------------------------self.history_input_list-------------------------------')
-            for item in self.history_input_list:
-                dblue(item)
-            dblue('---------------------------/self.history_input_list-------------------------------')
+            # dblue('----------------------------self.history_input_list-------------------------------')
+            # for item in self.history_input_list:
+            #     dblue(item)
+            # dblue('---------------------------/self.history_input_list-------------------------------')
             res = self.openai.chat.completions.create(messages=self.history_input_list, **chatml_request.model_dump(exclude_none=True))
         except Exception as e:
             dred(f'【Response_LLM_Client.chatml_create】Error: {e!r}')
@@ -423,20 +423,20 @@ class Response_LLM_Client:
             error=tool_call_error
         )
 
-        dyellow('==================================1111111====================================')
+        # dyellow('==================================1111111====================================')
         # ----------------------注册tool func-------------------------
         self.funcs = []  # 要先清除之前的tools
         for tool in chatml_request.tools:
-            dred(tool)
-            for item in tool:
-                dyellow(item)
+            # dred(tool)
+            # for item in tool:
+            #     dyellow(item)
             func_dict = {
                 'name' : tool.function.name,
                 'func' : tool.function.func,
             }
             self.funcs.append(func_dict)
         # ---------------------/注册tool func-------------------------
-        dyellow('==================================2222222====================================')
+        # dyellow('==================================2222222====================================')
 
         return responses_result
 
@@ -504,9 +504,9 @@ class Response_LLM_Client:
         # ----------------------注册tool func-------------------------
         self.funcs = [] # 要先清除之前的tools
         for tool in request.tools:
-            dred(tool)
-            for item in tool:
-                dyellow(item)
+            # dred(tool)
+            # for item in tool:
+            #     dyellow(item)
             func_dict = {
                 'name' : tool.name,
                 'func' : tool.func,
