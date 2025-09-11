@@ -215,7 +215,19 @@ class Response_LLM_Client:
         # dyellow(f'history input after: {self.history_input_list}')
 
     def tools_from_response_to_chatml(self, request):
-        # completions.create()下的tools
+        # -----------------response.create()下的tool-----------------
+        # {'description': '返回指定文件夹下所有文件和文件夹的名字信息。\n',
+        #  'name': 'Folder_Tool',
+        #  'parameters': {'additionalProperties': False,
+        #                 'properties': {'path': {'description': '文件夹所在的路径',
+        #                                         'enum': None,
+        #                                         'type': 'string'}},
+        #                 'required': ['path'],
+        #                 'type': 'object'},
+        #  'strict': True,
+        #  'type': 'function'}
+
+        # -----------------completions.create()下的tools-----------------
         # tools = [{
         #     "type": "function",
         #     "function": {
@@ -236,17 +248,6 @@ class Response_LLM_Client:
         #     }
         # }]
 
-        # response.create()下的tool
-        # {'description': '返回指定文件夹下所有文件和文件夹的名字信息。\n',
-        #  'name': 'Folder_Tool',
-        #  'parameters': {'additionalProperties': False,
-        #                 'properties': {'path': {'description': '文件夹所在的路径',
-        #                                         'enum': None,
-        #                                         'type': 'string'}},
-        #                 'required': ['path'],
-        #                 'type': 'object'},
-        #  'strict': True,
-        #  'type': 'function'}
         if hasattr(request, 'tools'):
             for tool_dict in request.tools:
                 dyellow(tool_dict)
