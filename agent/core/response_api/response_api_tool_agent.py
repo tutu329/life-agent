@@ -33,6 +33,8 @@ from pprint import pprint
 from uuid import uuid4
 import json
 
+from console import agent_query_output, agent_tool_chosen_output, agent_tool_result_output, agent_finished_output
+
 # DEBUG = True
 DEBUG = False
 
@@ -88,6 +90,7 @@ class Response_API_Tool_Agent:
                 if func['name'] in tool_name:   # vllm的response api有时候会出错，如：'name': 'div_tool<|channel|>json' 而不是 'name': 'div_tool'
                 # if tool_name == func['name']:
                     try:
+                        agent_tool_chosen_output(tool_name=tool_name, tool_paras=tool_call['arguments'])
                         args = json.loads(tool_call['arguments'])
 
                         # -----------------------------工具调用-----------------------------
@@ -128,8 +131,8 @@ class Response_API_Tool_Agent:
 
         return response_result
 
-    def _run_before(self):
-        pass
+    def _run_before(self, query):
+        agent_query_output(query)
 
     def _run_after(self):
         self.agent_status.finished_one_run = True
@@ -142,9 +145,10 @@ class Response_API_Tool_Agent:
         dgreen('-----------------------------------最终结果---------------------------------------------')
         dgreen(self.agent_status.final_answer)
         dgreen('-----------------------------------最终结果---------------------------------------------')
+        agent_tool_result_output(self.agent_status.final_answer)
 
     def run(self, query, tools):
-        self._run_before()
+        self._run_before(query)
 
         use_chatml = self.response_llm_client.llm_config.chatml
 

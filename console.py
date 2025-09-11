@@ -2,6 +2,7 @@ import time, threading
 import random
 import sys
 import tiktoken
+import json
 
 ENCODING = tiktoken.encoding_for_model("gpt-4")
 
@@ -170,6 +171,9 @@ def agent_thinking_output(answer, output_thinking=False):
   ⎿ Found 10 results for "MacBook Air M5 release date 2025"
 '''
 def agent_tool_chosen_output(tool_name, tool_paras):
+    if isinstance(tool_paras, str):
+        tool_paras = json.loads(tool_paras)
+
     tool_paras_list = []
     for k,v in tool_paras.items():
         tool_paras_list.append(f'{k!r}:{v!r}')
