@@ -33,10 +33,9 @@ from pprint import pprint
 from uuid import uuid4
 import json
 
-from console import agent_query_output, agent_tool_chosen_output, agent_tool_result_output, agent_finished_output
+from console import err, agent_query_output, agent_tool_chosen_output, agent_tool_result_output, agent_finished_output
 
-# DEBUG = True
-DEBUG = False
+DEBUG = config.Global.app_debug
 
 def dprint(*args, **kwargs):
     if DEBUG:
@@ -125,6 +124,7 @@ class Response_API_Tool_Agent:
 
                         return response_result
                     except Exception as e:
+                        err(e)
                         response_result.error = e
                         # response_result.tool_call_result = e
                         dred(f'【Response_API_Tool_Agent._call_tool()】responses_result.error: {e!r}')
@@ -176,7 +176,7 @@ class Response_API_Tool_Agent:
         )
         responses_result = Response_Result()
 
-        while not hasattr(responses_result, 'output') or responses_result.output=='' :
+        while not hasattr(responses_result, 'output') or responses_result.output=='' or responses_result.output is None:
             agent_count += 1
             if agent_err_count >= self.agent_max_error_retry:
                 dred(f'【Response_API_Tool_Agent.run()】出错次数超出agent_max_error_retry({self.agent_max_error_retry})，退出循环.')
@@ -201,9 +201,9 @@ class Response_API_Tool_Agent:
                     responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
                 # dpprint(responses_result.model_dump())
             except Exception as e:
+                err(e)
                 agent_err_count += 1
                 responses_result.error = e
-                dred(f'【Response_API_Tool_Agent.run()】responses_result.error: {e!r}. continue')
                 continue
 
             # tool_call_paras = None
@@ -321,8 +321,9 @@ def main_response_agent():
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
+        llm_config=llm_protocol.g_local_qwen3_30b_chat,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
     )

@@ -3,6 +3,8 @@ import random
 import sys
 import tiktoken
 import json
+import traceback
+import os
 
 ENCODING = tiktoken.encoding_for_model("gpt-4")
 
@@ -281,6 +283,13 @@ def llm_output(result_gen, think_gen=None):
     sys.stdout.flush()
     # print(f'\n{WHITE}● {RESET}{LIGHT_BLACK}{result}{RESET}\n')
     print(f'\n{LIGHT_WHITE}● {RESET}{BLACK}{result.strip()}{RESET}\n')
+
+def err(e:Exception):
+    tb = traceback.extract_tb(e.__traceback__)
+    for filename, lineno, func, text in tb:
+        abs_path = os.path.abspath(filename)  # 转成绝对路径，IDE 更容易识别
+        print(f"{PALE_RED}> File {abs_path}:{lineno} in {func}() \n {text}{RESET}")
+    print(f"{DARK_RED}> {e}{RESET}")
 
 def todo_main():
     todo_list = [

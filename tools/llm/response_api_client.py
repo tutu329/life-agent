@@ -12,11 +12,11 @@ import llm_protocol
 from llm_protocol import LLM_Config
 import config
 from config import dred, dgreen, dblue, dyellow, dcyan
+from console import err
 
 from copy import deepcopy
 
-# DEBUG = True
-DEBUG = False
+DEBUG = config.Global.app_debug
 
 def dprint(*args, **kwargs):
     if DEBUG:
@@ -114,8 +114,8 @@ class Response_Request(BaseModel):
 
 class Response_Result(BaseModel):
     # 返回内容
-    reasoning               :str = ''
-    output                  :str = ''
+    reasoning               :Optional[str] = None
+    output                  :Optional[str] = None
     function_tool_call      :Dict[str, Any] = None # {'arguments': '{"a":2356,"b":3567,"unit":"meter"}', 'call_id': 'fc_cfaf81b5-7aec-457f-b745-59b8aee69648', 'name': 'div_tool'}
     other_item              :Any = None
 
@@ -373,20 +373,22 @@ class Response_LLM_Client:
             # dblue('---------------------------/self.history_input_list-------------------------------')
             res = self.openai.chat.completions.create(messages=self.history_input_list, **chatml_request.model_dump(exclude_none=True))
         except Exception as e:
-            dred(f'【Response_LLM_Client.chatml_create】Error: {e!r}')
+            err(e)
 
         dyellow('===================================chatml.choices[0].message====================================')
         dyellow('response: ', res)
 
-        content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else ''
-        content = content.strip()
-        dyellow('content: ', content.replace('\n', ' '))
+        content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else None
+        if content:
+            content = content.strip()
+            dyellow('content: ', content.replace('\n', ' '))
 
         if hasattr(res.choices[0].message, 'reasoning_content'):
             reasoning_content = res.choices[0].message.reasoning_content
         else:
             reasoning_content = ''
-        dyellow('reasoning_content: ', reasoning_content.replace('\n', ' '))
+        if reasoning_content:
+            dyellow('reasoning_content: ', reasoning_content.replace('\n', ' '))
 
         if hasattr(res.choices[0].message, 'tool_calls') and res.choices[0].message.tool_calls:
             tool_arguments = res.choices[0].message.tool_calls[0].function.arguments
@@ -491,7 +493,7 @@ class Response_LLM_Client:
         try:
             res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
         except Exception as e:
-            dred(f'【Response_LLM_Client.responses_create】Error: {e!r}')
+            err(e)
 
         # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
         if res:
