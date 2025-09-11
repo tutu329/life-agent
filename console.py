@@ -186,11 +186,13 @@ def agent_tool_chosen_output(tool_name, tool_paras):
     print(f'{LIGHT_GRAY}⏺ {CRIMSON}{tool_name.strip()}{LIGHT_BLACK}({tool_paras_string}){RESET}')
 
 def agent_tool_result_output(action_result):
-    action_result = action_result.replace("\n", " ").strip()
+    if isinstance(action_result, str):
+        action_result = action_result.replace("\n", " ").strip()
     print(f'{LIGHT_BLACK}  ⎿ {action_result}{RESET}')
 
 def agent_finished_output(final_answer):
-    final_answer = final_answer.replace("\n", " ").strip()
+    final_answer = final_answer.strip()
+    # final_answer = final_answer.replace("\n", " ").strip()
     print(f'{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer.strip()}{RESET}')
 
 def llm_user_output(query):

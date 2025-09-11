@@ -322,23 +322,23 @@ def main_response_agent():
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_local_qwen3_30b_chat,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         has_history=True,
     )
 
-    query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件'
-    # query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    # query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件'
+    query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     # query = '你是谁？'
 
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
     # agent.run(query=query, tools=tools)
 
-    agent.run(query='你好，我的名字是土土', tools=tools)
+    # agent.run(query='你好，我的名字是土土', tools=tools)
     agent.run(query=query, tools=tools)
-    agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到', tools=tools)
+    # agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到', tools=tools)
 
     # agent.run(query='你好，我的名字是土土', tools=tools)
     # agent.run(query='你还记得我的名字是什么吗？', tools=tools)

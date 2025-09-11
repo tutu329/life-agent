@@ -189,7 +189,7 @@ class Response_LLM_Client:
             tool_call_result_item = {
                 "type": "function_call_output",
                 "call_id": call_id,
-                'arguments': arguments,
+                # 'arguments': arguments,   # ------官方没有要求输出该参数，增加该参数输出后，似乎并没有影响tool call全流程的推理精度------
                 "output": output,
                 "error": error
             }
@@ -489,7 +489,7 @@ class Response_LLM_Client:
         dblue('================================/self.history_input_list===================================')
 
         res = None
-        response_result = None
+        response_result = Response_Result()
         try:
             res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
         except Exception as e:
