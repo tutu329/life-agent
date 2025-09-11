@@ -183,12 +183,13 @@ class Response_LLM_Client:
     #
     #     return responses_result.output
 
-    def history_input_add_tool_call_result_item(self, call_id, output, error):
+    def history_input_add_tool_call_result_item(self, arguments, call_id, output, error):
         if not self.llm_config.chatml:
             # response接口
             tool_call_result_item = {
                 "type": "function_call_output",
                 "call_id": call_id,
+                'arguments': arguments,
                 "output": output,
                 "error": error
             }
@@ -196,7 +197,7 @@ class Response_LLM_Client:
             # chatml接口
             tool_call_result_item = {
                 "role": "tool",
-                "content": f'tool call result: "{output}", tool call error: "{error}".',
+                "content": f'tool call arguments: "{arguments}", tool call result: "{output}", tool call error: "{error}".',
             }
         self.history_input_list.append(tool_call_result_item)
 
@@ -214,12 +215,18 @@ class Response_LLM_Client:
 
     # agent在一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage等清除
     # 否则agent第二轮run时，server会报validation errors for ValidatorIterator之类的错误
-    def history_input_clear_after_this_run(self):
+    def history_input_reduce_content_after_this_run(self):
         # dyellow(f'history input before: {self.history_input_list}')
-        self.history_input_list[:] = [
-            item for item in self.history_input_list
-            if isinstance(item, dict) and ('type'in item and item['type'] =='message' or 'role' in item)
-        ]
+        if self.llm_config.chatml:
+            self.history_input_list[:] = [
+                item for item in self.history_input_list
+                if isinstance(item, dict) and ('content' in item)
+            ]
+        else:
+            self.history_input_list[:] = [
+                item for item in self.history_input_list
+                if isinstance(item, dict) and ('type'in item and item['type'] =='message' or 'role' in item)
+            ]
         # dyellow(f'history input after: {self.history_input_list}')
 
     def tools_from_response_to_chatml(self, request):
@@ -393,17 +400,21 @@ class Response_LLM_Client:
         # dyellow(res.choices[0].message.content)
         dyellow('==================================/chatml.choices[0].message====================================')
 
+        # -----------------------------添加到历史-------------------------------
         tool_call_error = ''
         if reasoning_content:
-            self.history_input_list += [
-                {"role": "assistant", "content": reasoning_content}
-            ]
+            # chatml下，reasoning添加到历史似乎导致上下文过长
+            pass
+            # self.history_input_list += [
+            #     {"role": "assistant", "reasoning_content": reasoning_content}
+            # ]
         elif content:
             self.history_input_list += [
                 {"role": "assistant", "content": content}
             ]
         else:
             dred(f'【Response_LLM_Client.chatml_create】Warning: chatml.create()返回失败.')
+        # ----------------------------/添加到历史-------------------------------
 
         responses_result = Response_Result(
             reasoning = reasoning_content,
@@ -662,25 +673,19 @@ def main_response_llm_client():
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     response_request = Response_Request(
         model=client.llm_config.llm_model_id,
-        input=query,
         tools=tools,
     )
-    responses_result = client.responses_create(request=response_request)
-    responses_result = client.legacy_call_tool(responses_result)
+    responses_result = client.responses_create(query=query, request=response_request, new_run=False)
 
     dprint(f'responses_result.output: {responses_result.output!r}')
     # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
 
     while not hasattr(responses_result, 'output') or responses_result.output=='' :
-        response_request = Response_Request(
-            instructions=query, # 这里仍然是'请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
-            # instructions='继续调用工具直到完成user的任务',
-            model=client.llm_config.llm_model_id,
-            tools=tools,
-        )
-        responses_result = client.responses_create(request=response_request)
-        responses_result = client.legacy_call_tool(responses_result)
+        responses_result = client.responses_create(query=query, request=response_request, new_run=False)
         dprint(f'responses_result: {responses_result!r}')
+
+        if not responses_result.output:
+            continue
 
         if responses_result.output != '':
             dprint('-----------------------------------最终结果---------------------------------------------')

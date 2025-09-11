@@ -112,6 +112,7 @@ class Response_API_Tool_Agent:
                         # }
 
                         self.response_llm_client.history_input_add_tool_call_result_item(
+                            arguments=tool_call['arguments'],
                             call_id=tool_call['call_id'],
                             output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
                             error=response_result.error
@@ -136,7 +137,7 @@ class Response_API_Tool_Agent:
         # --------------------------------
         # 一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage清除
         # 否则server会报validation errors for ValidatorIterator的错误
-        self.response_llm_client.history_input_clear_after_this_run()
+        self.response_llm_client.history_input_reduce_content_after_this_run()
 
         dgreen('-----------------------------------最终结果---------------------------------------------')
         dgreen(self.agent_status.final_answer)
