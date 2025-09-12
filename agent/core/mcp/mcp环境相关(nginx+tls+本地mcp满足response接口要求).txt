@@ -58,6 +58,76 @@ server {
 #     return 301 https://$host$request_uri;
 # }
 
+
+
+
+# 可选：把后端端口起成 upstream，配置更清晰
+upstream mcp_everything { server 127.0.0.1:8787; }
+upstream mcp_files      { server 127.0.0.1:8788; }
+upstream mcp_office     { server 127.0.0.1:8789; }
+
+server {
+    listen 8100 ssl http2;
+    server_name powerai.cc;
+
+    ssl_certificate     /home/tutu/ssl/powerai_fullchain.pem;
+    ssl_certificate_key /home/tutu/ssl/powerai.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    proxy_http_version 1.1;
+    proxy_buffering off;
+    proxy_request_buffering off;
+    proxy_read_timeout 1d;
+    proxy_send_timeout 1d;
+
+    # 健康检查（可选）
+    location = / {
+        return 200 "nginx tls ok\n";
+        add_header Content-Type text/plain;
+    }
+
+    # ---------- everything 实例 ----------
+    # SSE:  https://powerai.cc:8100/mcp/everything/sse  ->  127.0.0.1:8787/sse
+    location /mcp/everything/sse {
+        proxy_set_header Host $host;
+        proxy_set_header Connection "";
+        proxy_set_header Cache-Control "no-cache";
+        proxy_pass http://mcp_everything/sse;
+    }
+    # POST: https://powerai.cc:8100/mcp/everything/message -> 127.0.0.1:8787/message
+    location /mcp/everything/message {
+        proxy_set_header Host $host;
+        proxy_pass http://mcp_everything/message;
+    }
+
+    # ---------- files 实例 ----------
+    location /mcp/files/sse {
+        proxy_set_header Host $host;
+        proxy_set_header Connection "";
+        proxy_set_header Cache-Control "no-cache";
+        proxy_pass http://mcp_files/sse;
+    }
+    location /mcp/files/message {
+        proxy_set_header Host $host;
+        proxy_pass http://mcp_files/message;
+    }
+
+    # ---------- office 实例 ----------
+    location /mcp/office/sse {
+        proxy_set_header Host $host;
+        proxy_set_header Connection "";
+        proxy_set_header Cache-Control "no-cache";
+        proxy_pass http://mcp_office/sse;
+    }
+    location /mcp/office/message {
+        proxy_set_header Host $host;
+        proxy_pass http://mcp_office/message;
+    }
+}
+
+
+
+
 3）链接
     sudo ln -s /etc/nginx/sites-available/powerai_mcp.conf /etc/nginx/sites-enabled/
 
@@ -69,7 +139,18 @@ server {
     systemctl status nginx
 
 二、mcp
-    npx supergateway --stdio "npx @modelcontextprotocol/server-everything" --port 8100 --sse
+    1)sqlite:
+        git clone https://github.com/modelcontextprotocol/servers-archived.git
+        cd servers-archived/src/sqlite
+        npm install
+        pip install uv
+        uv sync(开vpn)
+        uv run -m mcp_server_sqlite --help(跑本体验证)
+        sqlite3 ./test.db 'create table if not exists t(id integer);'
+        npx supergateway --stdio "uv run mcp-server-sqlite --db-path ./test.db" --port 8787 --sse
+
+    2)everything:
+        npx supergateway --stdio "npx @modelcontextprotocol/server-everything" --port 8788 --sse
 
 三、测试nginx+本地mcp的连通性
     curl -vk https://127.0.0.1:8100/
