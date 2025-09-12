@@ -349,14 +349,15 @@ def main_response_agent():
     # agent.run(query='你好，我的名字是土土', tools=tools)
     # agent.run(query='你还记得我的名字是什么吗？', tools=tools)
 
-def main_response_agent_mcp_stdio():
+def main_response_agent_mcp_nginx():
     from openai import OpenAI
     import httpx
     import llm_protocol
     import config
 
     http_client = httpx.Client(proxy=config.g_vpn_proxy)
-    llm_config = llm_protocol.g_online_groq_gpt_oss_20b
+    llm_config = llm_protocol.g_online_groq_gpt_oss_120b
+    # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
 
     client = OpenAI(
         api_key=llm_config.api_key,
@@ -370,17 +371,32 @@ def main_response_agent_mcp_stdio():
             {
                 "type": "mcp",
                 "server_label": "everything",
-                "server_description": "Local MCP server (server-everything via STDIO)",
-                "server_command": "npx",
-                "server_args": ["@modelcontextprotocol/server-everything"],
-                "server_transport": "stdio",  # 👈 关键改这里
+                "server_description": "This MCP server attempts to exercise all the features of the MCP protocol",
+                # 原来是 stdio，现在改成 http
+                "server_transport": "http",
+                # 指向你 Nginx 的公开地址（本地就是 127.0.0.1:8100）
+                "server_url": "https://127.0.0.1:8100/sse",
+                "require_approval": "never",
+            },
+            {
+                "type": "mcp",
+                "server_label": "dmcp",
+                "server_description": "A Dungeons and Dragons MCP server to assist with dice rolling.",
+                "server_url": "https://dmcp-server.deno.dev/sse",
                 "require_approval": "never",
             },
         ],
-        input="你怎么用",
+        # input="Roll 2d4+1",
+        input="调用everything mcp计算23+999=?",
     )
 
-    print(resp.output_text)
+    # print(resp)
+    print('----------------------resp.output--------------------------')
+    for item in resp.output:
+        print(item)
+    print('---------------------/resp.output--------------------------')
+    print(resp.output_text.replace('\n', ''))
+
 
 def main_response_agent_mcp_server():
     from openai import OpenAI
@@ -411,7 +427,11 @@ def main_response_agent_mcp_server():
 
     print(resp.output_text)
 
+def mcp_test():
+    print()
+
 if __name__ == "__main__":
-    main_response_agent()
+    # main_response_agent()
     # main_response_agent_mcp_server()
-    # main_response_agent_mcp_stdio()
+    # main_response_agent_mcp_nginx()
+    mcp_test()
