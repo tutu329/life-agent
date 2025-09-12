@@ -92,7 +92,13 @@ def list_server_and_tools(server_url: str):
     """
     return asyncio.run(_list_server_and_tools_async(server_url))
 
-def get_mcp_tools(server_url: str, allowed_tools: Optional[Iterable[str]] = None) -> List[Tool_Request]:
+def get_mcp_server_tool_names(server_url: str):
+    initialize_response, list_tools_response = list_server_and_tools(server_url)
+    tool_names = [tool.name for tool in list_tools_response.tools]
+    print('tools: ', tool_names)
+    return tool_names
+
+def get_mcp_server_tools(server_url: str, allowed_tools: Optional[Iterable[str]] = None) -> List[Tool_Request]:
     """
     同步版本：返回 List[Tool_Request]
     """
@@ -103,13 +109,13 @@ def get_mcp_tools(server_url: str, allowed_tools: Optional[Iterable[str]] = None
 # -------------------------------
 def main():
     server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
+    get_mcp_server_tool_names(server_url)
 
-    initialize_response, list_tools_response = list_server_and_tools(server_url)
-    print('tools:', [tool.name for tool in list_tools_response.tools])
-
-    # 例：只保留白名单；不传则不过滤
-    # allowed = ["read_query", "write_query"]
-    tools = get_mcp_tools(server_url)  # , allowed_tools=allowed)
+    allowed = ["read_query", "write_query"]
+    tools = get_mcp_server_tools(
+        server_url,
+        # allowed_tools = allowed     # 不传则不过滤
+    )
 
     for t in tools:
         pprint(t)
