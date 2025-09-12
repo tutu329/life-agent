@@ -71,4 +71,21 @@ server {
 二、mcp
     npx supergateway --stdio "npx @modelcontextprotocol/server-everything" --port 8100 --sse
 
-三、测试
+三、测试nginx+本地mcp的连通性
+    curl -vk https://127.0.0.1:8100/
+
+四、测试nginx+本地mcp的tool list
+1）vi mcp.json
+{
+  "mcpServers": {
+    "powerai": {
+      "type": "sse",
+      "url": "https://powerai.cc:8100/sse"
+    }
+  }
+}
+2）npx -y @modelcontextprotocol/inspector@latest \
+  --cli \
+  --config ./mcp.json \
+  --server powerai \
+  --method tools/list
