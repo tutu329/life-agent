@@ -78,7 +78,7 @@ server {
 1）vi mcp.json
 {
   "mcpServers": {
-    "powerai": {
+    "my_mcp_server": {
       "type": "sse",
       "url": "https://powerai.cc:8100/sse"
     }
@@ -87,5 +87,5 @@ server {
 2）npx -y @modelcontextprotocol/inspector@latest \
   --cli \
   --config ./mcp.json \
-  --server powerai \
+  --server my_mcp_server \
   --method tools/list
