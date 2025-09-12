@@ -26,10 +26,7 @@ async def call_tool(server_url: str, tool_name: str, args: dict):
         return result
 
 def main():
-    result = asyncio.run(list_server_and_tools("https://powerai.cc:8011/mcp/sqlite/sse"))
-    print(result)
-    initialize_response, list_tools_response = result
-    print(list_tools_response)
+    initialize_response, list_tools_response = asyncio.run(list_server_and_tools("https://powerai.cc:8011/mcp/sqlite/sse"))
     for tool in list_tools_response.tools:
         print(tool.model_dump())
 
