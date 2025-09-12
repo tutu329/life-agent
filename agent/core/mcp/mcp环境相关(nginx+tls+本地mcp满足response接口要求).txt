@@ -10,7 +10,7 @@
     # 查看状态
     systemctl status nginx
 
-2、nginx配置(将mcp的8100端口映射为https)
+2、nginx配置(将mcp的8011端口映射为https)
 1）生成fullchain(根据测试：powerai_public.crt 与 powerai.key 匹配（两者哈希一致），powerai_chain.crt 是中间证书链（与私钥不匹配是正常的）)
     cd /home/tutu/ssl
     sudo sh -c "cat powerai_public.crt powerai_chain.crt > powerai_fullchain.pem"
@@ -20,7 +20,7 @@ upstream mcp_sqlite     { server 127.0.0.1:8787; }
 upstream mcp_everything { server 127.0.0.1:8788; }
 
 server {
-    listen 8100 ssl http2;
+    listen 8011 ssl http2;
     server_name powerai.cc;
 
     ssl_certificate     /home/tutu/ssl/powerai_fullchain.pem;
@@ -51,27 +51,27 @@ server {
 
     # ---------- mcp_sqlite 实例 ----------
     location /mcp/sqlite/sse {
-    # SSE:  https://powerai.cc:8100/mcp/sqlite/sse  ->  127.0.0.1:8787/sse
+    # SSE:  https://powerai.cc:8011/mcp/sqlite/sse  ->  127.0.0.1:8787/sse
         proxy_set_header Host $host;
         proxy_set_header Connection "";
         proxy_set_header Cache-Control "no-cache";
         proxy_pass http://mcp_sqlite/sse;
     }
     location /mcp/sqlite/message {
-    # SSE:  https://powerai.cc:8100/mcp/sqlite/message  ->  127.0.0.1:8787/message
+    # SSE:  https://powerai.cc:8011/mcp/sqlite/message  ->  127.0.0.1:8787/message
         proxy_set_header Host $host;
         proxy_pass http://mcp_sqlite/message;
     }
 
     # ---------- everything 实例 ----------
-    # SSE:  https://powerai.cc:8100/mcp/everything/sse  ->  127.0.0.1:8788/sse
+    # SSE:  https://powerai.cc:8011/mcp/everything/sse  ->  127.0.0.1:8788/sse
     location /mcp/everything/sse {
         proxy_set_header Host $host;
         proxy_set_header Connection "";
         proxy_set_header Cache-Control "no-cache";
         proxy_pass http://mcp_everything/sse;
     }
-    # POST: https://powerai.cc:8100/mcp/everything/message -> 127.0.0.1:8788/message
+    # POST: https://powerai.cc:8011/mcp/everything/message -> 127.0.0.1:8788/message
     location /mcp/everything/message {
         proxy_set_header Host $host;
         proxy_pass http://mcp_everything/message;
@@ -101,7 +101,7 @@ server {
   --stdio "uv run mcp-server-sqlite --db-path ./test.db" \
   --port 8787 \
   --sse \
-  --baseUrl "https://powerai.cc:8100/mcp/sqlite"
+  --baseUrl "https://powerai.cc:8011/mcp/sqlite"
 
 
     2)everything:
@@ -109,12 +109,12 @@ server {
   --stdio "npx @modelcontextprotocol/server-everything" \
   --port 8788 \
   --sse \
-  --baseUrl "https://powerai.cc:8100/mcp/everything"
+  --baseUrl "https://powerai.cc:8011/mcp/everything"
 
 
 三、测试nginx+本地mcp的连通性
-    curl -vk https://127.0.0.1:8100/mcp/sqlite/sse
-    curl -vk https://127.0.0.1:8100/mcp/everything/sse
+    curl -vk https://127.0.0.1:8011/mcp/sqlite/sse
+    curl -vk https://127.0.0.1:8011/mcp/everything/sse
 
 四、测试nginx+本地mcp的tool list
 1）vi mcp.json
@@ -122,11 +122,11 @@ server {
   "mcpServers": {
     "sqlite": {
       "type": "sse",
-      "url": "https://powerai.cc:8100/mcp/sqlite/sse"
+      "url": "https://powerai.cc:8011/mcp/sqlite/sse"
     },
     "everything": {
       "type": "sse",
-      "url": "https://powerai.cc:8100/mcp/everything/sse"
+      "url": "https://powerai.cc:8011/mcp/everything/sse"
     }
   }
 }
