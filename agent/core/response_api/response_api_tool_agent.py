@@ -34,6 +34,7 @@ from uuid import uuid4
 import json
 
 from console import err, agent_query_output, agent_tool_chosen_output, agent_tool_result_output, agent_finished_output
+from agent.core.mcp.mcp_manager import get_mcp_server_tool_names, get_mcp_server_tools
 
 DEBUG = config.Global.app_debug
 
@@ -355,61 +356,27 @@ def main_response_agent_mcp_nginx():
     import llm_protocol
     import config
 
-    http_client = httpx.Client(proxy=config.g_vpn_proxy)
-    llm_config = llm_protocol.g_online_groq_gpt_oss_120b
-    # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
+    server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
+    tools = get_mcp_server_tools(server_url)
+    tool_names = get_mcp_server_tool_names(server_url)
+    print(tools)
+    for tool in tools:
+        print(tool)
 
-    client = OpenAI(
-        api_key=llm_config.api_key,
-        base_url=llm_config.base_url,
-        http_client=http_client,
+    agent_config = Agent_Config(
+        agent_name='MCP agent',
+        tool_names=tool_names,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
+        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4_lmstudio,
+        # llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        has_history=True,
     )
-
-    resp = client.responses.create(
-        model=llm_config.llm_model_id,
-        tools=[
-            {
-                "type": "mcp",
-                "server_label": "sqlite",
-                "server_description": "该MCP服务提供sqlite服务",
-                "server_url": "https://powerai.cc:8100/mcp/sqlite/sse",
-                "allowed_tools": ["create_table", "write_query", "read_query"],
-                "require_approval": "never",
-            },
-            {
-                "type": "mcp",
-                "server_label": "everything",
-                "server_description": "This MCP server attempts to exercise all the features of the MCP protocol",
-                "server_url": "https://powerai.cc:8100/mcp/everything/sse",
-                "require_approval": "never",
-            },
-            {
-                "type": "mcp",
-                "server_label": "dmcp",
-                "server_description": "A Dungeons and Dragons MCP server to assist with dice rolling.",
-                "server_url": "https://dmcp-server.deno.dev/sse",
-                "require_approval": "never",
-            },
-        ],
-        input=(
-            "请务必使用 *sqlite* 的 MCP 工具在数据库中新建表“工资清单”："
-            "列包括 序号 INTEGER 主键自增、姓名 TEXT、性别 TEXT、手机号 TEXT 唯一；"
-            "随后插入 3 行示例数据；最后 SELECT * 返回查询结果。"
-        ),
-        # input="帮我新建一个叫工资清单的表格",
-        # input="Roll 2d4+1",
-        # input="调用everything mcp计算23+999=?",
-
-        tool_choice="required",
-    )
-
-    # print(resp)
-    print('----------------------resp.output--------------------------')
-    for item in resp.output:
-        print(item)
-    print('---------------------/resp.output--------------------------')
-    print(resp.output_text.replace('\n', ''))
-
+    query = '列出所有表格名称'
+    agent = Response_API_Tool_Agent(agent_config=agent_config)
+    agent.init()
+    agent.run(query=query, tools=tools)
 
 def main_response_agent_mcp_server():
     from openai import OpenAI
@@ -445,6 +412,6 @@ def main_response_agent_mcp_server():
     print(resp.output_text.replace('\n', ''))
 
 if __name__ == "__main__":
-    main_response_agent()
-    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
+    # main_response_agent()
+    main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()

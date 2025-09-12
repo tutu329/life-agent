@@ -1,26 +1,34 @@
 from typing import List, Optional, Dict, Any, Iterable, Callable
 from pydantic import BaseModel, Field, ConfigDict
+from mcp import ClientSession
+from mcp.client.sse import sse_client
 import asyncio
 from pprint import pprint
 
-from agent.core.response_api.response_api_tool_agent import Tool_Property, Tool_Parameters, Tool_Request
+from tools.llm.response_api_client import Tool_Property, Tool_Parameters, Tool_Request
 
 # -------------------------------
 # 内部：真正的异步实现（保持原有逻辑）
 # -------------------------------
-async def _list_server_and_tools_async(server_url: str):
-    from mcp import ClientSession
-    from mcp.client.sse import sse_client
+async def _call_tool(server_url: str, tool_name: str, args: dict):
+    async with sse_client(url=server_url) as streams, ClientSession(*streams) as session:
+        # 初始化
+        await session.initialize()
 
+        # 调用具体工具
+        result = await session.call_tool(
+            name=tool_name,
+            arguments=args,
+        )
+        return result
+
+async def _list_server_and_tools_async(server_url: str):
     async with sse_client(url=server_url) as streams, ClientSession(*streams) as session:
         initialize_response = await session.initialize()
         list_tools_response = await session.list_tools()
         return initialize_response, list_tools_response
 
 async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable[str]] = None) -> List[Tool_Request]:
-    from mcp import ClientSession
-    from mcp.client.sse import sse_client
-
     allowed: Optional[set] = set(allowed_tools) if allowed_tools else None
 
     def _pick_json_type(t: Any) -> str:
@@ -86,6 +94,9 @@ async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable
 # -------------------------------
 # 对外：同步封装（阻塞调用）
 # -------------------------------
+def call_tool(server_url: str, tool_name: str, args: dict):
+    return asyncio.run(_call_tool(server_url, tool_name, args))
+
 def list_server_and_tools(server_url: str):
     """
     同步版本：返回 (initialize_response, list_tools_response)
@@ -109,6 +120,13 @@ def get_mcp_server_tools(server_url: str, allowed_tools: Optional[Iterable[str]]
 # -------------------------------
 def main():
     server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
+    result = call_tool(
+        server_url,
+        tool_name="read_query",
+        args={"query": "SELECT name FROM sqlite_master WHERE type='table';"}
+    )
+    print(result)
+
     get_mcp_server_tool_names(server_url)
 
     allowed = ["read_query", "write_query"]
