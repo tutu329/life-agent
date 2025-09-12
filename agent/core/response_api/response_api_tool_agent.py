@@ -330,6 +330,7 @@ def main_response_agent():
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4_lmstudio,
+        # llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         has_history=True,
     )
 
@@ -348,5 +349,69 @@ def main_response_agent():
     # agent.run(query='你好，我的名字是土土', tools=tools)
     # agent.run(query='你还记得我的名字是什么吗？', tools=tools)
 
+def main_response_agent_mcp_stdio():
+    from openai import OpenAI
+    import httpx
+    import llm_protocol
+    import config
+
+    http_client = httpx.Client(proxy=config.g_vpn_proxy)
+    llm_config = llm_protocol.g_online_groq_gpt_oss_20b
+
+    client = OpenAI(
+        api_key=llm_config.api_key,
+        base_url=llm_config.base_url,
+        http_client=http_client,
+    )
+
+    resp = client.responses.create(
+        model=llm_config.llm_model_id,
+        tools=[
+            {
+                "type": "mcp",
+                "server_label": "everything",
+                "server_description": "Local MCP server (server-everything via STDIO)",
+                "server_command": "npx",
+                "server_args": ["@modelcontextprotocol/server-everything"],
+                "server_transport": "stdio",  # 👈 关键改这里
+                "require_approval": "never",
+            },
+        ],
+        input="你怎么用",
+    )
+
+    print(resp.output_text)
+
+def main_response_agent_mcp_server():
+    from openai import OpenAI
+    import httpx
+    import llm_protocol
+
+    http_client = httpx.Client(proxy=config.g_vpn_proxy)
+    llm_config = llm_protocol.g_online_groq_gpt_oss_20b
+    client = OpenAI(
+        api_key=llm_config.api_key,
+        base_url=llm_config.base_url,
+        http_client=http_client,
+    )
+
+    resp = client.responses.create(
+        model=llm_config.llm_model_id,
+        tools=[
+            {
+                "type": "mcp",
+                "server_label": "dmcp",
+                "server_description": "A Dungeons and Dragons MCP server to assist with dice rolling.",
+                "server_url": "https://dmcp-server.deno.dev/sse",
+                "require_approval": "never",
+            },
+        ],
+        input="Roll 2d4+1",
+    )
+
+    print(resp.output_text)
+
 if __name__ == "__main__":
     main_response_agent()
+    # main_response_agent_mcp_server()
+    # main_response_agent_mcp_stdio()

@@ -1,0 +1,11 @@
+1、安装nginx（用于将mcp的http映射到https，openai的response api必须mcp开https）
+    # 更新包索引
+    sudo apt update
+    # 安装 nginx
+    sudo apt install -y nginx
+    # 设置开机自启
+    sudo systemctl enable nginx
+    # 启动服务
+    sudo systemctl start nginx
+    # 查看状态
+    systemctl status nginx
