@@ -370,12 +370,17 @@ def main_response_agent_mcp_nginx():
         tools=[
             {
                 "type": "mcp",
+                "server_label": "sqlite",
+                "server_description": "该MCP服务提供sqlite服务",
+                "server_url": "https://powerai.cc:8100/mcp/sqlite/sse",
+                "allowed_tools": ["create_table", "write_query", "read_query"],
+                "require_approval": "never",
+            },
+            {
+                "type": "mcp",
                 "server_label": "everything",
                 "server_description": "This MCP server attempts to exercise all the features of the MCP protocol",
-                # 原来是 stdio，现在改成 http
-                "server_transport": "http",
-                # 指向你 Nginx 的公开地址（本地就是 127.0.0.1:8100）
-                "server_url": "https://127.0.0.1:8100/sse",
+                "server_url": "https://powerai.cc:8100/mcp/everything/sse",
                 "require_approval": "never",
             },
             {
@@ -386,8 +391,16 @@ def main_response_agent_mcp_nginx():
                 "require_approval": "never",
             },
         ],
+        input=(
+            "请务必使用 *sqlite* 的 MCP 工具在数据库中新建表“工资清单”："
+            "列包括 序号 INTEGER 主键自增、姓名 TEXT、性别 TEXT、手机号 TEXT 唯一；"
+            "随后插入 3 行示例数据；最后 SELECT * 返回查询结果。"
+        ),
+        # input="帮我新建一个叫工资清单的表格",
         # input="Roll 2d4+1",
-        input="调用everything mcp计算23+999=?",
+        # input="调用everything mcp计算23+999=?",
+
+        tool_choice="required",
     )
 
     # print(resp)
@@ -425,13 +438,13 @@ def main_response_agent_mcp_server():
         input="Roll 2d4+1",
     )
 
-    print(resp.output_text)
-
-def mcp_test():
-    print()
+    print('----------------------resp.output--------------------------')
+    for item in resp.output:
+        print(item)
+    print('---------------------/resp.output--------------------------')
+    print(resp.output_text.replace('\n', ''))
 
 if __name__ == "__main__":
-    # main_response_agent()
+    main_response_agent()
+    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()
-    # main_response_agent_mcp_nginx()
-    mcp_test()

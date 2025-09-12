@@ -130,7 +130,7 @@ server {
     }
   }
 }
-2）测试
+2）测试工具清单的查询
 npx -y @modelcontextprotocol/inspector@latest \
   --cli \
   --config ./mcp.json \
@@ -141,3 +141,38 @@ npx -y @modelcontextprotocol/inspector@latest \
   --config ./mcp.json \
   --server everything \
   --method tools/list
+
+3）测试如sqlite的工具如：list_tables、
+# 列出所有表
+npx -y @modelcontextprotocol/inspector \
+  --cli --config ./mcp.json --server sqlite \
+  --method tools/call --tool-name list_tables
+
+# 查看表 t 的列定义
+npx -y @modelcontextprotocol/inspector \
+  --cli --config ./mcp.json --server sqlite \
+  --method tools/call --tool-name describe_table \
+  --tool-arg table_name=t
+
+# 新建表：通讯录（序号/姓名/性别/手机号）
+npx -y @modelcontextprotocol/inspector \
+  --cli --config ./mcp.json --server sqlite \
+  --method tools/call --tool-name create_table \
+  --tool-arg query="CREATE TABLE IF NOT EXISTS \"通讯录\" (
+    \"序号\"   INTEGER PRIMARY KEY AUTOINCREMENT,
+    \"姓名\"   TEXT    NOT NULL,
+    \"性别\"   TEXT    NOT NULL,
+    \"手机号\" TEXT    NOT NULL UNIQUE
+  );"
+
+# 随机填了一些常见姓名/手机号（注意：手机号当 TEXT 存储）
+npx -y @modelcontextprotocol/inspector \
+  --cli --config ./mcp.json --server sqlite \
+  --method tools/call --tool-name write_query \
+  --tool-arg query="INSERT INTO \"通讯录\" (\"姓名\",\"性别\",\"手机号\") VALUES
+  ('张伟','男','13800010001'),
+  ('王芳','女','13800010002'),
+  ('李军','男','13800010003'),
+  ('刘敏','女','13800010004'),
+  ('陈晨','其他','13800010005');"
+
