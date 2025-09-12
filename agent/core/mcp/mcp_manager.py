@@ -113,7 +113,6 @@ def main():
 
     for t in tools:
         pprint(t)
-        # 或：pprint(t.model_dump())
 
 if __name__ == "__main__":
     main()
