@@ -37,6 +37,7 @@ def main():
             args={"query": "SELECT name FROM sqlite_master WHERE type='table';"}
         )
     )
+    print()
     pprint(result.model_dump())   # Pydantic 对象转 dict
 
 if __name__ == "__main__":
