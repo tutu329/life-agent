@@ -5,7 +5,7 @@ import uuid
 # Import your existing modules
 import config
 from config import dred, dblue, dyellow
-from agent.core.tool_agent import Tool_Agent
+from agent.core.react_agent import Tool_Agent
 from agent.tools.table_tool import Table_Tool
 from server_manager.web_server_task_manager import Web_Server_Task_Manager
 

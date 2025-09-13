@@ -89,7 +89,7 @@ class Folder_Tool(Base_Tool):
 
 def main_folder():
     import config
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
     from agent.core.agent_config import Agent_Config
 

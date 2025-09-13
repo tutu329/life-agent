@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from tools.llm.api_client import LLM_Client
 from client.office.parse_scheme import get_scheme_list
 
-from agent.core.tool_agent import Tool_Agent
+from agent.core.react_agent import Tool_Agent
 from agent.tools.folder_tool import Folder_Tool
 from agent.tools.search_tool import Search_Tool
 from agent.tools.table_tool import Table_Tool

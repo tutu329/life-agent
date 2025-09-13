@@ -687,7 +687,7 @@ class Write_Chapter_Tool(Base_Tool):
 # 用于测试的主函数
 def main_office():
     import config
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     from agent.core.agent_config import Agent_Config
 
     tools = [Office_Tool]

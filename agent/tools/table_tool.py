@@ -362,7 +362,7 @@ def main_word():
 
 def main_client():
     import config
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     from agent.core.agent_config import Agent_Config
 
     tools=[Table_Tool]

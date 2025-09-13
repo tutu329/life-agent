@@ -10,7 +10,7 @@ import llm_protocol
 from config import dred, dgreen, dblue
 from tools.llm.api_client import LLM_Client, Legacy_Async_LLM
 
-from agent.core.tool_agent import Tool_Agent
+from agent.core.react_agent import Tool_Agent
 from tools.t2i.api_client_comfy import Comfy, Work_Flow_Type
 
 import time

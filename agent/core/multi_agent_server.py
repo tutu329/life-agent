@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import Future
 import time
 
-from agent.core.tool_agent import Tool_Agent
+from agent.core.react_agent import Tool_Agent
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.tools.tool_manager import legacy_get_all_local_tools_class, get_all_registered_tools_class, server_register_tool, server_get_tool_data_by_id
 from agent.core.protocol import Agent_Status, Agent_Stream_Queues, Query_Agent_Context

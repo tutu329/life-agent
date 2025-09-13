@@ -17,7 +17,7 @@ from config import Port, dyellow, dred, dgreen, dcyan, dblue
 from agent.core.protocol import Query_Agent_Context
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
-from agent.core.tool_agent import Tool_Agent
+from agent.core.react_agent import Tool_Agent
 from agent.core.multi_agent_server import Registered_Agent_Data, server_continue_agent, server_cancel_agent, server_start_and_register_2_levels_agents_system, print_agent_status, server_get_agent_status, __server_wait_registered_agent
 
 from contextlib import asynccontextmanager

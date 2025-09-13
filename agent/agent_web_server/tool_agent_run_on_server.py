@@ -4,7 +4,7 @@ import uuid
 
 # Import your existing modules
 from config import dblue
-from agent.core.tool_agent import Tool_Agent
+from agent.core.react_agent import Tool_Agent
 from agent.tools.folder_tool import Folder_Tool
 from server_manager.web_server_task_manager import Web_Server_Task_Manager
 

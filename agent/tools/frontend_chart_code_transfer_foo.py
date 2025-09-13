@@ -60,7 +60,7 @@ class Frontend_Chart_Code_Transfer_Tool(Base_Tool):
 
 def main_db_tool():
     import config
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     from agent.core.agent_config import Agent_Config
 
     tools=[Frontend_Chart_Code_Transfer_Tool]

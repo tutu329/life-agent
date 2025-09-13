@@ -340,7 +340,7 @@ def main_test_get_all_tools():
 
 def main_test_agent():
     from agent.core.agent_config import Agent_Config
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     # tool_names = ['Folder_Tool']
     tool_names = ['Human_Console_Tool', 'Folder_Tool']
     class_list = get_all_registered_tools_class(tool_names)
@@ -367,7 +367,7 @@ def main_test_agent():
 
 def main_test_server_start():
     from pprint import pprint
-    from agent.core.tool_agent import client_run_agent
+    from agent.core.react_agent import client_run_agent
     server_register_all_local_tool_on_start()
 
     tool_data_list = server_get_all_registered_tool_data_list()

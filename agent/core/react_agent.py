@@ -4,7 +4,7 @@
 # 正常运行代码是：
 # python -m agent.tool_agent
 # 转换代码是：
-# pyinstaller agent/tool_agent.py --paths=. --distpath ~/
+# pyinstaller agent/react_agent.py --paths=. --distpath ~/
 # 其中“--paths=.”表示将/home/tutu/server/life-agent加入到PyInstaller分析路径中，以便找到tools模块
 # 可执行代码将输出至~/tool_agent/下，包括可执行代码和关联so等文件
 
@@ -981,7 +981,7 @@ def main_folder():
     import config
     from pprint import pprint
 
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     from agent.tools.folder_tool import Folder_Tool
     from agent.core.agent_config import Agent_Config
     from agent.tools.tool_manager import server_register_all_local_tool_on_start
@@ -1006,7 +1006,8 @@ def main_folder():
         # llm_config=llm_protocol.g_online_groq_kimi_k2,
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_qwen3_30b_chat,
         has_history=True,
     )
@@ -1027,7 +1028,7 @@ def main_folder():
 
 def main_table():
     import config
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     from agent.tools.table_tool import Table_Tool
     from agent.core.agent_config import Agent_Config
 

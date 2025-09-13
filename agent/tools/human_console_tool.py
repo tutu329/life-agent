@@ -40,7 +40,7 @@ class Human_Console_Tool(Base_Tool):
         return action_result
 
 def main_agent_as_tool():
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     from agent.core.agent_config import Agent_Config
     from agent.tools.folder_tool import Folder_Tool
 
@@ -86,7 +86,7 @@ def main_agent_as_tool():
 
 def main_human_console_tool():
     import config
-    from agent.core.tool_agent import Tool_Agent
+    from agent.core.react_agent import Tool_Agent
     from agent.core.agent_config import Agent_Config
     from agent.tools.folder_tool import Folder_Tool
 
