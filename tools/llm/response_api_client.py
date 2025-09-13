@@ -100,7 +100,7 @@ class Response_Request(BaseModel):
     model           :str
     temperature     :float = 1.0
     top_p           :float = 1.0
-    instructions    :str =  'You are a helpful agent.'  # 注意这里用了'agent'
+    instructions    :str =  'You are a helpful agent. if tool has no arguments, use "{}", do not use "{'', ''}" or "{\"\", \"\"}".'  # 注意这里用了'agent'
     # input           :str | List[Dict[str, Any]] = None  # 非第一次responses.create时为None，并在Response_LLM_Client里采用history_input_list
     tools           :List[Tool_Request]
     previous_response_id    :Optional[str] = None    # 上一次openai.response.create()返回的res.id
@@ -362,7 +362,7 @@ class Response_LLM_Client:
         dblue('================================/self.history_input_list===================================')
 
         res = None
-        response_result = None
+        response_result = Response_Result()
 
         try:
             chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
@@ -375,9 +375,13 @@ class Response_LLM_Client:
             res = self.openai.chat.completions.create(messages=self.history_input_list, **chatml_request.model_dump(exclude_none=True))
         except Exception as e:
             err(e)
+            response_result.error = str(e)
 
         dyellow('===================================chatml.choices[0].message====================================')
         dyellow('response: ', res)
+
+        if res is None:
+            self.history_input_list.append({'role': 'assistant', 'content': response_result.error})
 
         content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else None
         if content:
@@ -491,10 +495,17 @@ class Response_LLM_Client:
 
         res = None
         response_result = Response_Result()
+
         try:
+            # dpprint(request.model_dump(exclude_none=True))
+            dyellow('=================================request.tools===================================')
+            for tool in request.tools:
+                dyellow(tool)
+            dyellow('================================/request.tools===================================')
             res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
         except Exception as e:
             err(e)
+            response_result.error = str(e)
 
         # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
         if res:
@@ -502,7 +513,10 @@ class Response_LLM_Client:
             response_result = self._responses_result(res)
         else:
             dred(f'【Response_LLM_Client.responses_create】Warning: responses.create()返回失败.')
-
+            self.history_input_list.append({'role': 'assistant', 'content': response_result.error})
+            dprint('---------------------------------response_result(未调用工具)------------------------------------')
+            dpprint(response_result.model_dump())
+            dprint('--------------------------------/response_result(未调用工具)------------------------------------')
 
         # ----------------------注册tool func-------------------------
         self.funcs = [] # 要先清除之前的tools

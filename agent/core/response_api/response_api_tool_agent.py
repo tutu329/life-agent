@@ -120,7 +120,8 @@ class Response_API_Tool_Agent:
                             output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
                             error=response_result.error
                         )
-                        agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
+                        agent_tool_result_output(json.loads(response_result.tool_call_result))
+                        # agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
                         # self.response_llm_client.history_input_list.append(tool_call_result_item)
 
                         return response_result
@@ -204,10 +205,14 @@ class Response_API_Tool_Agent:
             except Exception as e:
                 err(e)
                 agent_err_count += 1
-                responses_result.error = e
+                responses_result.error = str(e)
                 continue
 
             # tool_call_paras = None
+
+            # tool解析出错等情况下
+            if responses_result.error:
+                continue
 
             # 有时候没有调用工具，直接output
             if not responses_result.function_tool_call:
@@ -359,9 +364,9 @@ def main_response_agent_mcp_nginx():
     server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
     tools = get_mcp_server_tools(server_url)
     tool_names = get_mcp_server_tool_names(server_url)
-    print(tools)
-    for tool in tools:
-        print(tool)
+    # print(tools)
+    # for tool in tools:
+    #     print(tool)
 
     agent_config = Agent_Config(
         agent_name='MCP agent',

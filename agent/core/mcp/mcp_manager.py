@@ -1,11 +1,23 @@
+import json
 from typing import List, Optional, Dict, Any, Iterable, Callable
 from pydantic import BaseModel, Field, ConfigDict
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 import asyncio
 from pprint import pprint
+import config
 
 from tools.llm.response_api_client import Tool_Property, Tool_Parameters, Tool_Request
+
+DEBUG = config.Global.app_debug
+
+def dprint(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
+
+def dpprint(*args, **kwargs):
+    if DEBUG:
+        pprint(*args, **kwargs)
 
 # -------------------------------
 # 内部：真正的异步实现（保持原有逻辑）
@@ -16,10 +28,15 @@ async def _call_tool(server_url: str, tool_name: str, args: dict):
         await session.initialize()
 
         # 调用具体工具
-        result = await session.call_tool(
+        res = await session.call_tool(
             name=tool_name,
             arguments=args,
         )
+        dprint(res)
+        text_list = [item.text for item in res.content]
+        # result = json.dumps(res.content, ensure_ascii=False)
+        dprint(text_list)
+        result = '\n'.join(text_list)
         return result
 
 async def _list_server_and_tools_async(server_url: str):
@@ -28,6 +45,9 @@ async def _list_server_and_tools_async(server_url: str):
         list_tools_response = await session.list_tools()
         return initialize_response, list_tools_response
 
+# -------------------------------
+# 内部：真正的异步实现（保持原有逻辑）——给每个 tool 绑定 func
+# -------------------------------
 async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable[str]] = None) -> List[Tool_Request]:
     allowed: Optional[set] = set(allowed_tools) if allowed_tools else None
 
@@ -42,6 +62,27 @@ async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable
         if not t:
             return "string"
         return t if t in allowed_types else "string"
+
+    # 绑定一个同步函数：支持 *args（按 required 顺序）+ **kwargs，最终都转成 kwargs
+    def _make_bound_func(_server_url: str, _tool_name: str, _required: List[str]):
+        def _caller(*args, **kwargs):
+            # 把位置参数映射到 required 字段
+            if args:
+                # 只按 required 的顺序填充，剩余的必须通过 kwargs 传
+                mapped = {k: v for k, v in zip(_required, args)}
+                # 合并 kwargs（kwargs 会覆盖相同键）
+                mapped.update(kwargs)
+            else:
+                mapped = dict(kwargs)
+
+            # （可选）做一个最小必填校验，早点发现问题
+            missing = [k for k in _required if k not in mapped]
+            if missing:
+                raise TypeError(f"Missing required arguments for tool '{_tool_name}': {missing}")
+
+            # 调用你现有的同步封装
+            return call_tool(_server_url, _tool_name, mapped)
+        return _caller
 
     async with sse_client(url=server_url) as streams, ClientSession(*streams) as session:
         await session.initialize()
@@ -79,13 +120,16 @@ async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable
                 additionalProperties=False,
             )
 
+            # 这里把 func 绑定进去
+            bound_func = _make_bound_func(server_url, name, schema_required)
+
             tr = Tool_Request(
                 type="function",
                 name=name,
                 description=description,
                 strict=True,
                 parameters=parameters,
-                func=None,
+                func=bound_func,   # 关键：赋值给 func
             )
             tool_requests.append(tr)
 
@@ -106,7 +150,7 @@ def list_server_and_tools(server_url: str):
 def get_mcp_server_tool_names(server_url: str):
     initialize_response, list_tools_response = list_server_and_tools(server_url)
     tool_names = [tool.name for tool in list_tools_response.tools]
-    print('tools: ', tool_names)
+    dprint('tools: ', tool_names)
     return tool_names
 
 def get_mcp_server_tools(server_url: str, allowed_tools: Optional[Iterable[str]] = None) -> List[Tool_Request]:
@@ -138,5 +182,20 @@ def main():
     for t in tools:
         pprint(t)
 
+def main_func_test():
+    server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
+    tools = get_mcp_server_tools(server_url)
+
+    # 找到 read_query 工具并直接调用其 func（既可按 required 顺序传 *args，也可 **kwargs）
+    read_tool = next(t for t in tools if t.name == "read_query")
+    res = read_tool.func(query="SELECT name FROM sqlite_master WHERE type='table';")
+    print(res)
+
+    # 若某工具 required = ['a','b']，也可：
+    # div_res = div_tool.func(6, 3)              # 位置参数
+    # div_res = div_tool.func(a=6, b=3)          # 关键字参数
+    # div_res = div_tool.func(6, b=3)            # 混合（*args 覆盖 required 的前缀）
+
 if __name__ == "__main__":
     main()
+    # main_func_test()

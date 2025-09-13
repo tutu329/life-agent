@@ -191,7 +191,11 @@ def agent_tool_result_output(action_result):
     print(f'{LIGHT_BLACK}  ⎿ {action_result}{RESET}')
 
 def agent_finished_output(final_answer):
+    if final_answer is None:
+        final_answer = ''
+
     final_answer = final_answer.strip()
+
     # final_answer = final_answer.replace("\n", " ").strip()
     print(f'{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer.strip()}{RESET}')
 
