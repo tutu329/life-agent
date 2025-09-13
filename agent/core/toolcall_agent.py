@@ -372,8 +372,10 @@ def main_response_agent_mcp_nginx():
     import config
 
     server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
+    # server_url = "https://powerai.cc:8011/mcp/everything/sse"
     tools = get_mcp_server_tools(server_url)
     tool_names = get_mcp_server_tool_names(server_url)
+    print(tool_names)
     # print(tools)
     # for tool in tools:
     #     print(tool)
