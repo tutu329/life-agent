@@ -197,6 +197,7 @@ class Response_LLM_Client:
             # chatml接口
             tool_call_result_item = {
                 "role": "tool",
+                "tool_call_id": call_id,
                 "content": f'tool call result: "{output}", tool call error: "{error}".',
                 # "content": f'tool call arguments: "{arguments}", tool call result: "{output}", tool call error: "{error}".',
             }
@@ -273,11 +274,11 @@ class Response_LLM_Client:
         # }
 
         if hasattr(request, 'tools'):
-            for tool_dict in request.tools:
-                dyellow(tool_dict)
+            # for tool_dict in request.tools:
+                # dyellow(tool_dict)
 
             for tool_dict in request.tools:
-                dgreen(f'tool_dict: {tool_dict}')
+                # dgreen(f'tool_dict: {tool_dict}')
 
                 # 1、将response tool除type外的部分装到新的chatml tool中
                 response_tool = deepcopy(tool_dict)
@@ -289,8 +290,8 @@ class Response_LLM_Client:
                 del tool_dict.__dict__['parameters']
                 del tool_dict.__dict__['strict']
 
-            for tool_dict in request.tools:
-                dyellow(tool_dict)
+            # for tool_dict in request.tools:
+                # dyellow(tool_dict)
 
             return request
 
@@ -320,14 +321,14 @@ class Response_LLM_Client:
         # request['max_tokens'] = request['max_output_tokens']
         # request.pop('max_output_tokens')
 
-        dyellow('-------------response tool[0]--------------')
-        dpprint(request.tools[0])
-        dyellow('------------/response tool[0]--------------')
+        # dyellow('-------------response tool[0]--------------')
+        # dpprint(request.tools[0])
+        # dyellow('------------/response tool[0]--------------')
 
         request = self.tools_from_response_to_chatml(request=request)
-        dyellow('-----------chatml tool[0]------------')
-        dpprint(request.tools[0])
-        dyellow('----------/chatml tool[0]------------')
+        # dyellow('-----------chatml tool[0]------------')
+        # dpprint(request.tools[0])
+        # dyellow('----------/chatml tool[0]------------')
 
         request.extra_body = {'reasoning_effort': request.reasoning['effort']}
         del request.__dict__['reasoning']
@@ -362,6 +363,7 @@ class Response_LLM_Client:
         dblue('================================/self.history_input_list===================================')
 
         res = None
+        call_id = ''
         response_result = Response_Result()
 
         try:
@@ -382,6 +384,9 @@ class Response_LLM_Client:
 
         if res is None:
             self.history_input_list.append({'role': 'assistant', 'content': response_result.error})
+        else:
+            self.history_input_list.append(res.choices[0].message.model_dump(exclude_none=True))
+
 
         content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else None
         if content:
@@ -398,6 +403,7 @@ class Response_LLM_Client:
         if hasattr(res.choices[0].message, 'tool_calls') and res.choices[0].message.tool_calls:
             tool_arguments = res.choices[0].message.tool_calls[0].function.arguments
             tool_name = res.choices[0].message.tool_calls[0].function.name
+            call_id = res.choices[0].message.tool_calls[0].id
         else:
             tool_arguments = ''
             tool_name = ''
@@ -416,17 +422,18 @@ class Response_LLM_Client:
             #     {"role": "assistant", "reasoning_content": reasoning_content}
             # ]
         elif content:
-            self.history_input_list += [
-                {"role": "assistant", "content": content}
-            ]
-        else:
-            dred(f'【Response_LLM_Client.chatml_create】Warning: chatml.create()返回失败.')
+            pass
+            # self.history_input_list += [
+            #     {"role": "assistant", "content": content}
+            # ]
+        # else:
+        #     dred(f'【Response_LLM_Client.chatml_create】Warning: chatml.create()返回失败.')
         # ----------------------------/添加到历史-------------------------------
 
         responses_result = Response_Result(
             reasoning = reasoning_content,
             output = content,
-            function_tool_call = {'arguments': tool_arguments, 'call_id': '', 'name': tool_name},
+            function_tool_call = {'arguments': tool_arguments, 'call_id': call_id, 'name': tool_name},
             error=tool_call_error
         )
 
@@ -547,6 +554,7 @@ class Response_LLM_Client:
         dprint()
         dprint(f'==========================================Response Items(res id: "{res.id}")==========================================')
         if res.output:
+            dyellow(res.output)
             for item in res.output:
                 if isinstance(item, ResponseFunctionToolCall):
                     dprint('---------------------------ResponseFunctionToolCall------------------------------------')

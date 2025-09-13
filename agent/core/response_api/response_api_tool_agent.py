@@ -178,7 +178,9 @@ class Response_API_Tool_Agent:
         )
         responses_result = Response_Result()
 
-        while not hasattr(responses_result, 'output') or responses_result.output=='' or responses_result.output is None:
+        # 只有当res包含output、且不包含function_tool_call时，才退出
+        while (responses_result.function_tool_call and responses_result.function_tool_call['name']) or (not hasattr(responses_result, 'output') or responses_result.output=='' or responses_result.output is None):
+        # while (responses_result.function_tool_call) or (not hasattr(responses_result, 'output') or responses_result.output=='' or responses_result.output is None):
             agent_count += 1
             if agent_err_count >= self.agent_max_error_retry:
                 dred(f'【Response_API_Tool_Agent.run()】出错次数超出agent_max_error_retry({self.agent_max_error_retry})，退出循环.')
@@ -202,6 +204,10 @@ class Response_API_Tool_Agent:
                 else:
                     responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
                 # dpprint(responses_result.model_dump())
+                dblue(f'-------------------------responses_result(use_chatml: {use_chatml})-----------------------------')
+                for item in responses_result:
+                    dblue(item)
+                dblue(f'------------------------/responses_result-----------------------------')
             except Exception as e:
                 err(e)
                 agent_err_count += 1
@@ -332,7 +338,8 @@ def main_response_agent():
         tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_local_qwen3_30b_chat,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        llm_config=llm_protocol.g_online_deepseek_chat,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4_lmstudio,
@@ -420,6 +427,6 @@ def main_response_agent_mcp_server():
     print(resp.output_text.replace('\n', ''))
 
 if __name__ == "__main__":
-    # main_response_agent()
-    main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
+    main_response_agent()
+    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()
