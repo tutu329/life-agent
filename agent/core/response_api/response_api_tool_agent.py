@@ -378,10 +378,10 @@ def main_response_agent_mcp_nginx():
         # llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         has_history=True,
     )
-    query = '列出所有表格名称'
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
-    agent.run(query=query, tools=tools)
+    agent.run(query='列出所有表格名称', tools=tools)
+    agent.run(query='查看通信录表的数据', tools=tools)
 
 def main_response_agent_mcp_server():
     from openai import OpenAI
