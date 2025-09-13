@@ -381,11 +381,11 @@ def main_response_agent_mcp_nginx():
     agent_config = Agent_Config(
         agent_name='MCP agent',
         tool_names=tool_names,
-        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4_lmstudio,
-        # llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         has_history=True,
     )
     agent = Response_API_Tool_Agent(agent_config=agent_config)
@@ -430,6 +430,6 @@ def main_response_agent_mcp_server():
     print(resp.output_text.replace('\n', ''))
 
 if __name__ == "__main__":
-    main_response_agent()
-    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
+    # main_response_agent()
+    main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()

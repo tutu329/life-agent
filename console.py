@@ -197,7 +197,7 @@ def agent_finished_output(final_answer):
     final_answer = final_answer.strip()
 
     # final_answer = final_answer.replace("\n", " ").strip()
-    print(f'{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer.strip()}{RESET}')
+    print(f'{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer.strip()}{RESET}\n')
 
 def llm_user_output(query):
     print(f'{PALE_GRAY}> {query.strip()!r}{RESET}')
