@@ -17,7 +17,7 @@
 #         }
 # 4、response.create()中，在res输出output(assistant的text输出）后，需要一个新的{'role': 'user', 'content': ...}开启下一轮对话或工具调用任务
 # 5、response.create()连续调用工具完成任务后会输出output，此时若继续调用response.create()进行新一轮run，似乎必须将input历史中的ResponseReasoningItem、ResponseFunctionToolCall、ResponseOutputMessage等清除，不然会报错
-# 6、chatml的tool_call过程，关键点两个：
+# 6、chatml的tool_call过程，与response的tool_call不太一样，关键点两个：
 #   1) 输入tools信息并返回res后，要msgs.append(resp.choices[0].message.model_dump(exclude_none=True)), 类似response中的input += res.output
 #   2) 获得工具调用结果后，要msgs.append({ "role": "tool", "tool_call_id": call_id, "content": f'tool call result: "{output}", tool call error: "{error}".' }), 这里必须要有call_id, 且call_id必须和前一条message中的'tool_calls'信息中的'id'一致
 
