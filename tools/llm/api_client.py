@@ -40,7 +40,7 @@ import config
 
 import llm_protocol
 from llm_protocol import LLM_Config, LLM_Clear_History_Method, LLM_Query_Paras, LLM_Reasoning_Effort
-from console import llm_output, llm_user_output
+from console import llm_output, llm_user_output, err
 
 # DEBUG = True
 DEBUG = False
@@ -539,6 +539,7 @@ class LLM_Client():
                         stream_options={"include_usage": True},  # 最新版本openai的要求
                     )
         except Exception as e:
+            err(e)
             dred(f'【LLM_Client异常】ask_prepare(): {e!r}(注意：api_key不能设置为"")')
             self.question_last_turn = self.llm_current_query_paras.query
             return self
@@ -1755,10 +1756,11 @@ def async_reasoning_effort_main():
     # llm_config = llm_protocol.g_local_qwen3_30b_chat
     # llm_config = llm_protocol.g_online_deepseek_chat
     # llm_config = llm_protocol.g_local_qwen3_4b_thinking
-    llm_config = llm_protocol.g_online_groq_gpt_oss_20b
+    # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
     # llm_config = llm_protocol.g_online_groq_kimi_k2
-    # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    # llm_config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
     # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
     llm = Async_LLM_Client(
         llm_config=llm_config,

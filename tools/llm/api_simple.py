@@ -13,7 +13,9 @@ oai = OpenAI(
     # base_url='https://powerai.cc:8001/v1',
     # base_url=config.Global.llm_url,
 
-    base_url='http://localhost:8022/v1',
+    # base_url='http://powerai.cc:8001/v1',
+    base_url='http://powerai.cc:18002/v1',
+    # base_url='http://127.0.0.1:18002/v1',
     api_key='empty',
 
     # base_url='http://127.0.0.1:8001/v1',
