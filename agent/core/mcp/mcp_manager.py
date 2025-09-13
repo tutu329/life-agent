@@ -7,7 +7,7 @@ import asyncio
 from pprint import pprint
 import config
 
-from tools.llm.response_api_client import Tool_Property, Tool_Parameters, Tool_Request
+from tools.llm.response_and_chatml_api_client import Tool_Property, Tool_Parameters, Tool_Request
 
 DEBUG = config.Global.app_debug
 

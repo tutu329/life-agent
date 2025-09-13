@@ -125,7 +125,7 @@ class Response_Result(BaseModel):
 
     error                   :str = ''
 
-class Response_LLM_Client:
+class Response_and_Chatml_LLM_Client:
     def __init__(self, llm_config:LLM_Config):
     # def __init__(self, client: OpenAI):
         self.llm_config = llm_config
@@ -692,7 +692,7 @@ def main_response_llm_client():
     # -------------打印输入参数--------------
     # dpprint(response_request.model_dump())
 
-    client = Response_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
     client.init()
 
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
@@ -789,7 +789,7 @@ def main_response_agent():
 
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
 
-    client = Response_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
     client.init()
     client.legacy_agent_run(query=query, tools=tools)
 
