@@ -120,9 +120,9 @@ g_local_gpt_oss_20b_mxfp4_lmstudio = LLM_Config(
     # temperature=0.6,
     # top_p=0.95,
     max_new_tokens=8192,
-    reasoning_effort=LLM_Reasoning_Effort.HIGH,
+    # reasoning_effort=LLM_Reasoning_Effort.HIGH,
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
-    # reasoning_effort=LLM_Reasoning_Effort.LOW,
+    reasoning_effort=LLM_Reasoning_Effort.LOW,
     chatml=True,
 )
 
@@ -136,9 +136,9 @@ g_local_gpt_oss_120b_mxfp4_lmstudio = LLM_Config(
     # temperature=0.6,
     # top_p=0.95,
     max_new_tokens=8192,
-    reasoning_effort=LLM_Reasoning_Effort.HIGH,
+    # reasoning_effort=LLM_Reasoning_Effort.HIGH,
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
-    # reasoning_effort=LLM_Reasoning_Effort.LOW,
+    reasoning_effort=LLM_Reasoning_Effort.LOW,
     chatml=True,
 )
 
@@ -231,6 +231,17 @@ g_online_groq_gpt_oss_120b = LLM_Config(
     vpn_on=True
 )
 
+g_local_qwen3_30b_gptq_int4 = LLM_Config(
+    name = 'local_qwen3_30b_gptq_int4',
+    base_url='https://powerai.cc:8001/v1',
+    api_key='empty',
+    llm_model_id='Qwen3-30B-A3B-GPTQ-Int4',
+    temperature=0.6,
+    top_p=0.95,
+    max_new_tokens=8192,
+    chatml=True,
+)
+
 g_llm_configs = [
     g_local_gpt_oss_20b_mxfp4,
     g_local_gpt_oss_20b_mxfp4_lmstudio,
@@ -241,5 +252,6 @@ g_llm_configs = [
     g_online_deepseek_chat,
     g_online_groq_kimi_k2,
     g_online_groq_gpt_oss_20b,
-    g_online_groq_gpt_oss_120b
+    g_online_groq_gpt_oss_120b,
+    g_local_qwen3_30b_gptq_int4
 ]
