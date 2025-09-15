@@ -212,6 +212,7 @@ class Port:
 
     dify: int           = 7866
     sovit: int          = 7867
+    n8n: int            = 7868
     llm_viz:int         = 7869  # 三维演示gpt结构
 
     openwebui: int      = 7870
@@ -238,9 +239,6 @@ class Port:
     redis_client:int    = 8010 # redis消息服务
 
     mcp:int             = 8011 # --------------------------------所有的MCP端口通过nginx映射到8005--------------------------------
-
-    # sd:int              = 7868  # stable diffusion
-    # comfy:int           = 7869  # ComfyUI
 
 class Domain:
     # 用于redis、streamlit的ssl证书文件path
