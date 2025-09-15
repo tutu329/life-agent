@@ -242,6 +242,17 @@ g_local_qwen3_30b_gptq_int4 = LLM_Config(
     chatml=True,
 )
 
+g_local_seed_oss_36b_int4 = LLM_Config(
+    name = 'local_seed_oss_36b_int4',
+    base_url='https://powerai.cc:8001/v1',
+    api_key='empty',
+    llm_model_id='Seed-OSS-36B-Instruct-GPTQ-Int4',
+    temperature=1.1,
+    top_p=0.95,
+    max_new_tokens=8192,
+    chatml=True,
+)
+
 g_llm_configs = [
     g_local_gpt_oss_20b_mxfp4,
     g_local_gpt_oss_20b_mxfp4_lmstudio,
@@ -253,5 +264,6 @@ g_llm_configs = [
     g_online_groq_kimi_k2,
     g_online_groq_gpt_oss_20b,
     g_online_groq_gpt_oss_120b,
-    g_local_qwen3_30b_gptq_int4
+    g_local_qwen3_30b_gptq_int4,
+    g_local_seed_oss_36b_int4
 ]
