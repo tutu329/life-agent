@@ -53,13 +53,12 @@ class LLM_Config(BaseModel):
 
     # llm推理强度(用于支持GPT-oss的推理强度选择)
     reasoning_effort:Optional[LLM_Reasoning_Effort] = None
-    use_harmony     :bool = False   # openai主推的对话/工具调用格式（增强agent能力，且目前vllm的completion接口有bug，必须用harmony格式；GPT-oss模型是在harmony格式上训练的。）
 
     # llm是否通过vpn访问
     vpn_on          :bool = False
 
     # response接口还是chatml接口
-    chatml          :bool = False   # False表示为response接口
+    chatml          :bool = True   # False表示为response接口
 
     # llm在对话层面的参数
     has_history         :bool = bool(LLM_Default.has_history)
@@ -212,7 +211,6 @@ g_online_groq_gpt_oss_20b = LLM_Config(
     reasoning_effort=LLM_Reasoning_Effort.LOW, # groq似乎不支持reasoning_effort
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM, # groq似乎不支持reasoning_effort
     # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
-    use_harmony=True,
     chatml=False,
     vpn_on=True
 )
@@ -229,7 +227,19 @@ g_online_groq_gpt_oss_120b = LLM_Config(
     max_new_tokens=8192,
     # reasoning_effort=LLM_Reasoning_Effort.HIGH, # groq似乎不支持reasoning_effort
     reasoning_effort=LLM_Reasoning_Effort.LOW, # groq似乎不支持reasoning_effort
-    use_harmony=True,
     chatml=False,
     vpn_on=True
 )
+
+g_llm_configs = [
+    g_local_gpt_oss_20b_mxfp4,
+    g_local_gpt_oss_20b_mxfp4_lmstudio,
+    g_local_gpt_oss_120b_mxfp4_lmstudio,
+    g_local_qwen3_30b_chat,
+    g_local_qwen3_30b_thinking,
+    g_local_qwen3_4b_thinking,
+    g_online_deepseek_chat,
+    g_online_groq_kimi_k2,
+    g_online_groq_gpt_oss_20b,
+    g_online_groq_gpt_oss_120b
+]

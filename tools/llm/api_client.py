@@ -147,7 +147,12 @@ class LLM_Client():
 
         self._init_print()
 
-    def refresh_endpoint(self, url, api_key, model_id):
+    def refresh_endpoint(self, llm_config_name):
+        for llm_config in llm_protocol.g_llm_configs:
+            if llm_config.name == llm_config_name:
+                self.llm_config = llm_config
+
+    def legacy_refresh_endpoint(self, url, api_key, model_id):
         self.llm_config.base_url = url
         self.llm_config.api_key = api_key
         self.llm_config.llm_model_id = model_id
@@ -466,6 +471,9 @@ class LLM_Client():
             raise Exception('LLM_Client.ask_prepare(): query格式错误，必须是str。')
 
         try:
+            dyellow('-----------------------llm_config----------------------------')
+            dyellow(self.llm_config)
+            dyellow('----------------------/llm_config----------------------------')
             dyellow(f'【LLM_Client】ask_prepare(): reasoning_effort为{self.llm_config.reasoning_effort}')
             if not self.llm_config.chatml:
                 dblue(f'before openai.responses.create, temperature: {self.llm_current_query_paras.temperature}')
@@ -506,8 +514,8 @@ class LLM_Client():
             else:
                 dblue(f'before chat.completions.create, temperature: {self.llm_current_query_paras.temperature}')
                 dblue(f'before chat.completions.create, top_p: {self.llm_current_query_paras.top_p}')
-                dblue(f'before chat.completions.create, instructions: {self.llm_config.system_prompt}')
-                dblue(f'before chat.completions.create, input: {msgs}')
+                dblue(f'before chat.completions.create, system: {self.llm_config.system_prompt}')
+                dblue(f'before chat.completions.create, messages: {msgs}')
                 dblue(f'before chat.completions.create, stream: {self.llm_config.stream}')
                 dblue(f'before chat.completions.create, max_output_tokens: {self.llm_current_query_paras.max_new_tokens}')
                 dblue(f'before chat.completions.create, reasoning_effort: {self.llm_config.reasoning_effort}')
@@ -1756,10 +1764,10 @@ def async_reasoning_effort_main():
     # llm_config = llm_protocol.g_local_qwen3_30b_chat
     # llm_config = llm_protocol.g_online_deepseek_chat
     # llm_config = llm_protocol.g_local_qwen3_4b_thinking
-    # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
+    llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
     # llm_config = llm_protocol.g_online_groq_kimi_k2
-    llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
     # llm_config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
     # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
     llm = Async_LLM_Client(

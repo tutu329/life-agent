@@ -319,6 +319,7 @@ default_session_data = {
         'system_prompt': config.Global.llm_system_prompt,
         'role_prompt': '',
 
+        'llm_config_name': 'local_gpt_oss_120b_mxfp4_lmstudio',
         'main_llm_url': config.Domain.llm_url,
         'main_llm_key': config.Global.llm_key,
         'main_llm_model_id': config.Global.llm_model,
@@ -794,6 +795,10 @@ def show_string_container_latex(streamlit, s):
         streamlit.markdown(markdown_text)
 
 def ask_llm(prompt, paras):
+    print('--------------ask_llm-----------------')
+    print(f'paras: ')
+    pprint.pprint(paras)
+
     role_prompt = paras['role_prompt']
     url_prompt = paras['url_prompt']
     connecting_internet = paras['connecting_internet']
@@ -1050,13 +1055,24 @@ def ask_llm(prompt, paras):
 
         print(f'image_url: "{image_url}"')
         from llm_protocol import LLM_Query_Paras
+        from llm_protocol import LLM_Config
         query_paras = LLM_Query_Paras(
             query=prompt,
             image_url=image_url,
-            temperature=st.session_state.session_data['paras']['local_llm_temperature'],
-            max_new_tokens=st.session_state.session_data['paras']['local_llm_max_new_token'],
-            system_prompt=system_prompt,
+            temperature=paras['local_llm_temperature'],
+            max_new_tokens=paras['local_llm_max_new_token'],
+            system_prompt=paras['system_prompt'],
+            role_prompt=paras['role_prompt'],
         )
+        # llm_config = LLM_Config(
+        #     base_url=paras['main_llm_url'],
+        #     api_key=paras['main_llm_key'],
+        #     llm_model_id=paras['main_llm_model_id'],
+        #     temperature=paras['local_llm_temperature'],
+        #     max_new_tokens=paras['local_llm_max_new_token'],
+        #     system_prompt=paras['system_prompt'],
+        #     role_prompt=paras['role_prompt'],
+        # )
         gen = mem_llm.ask_prepare(query_paras).get_answer_generator()
         # gen = mem_llm.ask_prepare(
         #     question=prompt,
@@ -1225,6 +1241,7 @@ def ask_llm(prompt, paras):
         #     return think_status_data, None, full_res, None
         # else:
         #     return None, None, full_res, None
+    print('-------------/ask_llm-----------------')
 
 def on_clear_history():
     # st.session_state.messages = []
@@ -1376,14 +1393,18 @@ def on_is_agent_change():
 #     s_paras['input_translate'] = not s_paras['input_translate']
 
 def on_main_llm_change():
+    print('----------------mem_llm.refresh_endpoint-------------------')
     s_paras = st.session_state.session_data['paras']
     # s_paras['main_llm_url'] = value
 
-    refreshed = mem_llm.refresh_endpoint(
-        s_paras['main_llm_url'],
-        s_paras['main_llm_key'],
-        s_paras['main_llm_model_id'],
-    )
+    refreshed = mem_llm.refresh_endpoint(s_paras['llm_config_name'])
+    # refreshed = mem_llm.refresh_endpoint(
+    #     s_paras['main_llm_url'],
+    #     s_paras['main_llm_key'],
+    #     s_paras['main_llm_model_id'],
+    # )
+    print(s_paras)
+    print('---------------/mem_llm.refresh_endpoint-------------------')
     # if refreshed:
     #     # 更换llm成功时，清空屏幕内容和llm记忆
     #     on_clear_history()
@@ -1552,10 +1573,19 @@ def streamlit_refresh_loop():
     # =============================主模型、辅模型(用于翻译input)==============================
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
     # 注意：用on_change回调的话，回调的瞬间，s_paras['main_llm_url']中的值是change之前的
-    s_paras['main_llm_url'] = exp4.text_input(label="URL:", placeholder="http(s)://ip:port/v1/", value=s_paras['main_llm_url'])
-    s_paras['main_llm_key'] = exp4.text_input(label="API-key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['main_llm_key'])
-    s_paras['main_llm_model_id'] = exp4.text_input(label="id:", placeholder="model_id", value=s_paras['main_llm_model_id'])
-    if s_paras['main_llm_url'] or s_paras['main_llm_key'] or s_paras['main_llm_model_id']:
+    llm_config_options = [config.name for config in llm_protocol.g_llm_configs]
+    s_paras['llm_config_name'] = exp4.selectbox(
+        label="LLM配置ID:",
+        options=llm_config_options,
+        index=llm_config_options.index(s_paras['llm_config_name']) if s_paras['llm_config_name'] in llm_config_options else 0,
+        placeholder="请选择LLM配置ID"
+    )
+    # s_paras['llm_config_name'] = exp4.text_input(label="LLM配置ID:", placeholder="local_gpt_oss_120b_mxfp4_lmstudio", value=s_paras['llm_config_name'])
+
+    # s_paras['main_llm_url'] = exp4.text_input(label="URL:", placeholder="http(s)://ip:port/v1/", value=s_paras['main_llm_url'])
+    # s_paras['main_llm_key'] = exp4.text_input(label="API-key:", placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", value=s_paras['main_llm_key'])
+    # s_paras['main_llm_model_id'] = exp4.text_input(label="id:", placeholder="model_id", value=s_paras['main_llm_model_id'])
+    if s_paras['llm_config_name'] or s_paras['main_llm_url'] or s_paras['main_llm_key'] or s_paras['main_llm_model_id']:
         on_main_llm_change()
     # if not 'input_translate' in s_paras or not s_paras['input_translate']:
     #     # 当调用英语模型时，由于mem_llm的url经过refresh变成了英语模型，因此这里如果refresh为主模型会发现不一致从而清除历史
