@@ -371,10 +371,11 @@ def main_response_agent_mcp_nginx():
     import llm_protocol
     import config
 
-    server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
+    server_url1 = "https://powerai.cc:8011/mcp/sqlite/sse"
+    server_url2 = "http://localhost:8789/sse"
     # server_url = "https://powerai.cc:8011/mcp/everything/sse"
-    tools = get_mcp_server_tools(server_url)
-    tool_names = get_mcp_server_tool_names(server_url)
+    tools = get_mcp_server_tools(server_url1) +  get_mcp_server_tools(server_url2)
+    tool_names = get_mcp_server_tool_names(server_url1) + get_mcp_server_tool_names(server_url2)
     print(tool_names)
     # print(tools)
     # for tool in tools:
@@ -385,9 +386,9 @@ def main_response_agent_mcp_nginx():
         tool_names=tool_names,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
-        llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
+        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4_lmstudio,
-        # llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         has_history=True,
     )
     agent = Response_API_Tool_Agent(agent_config=agent_config)

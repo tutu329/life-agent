@@ -1,4 +1,4 @@
-import json
+import json, os
 from typing import List, Optional, Dict, Any, Iterable, Callable
 from pydantic import BaseModel, Field, ConfigDict
 from mcp import ClientSession
@@ -162,7 +162,7 @@ def get_mcp_server_tools(server_url: str, allowed_tools: Optional[Iterable[str]]
 # -------------------------------
 # 同步 main()
 # -------------------------------
-def main():
+def main_mcp_sqlite():
     server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
     result = call_tool(
         server_url,
@@ -196,6 +196,40 @@ def main_func_test():
     # div_res = div_tool.func(a=6, b=3)          # 关键字参数
     # div_res = div_tool.func(6, b=3)            # 混合（*args 覆盖 required 的前缀）
 
+def main_mcp_tavily():
+    '''
+    vpn_off
+    npx supergateway \
+    --stdio "npx -y tavily-mcp@latest" \
+    --port 8789 \
+    --sse
+    '''
+    tavily_api_key = os.getenv("TAVILY_API_KEY")
+    # print(f'TAVILY_API_KEY: {tavily_api_key!r}')
+    # server_url = f"https://mcp.tavily.com/mcp/?tavilyApiKey={tavily_api_key}"
+    server_url = f"http://localhost:8789/sse"
+    tools = get_mcp_server_tool_names(server_url)
+    # tools = get_mcp_server_tools(server_url)
+    print(tools)
+    # result = call_tool(
+    #     server_url,
+    #     tool_name="read_query",
+    #     args={"query": "SELECT name FROM sqlite_master WHERE type='table';"}
+    # )
+    # print(result)
+    #
+    # get_mcp_server_tool_names(server_url)
+    #
+    # allowed = ["read_query", "write_query"]
+    # tools = get_mcp_server_tools(
+    #     server_url,
+    #     # allowed_tools = allowed     # 不传则不过滤
+    # )
+    #
+    # for t in tools:
+    #     pprint(t)
+
 if __name__ == "__main__":
-    main()
+    # main_mcp_sqlite()
     # main_func_test()
+    main_mcp_tavily()
