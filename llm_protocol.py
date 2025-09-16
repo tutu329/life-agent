@@ -98,16 +98,16 @@ class LLM_Query_Paras(BaseModel):
 
 g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     name = 'local_gpt_oss_20b_mxfp4',
-    base_url='http://powerai.cc:18002/v1',
+    base_url='http://powerai.cc:8001/v1',
     api_key='empty',
-    llm_model_id='gpt-oss-20b-mxfp4',
+    llm_model_id='gpt-oss-20b',
     temperature=1.0,
     top_p=1.0,
     max_new_tokens=8192,
     # reasoning_effort=LLM_Reasoning_Effort.HIGH,
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
     reasoning_effort=LLM_Reasoning_Effort.LOW,
-    chatml=False,
+    chatml=True,
 )
 
 g_local_gpt_oss_20b_mxfp4_lmstudio = LLM_Config(

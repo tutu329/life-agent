@@ -105,8 +105,34 @@ def call_qwen2_audio():
 def call_funasr():
     pass
 
+def main_gpt_oss_lmdeploy():
+    import llm_protocol
+    from openai import OpenAI
+
+    llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    oai = OpenAI(
+        base_url=llm_config.base_url,
+        api_key=llm_config.api_key,
+    )
+
+    query = '你是谁'
+
+    res = oai.chat.completions.create(
+        model=llm_config.llm_model_id,
+        messages=[{'role': 'user','content': query}],
+        temperature=llm_config.temperature,
+        top_p=llm_config.top_p,
+        max_tokens=llm_config.max_new_tokens,
+        stream=False,
+        reasoning_effort={"effort": llm_protocol.LLM_Reasoning_Effort.LOW},
+    )
+
+    from pprint import pprint
+    pprint(res.model_dump())
+
 if __name__ == '__main__':
-    main()
+    # main()
+    main_gpt_oss_lmdeploy()
     # call_funasr()
     # call_qwen2_audio()
 

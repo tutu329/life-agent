@@ -1767,8 +1767,8 @@ def async_reasoning_effort_main():
     # llm_config = llm_protocol.g_online_groq_gpt_oss_20b
     # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
     # llm_config = llm_protocol.g_online_groq_kimi_k2
-    # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
-    llm_config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
+    llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    # llm_config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
     # llm_config.reasoning_effort = LLM_Reasoning_Effort.HIGH
     llm = Async_LLM_Client(
         llm_config=llm_config,
