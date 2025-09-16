@@ -89,6 +89,103 @@ class Write_Chapter_Tool(Base_Tool):
 1）不要连续调用"docx_write_chapter_title"输出多个标题(如2.1、2.2、2.3)然后再调用"docx_write_chapter_text"编写(如编写2.1、2.2、2.3的内容)。（因为输出是串行的，输出内容无法插入到前面。）
 </注意事项>
 '''
+#     legacy_强制required_tool_parameters = [
+#         # {
+#         #     'name': 'template_filename',
+#         #     'type': 'string',
+#         #     'description': '(用于"docx_write_chapter_text")模板文档的完整文件名，包含扩展名',
+#         #     'required': 'False',
+#         #     'default': '',
+#         # },
+#         {
+#             'name': 'operation',
+#             'type': 'string',
+#             'description': \
+#                 '''操作类型，支持以下值：
+#                 - "docx_write_chapter_title": 编制docx文档一个章节的标题。
+#                 - "docx_write_chapter_text": 编制docx文档一个章节的文本。
+#                 - "docx_write_chapter_table": 编制docx文档一个章节的表格。
+#                 - "docx_write_chapter_image": 编制docx文档一个章节的图片。
+#                 ''',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'title',
+#             'type': 'string',
+#             'description': \
+# '''
+# (用于"docx_write_chapter_title"和"docx_write_chapter_text")章节标题:
+# 1）其中章节号如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等，
+# 2）章节标题的文字不要漏写。
+# ''',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'heading',
+#             'type': 'int',
+#             'description': '(用于"docx_write_chapter_title")标题的大纲级别，如1、2、3、4、5等',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'font-size',
+#             'type': 'int',
+#             'description': '(用于"docx_write_chapter_title")标题的字体大小，如14、20等(单位为pt)',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'font-family',
+#             'type': 'string',
+#             'description': '(用于"docx_write_chapter_title")标题的字体名，如"SimSun"等',
+#             'required': 'False',
+#             'default': 'SimSun',
+#         },
+#         {
+#             'name': 'font-color',
+#             'type': 'int',
+#             'description': '(用于"docx_write_chapter_title")标题的字体颜色，仅可选择"red"、"green"、"blue"、"black"、"white"、"gray"、"yellow"之一',
+#             'required': 'False',
+#             'default': 'red',
+#         },
+#         {
+#             'name': 'font-bold',
+#             'type': 'bool',
+#             'description': '(用于"docx_write_chapter_title")标题的字体是否加粗',
+#             'required': 'False',
+#             'default': 'False',
+#         },
+#         {
+#             'name': 'center',
+#             'type': 'bool',
+#             'description': '(用于"docx_write_chapter_title")标题是否居中',
+#             'required': 'False',
+#             'default': 'False',
+#         },
+#         {
+#             'name': 'chapter_demand',
+#             'type': 'string',
+#             'description': '(用于"docx_write_chapter_text")章节文本编制的要求',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'project_name',
+#             'type': 'string',
+#             'description': '(用于"docx_write_chapter_text")项目名称',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'project_key_demand',
+#             'type': 'string',
+#             'description': '(用于"docx_write_chapter_text")项目核心需求',
+#             'required': 'True',
+#         },
+#         {
+#             'name': 'project_investment',
+#             'type': 'string',
+#             'description': '(用于"docx_write_chapter_text")项目预期投资',
+#             'required': 'True',
+#         },
+#     ]
+
     tool_parameters = [
         # {
         #     'name': 'template_filename',
@@ -118,19 +215,19 @@ class Write_Chapter_Tool(Base_Tool):
 1）其中章节号如"3 "、"3.2 "、"3.2.1 "、"3.2.1.1 "、"3.2.1.1.1 "、"二、"、"第二章"、"第1章"等，
 2）章节标题的文字不要漏写。
 ''',
-            'required': 'True',
+            'required': 'False',
         },
         {
             'name': 'heading',
             'type': 'int',
             'description': '(用于"docx_write_chapter_title")标题的大纲级别，如1、2、3、4、5等',
-            'required': 'True',
+            'required': 'False',
         },
         {
             'name': 'font-size',
             'type': 'int',
             'description': '(用于"docx_write_chapter_title")标题的字体大小，如14、20等(单位为pt)',
-            'required': 'True',
+            'required': 'False',
         },
         {
             'name': 'font-family',
@@ -164,25 +261,25 @@ class Write_Chapter_Tool(Base_Tool):
             'name': 'chapter_demand',
             'type': 'string',
             'description': '(用于"docx_write_chapter_text")章节文本编制的要求',
-            'required': 'True',
+            'required': 'False',
         },
         {
             'name': 'project_name',
             'type': 'string',
             'description': '(用于"docx_write_chapter_text")项目名称',
-            'required': 'True',
+            'required': 'False',
         },
         {
             'name': 'project_key_demand',
             'type': 'string',
             'description': '(用于"docx_write_chapter_text")项目核心需求',
-            'required': 'True',
+            'required': 'False',
         },
         {
             'name': 'project_investment',
             'type': 'string',
             'description': '(用于"docx_write_chapter_text")项目预期投资',
-            'required': 'True',
+            'required': 'False',
         },
     ]
 
@@ -226,7 +323,7 @@ class Write_Chapter_Tool(Base_Tool):
 
             rtn_params.properties[name] = property
 
-            if required:
+            if required=='True' or required==True or required=='true':
                 rtn_params.required.append(name)
 
         tool_param_dict = Tool_Request(

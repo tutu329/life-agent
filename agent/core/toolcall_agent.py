@@ -458,7 +458,7 @@ def main_office_agent():
         has_history=True,
     )
 
-    query = '请帮我在文档里写一首关于生活的诗'
+    query = '请帮我编制报告，项目名称是"基于AI-native框架的自主化咨询设计系统"，投资控制在100万元左右，章节编制需求是3.2章、编写项目必要性，项目关键诉求是方案具有前瞻性。'
 
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
