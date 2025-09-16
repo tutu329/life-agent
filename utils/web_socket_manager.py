@@ -42,7 +42,7 @@ class Web_Socket_Manager:
 
     def start_server(self, port=5112):
         """启动WebSocket服务器"""
-        print(f'🔍 WebSocket服务器状态检查: server_started={self.server_started}')
+        print(f'🔍 ----------WebSocket服务器状态检查: server_started={self.server_started}----------')
 
         if self.server_started:
             print('⚠️ WebSocket服务器已运行，跳过启动')
@@ -58,6 +58,7 @@ class Web_Socket_Manager:
         else:
             print('⚠️ WebSocket服务器线程已存在且运行中')
             self.server_started = True
+        print(f'🔍 ----------WebSocket服务器状态检查: server_started={self.server_started}----------')
 
     def _run_server(self, port=5112):
         """运行WebSocket服务器"""
