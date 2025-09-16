@@ -1130,6 +1130,7 @@ class Write_Chapter_Tool(Base_Tool):
         }
 
         DEBUG = True
+
         success = False
         message = None
         if DEBUG:
