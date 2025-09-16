@@ -433,7 +433,37 @@ def main_response_agent_mcp_server():
     print('---------------------/resp.output--------------------------')
     print(resp.output_text.replace('\n', ''))
 
+def main_office_agent():
+    print(f'office_agent started.')
+
+    from agent.tools.office_tool import Write_Chapter_Tool
+    write_chapter_tool = Write_Chapter_Tool.get_tool_param_dict()
+
+    tools = [write_chapter_tool]
+
+    agent_config = Agent_Config(
+        agent_name = 'agent for office docx file editing',
+        tool_names=['Write_Chapter_Tool'],
+        # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
+        # llm_config=llm_protocol.g_local_qwen3_30b_chat,
+        # llm_config=llm_protocol.g_online_deepseek_chat,
+        llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
+        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4_lmstudio,
+        # llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        has_history=True,
+    )
+
+    query = '请帮我在文档里写一首关于生活的诗'
+
+    agent = Response_API_Tool_Agent(agent_config=agent_config)
+    agent.init()
+    agent.run(query=query, tools=tools)
+    # agent.run(query='', tools=tools)
+
 if __name__ == "__main__":
     # main_response_agent()
     main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()
+    main_office_agent()
