@@ -54,7 +54,7 @@ class Web_Socket_Manager:
             print('🚀 启动新的WebSocket服务器线程...')
             self.server_thread = threading.Thread(target=self._run_server, kwargs={'port': port}, daemon=True)
             self.server_thread.start()
-            print('🚀 WebSocket服务器启动中... (端口:5112)')
+            print(f'🚀 WebSocket服务器启动中... (端口:{port})')
             self.server_started = True
             time.sleep(1)
         else:
@@ -86,7 +86,7 @@ class Web_Socket_Manager:
                                         del self.connections[old_id]
 
                                 # 注册新连接
-                                print(f'➕ 注册新连接: {client_id}')
+                                print(f'➕ 注册新连接: client_id为 {client_id}')
                                 self.connections[client_id] = websocket
                                 self.connection_reverse[websocket] = client_id
                                 print(f'🔍 当前连接数: {len(self.connections)}')

@@ -997,14 +997,17 @@ class Write_Chapter_Tool(Base_Tool):
         # self.ws_manager.start_server(port=5113)
         # -------------------------------------5112需测试CODE command, 这里port临时用5113----------------------------------------
         self.ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
-        print('✅ Write_Chapter_Tool 初始化完成')
+        print(f'✅ Write_Chapter_Tool 初始化完成，port:{config.Port.collabora_code_web_socket_server}')
 
     @classmethod
     def init(cls):
         if cls._s_ws_manager is None:
             cls._s_ws_manager = get_websocket_manager()
-            cls._s_ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
-            print('✅ Write_Chapter_Tool.init(cls) 初始化完成')
+
+            port = 5113 # ---------------------测试用5113---------------------
+            # port = config.Port.collabora_code_web_socket_server # 5112
+            cls._s_ws_manager.start_server(port=port)
+            print(f'✅ Write_Chapter_Tool.init(cls) 初始化完成, port:{port}')
 
     @classmethod
     def get_tool_param_dict(cls):
