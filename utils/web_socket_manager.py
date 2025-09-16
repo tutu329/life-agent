@@ -68,7 +68,7 @@ class Web_Socket_Manager:
         asyncio.set_event_loop(loop)
 
         async def handler(websocket):
-            print(f'📱 新的WebSocket连接: {websocket.remote_address}')
+            dgreen(f'📱 新的WebSocket连接: {websocket.remote_address}')
 
             try:
                 async for message in websocket:
@@ -86,10 +86,10 @@ class Web_Socket_Manager:
                                         del self.connections[old_id]
 
                                 # 注册新连接
-                                print(f'➕ 注册新连接: client_id为 {client_id}')
+                                dgreen(f'➕ 注册新连接: agent_id为 {client_id}, port为{port}')
                                 self.connections[client_id] = websocket
                                 self.connection_reverse[websocket] = client_id
-                                print(f'🔍 当前连接数: {len(self.connections)}')
+                                dgreen(f'🔍 当前连接数: {len(self.connections)}')
 
                             # 发送注册成功确认
                             await websocket.send(json.dumps({
@@ -164,9 +164,9 @@ class Web_Socket_Manager:
             print(f'self.connections: {self.connections}')
             print(f'command: {command}')
             if client_id not in self.connections:
-                dred(f'_async_send_command()失败：客户端 "{client_id}" 没有WebSocket连接')
+                dred(f'_async_send_command()失败：client_id为"{client_id}"，没有对应WebSocket连接')
             else:
-                dgreen(f'_async_send_command()成功：客户端为"{client_id}".')
+                dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
             print('------------/_async_send_command()------------')
 
         with self.connection_lock:
@@ -198,5 +198,5 @@ class Web_Socket_Manager:
 def get_websocket_manager():
     """获取WebSocket管理器单例实例"""
     manager = Web_Socket_Manager()
-    print(f'🔧 获取WebSocket管理器实例: {id(manager)} (server_started={manager.server_started})')
+    print(f'🔧 get_websocket_manager()获取WebSocket管理器实例: {id(manager)} (server_started={manager.server_started})')
     return manager

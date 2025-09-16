@@ -1,6 +1,7 @@
 import time, json5
 
 from accelerate.commands.config.update import description
+from streamlit import success
 
 import config
 from config import dred, dgreen, dcyan, dblue, dyellow
@@ -1128,8 +1129,20 @@ class Write_Chapter_Tool(Base_Tool):
             'params':params
         }
 
-        # 通过web-socket发送至前端
-        success, message = cls._s_ws_manager.send_command(top_agent_id, command)
+        DEBUG = True
+        success = False
+        message = None
+        if DEBUG:
+            # -----------------------DEBUG-----------------------------
+            registered_clients = cls._s_ws_manager.get_connected_clients()
+            if registered_clients:
+                # 选择第一个连接的客户端进行测试，而不是真正对应的agent!!!
+                fake_agent_id = registered_clients[0]
+                success, message = cls._s_ws_manager.send_command(fake_agent_id, command)
+            # ----------------------/DEBUG-----------------------------
+        else:
+            # 通过web-socket发送至前端
+            success, message = cls._s_ws_manager.send_command(top_agent_id, command)
         return success, message
 
     def _call_collabora_api(self, top_agent_id, cmd, params):

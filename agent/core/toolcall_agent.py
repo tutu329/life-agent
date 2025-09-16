@@ -458,12 +458,13 @@ def main_office_agent():
         has_history=True,
     )
 
-    query = '请帮我编制报告，项目名称是"基于AI-native框架的自主化咨询设计系统"，投资控制在100万元左右，章节编制需求是3.2章、编写项目必要性，项目关键诉求是方案具有前瞻性。'
 
     agent = Response_API_Tool_Agent(agent_config=agent_config)
     agent.init()
-    agent.run(query=query, tools=tools)
-    # agent.run(query='', tools=tools)
+
+    while True:
+        # query = '请帮我编制报告，项目名称是"基于AI-native框架的自主化咨询设计系统"，投资控制在100万元左右，章节编制需求是3.2章、编写项目必要性，项目关键诉求是方案具有前瞻性。'
+        agent.run(query=input('请输入你的指令：'), tools=tools)
 
 if __name__ == "__main__":
     # main_response_agent()
