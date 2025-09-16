@@ -236,7 +236,16 @@ class Write_Chapter_Tool(Base_Tool):
             func = cls.class_call
         )
 
-        return tool_param_dict.model_dump(exclude_none=True)
+
+        rtn_tool_param_dict = tool_param_dict.model_dump(exclude_none=True)
+        rtn_tool_param_dict['func'] = cls.class_call    # 还是手动添加Callable对象，model_dump(mode='python')似乎不行
+
+        # dred('-------------------tool_param_dict.model_dump(exclude_none=True)------------------')
+        # from pprint import pprint
+        # pprint(rtn_tool_param_dict)
+        # dred('------------------/tool_param_dict.model_dump(exclude_none=True)------------------')
+
+        return rtn_tool_param_dict
 
     def _test_call_collabora_api(self):
         # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
