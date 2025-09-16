@@ -1256,7 +1256,8 @@ class Write_Chapter_Tool(Base_Tool):
                 # 选择llm和参数
                 # llm_config = config.g_online_groq_kimi_k2
                 # llm_config = config.g_online_deepseek_chat
-                llm_config = llm_protocol.g_online_groq_gpt_oss_120b
+                llm_config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
+                # llm_config = llm_protocol.g_online_groq_gpt_oss_120b
                 # llm_config = llm_protocol.g_online_deepseek_chat
                 llm = LLM_Client(llm_config=llm_config)
 
