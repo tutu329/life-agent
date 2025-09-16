@@ -109,7 +109,9 @@ def main_gpt_oss_lmdeploy():
     import llm_protocol
     from openai import OpenAI
 
-    llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    llm_config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
+    # llm_config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+
     oai = OpenAI(
         base_url=llm_config.base_url,
         api_key=llm_config.api_key,

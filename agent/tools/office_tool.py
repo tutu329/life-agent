@@ -1205,7 +1205,7 @@ class Write_Chapter_Tool(Base_Tool):
                     'font_color': font_color,
                     'font_bold': font_bold,
                 }
-                cls._class_call_collabora_api(cls, top_agent_id=top_agent_id, cmd='insert_title', params=params)
+                cls._class_call_collabora_api(top_agent_id=top_agent_id, cmd='insert_title', params=params)
                 result = f'【Write_Chapter_Tool】operation("{operation}")已经完成。'
 
             elif operation == 'docx_write_chapter_text':
@@ -1251,7 +1251,7 @@ class Write_Chapter_Tool(Base_Tool):
                     'space_before': 0,
                     'space_after': 0,
                 }
-                cls._class_call_collabora_api(cls, top_agent_id=top_agent_id, cmd='set_paragraph', params=params)
+                cls._class_call_collabora_api(top_agent_id=top_agent_id, cmd='set_paragraph', params=params)
 
                 # 选择llm和参数
                 # llm_config = config.g_online_groq_kimi_k2
@@ -1302,7 +1302,7 @@ class Write_Chapter_Tool(Base_Tool):
                             # 'line_spacing':1.5,
                             # 'first_line_indent':700,
                         }
-                        cls._class_call_collabora_api(cls, top_agent_id=top_agent_id, cmd='insert_text', params=params)
+                        cls._class_call_collabora_api(top_agent_id=top_agent_id, cmd='insert_text', params=params)
 
                         content += chunk
 
