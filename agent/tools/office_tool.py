@@ -1,5 +1,7 @@
 import time, json5
 
+from accelerate.commands.config.update import description
+
 import config
 from config import dred, dgreen, dcyan, dblue, dyellow
 from utils.encode import safe_encode
@@ -18,6 +20,9 @@ import llm_protocol
 from llm_protocol import LLM_Query_Paras
 
 from pydantic import BaseModel
+
+from tools.llm.response_and_chatml_api_client import Response_Result, Tool_Request, Tool_Parameters, Tool_Property, Response_Request, Property_Type
+
 
 class Prompt_Write_Chapter_Text(BaseModel):
     project_name            :str =''  # 项目名称
@@ -193,6 +198,46 @@ class Write_Chapter_Tool(Base_Tool):
         self.ws_manager.start_server(port=config.Port.collabora_code_web_socket_server) # 5112
         print('✅ Write_Chapter_Tool 初始化完成')
 
+    @classmethod
+    def get_tool_param_dict(cls):
+        rtn_params = Tool_Parameters(
+            properties={}
+        )
+
+        for tool_param in cls.tool_parameters:
+            name = tool_param['name']
+            required = tool_param.get('required')
+            default_value = tool_param.get('default')
+
+            type:Property_Type = ''
+            if tool_param['type'] == 'int':
+                type = "integer"
+            elif tool_param['type'] == 'float':
+                type = "number"
+            elif tool_param['type'] == 'bool':
+                type = "boolean"
+            elif tool_param['type'] == 'string':
+                type = "string"
+
+            property = Tool_Property(
+                type=type,
+                description=tool_param['description'] + f'(default: "{default_value}")',  # 将default_value放入description
+            )
+
+            rtn_params.properties[name] = property
+
+            if required:
+                rtn_params.required.append(name)
+
+        tool_param_dict = Tool_Request(
+            name = cls.tool_name,
+            description = cls.tool_description,
+            parameters = rtn_params,
+            func = cls.class_call
+        )
+
+        return tool_param_dict.model_dump(exclude_none=True)
+
     def _test_call_collabora_api(self):
         # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
         timeout = 30  # 等待30秒
@@ -264,7 +309,8 @@ class Write_Chapter_Tool(Base_Tool):
         success, message = self.ws_manager.send_command(top_agent_id, command)
         return success, message
 
-    def call(self, tool_call_paras: Tool_Call_Paras):
+    @classmethod
+    def class_call(self, tool_call_paras: Tool_Call_Paras, **kwargs):
         print(f'🔧 【Write_Chapter_Tool】开始调用，调用参数: {tool_call_paras.callback_tool_paras_dict}')
 
         # 获取顶层agent_id（用于WebSocket连接管理）
@@ -443,6 +489,9 @@ class Write_Chapter_Tool(Base_Tool):
 
         # 确保返回安全编码的结果
         return Action_Result(result=safe_encode(result))
+
+    def call(self, tool_call_paras:Tool_Call_Paras, **kwargs):
+        return Write_Chapter_Tool.class_call(tool_call_paras=tool_call_paras, **kwargs)
 
 # class Office_Tool(Base_Tool):
 #     name = 'Office_Tool'

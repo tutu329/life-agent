@@ -440,6 +440,9 @@ def main_office_agent():
     write_chapter_tool = Write_Chapter_Tool.get_tool_param_dict()
 
     tools = [write_chapter_tool]
+    dprint('--------------------tools[0]----------------------')
+    dpprint(write_chapter_tool)
+    dprint('-------------------/tools[0]----------------------')
 
     agent_config = Agent_Config(
         agent_name = 'agent for office docx file editing',
@@ -464,6 +467,6 @@ def main_office_agent():
 
 if __name__ == "__main__":
     # main_response_agent()
-    main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
+    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()
     main_office_agent()
