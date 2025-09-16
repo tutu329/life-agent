@@ -365,22 +365,53 @@ class Tool_Agent(Agent_Base, Base_Tool):
             dred(f'----------------------/tool.tool_parameters(tool.name="{tool.tool_name}")---------------------------')
             if isinstance(tool, type):
                 # 如果tool是Folder_Tool这样的class，有多个参数
-                for name, param in tool.tool_parameters['properties'].items():
-                    self.tool_descs += '\t{'
+                dred('----------------------Tool_Agent.init():tool.tool_parameters["properties"]-----------------------')
+                dred(tool.tool_parameters)
+                dred('---------------------/Tool_Agent.init():tool.tool_parameters["properties"]-----------------------')
+                if isinstance(tool.tool_parameters, dict):
+                    for name, param in tool.tool_parameters['properties'].items():
+                        self.tool_descs += '\t{'
 
-                    self.tool_descs += '\t参数名称: ' + name + ',\n'
-                    self.tool_descs += '\t\t参数类型: ' + param['type'] + ',\n'
-                    self.tool_descs += '\t\t参数描述: ' + param['description'] + ',\n'
+                        self.tool_descs += '\t参数名称: ' + name + ',\n'
+                        self.tool_descs += '\t\t参数类型: ' + param['type'] + ',\n'
+                        self.tool_descs += '\t\t参数描述: ' + param['description'] + ',\n'
 
-                    # self.tool_descs += '\t\t参数是否必需: ' + para['required'] + ',\n'
-                    for required_name in tool.tool_parameters['required']:
-                        if required_name == name:
-                            self.tool_descs += '\t\t参数是否必需: True,\n'
-                            break
-                    else:
-                        self.tool_descs += '\t\t参数是否必需: False,\n'
+                        # self.tool_descs += '\t\t参数是否必需: ' + para['required'] + ',\n'
+                        for required_name in tool.tool_parameters['required']:
+                            if required_name == name:
+                                self.tool_descs += '\t\t参数是否必需: True,\n'
+                                break
+                        else:
+                            self.tool_descs += '\t\t参数是否必需: False,\n'
 
-                    self.tool_descs += '\t},'
+                        self.tool_descs += '\t},'
+                elif isinstance(tool.tool_parameters, list):
+                    for param in tool.tool_parameters:
+                    # for name, param in tool.tool_parameters['properties'].items():
+                        self.tool_descs += '\t{'
+
+                        self.tool_descs += '\t参数名称: ' + param['name'] + ',\n'
+                        self.tool_descs += '\t\t参数类型: ' + param['type'] + ',\n'
+                        self.tool_descs += '\t\t参数描述: ' + param['description'] + ',\n'
+                        self.tool_descs += '\t\t参数是否必需: ' + param['required'] + ',\n'
+                        self.tool_descs += '\t},'
+                # for name, param in tool.tool_parameters['properties'].items():
+                #     self.tool_descs += '\t{'
+                #
+                #     self.tool_descs += '\t参数名称: ' + name + ',\n'
+                #     self.tool_descs += '\t\t参数类型: ' + param['type'] + ',\n'
+                #     self.tool_descs += '\t\t参数描述: ' + param['description'] + ',\n'
+                #
+                #     # self.tool_descs += '\t\t参数是否必需: ' + para['required'] + ',\n'
+                #     for required_name in tool.tool_parameters['required']:
+                #         if required_name == name:
+                #             self.tool_descs += '\t\t参数是否必需: True,\n'
+                #             break
+                #     else:
+                #         self.tool_descs += '\t\t参数是否必需: False,\n'
+                #
+                #     self.tool_descs += '\t},'
+
             else:
                 # 如果tool是folder_agent_as_tool这样的实例，只有1个"自然语言指令"参数
                 self.tool_descs += '\t{'

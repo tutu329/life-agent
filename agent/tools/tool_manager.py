@@ -40,13 +40,43 @@ def server_register_all_local_tool_on_start():
             tool_id = str(uuid4())
 
             # 查找tool
-            tool_data = Registered_Tool_Data(
-                tool_id=tool_id,
-                name=tool_data['name'],
-                description=tool_data['description'],
-                parameters=tool_data['parameters'],
-                tool_class=tool_class,
-            )
+            # dred('------------------server_register_all_local_tool_on_start--------------------')
+            # dred(tool_data['parameters'])
+            # dred('-----------------/server_register_all_local_tool_on_start--------------------')
+            param = tool_data['parameters']
+            if isinstance(param, list):
+                tool_data = Registered_Tool_Data(
+                    tool_id=tool_id,
+                    name=tool_data['name'],
+                    description=tool_data['description'],
+                    parameters=tool_data['parameters'],
+                    tool_class=tool_class,
+                )
+            elif isinstance(param, dict):
+                # 新的folder中，param格式为response的dict格式：{'type': 'object', 'properties': {'path': {'type': 'string', 'description': '文件夹所在的路径'}}, 'required': ['path'], 'additionalProperties': False}
+                # 要转换为原有list格式：[{'name': 'frontend_chart_code', 'type': 'string', 'description': ...}]
+                param_list = []
+                for para_name, para_value in param['properties'].items():
+                    required = False
+                    for required_name in param['required']:
+                        if para_name == required_name:
+                            required = True
+                    one_param = {
+                        'name':para_name,
+                        'type':para_value['type'],
+                        'description':para_value['description'],
+                        'required':'True' if required else 'False',
+                    }
+                    param_list.append(one_param)
+
+                tool_data = Registered_Tool_Data(
+                    tool_id=tool_id,
+                    name=tool_data['name'],
+                    description=tool_data['description'],
+                    parameters=param_list,
+                    tool_class=tool_class,
+                )
+
 
             # server端注册tool
             g_registered_tools_dict[tool_id] = tool_data

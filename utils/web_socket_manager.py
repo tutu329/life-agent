@@ -7,10 +7,12 @@ import asyncio
 import websockets
 import threading
 import time
+
 from utils.encode import safe_encode
 from agent.tools.base_tool import Base_Tool
 from agent.tools.protocol import Action_Result, Tool_Call_Paras
 
+from config import dred,dgreen,dblue,dyellow,dblack,dcyan,dmagenta, dwhite
 
 # 通用WebSocket管理器 - 可被多个模块使用
 # 提供WebSocket服务器和消息发送功能
@@ -156,6 +158,17 @@ class Web_Socket_Manager:
 
     async def _async_send_command(self, client_id, command):
         """向指定客户端发送命令（异步实现）"""
+        if not (command.get('data') and command['data'].get('cmd') and command['data']['cmd'] == 'insert_text'):
+            print('-------------_async_send_command()------------')
+            print(f'client_id: {client_id}')
+            print(f'self.connections: {self.connections}')
+            print(f'command: {command}')
+            if client_id not in self.connections:
+                dred(f'_async_send_command()失败：客户端 "{client_id}" 没有WebSocket连接')
+            else:
+                dgreen(f'_async_send_command()成功：客户端为"{client_id}".')
+            print('------------/_async_send_command()------------')
+
         with self.connection_lock:
             if client_id not in self.connections:
                 return False, f'客户端 {client_id} 没有WebSocket连接'
