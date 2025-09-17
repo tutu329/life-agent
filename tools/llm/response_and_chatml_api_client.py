@@ -385,7 +385,15 @@ class Response_and_Chatml_LLM_Client:
         if res is None:
             self.history_input_list.append({'role': 'assistant', 'content': response_result.error})
         else:
-            self.history_input_list.append(res.choices[0].message.model_dump(exclude_none=True))
+            # 在history_input_list末尾添加上一次res的message
+            if not self.llm_config.msgs_must_have_content:
+                self.history_input_list.append(res.choices[0].message.model_dump(exclude_none=True))
+            else:
+                # 有些模型要求message里必须有content，则msg如{'role': 'assistant', 'tool_calls': [...], 'reasoning_content': '...'}就不行
+                dict_have_content = res.choices[0].message.model_dump(exclude_none=True)
+                dict_have_content['content'] = dict_have_content.get('content', '')
+                self.history_input_list.append(dict_have_content)
+
 
 
         content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else None

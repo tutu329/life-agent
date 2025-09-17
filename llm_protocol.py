@@ -58,7 +58,8 @@ class LLM_Config(BaseModel):
     vpn_on          :bool = False
 
     # response接口还是chatml接口
-    chatml          :bool = True   # False表示为response接口
+    chatml          :bool = True                # False表示为response接口
+    msgs_must_have_content   :bool = False      # 有的模型要求msgs里每一条必须有content
 
     # llm在对话层面的参数
     has_history         :bool = bool(LLM_Default.has_history)
@@ -108,6 +109,7 @@ g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
     reasoning_effort=LLM_Reasoning_Effort.LOW,
     chatml=True,
+    msgs_must_have_content=True,
 )
 
 g_local_gpt_oss_20b_mxfp4_lmstudio = LLM_Config(
