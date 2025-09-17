@@ -112,6 +112,20 @@ g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     msgs_must_have_content=True,
 )
 
+g_local_gpt_oss_120b_mxfp4 = LLM_Config(
+    name = 'local_gpt_oss_120b_mxfp4',
+    base_url='http://powerai.cc:8002/v1',
+    api_key='empty',
+    llm_model_id='gpt-oss-120b',
+    temperature=1.0,
+    top_p=1.0,
+    max_new_tokens=8192,
+    # reasoning_effort=LLM_Reasoning_Effort.HIGH,
+    # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
+    reasoning_effort=LLM_Reasoning_Effort.LOW,
+    chatml=True,
+)
+
 g_local_gpt_oss_20b_mxfp4_lmstudio = LLM_Config(
     name = 'local_gpt_oss_20b_mxfp4_lmstudio',
     base_url='http://powerai.cc:8001/v1',
@@ -246,6 +260,7 @@ g_local_qwen3_30b_gptq_int4 = LLM_Config(
 
 g_llm_configs = [
     g_local_gpt_oss_20b_mxfp4,
+    g_local_gpt_oss_120b_mxfp4,
     g_local_gpt_oss_20b_mxfp4_lmstudio,
     g_local_gpt_oss_120b_mxfp4_lmstudio,
     g_local_qwen3_30b_chat,
