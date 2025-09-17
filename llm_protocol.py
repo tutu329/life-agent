@@ -98,7 +98,7 @@ class LLM_Query_Paras(BaseModel):
 
 g_local_gpt_oss_20b_mxfp4 = LLM_Config(
     name = 'local_gpt_oss_20b_mxfp4',
-    base_url='http://powerai.cc:8001/v1',
+    base_url='http://powerai.cc:8002/v1',
     api_key='empty',
     llm_model_id='gpt-oss-20b',
     temperature=1.0,
