@@ -435,8 +435,8 @@ def main_response_agent_mcp_server():
 
 def main_office_agent():
     # ---------------------------测试阶段用agent控制libre-office---------------------------
-    # 1、前端：EditorPanel.tsx的第27行的5112临时改为5113，然后运行remote_dev.sh
-    # 2、后端：office_tool.py的第1132行的DEBUG改为True，然后启动agent_fastapi_server.py
+    # 1、前端：EditorPanel.tsx，第27行的5112临时改为5113，然后运行remote_dev.sh
+    # 2、后端：office_tool.py，第1008行改用5113端口，第1132行的DEBUG改为True(不做connection和agent_id对应)，然后启动agent_fastapi_server.py
     # 3、运行本程序
     # --------------------------/测试阶段用agent控制libre-office---------------------------
 
@@ -444,6 +444,7 @@ def main_office_agent():
 
     from agent.tools.office_tool import Write_Chapter_Tool
     write_chapter_tool = Write_Chapter_Tool.get_tool_param_dict()
+    Write_Chapter_Tool.init_ws_server()
 
     tools = [write_chapter_tool]
     dprint('--------------------tools[0]----------------------')

@@ -1001,7 +1001,7 @@ class Write_Chapter_Tool(Base_Tool):
         print(f'✅ Write_Chapter_Tool 初始化完成，port:{config.Port.collabora_code_web_socket_server}')
 
     @classmethod
-    def init(cls):
+    def init_ws_server(cls):
         if cls._s_ws_manager is None:
             cls._s_ws_manager = get_websocket_manager()
 
@@ -1105,7 +1105,7 @@ class Write_Chapter_Tool(Base_Tool):
 
     @classmethod
     def _class_call_collabora_api(cls, top_agent_id, cmd, params):
-        cls.init()
+        cls.init_ws_server()
 
         # 桥接collabora CODE接口
         command = {
