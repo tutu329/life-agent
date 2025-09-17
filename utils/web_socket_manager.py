@@ -165,8 +165,6 @@ class Web_Socket_Manager:
             print(f'command: {command}')
             if client_id not in self.connections:
                 dred(f'_async_send_command()失败：client_id为"{client_id}"，没有对应WebSocket连接')
-            else:
-                dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
             print('------------/_async_send_command()------------')
 
         with self.connection_lock:
@@ -178,6 +176,7 @@ class Web_Socket_Manager:
         try:
             command_json = json.dumps(command, ensure_ascii=False)
             await websocket.send(command_json)
+            dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
             return True, 'success'
         except Exception as e:
             # 连接可能已断开，清理映射
