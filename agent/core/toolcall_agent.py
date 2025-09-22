@@ -386,9 +386,9 @@ def main_response_agent_mcp_nginx():
         tool_names=tool_names,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
-        llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
+        # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4_lmstudio,
-        # llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         # llm_config=llm_protocol.g_local_qwen3_30b_gptq_int4,
         has_history=True,
     )
