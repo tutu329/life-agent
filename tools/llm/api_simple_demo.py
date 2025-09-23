@@ -1,3 +1,16 @@
+# 关于购买如deepseek的API
+#     1、https://www.deepseek.com/，进入API开放平台
+#     2、注册登录、充值如10元
+#     3、API keys中“创建API key”，随便取个名字，“复制”，就取得了"sk-xxx"这种形式的api key，保存好，丢失了再创建一个就行。
+# 关于使用如deepseek的API(初始化OpenAI对象时)
+#     1、base_url='https://api.deepseek.com/v1'
+#     2、api_key='sk-xxx'
+# 关于使用如deepseek的API(调用chat.completions.create()时)
+#     1、model='deepseek-chat'   # 或者'deepseek-reasoner'
+#     2、temperature=0.6         # 0表示生成答案固定，1.0表示生成答案多变
+#     3、max_tokens=4096         # 能生成的最大token数量
+#     4、stream=True             # 是否流式输出
+
 from openai import OpenAI
 
 # 设置api-key和LLM的地址
