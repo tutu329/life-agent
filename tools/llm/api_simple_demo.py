@@ -19,7 +19,7 @@ oai = OpenAI(
     api_key='empty',
 )
 
-# 流式输出的调用
+# 获取流式输出的接口
 def message_stream(gen):
     for chunk in gen:
         if chunk.choices and hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content is not None:
@@ -27,35 +27,35 @@ def message_stream(gen):
 
 def main():
     try:
-        # 获取LLM服务器上的具体模型id
+        # 获取LLM服务器上的模型列表，并取第一个模型的id
         model_id = oai.models.list().data[0].id
+
+        # 或者直接指定模型的id
+        mid=model_id
+        # mid='deepseek-chat'
+        # mid='deepseek-reasoner'
+
         print(f'模型id：{model_id!r}')
 
-        # messages = [{'role': 'system','content': 'You are a helpful assistant.'},{'role': 'user','content': '1+1？'}]
         messages = [
             {'role': 'system','content': 'You are a helpful assistant.'},
         ]
 
-        # 向LLM发送messages
-        mid=model_id
-        # mid='deepseek-chat'
-        # mid='deepseek-coder'
-
-        while True:
-            prompt = input('[用户输入]')
+        while True: # 对话循环
+            prompt = input('[用户输入]')    # 从控制台获取用户输入
             if prompt == 'exit':
                 break
             else:
-                messages.append({'role': 'user', 'content': prompt})
-                gen = oai.chat.completions.create(model=mid, temperature=0.7, messages=messages, stream=True, max_tokens=1024)
+                messages.append({'role': 'user', 'content': prompt})    # 将用户输入放入对话历史
+                gen = oai.chat.completions.create(model=mid, temperature=0.7, messages=messages, stream=True, max_tokens=1024)  # 从LLM api获取模型输出接口
 
                 # 流式输出LLM的回复
                 output = ''
                 print('[LLM输出]')
-                for chunk in message_stream(gen):
-                    print(chunk, end='', flush=True)
-                    output += chunk
-                messages.append({'role': 'assistant','content': output})
+                for chunk in message_stream(gen):       # 流式输出LLM返回的内容
+                    print(chunk, end='', flush=True)    # 打印流式输出的每一个片段
+                    output += chunk                     # 将每一个片段连接起来，组成最终的完整回复
+                messages.append({'role': 'assistant','content': output})    # 将llm输出放入对话历史
                 print()
 
     except Exception as e:
