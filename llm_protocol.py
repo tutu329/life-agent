@@ -97,37 +97,8 @@ class LLM_Query_Paras(BaseModel):
         rtn_str += f'/llm query "{self.id}"'.center(80, '-')
         return rtn_str
 
-g_local_gpt_oss_20b_mxfp4 = LLM_Config(
-    name = 'local_gpt_oss_20b_mxfp4',
-    base_url='http://powerai.cc:8002/v1',
-    api_key='empty',
-    llm_model_id='gpt-oss-20b',
-    temperature=1.0,
-    top_p=1.0,
-    max_new_tokens=8192,
-    # reasoning_effort=LLM_Reasoning_Effort.HIGH,
-    # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
-    reasoning_effort=LLM_Reasoning_Effort.LOW,
-    chatml=True,
-    msgs_must_have_content=True,
-)
-
-g_local_gpt_oss_120b_mxfp4 = LLM_Config(
-    name = 'local_gpt_oss_120b_mxfp4',
-    base_url='http://powerai.cc:8002/v1',
-    api_key='empty',
-    llm_model_id='gpt-oss-120b',
-    temperature=1.0,
-    top_p=1.0,
-    max_new_tokens=8192,
-    # reasoning_effort=LLM_Reasoning_Effort.HIGH,
-    # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
-    reasoning_effort=LLM_Reasoning_Effort.LOW,
-    chatml=True,
-)
-
 g_local_gpt_oss_20b_mxfp4_lmstudio = LLM_Config(
-    name = 'local_gpt_oss_20b_mxfp4_lmstudio',
+    name = 'local_20b_lmstudio',
     base_url='http://powerai.cc:8001/v1',
     api_key='empty',
     llm_model_id='openai/gpt-oss-20b',
@@ -143,7 +114,7 @@ g_local_gpt_oss_20b_mxfp4_lmstudio = LLM_Config(
 )
 
 g_local_gpt_oss_120b_mxfp4_lmstudio = LLM_Config(
-    name = 'local_gpt_oss_120b_mxfp4_lmstudio',
+    name = 'local_120b_lmstudio',
     base_url='http://powerai.cc:8001/v1',
     api_key='empty',
     llm_model_id='openai/gpt-oss-120b',
@@ -158,41 +129,8 @@ g_local_gpt_oss_120b_mxfp4_lmstudio = LLM_Config(
     chatml=True,
 )
 
-g_local_qwen3_30b_chat = LLM_Config(
-    name = 'local_qwen3_30b_chat',
-    base_url='https://powerai.cc:8001/v1',
-    api_key='empty',
-    llm_model_id='Qwen3-30B-A3B-Instruct-2507',
-    temperature=0.7,
-    top_p=0.8,
-    chatml=True,
-    max_new_tokens=8192
-)
-
-g_local_qwen3_30b_thinking = LLM_Config(
-    name = 'local_qwen3_30b_thinking',
-    base_url='https://powerai.cc:8001/v1',
-    api_key='empty',
-    llm_model_id='Qwen3-30B-A3B-Thinking-2507',
-    temperature=0.6,
-    top_p=0.95,
-    chatml=True,
-    max_new_tokens=8192
-)
-
-g_local_qwen3_4b_thinking = LLM_Config(
-    name = 'local_qwen3_4b_thinking',
-    base_url='https://powerai.cc:8001/v1',
-    api_key='empty',
-    # llm_model_id='',
-    temperature=0.6,
-    top_p=0.95,
-    chatml=True,
-    max_new_tokens=8192
-)
-
 g_online_deepseek_chat = LLM_Config(
-    name = 'online_deepseek_chat',
+    name = 'deepseek_chat',
     base_url='https://api.deepseek.com/v1',
     api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
     llm_model_id='deepseek-chat',
@@ -203,7 +141,7 @@ g_online_deepseek_chat = LLM_Config(
 )
 
 g_online_groq_kimi_k2 = LLM_Config(
-    name = 'online_groq_kimi_k2',
+    name = 'groq_kimi_k2',
     base_url='https://api.groq.com/openai/v1',
     api_key=os.getenv("GROQ_API_KEY") or 'empty',
     llm_model_id='moonshotai/kimi-k2-instruct',
@@ -215,7 +153,7 @@ g_online_groq_kimi_k2 = LLM_Config(
 )
 
 g_online_groq_gpt_oss_20b = LLM_Config(
-    name = 'online_groq_gpt_oss_20b',
+    name = 'groq_gpt_oss_20b',
     base_url='https://api.groq.com/openai/v1',
     api_key=os.getenv("GROQ_API_KEY") or 'empty',
     llm_model_id='openai/gpt-oss-20b',
@@ -232,7 +170,7 @@ g_online_groq_gpt_oss_20b = LLM_Config(
 )
 
 g_online_groq_gpt_oss_120b = LLM_Config(
-    name = 'online_groq_gpt_oss_120b',
+    name = 'groq_gpt_oss_120b',
     base_url='https://api.groq.com/openai/v1',
     api_key=os.getenv("GROQ_API_KEY") or 'empty',
     llm_model_id='openai/gpt-oss-120b',
@@ -248,7 +186,7 @@ g_online_groq_gpt_oss_120b = LLM_Config(
 )
 
 g_local_qwen3_30b_gptq_int4 = LLM_Config(
-    name = 'local_qwen3_30b_gptq_int4',
+    name = 'qwen3_30b_gptq_int4',
     base_url='https://powerai.cc:8001/v1',
     api_key='empty',
     llm_model_id='Qwen3-30B-A3B-GPTQ-Int4',
@@ -259,7 +197,7 @@ g_local_qwen3_30b_gptq_int4 = LLM_Config(
 )
 
 g_online_qwen3_next_80b_instruct = LLM_Config(
-    name = 'online_qwen3_next_80b_instruct',
+    name = 'qwen3_next_80b_instruct',
     base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
     api_key=os.getenv("QWEN_API_KEY") or 'empty',
     llm_model_id='qwen3-next-80b-a3b-instruct',
@@ -270,7 +208,7 @@ g_online_qwen3_next_80b_instruct = LLM_Config(
 )
 
 g_online_qwen3_next_80b_thinking = LLM_Config(
-    name = 'online_qwen3_next_80b_thinking',
+    name = 'qwen3_next_80b_thinking',
     base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
     api_key=os.getenv("QWEN_API_KEY") or 'empty',
     llm_model_id='qwen3-next-80b-a3b-thinking',
@@ -281,12 +219,8 @@ g_online_qwen3_next_80b_thinking = LLM_Config(
 )
 
 g_llm_configs = [
-    g_local_gpt_oss_20b_mxfp4,
-    g_local_gpt_oss_120b_mxfp4,
     g_local_gpt_oss_20b_mxfp4_lmstudio,
     g_local_gpt_oss_120b_mxfp4_lmstudio,
-    g_local_qwen3_30b_chat,
-    g_local_qwen3_30b_thinking,
     g_online_deepseek_chat,
     g_online_groq_kimi_k2,
     g_online_groq_gpt_oss_20b,

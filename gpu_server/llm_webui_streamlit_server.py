@@ -1403,7 +1403,7 @@ def on_main_llm_change():
     #     s_paras['main_llm_key'],
     #     s_paras['main_llm_model_id'],
     # )
-    print(s_paras)
+    print(mem_llm.llm_config)
     print('---------------/mem_llm.refresh_endpoint-------------------')
     # if refreshed:
     #     # 更换llm成功时，清空屏幕内容和llm记忆

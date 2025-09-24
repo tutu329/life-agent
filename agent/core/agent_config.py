@@ -41,7 +41,7 @@ class Agent_Config(BaseModel):
     tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
     exp_json_path       :str = ''                       # 如：'my_2_levels_mas_exp.json'
 
-    llm_config          :LLM_Config = llm_protocol.g_local_gpt_oss_20b_mxfp4
+    llm_config          :LLM_Config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
 
     has_history         :bool = False
     tool_agent_experience_json_path     :str = ''  # 经验json文件，如果为‘’，就不设置经验
