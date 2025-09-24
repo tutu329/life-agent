@@ -13,10 +13,21 @@ from agent.tools.base_tool import Base_Tool
 from agent.tools.protocol import Action_Result, Tool_Call_Paras
 
 from config import dred,dgreen,dblue,dyellow,dblack,dcyan,dmagenta, dwhite
+from pprint import pprint
+import config
+
+DEBUG = config.Global.app_debug
+
+def dprint(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
+
+def dpprint(*args, **kwargs):
+    if DEBUG:
+        pprint(*args, **kwargs)
 
 # 通用WebSocket管理器 - 可被多个模块使用
 # 提供WebSocket服务器和消息发送功能
-
 class Web_Socket_Manager:
     """通用WebSocket管理器单例类"""
     _instance = None
@@ -40,27 +51,27 @@ class Web_Socket_Manager:
         self.connection_reverse = {}  # websocket连接 -> id的反向映射
         self.server_started = False
         self.connection_lock = threading.Lock()
-        print('🔧 WebSocket_Manager 单例已初始化')
+        dprint('🔧 WebSocket_Manager 单例已初始化')
 
     def start_server(self, port=5112):
         """启动WebSocket服务器"""
-        print(f'🔍 ----------WebSocket服务器状态检查: server_started={self.server_started}----------')
+        dprint(f'🔍 ----------WebSocket服务器状态检查: server_started={self.server_started}----------')
 
         if self.server_started:
-            print('⚠️ WebSocket服务器已运行，跳过启动')
+            dprint('⚠️ WebSocket服务器已运行，跳过启动')
             return
 
         if self.server_thread is None or not self.server_thread.is_alive():
-            print('🚀 启动新的WebSocket服务器线程...')
+            dprint('🚀 启动新的WebSocket服务器线程...')
             self.server_thread = threading.Thread(target=self._run_server, kwargs={'port': port}, daemon=True)
             self.server_thread.start()
-            print(f'🚀 WebSocket服务器启动中... (端口:{port})')
+            dprint(f'🚀 WebSocket服务器启动中... (端口:{port})')
             self.server_started = True
             time.sleep(1)
         else:
-            print('⚠️ WebSocket服务器线程已存在且运行中')
+            dprint('⚠️ WebSocket服务器线程已存在且运行中')
             self.server_started = True
-        print(f'🔍 ----------WebSocket服务器状态检查: server_started={self.server_started}----------')
+        dprint(f'🔍 ----------WebSocket服务器状态检查: server_started={self.server_started}----------')
 
     def _run_server(self, port=5112):
         """运行WebSocket服务器"""
@@ -82,7 +93,7 @@ class Web_Socket_Manager:
                                 if websocket in self.connection_reverse:
                                     old_id = self.connection_reverse[websocket]
                                     if old_id in self.connections:
-                                        print(f'🗑️ 删除旧连接: {old_id}')
+                                        dprint(f'🗑️ 删除旧连接: {old_id}')
                                         del self.connections[old_id]
 
                                 # 注册新连接
@@ -98,25 +109,25 @@ class Web_Socket_Manager:
                                 'message': 'WebSocket连接已注册'
                             }))
                         else:
-                            print(f'⚠️ 收到无效消息: {data}')
+                            dprint(f'⚠️ 收到无效消息: {data}')
                     except json.JSONDecodeError:
-                        print(f'⚠️ 收到非JSON消息: {message}')
+                        dprint(f'⚠️ 收到非JSON消息: {message}')
 
             except websockets.exceptions.ConnectionClosed as e:
-                print(f'📱 WebSocket连接已关闭: {websocket.remote_address}')
+                dprint(f'📱 WebSocket连接已关闭: {websocket.remote_address}')
             except Exception as e:
-                print(f'⚠️ WebSocket连接错误: {websocket.remote_address} - {e}')
+                dprint(f'⚠️ WebSocket连接错误: {websocket.remote_address} - {e}')
             finally:
                 # 清理连接映射
                 with self.connection_lock:
                     if websocket in self.connection_reverse:
                         client_id = self.connection_reverse[websocket]
                         if client_id in self.connections:
-                            print(f'🗑️ 清理断开连接: {client_id}')
+                            dprint(f'🗑️ 清理断开连接: {client_id}')
                             del self.connections[client_id]
                         if websocket in self.connection_reverse:
                             del self.connection_reverse[websocket]
-                        print(f'🔍 剩余连接数: {len(self.connections)}')
+                        dprint(f'🔍 剩余连接数: {len(self.connections)}')
 
         async def start_server(port=port):
             import ssl
@@ -124,21 +135,21 @@ class Web_Socket_Manager:
             try:
                 ssl_context.load_cert_chain('/home/tutu/ssl/powerai_public.crt', '/home/tutu/ssl/powerai.key')
                 self.server = await websockets.serve(handler, '0.0.0.0', port, ssl=ssl_context)
-                print(f'✅ WebSocket服务器已启动 (WSS端口:{port})')
+                dprint(f'✅ WebSocket服务器已启动 (WSS端口:{port})')
                 await self.server.wait_closed()
             except FileNotFoundError:
-                print('⚠️ SSL证书未找到，使用普通WebSocket连接')
+                dprint('⚠️ SSL证书未找到，使用普通WebSocket连接')
                 self.server = await websockets.serve(handler, '0.0.0.0', port)
-                print(f'✅ WebSocket服务器已启动 (WS端口:{port})')
+                dprint(f'✅ WebSocket服务器已启动 (WS端口:{port})')
                 await self.server.wait_closed()
             except Exception as e:
-                print(f'❌ SSL WebSocket启动失败: {e}，回退到普通连接')
+                dprint(f'❌ SSL WebSocket启动失败: {e}，回退到普通连接')
                 try:
                     self.server = await websockets.serve(handler, '0.0.0.0', port)
-                    print(f'✅ WebSocket服务器已启动 (WS端口:{port})')
+                    dprint(f'✅ WebSocket服务器已启动 (WS端口:{port})')
                     await self.server.wait_closed()
                 except Exception as fallback_error:
-                    print(f'❌ WebSocket服务器启动完全失败: {fallback_error}')
+                    dprint(f'❌ WebSocket服务器启动完全失败: {fallback_error}')
 
         loop.run_until_complete(start_server())
 
@@ -159,13 +170,13 @@ class Web_Socket_Manager:
     async def _async_send_command(self, client_id, command):
         """向指定客户端发送命令（异步实现）"""
         if not (command.get('data') and command['data'].get('cmd') and command['data']['cmd'] == 'insert_text'):
-            print('-------------_async_send_command()------------')
-            print(f'client_id: {client_id}')
-            print(f'self.connections: {self.connections}')
-            print(f'command: {command}')
+            dprint('-------------_async_send_command()------------')
+            dprint(f'client_id: {client_id}')
+            dprint(f'self.connections: {self.connections}')
+            dprint(f'command: {command}')
             if client_id not in self.connections:
                 dred(f'_async_send_command()失败：client_id为"{client_id}"，没有对应WebSocket连接')
-            print('------------/_async_send_command()------------')
+            dprint('------------/_async_send_command()------------')
 
         with self.connection_lock:
             if client_id not in self.connections:
@@ -176,13 +187,13 @@ class Web_Socket_Manager:
         try:
             command_json = json.dumps(command, ensure_ascii=False)
             await websocket.send(command_json)
-            dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
+            # dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
             return True, 'success'
         except Exception as e:
             # 连接可能已断开，清理映射
             with self.connection_lock:
                 if client_id in self.connections:
-                    print(f'🗑️ 发送失败，清理连接: {client_id}')
+                    dprint(f'🗑️ 发送失败，清理连接: {client_id}')
                     del self.connections[client_id]
                 if websocket in self.connection_reverse:
                     del self.connection_reverse[websocket]
@@ -197,5 +208,5 @@ class Web_Socket_Manager:
 def get_websocket_manager():
     """获取WebSocket管理器单例实例"""
     manager = Web_Socket_Manager()
-    print(f'🔧 get_websocket_manager()获取WebSocket管理器实例: {id(manager)} (server_started={manager.server_started})')
+    dprint(f'🔧 get_websocket_manager()获取WebSocket管理器实例: {id(manager)} (server_started={manager.server_started})')
     return manager

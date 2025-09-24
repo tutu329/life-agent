@@ -475,6 +475,6 @@ def main_office_agent():
 
 if __name__ == "__main__":
     # main_response_agent()
-    main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
+    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()
-    # main_office_agent()
+    main_office_agent()
