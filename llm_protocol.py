@@ -258,6 +258,28 @@ g_local_qwen3_30b_gptq_int4 = LLM_Config(
     chatml=True,
 )
 
+g_online_qwen3_next_80b_instruct = LLM_Config(
+    name = 'online_qwen3_next_80b_instruct',
+    base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
+    api_key=os.getenv("QWEN_API_KEY") or 'empty',
+    llm_model_id='qwen3-next-80b-a3b-instruct',
+    temperature=0.7,
+    top_p=0.8,
+    chatml=True,
+    max_new_tokens=8192
+)
+
+g_online_qwen3_next_80b_thinking = LLM_Config(
+    name = 'online_qwen3_next_80b_thinking',
+    base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
+    api_key=os.getenv("QWEN_API_KEY") or 'empty',
+    llm_model_id='qwen3-next-80b-a3b-thinking',
+    temperature=0.6,
+    top_p=0.95,
+    chatml=True,
+    max_new_tokens=8192
+)
+
 g_llm_configs = [
     g_local_gpt_oss_20b_mxfp4,
     g_local_gpt_oss_120b_mxfp4,
@@ -265,10 +287,10 @@ g_llm_configs = [
     g_local_gpt_oss_120b_mxfp4_lmstudio,
     g_local_qwen3_30b_chat,
     g_local_qwen3_30b_thinking,
-    g_local_qwen3_4b_thinking,
     g_online_deepseek_chat,
     g_online_groq_kimi_k2,
     g_online_groq_gpt_oss_20b,
     g_online_groq_gpt_oss_120b,
-    g_local_qwen3_30b_gptq_int4,
+    g_online_qwen3_next_80b_instruct,
+    g_online_qwen3_next_80b_thinking,
 ]

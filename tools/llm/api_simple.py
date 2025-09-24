@@ -1,5 +1,5 @@
 from openai import OpenAI
-import openai
+import openai, os
 
 # 设置api-key和LLM的地址
 oai = OpenAI(
@@ -13,10 +13,12 @@ oai = OpenAI(
     # base_url='https://powerai.cc:8001/v1',
     # base_url=config.Global.llm_url,
 
-    base_url='http://powerai.cc:8001/v1',
+    base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
+    # base_url='http://powerai.cc:8001/v1',
     # base_url='http://powerai.cc:18002/v1',
     # base_url='http://127.0.0.1:18002/v1',
-    api_key='empty',
+    api_key=os.getenv("QWEN_API_KEY") or 'empty',
+    # api_key='empty',
 
     # base_url='http://127.0.0.1:8001/v1',
     # api_key='empty',
@@ -35,27 +37,31 @@ def message_stream(gen):
 def main():
     try:
         # 获取LLM服务器上的具体模型id
-        model_id = oai.models.list().data[0].id
+        print('-------------------models.list()---------------------')
+        for model_name in oai.models.list():
+            print(model_name)
+        print('------------------/models.list()---------------------')
+
+        model_id = 'qwen3-next-80b-a3b-instruct'
+        # model_id = oai.models.list().data[0].id
         print(f'模型id：{model_id!r}')
 
         # messages = [{'role': 'system','content': 'You are a helpful assistant.'},{'role': 'user','content': '1+1？'}]
         messages = [
             {'role': 'system','content': 'You are a helpful assistant.'},
-            {'role': 'user','content': '你是谁？'},
+            {'role': 'user','content': '写一首长诗，关于生活'},
             # {'role': 'assistant','content': '我是'},
-            {'role': 'assistant','content': '去你的'},
         ]
 
         # 向LLM发送messages
         mid=model_id
         # mid='deepseek-chat'
         # mid='deepseek-coder'
-        gen = oai.chat.completions.create(model=mid,temperature=0.7,messages=messages,stream=True,max_tokens=1024,)
+        gen = oai.chat.completions.create(model=mid,temperature=0.7,messages=messages,stream=True,max_tokens=4096,)
 
         # 流式输出LLM的回复
         for chunk in message_stream(gen):
             print(chunk, end='', flush=True)
-
 
     except Exception as e:
         print(f'访问LLM服务器报错：{e}')
