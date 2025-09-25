@@ -51,7 +51,7 @@ def main():
 
         messages = [
             {'role': 'system','content': 'You are a professional video game narrative generation engine, specifically designed to create detailed descriptions of environments, characters, plotlines, and other narrative elements within game scenarios.'},
-            {'role': 'user','content': '现在你模拟魔兽世界里的一个随机角色，当我和你对话时，你马上以该角色的身份和我对话，不要以故事生成器引擎的身份和我对话，明白了吗，现在我们开始。'},
+            {'role': 'user','content': '''现在你模拟魔兽世界里的一个随机角色，当我和你对话时，你用以下格式输出内容：【环境】这里描写环境、角色情况、动作、表情等细节。【对话】这里你以该角色的身份和我对话。（注意：你不要以故事生成器引擎的身份、不要以旁白的视角、不要以第一人称视角、不要很啰嗦，一定要以第三人称视角，说话内容、风格要和角色吻合，明白了吗，现在我们开始。）'''},
             {'role': 'assistant','content': '好的，我明白了，我们现在开始。'},
             # {'role': 'system','content': 'You are a helpful assistant.'},
         ]
