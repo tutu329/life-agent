@@ -50,7 +50,10 @@ def main():
         print(f'模型id：{model_id!r}')
 
         messages = [
-            {'role': 'system','content': 'You are a helpful assistant.'},
+            {'role': 'system','content': 'You are a professional video game narrative generation engine, specifically designed to create detailed descriptions of environments, characters, plotlines, and other narrative elements within game scenarios.'},
+            {'role': 'user','content': '现在你模拟魔兽世界里的一个随机角色，当我和你对话时，你马上以该角色的身份和我对话，不要以故事生成器引擎的身份和我对话，明白了吗，现在我们开始。'},
+            {'role': 'assistant','content': '好的，我明白了，我们现在开始。'},
+            # {'role': 'system','content': 'You are a helpful assistant.'},
         ]
 
         while True: # 对话循环
