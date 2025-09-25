@@ -319,7 +319,7 @@ default_session_data = {
         'system_prompt': config.Global.llm_system_prompt,
         'role_prompt': '',
 
-        'llm_config_name': 'local_gpt_oss_120b_mxfp4_lmstudio',
+        'llm_config_name': 'local_120b_lmstudio',
         'main_llm_url': config.Domain.llm_url,
         'main_llm_key': config.Global.llm_key,
         'main_llm_model_id': config.Global.llm_model,
@@ -1457,6 +1457,9 @@ def streamlit_refresh_loop():
     # )
     # st.write(event)
 
+    print('--------------------st.session_state.session_data[paras]-------------------------')
+    pprint.pprint(st.session_state.session_data['paras'])
+    print('-------------------/st.session_state.session_data[paras]-------------------------')
     s_paras = st.session_state.session_data['paras']
     # =============================侧栏==============================
     sidebar = st.sidebar
@@ -1574,6 +1577,12 @@ def streamlit_refresh_loop():
     exp4 =  sidebar.expander("模型API 参数", expanded=True)
     # 注意：用on_change回调的话，回调的瞬间，s_paras['main_llm_url']中的值是change之前的
     llm_config_options = [config.name for config in llm_protocol.g_llm_configs]
+    print('--------------------------llm_config_options---------------------------')
+    print(llm_config_options)
+    print('-------------------------/llm_config_options---------------------------')
+    print('--------------------------s_paras---------------------------')
+    pprint.pprint(s_paras)
+    print('-------------------------/s_paras---------------------------')
     s_paras['llm_config_name'] = exp4.selectbox(
         label="LLM配置ID:",
         options=llm_config_options,
