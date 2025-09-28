@@ -66,7 +66,16 @@ class Agent_Manager:
     def get_mcp_url_tool_names(cls, mcp_url:str)->List[str]:
         return get_mcp_server_tool_names(server_url=mcp_url)
 
+    # 获取某agent的所有local和MCP的tool names
+    @classmethod
+    def get_all_tool_names(cls, agent_id) -> List[str]:
+        agent = cls._get_agent(agent_id)
+        return agent.agent_config.tool_names
+
 def main():
+    from agent.tools.folder_tool import Folder_Tool
+    fold_tool = Folder_Tool.get_tool_param_dict()
+
     dprint("--------------MCP------------------")
     dpprint(Agent_Manager.get_mcp_url_tool_names("https://powerai.cc:8011/mcp/sqlite/sse"))
     dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
@@ -80,9 +89,9 @@ def main():
     agent_config = Agent_Config(
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='Agent created by Agent_Manager',
-        # tool_names=['list_tables'],
+        tool_names=['Folder_Tool'],
         # tool_names=['read_query', 'write_query', 'create_table', 'list_tables', 'describe_table', 'append_insight', 'tavily-search', 'tavily-extract', 'tavily-crawl', 'tavily-map'],
-        tool_objects=[],
+        tool_objects=[fold_tool],
         mcp_requests=mcp_requests,
         has_history=True,
     )
@@ -91,6 +100,11 @@ def main():
     # dprint("-------------/agent_config------------------")
 
     agent_id = Agent_Manager.create_agent(agent_config)
+
+    dprint("--------------注册后tool情况------------------")
+    dprint(Agent_Manager.get_all_tool_names(agent_id))
+    dprint("-------------/注册后tool情况------------------")
+
     Agent_Manager.run_agent(agent_id=agent_id, query='有哪些表格？')
     Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
 
