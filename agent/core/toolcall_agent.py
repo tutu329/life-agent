@@ -271,71 +271,73 @@ class Toolcall_Agent:
         return self.agent_status
 
 def main_response_agent():
-    add_tool = Tool_Request(
-        name='add_tool',
-        description='加法计算工具',
-        parameters=Tool_Parameters(
-            properties={
-                'a': Tool_Property(type='number', description='参数1'),
-                'b': Tool_Property(type='number', description='参数2'),
-                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
-            },
-            required=['a', 'b'],
-        ),
-        func=lambda a, b, **kwargs: {"result": a + b}
-        # func=lambda a, b, unit: {"result": a + b, "unit": unit}
-    )
-    sub_tool = Tool_Request(
-        name='sub_tool',
-        description='减法计算工具',
-        parameters=Tool_Parameters(
-            properties={
-                'a': Tool_Property(type='number', description='参数1'),
-                'b': Tool_Property(type='number', description='参数2'),
-                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
-            },
-            required=['a', 'b'],
-        ),
-        func=lambda a, b, **kwargs: {"result": a - b}
-        # func=lambda a, b, unit: {"result": a - b, "unit": unit}
-    )
-    mul_tool = Tool_Request(
-        name='mul_tool',
-        description='乘法计算工具',
-        parameters=Tool_Parameters(
-            properties={
-                'a': Tool_Property(type='number', description='参数1'),
-                'b': Tool_Property(type='number', description='参数2'),
-                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
-            },
-            required=['a', 'b'],
-        ),
-        func=lambda a, b, **kwargs: {"result": a * b}
-        # func=lambda a, b, unit: {"result": a * b, "unit": unit}
-    )
-    div_tool = Tool_Request(
-        name='div_tool',
-        description='除法计算工具',
-        parameters=Tool_Parameters(
-            properties={
-                'a': Tool_Property(type='number', description='参数1'),
-                'b': Tool_Property(type='number', description='参数2'),
-                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
-            },
-            required=['a', 'b'],
-        ),
-        func=lambda a, b, **kwargs: {"result": a / b}
-        # func=lambda a, b, unit: {"result": a / b, "unit": unit}
-    )
+    # add_tool = Tool_Request(
+    #     name='add_tool',
+    #     description='加法计算工具',
+    #     parameters=Tool_Parameters(
+    #         properties={
+    #             'a': Tool_Property(type='number', description='参数1'),
+    #             'b': Tool_Property(type='number', description='参数2'),
+    #             # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+    #         },
+    #         required=['a', 'b'],
+    #     ),
+    #     func=lambda a, b, **kwargs: {"result": a + b}
+    #     # func=lambda a, b, unit: {"result": a + b, "unit": unit}
+    # )
+    # sub_tool = Tool_Request(
+    #     name='sub_tool',
+    #     description='减法计算工具',
+    #     parameters=Tool_Parameters(
+    #         properties={
+    #             'a': Tool_Property(type='number', description='参数1'),
+    #             'b': Tool_Property(type='number', description='参数2'),
+    #             # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+    #         },
+    #         required=['a', 'b'],
+    #     ),
+    #     func=lambda a, b, **kwargs: {"result": a - b}
+    #     # func=lambda a, b, unit: {"result": a - b, "unit": unit}
+    # )
+    # mul_tool = Tool_Request(
+    #     name='mul_tool',
+    #     description='乘法计算工具',
+    #     parameters=Tool_Parameters(
+    #         properties={
+    #             'a': Tool_Property(type='number', description='参数1'),
+    #             'b': Tool_Property(type='number', description='参数2'),
+    #             # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+    #         },
+    #         required=['a', 'b'],
+    #     ),
+    #     func=lambda a, b, **kwargs: {"result": a * b}
+    #     # func=lambda a, b, unit: {"result": a * b, "unit": unit}
+    # )
+    # div_tool = Tool_Request(
+    #     name='div_tool',
+    #     description='除法计算工具',
+    #     parameters=Tool_Parameters(
+    #         properties={
+    #             'a': Tool_Property(type='number', description='参数1'),
+    #             'b': Tool_Property(type='number', description='参数2'),
+    #             # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+    #         },
+    #         required=['a', 'b'],
+    #     ),
+    #     func=lambda a, b, **kwargs: {"result": a / b}
+    #     # func=lambda a, b, unit: {"result": a / b, "unit": unit}
+    # )
 
     from agent.tools.folder_tool import Folder_Tool
     fold_tool = Folder_Tool.get_tool_param_dict()
 
-    tools = [fold_tool, add_tool, sub_tool, mul_tool, div_tool]
+    tools = [fold_tool]
+    # tools = [fold_tool, add_tool, sub_tool, mul_tool, div_tool]
 
     agent_config = Agent_Config(
         agent_name = 'agent for search folder',
         tool_names=['Folder_Tool'],
+        tool_objects=tools,
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_local_qwen3_30b_chat,
         # llm_config=llm_protocol.g_online_deepseek_chat,
@@ -347,8 +349,8 @@ def main_response_agent():
         has_history=True,
     )
 
-    # query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件'
-    query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件'
+    # query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     # query = '你是谁？'
 
     agent = Toolcall_Agent(agent_config=agent_config)
@@ -356,7 +358,8 @@ def main_response_agent():
     # agent.run(query=query, tools=tools)
 
     # agent.run(query='你好，我的名字是土土', tools=tools)
-    agent.run(query=query, tools=tools)
+    agent.run(query=query)
+    # agent.run(query=query, tools=tools)
     # agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到', tools=tools)
 
     # agent.run(query='你好，我的名字是土土', tools=tools)
@@ -476,7 +479,7 @@ def main_office_agent():
         agent.run(query=input('请输入你的指令：'), tools=tools)
 
 if __name__ == "__main__":
-    # main_response_agent()
-    main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
+    main_response_agent()
+    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()
     # main_office_agent()
