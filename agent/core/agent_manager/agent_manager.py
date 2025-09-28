@@ -1,3 +1,4 @@
+from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
 from pprint import pprint
 
 from agent.core.mcp.mcp_manager import get_mcp_server_tools, get_mcp_server_tool_names
@@ -60,11 +61,22 @@ class Agent_Manager:
         agent = cls._get_agent(agent_id)
         agent.run(query=query)
 
+    # 获取MCP url对应的tools列表
+    @classmethod
+    def get_mcp_url_tool_names(cls, mcp_url:str)->List[str]:
+        return get_mcp_server_tool_names(server_url=mcp_url)
+
 def main():
+    dprint("--------------MCP------------------")
+    dpprint(Agent_Manager.get_mcp_url_tool_names("https://powerai.cc:8011/mcp/sqlite/sse"))
+    dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
+    dprint("-------------/MCP------------------")
+
     mcp_requests = [
         MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse", allowed_tool_names=['list_tables', 'read_query']),
         MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']),
     ]
+
     agent_config = Agent_Config(
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='Agent created by Agent_Manager',
@@ -74,9 +86,9 @@ def main():
         mcp_requests=mcp_requests,
         has_history=True,
     )
-    dprint("--------------agent_config------------------")
+    # dprint("--------------agent_config------------------")
     # dpprint(agent_config.model_dump())
-    dprint("-------------/agent_config------------------")
+    # dprint("-------------/agent_config------------------")
 
     agent_id = Agent_Manager.create_agent(agent_config)
     Agent_Manager.run_agent(agent_id=agent_id, query='有哪些表格？')
