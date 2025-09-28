@@ -50,11 +50,8 @@ def dpprint(*args, **kwargs):
         pprint(*args, **kwargs)
 
 class Toolcall_Agent:
-    def __init__(self,
-                 agent_config:Agent_Config,
-                 agent_max_retry=config.Agent.MAX_RETRY,
-                 agent_max_error_retry=config.Agent.MAX_ERROR_RETRY
-                 ):
+    def __init__(self, agent_config:Agent_Config):
+
         self.llm_config = agent_config.llm_config
         self.response_llm_client = Response_and_Chatml_LLM_Client(self.llm_config)
         self.agent_config = agent_config
@@ -68,9 +65,9 @@ class Toolcall_Agent:
         self.current_exp_str = ''
 
         # agent最大出错次数
-        self.agent_max_error_retry = agent_max_error_retry
+        self.agent_max_error_retry = self.agent_config.agent_max_error_retry
         # agent最大次数
-        self.agent_max_retry = agent_max_retry
+        self.agent_max_retry = self.agent_config.agent_max_retry
 
         self.agent_status = Agent_Status()
 
