@@ -34,20 +34,34 @@ g_agent_dict = {} # agent_id <--> agent object
 # agent工厂
 class Agent_Manager:
     agents_dict = {}
+    local_tool_objects_list = List[Tool_Request]
+
+    @classmethod
+    def _on_server_start(cls)->List[Dict[str, Any]]: # 由server侧调用
+        cls.local_tool_objects_list = Agent_Manager.parse_all_local_tools_on_server_start()
+        return cls.local_tool_objects_list
 
     # 创建agent，返回agent_id
     @classmethod
     def create_agent(cls, agent_config:Agent_Config)->str:
-        tool_objects = []
 
+        # 获取所有的local tools
+        allowd_local_tools = []
+        for tool in cls.local_tool_objects_list:
+            if tool.name in agent_config.allowed_local_tool_names:
+                allowd_local_tools.append(tool)
+
+        allowed_mcp_tools = []
         # 根据MCP url，添加allowed对应的tools
         if agent_config.mcp_requests:
             for mcp_req in agent_config.mcp_requests:
                 dprint(f'mcp_url: {mcp_req.url!r}')
-                tool_objects += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
+                allowed_mcp_tools += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
 
         # 已有tools加上MCP的tools
-        agent_config.tool_objects += tool_objects
+        if agent_config.tool_objects is None:
+            agent_config.tool_objects = []
+        agent_config.tool_objects = allowd_local_tools + allowed_mcp_tools
 
         # agent初始化
         agent = Toolcall_Agent(agent_config=agent_config)
@@ -75,9 +89,24 @@ class Agent_Manager:
     def get_mcp_url_tool_names(cls, mcp_url:str)->List[str]:
         return get_mcp_server_tool_names(server_url=mcp_url)
 
+    @classmethod
+    def get_local_tool_names(cls)->List[str]:
+        local_tool_names = []
+        for tool in cls.local_tool_objects_list:
+            local_tool_names.append(tool.name)
+        return local_tool_names
+
+    @classmethod
+    def get_local_tool_param_dict(cls, tool_name)->Tool_Request:
+        if cls.local_tool_objects_list:
+            for tool in cls.local_tool_objects_list:
+                if tool_name==tool.name:
+                    return tool
+        return None
+
     # 获取某agent的所有local和MCP的tool names
     @classmethod
-    def get_all_tool_info_list(cls, agent_id) -> List[str]:
+    def _get_all_tool_debug_info_list(cls, agent_id) -> List[str]:
         tool_info_list = []
         agent = cls._get_agent(agent_id)
         for tool in agent.agent_config.tool_objects:
@@ -145,11 +174,19 @@ def main():
     # from agent.tools.folder_tool import Folder_Tool
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
-    tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
+    # tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
+    local_tool_list = Agent_Manager._on_server_start()
     dprint("--------------tools_info------------------")
-    for tool_param_dict in tool_list:
+    for tool_param_dict in local_tool_list:
         dprint(tool_param_dict)
     dprint("-------------/tools_info------------------")
+
+    dprint("--------------client_get_server_local_tools_info------------------")
+    dprint(Agent_Manager.get_local_tool_names())
+    dprint(Agent_Manager.get_local_tool_param_dict(tool_name='Write_Chapter_Tool'))
+    dprint(Agent_Manager.get_local_tool_param_dict(tool_name='Folder_Tool'))
+    dprint("--------------client_get_server_local_tools_info------------------")
+
 
 
     dprint("--------------MCP------------------")
@@ -165,9 +202,12 @@ def main():
     agent_config = Agent_Config(
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='Agent created by Agent_Manager',
-        tool_names=['Folder_Tool'],
+        allowed_local_tool_names=['Folder_Tool'],
+        # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
+        # allowed_local_tool_names=['Write_Chapter_Tool'],
+        # tool_names=['Folder_Tool'],
         # tool_names=['read_query', 'write_query', 'create_table', 'list_tables', 'describe_table', 'append_insight', 'tavily-search', 'tavily-extract', 'tavily-crawl', 'tavily-map'],
-        tool_objects=tool_list,
+        # tool_objects=tool_list,
         # tool_objects=[fold_tool],
         mcp_requests=mcp_requests,
         has_history=True,
@@ -179,7 +219,7 @@ def main():
     agent_id = Agent_Manager.create_agent(agent_config)
 
     dprint("--------------注册后tool情况------------------")
-    for info in Agent_Manager.get_all_tool_info_list(agent_id):
+    for info in Agent_Manager._get_all_tool_debug_info_list(agent_id):
         dprint(info)
     dprint("-------------/注册后tool情况------------------")
 

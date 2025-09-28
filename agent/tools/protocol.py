@@ -46,7 +46,7 @@ class Tool_Request(BaseModel):
     # 允许 pydantic 接受 Callable 等任意类型（否则有些版本会抱怨）
     model_config = ConfigDict(arbitrary_types_allowed=True, extra='allow')
 
-def get_tool_param_dict_from_tool_class(cls, required_field_in_parameter=True):
+def get_tool_param_dict_from_tool_class(cls, required_field_in_parameter=True)->Tool_Request:
     if required_field_in_parameter:
         # 老格式，如office_tool
         rtn_params = Tool_Parameters(

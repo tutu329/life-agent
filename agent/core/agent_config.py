@@ -45,8 +45,9 @@ class Agent_Config(BaseModel):
     agent_max_error_retry   :int = config.Agent.MAX_ERROR_RETRY # agent循环中遇到错误后的最大尝试次数
 
     # 普通tools
-    tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
-    tool_objects        :List[Tool_Request]
+    allowed_local_tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    tool_names          :Optional[List[str]] = None           # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    tool_objects        :Optional[List[Tool_Request]] = None
 
     # MCP tools
     mcp_requests :Optional[List[MCP_Server_Request]] = None                # 如: [("https://powerai.cc:8011/mcp/sqlite/sse",['read_query', 'write_query']), ("http://localhost:8789/sse", [...])]
