@@ -24,8 +24,8 @@
 import config
 import llm_protocol
 from llm_protocol import LLM_Config
-from agent.tools.legacy_protocol import Tool_Call_Paras
-from tools.llm.response_and_chatml_api_client import Response_and_Chatml_LLM_Client, Response_Result, Tool_Request, Tool_Parameters, Tool_Property, Response_Request
+from agent.tools.protocol import Tool_Request
+from tools.llm.response_and_chatml_api_client import Response_and_Chatml_LLM_Client, Response_Result, Response_Request
 
 from agent.core.agent_config import Agent_Config
 from agent.core.protocol import Query_Agent_Context, Agent_Status
