@@ -105,8 +105,9 @@ def main():
     dprint(Agent_Manager.get_all_tool_names(agent_id))
     dprint("-------------/注册后tool情况------------------")
 
-    Agent_Manager.run_agent(agent_id=agent_id, query='有哪些表格？')
-    Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
+    Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件')
+    # Agent_Manager.run_agent(agent_id=agent_id, query='有哪些表格？')
+    # Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
 
 if __name__ == "__main__":
     main()
