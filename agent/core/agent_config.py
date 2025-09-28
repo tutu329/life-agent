@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, ConfigDict
 import config
 import llm_protocol
 from llm_protocol import LLM_Config
+from agent.tools.protocol import Tool_Request
 
 # @dataclass
 # class Agent_Config:
@@ -38,10 +39,12 @@ class Agent_Config(BaseModel):
 
     # agent配置
     agent_name          :Optional[str] = None           # agent的name
-    tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
     exp_json_path       :str = ''                       # 如：'my_2_levels_mas_exp.json'
     agent_max_retry         :int = config.Agent.MAX_RETRY       # agent循环的最大次数
     agent_max_error_retry   :int = config.Agent.MAX_ERROR_RETRY # agent循环中遇到错误后的最大尝试次数
+
+    tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    tool_objects        :List[Tool_Request]
 
     # LLM配置
     llm_config          :LLM_Config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio

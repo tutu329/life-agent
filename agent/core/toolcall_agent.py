@@ -152,7 +152,7 @@ class Toolcall_Agent:
         # print(f'final: {self.agent_status.final_answer}')
         agent_finished_output(self.agent_status.final_answer)
 
-    def run(self, query, tools):
+    def run(self, query):
         self._run_before(query)
 
         use_chatml = self.response_llm_client.llm_config.chatml
@@ -170,7 +170,7 @@ class Toolcall_Agent:
             # input=query_with_final_answer_flag,       # 第一次请求input用query，第二次及以后的请求，input实际用了self.history_input_list
             # instructions='继续调用工具直到完成user的任务',
             model=self.llm_config.llm_model_id,
-            tools=tools,
+            tools=self.agent_config.tool_objects,
             temperature=self.llm_config.temperature,
             top_p=self.llm_config.top_p,
             max_output_tokens=self.llm_config.max_new_tokens,
@@ -381,6 +381,7 @@ def main_response_agent_mcp_nginx():
     agent_config = Agent_Config(
         agent_name='MCP agent',
         tool_names=tool_names,
+        tool_objects=tools,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
@@ -398,7 +399,7 @@ def main_response_agent_mcp_nginx():
     # agent.run(query='查看通信录表的数据', tools=tools)
 
     while True:
-        agent.run(query=input('请输入你的指令：'), tools=tools)
+        agent.run(query=input('请输入你的指令：'))
 
 def main_response_agent_mcp_server():
     from openai import OpenAI
