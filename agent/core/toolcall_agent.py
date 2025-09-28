@@ -49,7 +49,7 @@ def dpprint(*args, **kwargs):
     if DEBUG:
         pprint(*args, **kwargs)
 
-class Response_API_Tool_Agent:
+class Toolcall_Agent:
     def __init__(self,
                  agent_config:Agent_Config,
                  agent_max_retry=config.Agent.MAX_RETRY,
@@ -354,7 +354,7 @@ def main_response_agent():
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     # query = '你是谁？'
 
-    agent = Response_API_Tool_Agent(agent_config=agent_config)
+    agent = Toolcall_Agent(agent_config=agent_config)
     agent.init()
     # agent.run(query=query, tools=tools)
 
@@ -395,7 +395,7 @@ def main_response_agent_mcp_nginx():
         # llm_config=llm_protocol.g_local_qwen3_30b_gptq_int4,
         has_history=True,
     )
-    agent = Response_API_Tool_Agent(agent_config=agent_config)
+    agent = Toolcall_Agent(agent_config=agent_config)
     agent.init()
     # agent.run(query='列出所有表格名称', tools=tools)
     # agent.run(query='查看通信录表的数据', tools=tools)
@@ -470,7 +470,7 @@ def main_office_agent():
     )
 
 
-    agent = Response_API_Tool_Agent(agent_config=agent_config)
+    agent = Toolcall_Agent(agent_config=agent_config)
     agent.init()
 
     while True:
