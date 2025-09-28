@@ -43,8 +43,12 @@ class Agent_Config(BaseModel):
     agent_max_retry         :int = config.Agent.MAX_RETRY       # agent循环的最大次数
     agent_max_error_retry   :int = config.Agent.MAX_ERROR_RETRY # agent循环中遇到错误后的最大尝试次数
 
+    # 普通tools
     tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
     tool_objects        :List[Tool_Request]
+
+    # MCP tools
+    mcp_urls :Optional[List[str]] = None                # 如: ["https://powerai.cc:8011/mcp/sqlite/sse", "http://localhost:8789/sse"]
 
     # LLM配置
     llm_config          :LLM_Config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
