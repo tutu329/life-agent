@@ -27,11 +27,12 @@ g_agent_dict = {} # agent_id <--> agent object
 class Agent_Manager:
     agents_dict = {}
 
+    # 创建agent，返回agent_id
     @classmethod
     def create_agent(cls, agent_config:Agent_Config)->str:
         tool_objects = []
 
-        # 处理MCP tool objects
+        # 根据MCP url，添加allowed对应的tools
         if agent_config.mcp_requests:
             for mcp_req in agent_config.mcp_requests:
                 dprint(f'mcp_url: {mcp_req.url!r}')
@@ -48,13 +49,15 @@ class Agent_Manager:
         # 返回agent id
         return agent.agent_id
 
+    # 根据agent_id，获取agent对象
     @classmethod
-    def get_agent(cls, agent_id:str)->Toolcall_Agent:
+    def _get_agent(cls, agent_id:str)->Toolcall_Agent:
         return cls.agents_dict.get(agent_id)
 
+    # 运行agent_id对应的对象
     @classmethod
     def run_agent(cls, agent_id:str, query):
-        agent = cls.get_agent(agent_id)
+        agent = cls._get_agent(agent_id)
         agent.run(query=query)
 
 def main():
