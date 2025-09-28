@@ -70,9 +70,15 @@ class Agent_Manager:
 
     # 获取某agent的所有local和MCP的tool names
     @classmethod
-    def get_all_tool_names(cls, agent_id) -> List[str]:
+    def get_all_tool_info_list(cls, agent_id) -> List[str]:
+        tool_info_list = []
         agent = cls._get_agent(agent_id)
-        return agent.agent_config.tool_names
+        for tool in agent.agent_config.tool_objects:
+            tool_info_list.append({
+                'name': tool.name,
+                'description': tool.description,
+            })
+        return tool_info_list
 
 def main():
     from agent.tools.folder_tool import Folder_Tool
@@ -104,7 +110,8 @@ def main():
     agent_id = Agent_Manager.create_agent(agent_config)
 
     dprint("--------------注册后tool情况------------------")
-    dprint(Agent_Manager.get_all_tool_names(agent_id))
+    for info in Agent_Manager.get_all_tool_info_list(agent_id):
+        dprint(info)
     dprint("-------------/注册后tool情况------------------")
 
     Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件')
