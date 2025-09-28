@@ -45,3 +45,28 @@ class Tool_Request(BaseModel):
 
     # 允许 pydantic 接受 Callable 等任意类型（否则有些版本会抱怨）
     model_config = ConfigDict(arbitrary_types_allowed=True, extra='allow')
+
+# ---------------------------------pydantic导出示例---------------------------------
+# class M(BaseModel):
+#     # 必填：必须出现
+#     a: int
+#
+#     # 必填但可为 None：必须出现，但能是 null
+#     b: Optional[int]  # 或 int | None
+#
+#     # ---------可省略：不出现也行；出现时可为 None--------，后续用m.model_dump(exclude_unset=True)即可
+#     c: Optional[int] = None
+#
+#     # 可省略：不出现也行；出现时必须是 int
+#     d: int | None = Field(default=None)  # 出现且为 None 也允许
+
+# m = M(a=1, b=None)  # c、d 未提供
+# m.model_dump(exclude_unset=True)
+# # -> 只包含 a、b
+#
+# m.model_dump(exclude_none=True)
+# # -> 过滤掉 None 值的字段（此时 b 会被去掉）
+#
+# m.model_dump(exclude_unset=True, exclude_none=True)
+# # -> 只留 a（因为 b 是 None 被过滤，c/d 未提供被过滤）
+# --------------------------------/pydantic导出示例---------------------------------
