@@ -8,7 +8,7 @@ from pprint import pprint
 from agent.core.mcp.mcp_manager import get_mcp_server_tools, get_mcp_server_tool_names
 from agent.core.agent_config import Agent_Config
 from agent.core.toolcall_agent import Toolcall_Agent
-from agent.tools.protocol import Tool_Request
+from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_param_dict_from_tool_class
 from agent.core.mcp.protocol import MCP_Server_Request
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
@@ -88,9 +88,9 @@ class Agent_Manager:
         return tool_info_list
 
     @classmethod
-    def server_init_local_tools_on_start(cls) -> List[Dict[str, Any]]:
+    def parse_all_local_tools_on_server_start(cls) -> List[Dict[str, Any]]:
         """
-        获取 tools 文件夹下所有 py 文件里的 tool 信息
+        获取 life-agent.agent.tools 文件夹下所有 py 文件里的 tool 信息
 
         Returns:
             List[Dict]: 包含所有 tool 信息的列表，每个元素包含：
@@ -99,12 +99,13 @@ class Agent_Manager:
                 - parameters: tool 参数
                 - tool_class: tool 类对象（非实例）
         """
-        tools_info = []
+        tool_param_dict_list = []
         tools_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tools')
         dprint(f'--------------tools_dir----------------')
         dprint(tools_dir)
         dprint(f'-------------/tools_dir----------------')
 
+        tool_param_list = []
         # 遍历 tools 文件夹下的所有 py 文件
         for filename in os.listdir(tools_dir):
             if filename.endswith('.py') and filename != '__init__.py':
@@ -124,28 +125,29 @@ class Agent_Manager:
                                 hasattr(obj, 'tool_name') and
                                 hasattr(obj, 'tool_description') and
                                 hasattr(obj, 'tool_parameters')):
-                            tool_info = {
-                                'name': obj.tool_name,
-                                'description': obj.tool_description,
-                                'parameters': obj.tool_parameters,
-                                'tool_class': obj  # 返回类对象本身，不是实例
-                            }
-                            tools_info.append(tool_info)
+
+                            if 'required' in obj.tool_parameters:
+                                required_field_in_parameter = False
+                            else:
+                                required_field_in_parameter = True
+
+                            tool_param = get_tool_param_dict_from_tool_class(obj, required_field_in_parameter)
+                            tool_param_list.append(tool_param)
 
                 except Exception as e:
                     dyellow(f"【Agent_Manager.server_init_local_tools_on_start】warning: 尝试动态导入 {filename} 失败: {e!r}")
                     continue
 
-        return tools_info
+        return tool_param_list
 
 def main():
-    from agent.tools.folder_tool import Folder_Tool
-    fold_tool = Folder_Tool.get_tool_param_dict()
+    # from agent.tools.folder_tool import Folder_Tool
+    # fold_tool = Folder_Tool.get_tool_param_dict()
 
-    tools_info = Agent_Manager.server_init_local_tools_on_start()
+    tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
     dprint("--------------tools_info------------------")
-    for info in tools_info:
-        dprint(info)
+    for tool_param_dict in tool_list:
+        dprint(tool_param_dict)
     dprint("-------------/tools_info------------------")
 
 
@@ -164,7 +166,8 @@ def main():
         agent_name='Agent created by Agent_Manager',
         tool_names=['Folder_Tool'],
         # tool_names=['read_query', 'write_query', 'create_table', 'list_tables', 'describe_table', 'append_insight', 'tavily-search', 'tavily-extract', 'tavily-crawl', 'tavily-map'],
-        tool_objects=[fold_tool],
+        tool_objects=tool_list,
+        # tool_objects=[fold_tool],
         mcp_requests=mcp_requests,
         has_history=True,
     )

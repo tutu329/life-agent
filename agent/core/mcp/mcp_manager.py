@@ -150,7 +150,7 @@ def list_server_and_tools(server_url: str):
 def get_mcp_server_tool_names(server_url: str):
     initialize_response, list_tools_response = list_server_and_tools(server_url)
     tool_names = [tool.name for tool in list_tools_response.tools]
-    dprint('tools: ', tool_names)
+    # dprint('tools: ', tool_names)
     return tool_names
 
 def get_mcp_server_tools(server_url: str, allowed_tools: Optional[Iterable[str]] = None) -> List[Tool_Request]:
