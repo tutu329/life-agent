@@ -38,7 +38,9 @@ class Agent_Manager:
             for mcp_req in agent_config.mcp_requests:
                 dprint(f'mcp_url: {mcp_req.url!r}')
                 tool_objects += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
-        agent_config.tool_objects = tool_objects
+
+        # 已有tools加上MCP的tools
+        agent_config.tool_objects += tool_objects
 
         # agent初始化
         agent = Toolcall_Agent(agent_config=agent_config)
