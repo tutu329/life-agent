@@ -58,7 +58,7 @@ class LLM_Client_Status:
     uuid: Optional[str] = None
     url: Optional[str] = None
     question: Optional[str] = None
-    model_id: Optional[str] = None
+    llm_model_id: Optional[str] = None
     stops: Optional[List[str]] = field(default_factory=list)
     temperature: Optional[float] = None
     system_prompt: Optional[str] = None

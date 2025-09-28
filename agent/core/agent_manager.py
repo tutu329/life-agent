@@ -1,3 +1,7 @@
+import os
+import importlib.util
+import inspect
+
 from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
 from pprint import pprint
 
@@ -12,6 +16,7 @@ from agent.tools.tool_manager import server_register_all_local_tool_on_start
 import llm_protocol
 
 import config
+from config import dred,dgreen,dcyan,dyellow,dblue,dblack,dwhite
 
 DEBUG = True
 # DEBUG = config.Global.app_debug
@@ -82,9 +87,67 @@ class Agent_Manager:
             })
         return tool_info_list
 
+    @classmethod
+    def server_init_local_tools_on_start(cls) -> List[Dict[str, Any]]:
+        """
+        获取 tools 文件夹下所有 py 文件里的 tool 信息
+
+        Returns:
+            List[Dict]: 包含所有 tool 信息的列表，每个元素包含：
+                - name: tool 名称
+                - description: tool 描述
+                - parameters: tool 参数
+                - tool_class: tool 类对象（非实例）
+        """
+        tools_info = []
+        tools_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tools')
+        dprint(f'--------------tools_dir----------------')
+        dprint(tools_dir)
+        dprint(f'-------------/tools_dir----------------')
+
+        # 遍历 tools 文件夹下的所有 py 文件
+        for filename in os.listdir(tools_dir):
+            if filename.endswith('.py') and filename != '__init__.py':
+                module_name = filename[:-3]  # 去掉 .py 后缀
+                file_path = os.path.join(tools_dir, filename)
+
+                try:
+                    # 动态导入模块
+                    spec = importlib.util.spec_from_file_location(module_name, file_path)
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+
+                    # 查找模块中的类
+                    for name, obj in inspect.getmembers(module, inspect.isclass):
+                        # 检查是否是在当前模块中定义的类（不是导入的类）
+                        if (obj.__module__ == module_name and
+                                hasattr(obj, 'tool_name') and
+                                hasattr(obj, 'tool_description') and
+                                hasattr(obj, 'tool_parameters')):
+                            tool_info = {
+                                'name': obj.tool_name,
+                                'description': obj.tool_description,
+                                'parameters': obj.tool_parameters,
+                                'tool_class': obj  # 返回类对象本身，不是实例
+                            }
+                            tools_info.append(tool_info)
+
+                except Exception as e:
+                    dyellow(f"【Agent_Manager.server_init_local_tools_on_start】warning: 尝试动态导入 {filename} 失败: {e!r}")
+                    continue
+
+        return tools_info
+
 def main():
     from agent.tools.folder_tool import Folder_Tool
     fold_tool = Folder_Tool.get_tool_param_dict()
+
+    tools_info = Agent_Manager.server_init_local_tools_on_start()
+    dprint("--------------tools_info------------------")
+    for info in tools_info:
+        dprint(info)
+    dprint("-------------/tools_info------------------")
+
 
     dprint("--------------MCP------------------")
     dpprint(Agent_Manager.get_mcp_url_tool_names("https://powerai.cc:8011/mcp/sqlite/sse"))

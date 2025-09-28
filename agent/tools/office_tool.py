@@ -22,7 +22,8 @@ from llm_protocol import LLM_Query_Paras
 
 from pydantic import BaseModel
 
-from tools.llm.response_and_chatml_api_client import Response_Result, Tool_Request, Tool_Parameters, Tool_Property, Response_Request, Property_Type
+from agent.tools.protocol import Tool_Parameters, Tool_Property, Property_Type
+from tools.llm.response_and_chatml_api_client import Response_Result, Tool_Request, Response_Request
 from console import err
 
 class Prompt_Write_Chapter_Text(BaseModel):
