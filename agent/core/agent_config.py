@@ -7,6 +7,7 @@ import config
 import llm_protocol
 from llm_protocol import LLM_Config
 from agent.tools.protocol import Tool_Request
+from agent.core.mcp.protocol import MCP_Server_Request
 
 # @dataclass
 # class Agent_Config:
@@ -48,7 +49,7 @@ class Agent_Config(BaseModel):
     tool_objects        :List[Tool_Request]
 
     # MCP tools
-    mcp_urls :Optional[List[str]] = None                # 如: ["https://powerai.cc:8011/mcp/sqlite/sse", "http://localhost:8789/sse"]
+    mcp_requests :Optional[List[MCP_Server_Request]] = None                # 如: [("https://powerai.cc:8011/mcp/sqlite/sse",['read_query', 'write_query']), ("http://localhost:8789/sse", [...])]
 
     # LLM配置
     llm_config          :LLM_Config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
