@@ -4,8 +4,8 @@ from sseclient import SSEClient  # pip install sseclient-py
 import threading
 import time
 
-from agent.tools.protocol import Registered_Remote_Tool_Data
-from agent.tools.protocol import Tool_Call_Paras
+from agent.tools.legacy_protocol import Registered_Remote_Tool_Data
+from agent.tools.legacy_protocol import Tool_Call_Paras
 from agent.tools.generate_tool_class_dynamically import generate_tool_class_dynamically
 from agent.core.agent_config import Agent_Config, Agent_As_Tool_Config
 from agent.agent_web_server.agent_fastapi_server import Agents_System_Request, Query_Agent_Request, Agent_Status_Request

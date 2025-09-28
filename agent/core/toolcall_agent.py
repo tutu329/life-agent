@@ -24,12 +24,12 @@
 import config
 import llm_protocol
 from llm_protocol import LLM_Config
-from agent.tools.protocol import Tool_Call_Paras
+from agent.tools.legacy_protocol import Tool_Call_Paras
 from tools.llm.response_and_chatml_api_client import Response_and_Chatml_LLM_Client, Response_Result, Tool_Request, Tool_Parameters, Tool_Property, Response_Request
 
 from agent.core.agent_config import Agent_Config
 from agent.core.protocol import Query_Agent_Context, Agent_Status
-from agent.tools.protocol import Tool_Call_Paras, Action_Result
+from agent.tools.legacy_protocol import Tool_Call_Paras, Action_Result
 
 from config import dred, dgreen, dblue, dyellow, dcyan
 from pprint import pprint

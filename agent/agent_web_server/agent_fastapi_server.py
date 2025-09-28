@@ -21,7 +21,7 @@ from agent.core.react_agent import Tool_Agent
 from agent.core.multi_agent_server import Registered_Agent_Data, server_continue_agent, server_cancel_agent, server_start_and_register_2_levels_agents_system, print_agent_status, server_get_agent_status, __server_wait_registered_agent
 
 from contextlib import asynccontextmanager
-from agent.tools.protocol import Action_Result, Tool_Call_Paras
+from agent.tools.legacy_protocol import Action_Result, Tool_Call_Paras
 # from agent.core.legacy_protocol import Action_Result
 from dataclasses import dataclass, field, asdict
 

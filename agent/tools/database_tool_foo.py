@@ -1,7 +1,7 @@
 import json5
 
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import Data_Set_Info, Action_Result
+from agent.tools.legacy_protocol import Data_Set_Info, Action_Result
 # from agent.core.legacy_protocol import Data_Set_Info, Action_Result
 
 # from agent.base_tool import Data_Attached_Tool

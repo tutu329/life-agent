@@ -1,5 +1,5 @@
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import Action_Result
+from agent.tools.legacy_protocol import Action_Result
 # from agent.core.legacy_protocol import Action_Result
 
 class Frontend_Chart_Code_Transfer_Tool(Base_Tool):

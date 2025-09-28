@@ -1,9 +1,9 @@
 from typing import List, Dict, Any, Optional, Type
 import httpx                     # pip install httpx
 
-from agent.tools.protocol import Tool_Call_Paras
+from agent.tools.legacy_protocol import Tool_Call_Paras
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import Registered_Remote_Tool_Data
+from agent.tools.legacy_protocol import Registered_Remote_Tool_Data
 
 # ========= server动态注册函数 =========
 def generate_tool_class_dynamically(

@@ -9,7 +9,7 @@ from utils.encode import safe_encode
 from utils.extract import extract_chapter_no
 
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import Action_Result, Tool_Call_Paras
+from agent.tools.legacy_protocol import Action_Result, Tool_Call_Paras
 from tools.doc.docx_para import DocxParser
 from tools.doc.docx_outline import DocxOutlineExtractor
 

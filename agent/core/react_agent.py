@@ -24,14 +24,14 @@ from typing import List
 from tools.llm.api_client import LLM_Client
 from agent.tools.base_tool import PROMPT_REACT
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
+from agent.tools.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
 # from agent.core.legacy_protocol import create_tool_ctx, get_tool_ctx, update_tool_context_info
-from agent.tools.protocol import Action_Result
+from agent.tools.legacy_protocol import Action_Result
 # from agent.core.legacy_protocol import Action_Result
 from agent.tools.tool_manager import legacy_get_all_local_tools_class
 from agent.core.protocol import Agent_Status, Agent_Stream_Queues, Query_Agent_Context
 from agent.experience.agent_experience import Agent_Experience
-from agent.tools.protocol import Tool_Call_Paras
+from agent.tools.legacy_protocol import Tool_Call_Paras
 
 import llm_protocol
 from llm_protocol import LLM_Config, LLM_Query_Paras

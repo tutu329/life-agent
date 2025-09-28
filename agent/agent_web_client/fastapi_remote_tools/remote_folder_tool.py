@@ -1,5 +1,5 @@
 from agent.agent_web_client.protocol import FastAPI_Remote_Tool_Base, FastFPI_Remote_Tool_Register_Data
-from agent.tools.protocol import Action_Result
+from agent.tools.legacy_protocol import Action_Result
 
 from agent.tools.folder_tool import Folder_Tool
 

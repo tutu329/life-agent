@@ -6,7 +6,7 @@ from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import Action_Result, Tool_Call_Paras
+from agent.tools.legacy_protocol import Action_Result, Tool_Call_Paras
 
 class FastFPI_Remote_Tool_Register_Data(BaseModel):
     tool    :Base_Tool              # Base_Tool的子类实例

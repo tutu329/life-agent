@@ -10,7 +10,7 @@ import time
 
 from utils.encode import safe_encode
 from agent.tools.base_tool import Base_Tool
-from agent.tools.protocol import Action_Result, Tool_Call_Paras
+from agent.tools.legacy_protocol import Action_Result, Tool_Call_Paras
 
 from config import dred,dgreen,dblue,dyellow,dblack,dcyan,dmagenta, dwhite
 from pprint import pprint
