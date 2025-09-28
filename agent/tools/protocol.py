@@ -1,6 +1,24 @@
 from typing import List, Dict, Any, Type, Literal, Optional, Callable
 from pydantic import BaseModel, Field, ConfigDict
 
+# --------------------------------tool参数示例---------------------------------
+# {
+#     "type": "function",
+#     "name": "add_tool",
+#     "description": "计算两个数的和",
+#     "strict": True,  # 让模型严格遵循 JSON Schema
+#     "parameters": {
+#         "type": "object",
+#         "properties": {
+#             "a": {"type": "number", "description": "a"},
+#             "b": {"type": "number", "description": "b"},
+#         },
+#         "required": [],
+#         "additionalProperties": False,
+#     },
+# },
+# -------------------------------/tool参数示例---------------------------------
+
 Property_Type = Literal["integer", "number", "boolean", "string"]
 
 class Tool_Property(BaseModel):
