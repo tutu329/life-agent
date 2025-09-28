@@ -7,6 +7,8 @@ from agent.core.toolcall_agent import Toolcall_Agent
 from agent.tools.protocol import Tool_Request
 from agent.core.mcp.protocol import MCP_Server_Request
 
+from agent.tools.tool_manager import server_register_all_local_tool_on_start
+
 import llm_protocol
 
 import config
