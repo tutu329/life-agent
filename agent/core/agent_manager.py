@@ -1,4 +1,4 @@
-import os
+import os, time
 import importlib.util
 import inspect
 
@@ -11,7 +11,7 @@ from agent.core.agent_config import Agent_Config
 from agent.core.toolcall_agent import Toolcall_Agent
 from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_param_dict_from_tool_class
 from agent.core.mcp.protocol import MCP_Server_Request
-from agent.core.protocol import Agent_Status, Agent_Data
+from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Phase, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Phase
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 
@@ -45,24 +45,35 @@ class Agent_Manager:
     # 1、创建agent，返回agent_id
     @classmethod
     def create_agent(cls, agent_config:Agent_Config)->str:
+        result = Agent_Request_Result(
+            agent_id='',
+            phase=Agent_Phase.CREATING,
+            result_type=Agent_Request_Result_Type.SUCCESS,
+        )
 
-        # 获取所有的local tools
         allowd_local_tools = []
-        for tool in cls.local_tool_objects_list:
-            if tool.name in agent_config.allowed_local_tool_names:
-                allowd_local_tools.append(tool)
-
         allowed_mcp_tools = []
-        # 根据MCP url，添加allowed对应的tools
-        if agent_config.mcp_requests:
-            for mcp_req in agent_config.mcp_requests:
-                dprint(f'mcp_url: {mcp_req.url!r}')
-                allowed_mcp_tools += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
 
-        # 已有tools加上MCP的tools
-        if agent_config.tool_objects is None:
-            agent_config.tool_objects = []
-        agent_config.tool_objects = allowd_local_tools + allowed_mcp_tools
+        try:
+            # 获取所有的local tools
+            for tool in cls.local_tool_objects_list:
+                if tool.name in agent_config.allowed_local_tool_names:
+                    allowd_local_tools.append(tool)
+
+            # 根据MCP url，添加allowed对应的tools
+            if agent_config.mcp_requests:
+                for mcp_req in agent_config.mcp_requests:
+                    dprint(f'mcp_url: {mcp_req.url!r}')
+                    allowed_mcp_tools += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
+
+            # 已有tools加上MCP的tools
+            if agent_config.tool_objects is None:
+                agent_config.tool_objects = []
+            agent_config.tool_objects = allowd_local_tools + allowed_mcp_tools
+        except Exception as e:
+            result.result_type = Agent_Request_Result_Type.FAILED
+            result.result_content = str(e)
+            return result
 
         # agent初始化
         agent = Toolcall_Agent(agent_config=agent_config)
@@ -75,14 +86,30 @@ class Agent_Manager:
         )
         cls.agents_dict[agent.agent_id] = agent_data
 
-        # 返回agent id
-        return agent.agent_id
+        result.agent_id = agent.agent_id
+
+        dprint()
+        dprint('--------------agent request result--------------')
+        dprint(result)
+        dprint('-------------/agent request result--------------')
+        return result
 
     # 2、启动agent_id下的thread，并run
     @classmethod
     def run_agent(cls, agent_id:str, query):
+        result = Agent_Request_Result(
+            agent_id=agent_id,
+            phase=Agent_Phase.RUNNING,
+            result_type=Agent_Request_Result_Type.SUCCESS,
+        )
+
         agent_data = cls.agents_dict[agent_id]
         agent = cls._get_agent(agent_id=agent_id)
+
+        if agent.agent_status.querying:
+            result.result_type = Agent_Request_Result_Type.FAILED
+            result.result_content = f'agent "{agent_id}" is still querying.'
+            return result
 
         def _worker(query):
             agent.run(query=query)
@@ -94,12 +121,35 @@ class Agent_Manager:
         )
         agent_data.agent_thread.start()
 
+        dprint()
+        dprint('--------------agent request result--------------')
+        dprint(result)
+        dprint('-------------/agent request result--------------')
+        return result
+
+    # 3、等待agent的某次query(串行，暂不考虑并行和query_id)
+    @classmethod
+    def wait_agent(cls, agent_id):
+        thread = cls._get_thread(agent_id=agent_id)
+        thread.join()
+
+    # 4、获取agent的实时状态
+    @classmethod
+    def get_agent_status(cls, agent_id)->Agent_Status:
+        agent_data = cls.agents_dict[agent_id]
+        return agent_data.agent.agent_status
 
     # 根据agent_id，获取agent对象
     @classmethod
     def _get_agent(cls, agent_id:str)->Toolcall_Agent:
         agent_data = cls.agents_dict.get(agent_id)
         return agent_data.agent
+
+    # 根据agent_id，获取thread
+    @classmethod
+    def _get_thread(cls, agent_id:str)->Thread:
+        agent_data = cls.agents_dict.get(agent_id)
+        return agent_data.agent_thread
 
     # 获取MCP url对应的tools列表
     @classmethod
@@ -233,14 +283,25 @@ def main():
     # dpprint(agent_config.model_dump())
     # dprint("-------------/agent_config------------------")
 
-    agent_id = Agent_Manager.create_agent(agent_config)
+    agent_id = Agent_Manager.create_agent(agent_config).agent_id
 
     dprint("--------------注册后tool情况------------------")
     for info in Agent_Manager._get_all_tool_debug_info_list(agent_id):
         dprint(info)
     dprint("-------------/注册后tool情况------------------")
 
-    Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
+    # Agent_Manager.wait_agent(agent_id=agent_id)
+
+    while True:
+        res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才搜索file_to_find.txt这个文件的位置的结果是啥来着')
+        if res.result_type==Agent_Request_Result_Type.SUCCESS:
+            break
+        time.sleep(0.1)
+
+    # Agent_Manager.wait_agent(agent_id=agent_id)
+
+
     # Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件')
     # Agent_Manager.run_agent(agent_id=agent_id, query='有哪些表格？')
     # Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')

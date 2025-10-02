@@ -136,10 +136,12 @@ class Toolcall_Agent:
         return response_result
 
     def _run_before(self, query):
+        self.agent_status.querying = True
         agent_query_output(query)
 
     def _run_after(self):
         self.agent_status.query_task_finished = True
+        self.agent_status.querying = False
 
         # --------------------------------
         # 一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage清除
