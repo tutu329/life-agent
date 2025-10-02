@@ -4,12 +4,14 @@ import inspect
 
 from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
 from pprint import pprint
+from threading import Thread
 
 from agent.core.mcp.mcp_manager import get_mcp_server_tools, get_mcp_server_tool_names
 from agent.core.agent_config import Agent_Config
 from agent.core.toolcall_agent import Toolcall_Agent
 from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_param_dict_from_tool_class
 from agent.core.mcp.protocol import MCP_Server_Request
+from agent.core.protocol import Agent_Status, Agent_Data
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 
@@ -29,19 +31,18 @@ def dpprint(*args, **kwargs):
     if DEBUG:
         pprint(*args, **kwargs)
 
-g_agent_dict = {} # agent_id <--> agent object
-
 # agent工厂
 class Agent_Manager:
-    agents_dict = {}
-    local_tool_objects_list = List[Tool_Request]
+    agents_dict: Dict[str, Agent_Data]          = {}    # 用于注册全server所有的agents, agent_id <--> agent_data
+    local_tool_objects_list: List[Tool_Request] = []    # 用于存放server本地的所有tools
 
+    # 0、用于server管理时的唯一的、必需的启动
     @classmethod
     def _on_server_start(cls)->List[Dict[str, Any]]: # 由server侧调用
         cls.local_tool_objects_list = Agent_Manager.parse_all_local_tools_on_server_start()
         return cls.local_tool_objects_list
 
-    # 创建agent，返回agent_id
+    # 1、创建agent，返回agent_id
     @classmethod
     def create_agent(cls, agent_config:Agent_Config)->str:
 
@@ -68,21 +69,37 @@ class Agent_Manager:
         agent.init()
 
         # 注册agent
-        cls.agents_dict[agent.agent_id] = agent
+        agent_data = Agent_Data(
+            agent_id=agent.agent_id,
+            agent=agent,
+        )
+        cls.agents_dict[agent.agent_id] = agent_data
 
         # 返回agent id
         return agent.agent_id
 
+    # 2、启动agent_id下的thread，并run
+    @classmethod
+    def run_agent(cls, agent_id:str, query):
+        agent_data = cls.agents_dict[agent_id]
+        agent = cls._get_agent(agent_id=agent_id)
+
+        def _worker(query):
+            agent.run(query=query)
+
+        # 启动agent的thread
+        agent_data.agent_thread = Thread(
+            target=_worker,
+            args=(query,),
+        )
+        agent_data.agent_thread.start()
+
+
     # 根据agent_id，获取agent对象
     @classmethod
     def _get_agent(cls, agent_id:str)->Toolcall_Agent:
-        return cls.agents_dict.get(agent_id)
-
-    # 运行agent_id对应的对象
-    @classmethod
-    def run_agent(cls, agent_id:str, query):
-        agent = cls._get_agent(agent_id)
-        agent.run(query=query)
+        agent_data = cls.agents_dict.get(agent_id)
+        return agent_data.agent
 
     # 获取MCP url对应的tools列表
     @classmethod

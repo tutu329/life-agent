@@ -166,7 +166,7 @@ async def get_agent_status(request:Agent_Status_Request):
     agent_status = server_get_agent_status(agent_id=request.agent_id)
     dred(f'------------------agent(id="{request.agent_id}")\'s status is "{agent_status}"-----------------')
     if agent_status:
-        if agent_status.finished_one_run:
+        if agent_status.query_task_finished:
             dgreen(f'------------------agent(id="{request.agent_id}")\'s status is finished.-----------------')
         return agent_status
     else:

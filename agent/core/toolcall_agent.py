@@ -139,7 +139,7 @@ class Toolcall_Agent:
         agent_query_output(query)
 
     def _run_after(self):
-        self.agent_status.finished_one_run = True
+        self.agent_status.query_task_finished = True
 
         # --------------------------------
         # 一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage清除
@@ -194,9 +194,9 @@ class Toolcall_Agent:
                 # query = query_with_final_answer_flag
 
                 new_run = False
-                if self.agent_status.finished_one_run:
+                if self.agent_status.query_task_finished:
                     new_run = True
-                    self.agent_status.finished_one_run = False
+                    self.agent_status.query_task_finished = False
 
                 # dred(tools)
                 if use_chatml:

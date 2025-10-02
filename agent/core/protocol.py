@@ -1,17 +1,24 @@
-from typing import List, Dict, Any, Type
+from typing import List, Dict, Any, Type, Optional
 from pydantic import BaseModel, Field, ConfigDict
 from queue import Queue
+from threading import Thread
 
 class Agent_Status(BaseModel):
-    started             :bool = False
+    started             :bool = False   # agent是否created
+    querying            :bool = False   # agent是否正在query
 
-    canceling           :bool = False
-    canceled            :bool = False
+    canceling           :bool = False   # agent的query是否正在canceling
+    canceled            :bool = False   # agent的query是否canceled
 
-    finished_one_run    :bool = False
-    task_success        :bool = False   #任务是否有效完成
+    query_task_finished :bool = False   # agent是否完成了一轮query
 
-    final_answer        :str = ''
+    final_answer        :str = ''       # agent的query任务的最终answer
+
+class Agent_Data(BaseModel):
+    agent_id:       str
+    agent:          Any = None      # agent对象
+    agent_thread:   Optional[Thread] = Field(default=None, exclude=True, repr=False)  # 该变量不出现在model_dump()和str中
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class Agent_Stream_Queues(BaseModel):
     output          :Queue= Field(default_factory=Queue)
