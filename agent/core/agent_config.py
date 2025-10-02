@@ -63,7 +63,7 @@ class Agent_Config(BaseModel):
 
     # -------------------------------经服务端处理后得到的参数---------------------------------------
     # 所有tool对象
-    # tool_names          :Optional[List[str]] = None           # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    tool_names          :Optional[List[str]] = None           # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
     tool_objects        :Optional[List[Tool_Request]] = None
 
     tool_agent_experience_json_path     :str = ''  # 经验json文件，如果为‘’，就不设置经验
