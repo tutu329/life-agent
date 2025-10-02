@@ -31,6 +31,7 @@ from agent.core.mcp.protocol import MCP_Server_Request
 #     web_server_stream_tool_client_data:    Any = None      # agent工具调用结果数据的stream输出func
 
 class Agent_Config(BaseModel):
+    # -------------------------------客户端需要输入的参数---------------------------------------
     # 基本配置
     # output_end:Any = None                   # 最终答复输出end的func
     # output_stream_to_console:bool = True    # 最终答复是否stream输出到console
@@ -44,36 +45,30 @@ class Agent_Config(BaseModel):
     agent_max_retry         :int = config.Agent.MAX_RETRY       # agent循环的最大次数
     agent_max_error_retry   :int = config.Agent.MAX_ERROR_RETRY # agent循环中遇到错误后的最大尝试次数
 
-    # 所有tool对象
-    tool_objects        :Optional[List[Tool_Request]] = None
-
-    # 普通tools
-    allowed_local_tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
-    tool_names          :Optional[List[str]] = None           # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
-
-    # MCP tools
-    mcp_requests :Optional[List[MCP_Server_Request]] = None                # 如: [("https://powerai.cc:8011/mcp/sqlite/sse",['read_query', 'write_query']), ("http://localhost:8789/sse", [...])]
-
     # LLM配置
     llm_config          :LLM_Config = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
 
-    has_history         :bool = False
-    tool_agent_experience_json_path     :str = ''  # 经验json文件，如果为‘’，就不设置经验
-    top_agent_id        :Optional[str] = None  # top_agent_id为None时，表明自己即为top agent
+    # 普通tools
+    allowed_local_tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+
+    # MCP tools
+    mcp_requests :Optional[List[MCP_Server_Request]] = None                # 如: [("https://powerai.cc:8011/mcp/sqlite/sse",['read_query', 'write_query']), ("http://localhost:8789/sse", [...])]
 
     # agent_as_tool配置
     as_tool_name        :Optional[str] = None  # As_Tool的name，如取: "Folder_Agent_As_Tool"
     as_tool_description :Optional[str] = None  # As_Tool的description，如取: "本工具用来获取某个文件夹下的信息"
 
-    # base_url        :str = config.LLM_Default.url
+    has_history         :bool = True
+    # ------------------------------/客户端需要输入的参数---------------------------------------
 
+    # -------------------------------经服务端处理后得到的参数---------------------------------------
+    # 所有tool对象
+    # tool_names          :Optional[List[str]] = None           # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    tool_objects        :Optional[List[Tool_Request]] = None
 
-    # web-server相关配置
-    # is_web_server:              bool = False    # agent是否为web-server
-    # web_server_stream_result:              Any = None      # agent最终答复result的stream输出func, 如print或streamlit的st.some_component.empty().markdown
-    # web_server_stream_thinking:            Any = None      # agent思考过程thinking的stream输出func
-    # web_server_stream_log:                 Any = None      # agent日志信息log的stream输出func
-    # web_server_stream_tool_client_data:    Any = None      # agent工具调用结果数据的stream输出func
+    tool_agent_experience_json_path     :str = ''  # 经验json文件，如果为‘’，就不设置经验
+    top_agent_id        :Optional[str] = None  # top_agent_id为None时，表明自己即为top agent
+    # ------------------------------/经服务端处理后得到的参数---------------------------------------
 
     def __str__(self):
         data = self.model_dump()
