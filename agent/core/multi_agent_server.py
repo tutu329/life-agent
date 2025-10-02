@@ -240,7 +240,7 @@ def _server_create_and_registered_agent_as_tool(
     #     temperature=agent_as_tool_config.temperature
     # )
     agent_config = Agent_Config(
-        tool_names=agent_as_tool_config.tool_names,
+        allowed_local_tool_names=agent_as_tool_config.tool_names,
         exp_json_path=agent_as_tool_config.exp_json_path,
         llm_config=agent_as_tool_config.llm_config,
         as_tool_name=agent_as_tool_config.as_tool_name,
@@ -367,7 +367,7 @@ def server_start_and_register_2_levels_agents_system(
 
     dred(f'【agents_as_tool_instance_list】{agents_as_tool_instance_list}')
 
-    upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_config.tool_names)
+    upper_agent_tools_class_list = get_all_registered_tools_class(upper_agent_config.allowed_local_tool_names)
     # upper_agent_tools_class_list = legacy_get_all_local_tools_class(upper_agent_dict['tool_names'])
     tool_class_and_tool_instance_list = upper_agent_tools_class_list + agents_as_tool_instance_list
 
@@ -394,7 +394,7 @@ def server_start_and_register_2_levels_agents_system(
         # tool_agent_experience_json_path = upper_agent_config.exp_json_path,
     )
     upper_agent_id = upper_agent.agent_id
-    dyellow(f'【upper_agent_config.tool_names】{upper_agent_config.tool_names}')
+    dyellow(f'【upper_agent_config.tool_names】{upper_agent_config.allowed_local_tool_names}')
     dred(f'【upper_agent_tools_class_list(upper_agent_id={upper_agent_id})】{upper_agent_tools_class_list}')
 
     # ---------------------注入top_agent_id------------------------

@@ -1031,7 +1031,7 @@ def main_folder():
 
     config = Agent_Config(
         agent_name = 'agent for search folder',
-        tool_names=['Folder_Tool'],
+        allowed_local_tool_names=['Folder_Tool'],
         # llm_config=llm_protocol.g_online_groq_kimi_k2,
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,

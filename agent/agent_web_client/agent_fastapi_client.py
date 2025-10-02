@@ -96,7 +96,7 @@ def main_test_2_level_agents_system():
             )
         ],
         upper_agent_config=Agent_Config(
-            tool_names=['Human_Console_Tool'],
+            allowed_local_tool_names=['Human_Console_Tool'],
             exp_json_path='my_2_levels_mas_exp.json',
 
             base_url='https://api.deepseek.com/v1',
@@ -260,7 +260,7 @@ def main_test_2_level_agents_system_without_remote_tool():
     request = Agents_System_Request(
         remote_tools=[],
         upper_agent_config=Agent_Config(
-            tool_names=['Human_Console_Tool'],
+            allowed_local_tool_names=['Human_Console_Tool'],
             exp_json_path='my_2_levels_mas_exp.json',
 
             base_url='https://api.deepseek.com/v1',

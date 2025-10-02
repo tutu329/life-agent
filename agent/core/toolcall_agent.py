@@ -338,7 +338,7 @@ def main_response_agent():
 
     agent_config = Agent_Config(
         agent_name = 'agent for search folder',
-        tool_names=['Folder_Tool'],
+        allowed_local_tool_names=['Folder_Tool'],
         tool_objects=tools,
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_local_qwen3_30b_chat,
@@ -385,7 +385,7 @@ def main_response_agent_mcp_nginx():
 
     agent_config = Agent_Config(
         agent_name='MCP agent',
-        tool_names=tool_names,
+        allowed_local_tool_names=tool_names,
         tool_objects=tools,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
@@ -459,7 +459,7 @@ def main_office_agent():
 
     agent_config = Agent_Config(
         agent_name = 'agent for office docx file editing',
-        tool_names=['Write_Chapter_Tool'],
+        allowed_local_tool_names=['Write_Chapter_Tool'],
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_local_qwen3_30b_chat,
         # llm_config=llm_protocol.g_online_deepseek_chat,

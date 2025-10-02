@@ -63,7 +63,7 @@ class Agent_Config(BaseModel):
 
     # -------------------------------经服务端处理后得到的参数---------------------------------------
     # 所有tool对象
-    tool_names          :Optional[List[str]] = None           # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
+    # allowed_local_tool_names          :Optional[List[str]] = None           # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
     tool_objects        :Optional[List[Tool_Request]] = None
 
     tool_agent_experience_json_path     :str = ''  # 经验json文件，如果为‘’，就不设置经验
@@ -85,6 +85,7 @@ class Agent_As_Tool_Config(BaseModel):
     as_tool_description     :str        # 如：'本工具用于获取文件夹中的文件和文件夹信息'
 
     llm_config              :LLM_Config = llm_protocol.g_online_groq_kimi_k2
+
 
     # LLM配置
     # base_url        :str = config.LLM_Default.url
