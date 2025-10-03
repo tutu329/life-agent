@@ -68,11 +68,9 @@ class Agent_Manager:
                     dprint(f'mcp_url: {mcp_req.url!r}')
                     allowed_mcp_tool_requests += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
 
-            # 已有tools加上MCP的tools
+            # 整理所有tool的requests
             if agent_config.all_tool_requests is None:
                 agent_config.all_tool_requests = []
-
-            # 整理所有tool的requests
             agent_config.all_tool_requests = allowd_local_tool_requests + allowed_mcp_tool_requests
 
         except Exception as e:
