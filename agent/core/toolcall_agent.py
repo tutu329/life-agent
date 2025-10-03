@@ -80,9 +80,73 @@ class Toolcall_Agent:
         # self.final_answer_flag = '【任务完成】'
         # self.decide_final_answer_prompt = f'当完成任务时，请输出"{self.final_answer_flag}"，否则系统无法判断何时结束任务。'
 
+    # 初始化self.tool_funcs_dict
+    def _set_funcs(self, tool_request_and_func_pairs):
+        for tool_request, tool_func in tool_request_and_func_pairs:
+            self.tool_funcs_dict[tool_request.name] = tool_func
 
-    def init(self):
+    def init(self, tool_request_and_func_pairs):
         self.response_llm_client.init()
+        self._set_funcs(tool_request_and_func_pairs)
+
+    # def _call_tool(self,
+    #                response_result:Response_Result, # response_api的调用结果
+    #                tool_call_paras:Tool_Call_Paras, # agent调度的上下文
+    #                ):
+    #     tool_call = response_result.function_tool_call
+    #     if tool_call and 'name' in tool_call:
+    #         tool_name = tool_call['name']
+    #
+    #         for func in self.response_llm_client.funcs:
+    #             if func['name'] in tool_name:   # vllm的response api有时候会出错，如：'name': 'div_tool<|channel|>json' 而不是 'name': 'div_tool'
+    #             # if tool_name == func['name']:
+    #                 try:
+    #                     agent_tool_chosen_output(tool_name=tool_name, tool_paras=tool_call['arguments'])
+    #                     args = json.loads(tool_call['arguments'])
+    #
+    #                     # -----------------------------工具调用-----------------------------
+    #                     # tool_call_paras.callback_tool_paras_dict = args
+    #                     func_rtn = func['func'](tool_call_paras=tool_call_paras, **args)
+    #                     # ----------------------------/工具调用-----------------------------
+    #
+    #                     dprint('-----------------------------工具调用结果-------------------------------')
+    #                     dprint(f'tool_name = "{tool_name}"')
+    #                     dprint(func_rtn)
+    #                     dprint('----------------------------/工具调用结果-------------------------------')
+    #                     if isinstance(func_rtn, Action_Result):
+    #                         response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
+    #                     elif isinstance(func_rtn, BaseModel):
+    #                         response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
+    #                     else:
+    #                         response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+    #
+    #                     # tool_call_result_item = {
+    #                     #     "type": "function_call_output",
+    #                     #     "call_id": tool_call['call_id'],
+    #                     #     "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
+    #                     #     "error": response_result.error
+    #                     # }
+    #
+    #                     self.response_llm_client.history_input_add_tool_call_result_item(
+    #                         arguments=tool_call['arguments'],
+    #                         call_id=tool_call['call_id'],
+    #                         output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
+    #                         error=response_result.error
+    #                     )
+    #                     agent_tool_result_output(json.loads(response_result.tool_call_result))
+    #                     # agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
+    #                     # self.response_llm_client.history_input_list.append(tool_call_result_item)
+    #
+    #                     return response_result
+    #                 except Exception as e:
+    #                     err(e)
+    #                     response_result.error = e
+    #                     # response_result.tool_call_result = e
+    #                     dred(f'【Toolcall_Agent._call_tool()】responses_result.error: {e!r}')
+    #                     agent_tool_result_output(response_result.error)
+    #                     return response_result
+    #
+    #     return response_result
 
     def _call_tool(self,
                    response_result:Response_Result, # response_api的调用结果
@@ -92,54 +156,57 @@ class Toolcall_Agent:
         if tool_call and 'name' in tool_call:
             tool_name = tool_call['name']
 
-            for func in self.response_llm_client.funcs:
-                if func['name'] in tool_name:   # vllm的response api有时候会出错，如：'name': 'div_tool<|channel|>json' 而不是 'name': 'div_tool'
+            func = self.tool_funcs_dict.get(tool_name)
+            if func:
+            # for func in self.response_llm_client.funcs:
+            #     if func['name'] in tool_name:   # vllm的response api有时候会出错，如：'name': 'div_tool<|channel|>json' 而不是 'name': 'div_tool'
                 # if tool_name == func['name']:
-                    try:
-                        agent_tool_chosen_output(tool_name=tool_name, tool_paras=tool_call['arguments'])
-                        args = json.loads(tool_call['arguments'])
+                try:
+                    agent_tool_chosen_output(tool_name=tool_name, tool_paras=tool_call['arguments'])
+                    args = json.loads(tool_call['arguments'])
 
-                        # -----------------------------工具调用-----------------------------
-                        # tool_call_paras.callback_tool_paras_dict = args
-                        func_rtn = func['func'](tool_call_paras=tool_call_paras, **args)
-                        # ----------------------------/工具调用-----------------------------
+                    # -----------------------------工具调用-----------------------------
+                    # tool_call_paras.callback_tool_paras_dict = args
+                    func_rtn = func(tool_call_paras=tool_call_paras, **args)
+                    # func_rtn = func['func'](tool_call_paras=tool_call_paras, **args)
+                    # ----------------------------/工具调用-----------------------------
 
-                        dprint('-----------------------------工具调用结果-------------------------------')
-                        dprint(f'tool_name = "{tool_name}"')
-                        dprint(func_rtn)
-                        dprint('----------------------------/工具调用结果-------------------------------')
-                        if isinstance(func_rtn, Action_Result):
-                            response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
-                        elif isinstance(func_rtn, BaseModel):
-                            response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
-                        else:
-                            response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+                    dprint('-----------------------------工具调用结果-------------------------------')
+                    dprint(f'tool_name = "{tool_name}"')
+                    dprint(func_rtn)
+                    dprint('----------------------------/工具调用结果-------------------------------')
+                    if isinstance(func_rtn, Action_Result):
+                        response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
+                    elif isinstance(func_rtn, BaseModel):
+                        response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
+                    else:
+                        response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
 
-                        # tool_call_result_item = {
-                        #     "type": "function_call_output",
-                        #     "call_id": tool_call['call_id'],
-                        #     "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
-                        #     "error": response_result.error
-                        # }
+                    # tool_call_result_item = {
+                    #     "type": "function_call_output",
+                    #     "call_id": tool_call['call_id'],
+                    #     "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
+                    #     "error": response_result.error
+                    # }
 
-                        self.response_llm_client.history_input_add_tool_call_result_item(
-                            arguments=tool_call['arguments'],
-                            call_id=tool_call['call_id'],
-                            output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
-                            error=response_result.error
-                        )
-                        agent_tool_result_output(json.loads(response_result.tool_call_result))
-                        # agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
-                        # self.response_llm_client.history_input_list.append(tool_call_result_item)
+                    self.response_llm_client.history_input_add_tool_call_result_item(
+                        arguments=tool_call['arguments'],
+                        call_id=tool_call['call_id'],
+                        output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
+                        error=response_result.error
+                    )
+                    agent_tool_result_output(json.loads(response_result.tool_call_result))
+                    # agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
+                    # self.response_llm_client.history_input_list.append(tool_call_result_item)
 
-                        return response_result
-                    except Exception as e:
-                        err(e)
-                        response_result.error = e
-                        # response_result.tool_call_result = e
-                        dred(f'【Toolcall_Agent._call_tool()】responses_result.error: {e!r}')
-                        agent_tool_result_output(response_result.error)
-                        return response_result
+                    return response_result
+                except Exception as e:
+                    err(e)
+                    response_result.error = e
+                    # response_result.tool_call_result = e
+                    dred(f'【Toolcall_Agent._call_tool()】responses_result.error: {e!r}')
+                    agent_tool_result_output(response_result.error)
+                    return response_result
 
         return response_result
 
@@ -339,12 +406,13 @@ def main_response_agent():
     # )
 
     from agent.tools.folder_tool import Folder_Tool
-    from agent.tools.protocol import get_tool_request_from_tool_class
+    from agent.tools.protocol import get_tool_request_and_func_from_tool_class
 
     # fold_tool_request = Folder_Tool.get_tool_param_dict()
-    fold_tool_request = get_tool_request_from_tool_class(Folder_Tool, required_field_in_parameter=False)
+    tool_request_and_func_pair = get_tool_request_and_func_from_tool_class(Folder_Tool, required_field_in_parameter=False)
 
-    tool_requests = [fold_tool_request]
+    tool_request_and_func_pairs = [tool_request_and_func_pair]
+    tool_requests, funcs = zip(*tool_request_and_func_pairs)
     # tools = [fold_tool, add_tool, sub_tool, mul_tool, div_tool]
 
     agent_config = Agent_Config(
@@ -367,7 +435,8 @@ def main_response_agent():
     # query = '你是谁？'
 
     agent = Toolcall_Agent(agent_config=agent_config)
-    agent.init()
+    agent.init(tool_request_and_func_pairs)
+    print(f'agent.tool_funcs_dict: {agent.tool_funcs_dict}')
     # agent.run(query=query, tools=tools)
 
     # agent.run(query='你好，我的名字是土土', tools=tools)

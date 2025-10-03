@@ -140,6 +140,82 @@ def get_tool_request_from_tool_class(cls, required_field_in_parameter=True)->Too
 
         return tool_request
 
+# tool_class --> (tool_request, tool_func)
+def get_tool_request_and_func_from_tool_class(cls, required_field_in_parameter=True)->Tool_Request:
+    if required_field_in_parameter:
+        # 老格式，如office_tool
+        rtn_params = Tool_Parameters(
+            properties={}
+        )
+
+        for tool_param in cls.tool_parameters:
+            name = tool_param['name']
+            required = tool_param.get('required')
+            default_value = tool_param.get('default')
+
+            type:Property_Type = ''
+            if tool_param['type'] == 'int':
+                type = "integer"
+            elif tool_param['type'] == 'float':
+                type = "number"
+            elif tool_param['type'] == 'bool':
+                type = "boolean"
+            elif tool_param['type'] == 'string':
+                type = "string"
+
+            property = Tool_Property(
+                type=type,
+                description=tool_param['description'] + f'(default: {default_value})',  # 将default_value放入description
+            )
+
+            rtn_params.properties[name] = property
+
+            if required=='True' or required==True or required=='true':
+                rtn_params.required.append(name)
+
+        tool_request = Tool_Request(
+            name = cls.tool_name,
+            description = cls.tool_description,
+            parameters = rtn_params,
+            # func = cls.class_call
+        )
+
+        return tool_request, cls.class_call
+
+    else:
+        # 新格式，如folder_tool
+        rtn_params = Tool_Parameters(
+            properties={}
+        )
+        # print(cls.tool_parameters['properties'])
+        for name, property in cls.tool_parameters['properties'].items():
+            enum=None
+            if 'enum' in property:
+                enum = property['enum']
+
+            type: Property_Type = ''
+            if property['type'] == 'int':
+                type = "integer"
+            elif property['type'] == 'float':
+                type = "number"
+            elif property['type'] == 'bool':
+                type = "boolean"
+            elif property['type'] == 'string':
+                type = "string"
+            # print(type, property['description'], enum)
+            rtn_params.properties[name] = Tool_Property(type=type, description=property['description'], enum=enum)
+
+        rtn_params.required = cls.tool_parameters.get('required')
+
+        tool_request = Tool_Request(
+            name=cls.tool_name,
+            description=cls.tool_description,
+            parameters=rtn_params,
+            # func=cls.class_call
+        )
+
+        return tool_request, cls.class_call
+
 # ---------------------------------pydantic导出示例---------------------------------
 # class M(BaseModel):
 #     # 必填：必须出现
