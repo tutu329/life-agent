@@ -22,6 +22,7 @@
 #   2) 获得工具调用结果后，要msgs.append({ "role": "tool", "tool_call_id": call_id, "content": f'tool call result: "{output}", tool call error: "{error}".' }), 这里必须要有call_id, 且call_id必须和前一条message中的'tool_calls'信息中的'id'一致
 
 from pydantic import BaseModel
+from typing import List, Dict, Any, Type, Literal, Optional, Callable
 
 import config
 import llm_protocol
@@ -57,6 +58,9 @@ class Toolcall_Agent:
         self.llm_config = agent_config.llm_config
         self.response_llm_client = Response_and_Chatml_LLM_Client(self.llm_config)
         self.agent_config = agent_config
+
+        # tool的funcs的管理: tool_name <--> tool_func（含agent_as_tool的func(即agent_as_tool.run))
+        self.tool_funcs_dict:Dict[str, Callable] = {}
 
         # 自己的id
         self.agent_id = str(uuid4())
