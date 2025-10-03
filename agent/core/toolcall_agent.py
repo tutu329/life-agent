@@ -21,6 +21,8 @@
 #   1) 输入tools信息并返回res后，要msgs.append(resp.choices[0].message.model_dump(exclude_none=True)), 类似response中的input += res.output
 #   2) 获得工具调用结果后，要msgs.append({ "role": "tool", "tool_call_id": call_id, "content": f'tool call result: "{output}", tool call error: "{error}".' }), 这里必须要有call_id, 且call_id必须和前一条message中的'tool_calls'信息中的'id'一致
 
+from pydantic import BaseModel
+
 import config
 import llm_protocol
 from llm_protocol import LLM_Config
@@ -104,6 +106,8 @@ class Toolcall_Agent:
                         dprint('----------------------------/工具调用结果-------------------------------')
                         if isinstance(func_rtn, Action_Result):
                             response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
+                        elif isinstance(func_rtn, BaseModel):
+                            response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
                         else:
                             response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
 
@@ -129,7 +133,7 @@ class Toolcall_Agent:
                         err(e)
                         response_result.error = e
                         # response_result.tool_call_result = e
-                        dred(f'【Response_API_Tool_Agent._call_tool()】responses_result.error: {e!r}')
+                        dred(f'【Toolcall_Agent._call_tool()】responses_result.error: {e!r}')
                         agent_tool_result_output(response_result.error)
                         return response_result
 
@@ -154,7 +158,7 @@ class Toolcall_Agent:
         # print(f'final: {self.agent_status.final_answer}')
         agent_finished_output(self.agent_status.final_answer)
 
-    def run(self, query):
+    def run(self, query, tool_call_paras:Tool_Call_Paras=None):
         self._run_before(query)
 
         use_chatml = self.response_llm_client.llm_config.chatml

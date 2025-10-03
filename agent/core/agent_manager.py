@@ -80,16 +80,16 @@ class Agent_Manager:
                 for agent_as_tool in cls.get_all_agents_as_tool():
                     if agent_as_tool.agent.agent_config.as_tool_name in agent_config.allowed_local_tool_names:
                         agent_as_tool_parameters = Tool_Parameters(
-                            properties={'query': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的指令')},  # 这里参数必须是toolcall_agent.run(self, query)的query
+                            properties={'query': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的自然语言指令')},  # 这里参数必须是toolcall_agent.run(self, query)的query
                             required=['query'],
                         )
 
                         # 构造bound_func，解决deepcopy问题
-                        def _make_bound_func_of_agent_run(query):
-                            def _bound_func(query):
-                                res = agent_as_tool.agent.run(query=query)
-                                return res
-                            return _bound_func
+                        def _make_bound_func_of_agent_run(*args, **kwargs):
+                            print(f'args={args}')
+                            print(f'kwargs={kwargs}')
+                            res = agent_as_tool.agent.run(query=kwargs['query'])
+                            return res
 
                         agent_as_tool_request = Tool_Request(
                             name=agent_as_tool.agent.agent_config.as_tool_name,
@@ -385,8 +385,9 @@ def main_2_levels_agents():
     agent_config = Agent_Config(
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='这是一个专门回答理论物理问题的Agent',
-        as_tool_name='Physical_Problems_Solving_Tool',
-        as_tool_description='本工具用来回答理论物理问题',
+        allowed_local_tool_names=['Folder_Tool'],
+        as_tool_name='File_Search_Tool',
+        as_tool_description='本工具用来在文件夹中搜索指定文件',
     )
     res = Agent_Manager.create_agent(agent_config)
     # ----------------------------/注册一个agent as tool-----------------------------------
@@ -396,7 +397,7 @@ def main_2_levels_agents():
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='Agent created by Agent_Manager',
-        allowed_local_tool_names=['Folder_Tool', 'Physical_Problems_Solving_Tool'],
+        allowed_local_tool_names=['File_Search_Tool'],
         # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
         # allowed_local_tool_names=['Write_Chapter_Tool'],
         # tool_names=['Folder_Tool'],
@@ -422,8 +423,8 @@ def main_2_levels_agents():
         dprint(info)
     dprint("-------------/注册后tool情况------------------")
 
-    res = Agent_Manager.run_agent(agent_id=agent_id, query='现代物理学的创始人是谁')
-    # res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
+    # res = Agent_Manager.run_agent(agent_id=agent_id, query='现代物理学的创始人是谁')
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
     while True:
