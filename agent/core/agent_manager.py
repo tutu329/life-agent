@@ -35,13 +35,13 @@ def dpprint(*args, **kwargs):
 # agent工厂
 class Agent_Manager:
     agents_dict: Dict[str, Agent_Data]          = {}    # 用于注册全server所有的agents, agent_id <--> agent_data
-    local_tool_objects_list: List[Tool_Request] = []    # 用于存放server本地的所有tools
+    local_all_tool_requests: List[Tool_Request] = []    # 用于存放server本地的所有tool_requests
 
     # 0、用于server管理时的唯一的、必需的启动
     @classmethod
     def _on_server_start(cls)->List[Dict[str, Any]]: # 由server侧调用
-        cls.local_tool_objects_list = Agent_Manager.parse_all_local_tools_on_server_start()
-        return cls.local_tool_objects_list
+        cls.local_all_tool_requests = Agent_Manager.parse_all_local_tools_on_server_start()
+        return cls.local_all_tool_requests
 
     # 1、创建agent，返回agent_id
     @classmethod
@@ -52,26 +52,26 @@ class Agent_Manager:
             result_type=Agent_Request_Result_Type.SUCCESS,
         )
 
-        allowd_local_tools = []
-        allowed_mcp_tools = []
+        allowd_local_tool_requests = []
+        allowed_mcp_tool_requests = []
 
         try:
             # 获取所有的local tools
             if agent_config.allowed_local_tool_names:
-                for tool in cls.local_tool_objects_list:
-                    if tool.name in agent_config.allowed_local_tool_names:
-                        allowd_local_tools.append(tool)
+                for local_tool_request in cls.local_all_tool_requests:
+                    if local_tool_request.name in agent_config.allowed_local_tool_names:
+                        allowd_local_tool_requests.append(local_tool_request)
 
             # 根据MCP url，添加allowed对应的tools
             if agent_config.mcp_requests:
                 for mcp_req in agent_config.mcp_requests:
                     dprint(f'mcp_url: {mcp_req.url!r}')
-                    allowed_mcp_tools += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
+                    allowed_mcp_tool_requests += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
 
             # 已有tools加上MCP的tools
             if agent_config.all_tool_requests is None:
                 agent_config.all_tool_requests = []
-            agent_config.all_tool_requests = allowd_local_tools + allowed_mcp_tools
+            agent_config.all_tool_requests = allowd_local_tool_requests + allowed_mcp_tool_requests
         except Exception as e:
             err(e)
             result.result_type = Agent_Request_Result_Type.FAILED
@@ -162,14 +162,14 @@ class Agent_Manager:
     @classmethod
     def get_local_tool_names(cls)->List[str]:
         local_tool_names = []
-        for tool in cls.local_tool_objects_list:
+        for tool in cls.local_all_tool_requests:
             local_tool_names.append(tool.name)
         return local_tool_names
 
     @classmethod
     def get_local_tool_param_dict(cls, tool_name)->Tool_Request:
-        if cls.local_tool_objects_list:
-            for tool in cls.local_tool_objects_list:
+        if cls.local_all_tool_requests:
+            for tool in cls.local_all_tool_requests:
                 if tool_name==tool.name:
                     return tool
         return None
