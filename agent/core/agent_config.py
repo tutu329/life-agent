@@ -65,7 +65,7 @@ class Agent_Config(BaseModel):
     # -------------------------------经服务端处理后得到的参数---------------------------------------
     # 所有tool对象
     # allowed_local_tool_names          :Optional[List[str]] = None           # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
-    tool_objects        :Optional[List[Tool_Request]] = None
+    all_tool_requests        :Optional[List[Tool_Request]] = None    # agent的所有local和MCP的tool的requests
 
     # exp_json_path     :str = ''  # 经验json文件，如果为‘’，就不设置经验
     top_agent_id        :Optional[str] = None  # top_agent_id为None时，表明自己即为top agent

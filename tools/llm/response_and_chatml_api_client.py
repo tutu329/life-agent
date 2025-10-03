@@ -300,10 +300,15 @@ class Response_and_Chatml_LLM_Client:
 
         try:
             chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
-            # print('----------request------------')
-            # print(request)
-            # print('---------/request------------')
+
+            # print('----------chatml_request------------')
+            # print(chatml_request)
+            # print('---------/chatml_request------------')
             temp_chatml_request = deepcopy(chatml_request)
+            # print('----------temp_chatml_request------------')
+            # print(temp_chatml_request)
+            # print('---------/temp_chatml_request------------')
+
             if not temp_chatml_request.tools:
                 del temp_chatml_request.tools    # 防止tools==[]交给api
 

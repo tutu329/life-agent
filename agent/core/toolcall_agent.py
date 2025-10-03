@@ -172,7 +172,7 @@ class Toolcall_Agent:
             # input=query_with_final_answer_flag,       # 第一次请求input用query，第二次及以后的请求，input实际用了self.history_input_list
             # instructions='继续调用工具直到完成user的任务',
             model=self.llm_config.llm_model_id,
-            tools=self.agent_config.tool_objects,
+            tools=self.agent_config.all_tool_requests,
             temperature=self.llm_config.temperature,
             top_p=self.llm_config.top_p,
             max_output_tokens=self.llm_config.max_new_tokens,
@@ -339,7 +339,7 @@ def main_response_agent():
     agent_config = Agent_Config(
         agent_name = 'agent for search folder',
         allowed_local_tool_names=['Folder_Tool'],
-        tool_objects=tools,
+        all_tool_requests=tools,
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_local_qwen3_30b_chat,
         # llm_config=llm_protocol.g_online_deepseek_chat,
@@ -386,7 +386,7 @@ def main_response_agent_mcp_nginx():
     agent_config = Agent_Config(
         agent_name='MCP agent',
         allowed_local_tool_names=tool_names,
-        tool_objects=tools,
+        all_tool_requests=tools,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,

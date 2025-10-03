@@ -69,9 +69,9 @@ class Agent_Manager:
                     allowed_mcp_tools += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
 
             # 已有tools加上MCP的tools
-            if agent_config.tool_objects is None:
-                agent_config.tool_objects = []
-            agent_config.tool_objects = allowd_local_tools + allowed_mcp_tools
+            if agent_config.all_tool_requests is None:
+                agent_config.all_tool_requests = []
+            agent_config.all_tool_requests = allowd_local_tools + allowed_mcp_tools
         except Exception as e:
             err(e)
             result.result_type = Agent_Request_Result_Type.FAILED
@@ -179,7 +179,7 @@ class Agent_Manager:
     def _get_all_tool_debug_info_list(cls, agent_id) -> List[str]:
         tool_info_list = []
         agent = cls._get_agent(agent_id)
-        for tool in agent.agent_config.tool_objects:
+        for tool in agent.agent_config.all_tool_requests:
             tool_info_list.append({
                 'name': tool.name,
                 'parameters': tool.parameters,
