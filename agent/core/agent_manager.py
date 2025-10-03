@@ -351,7 +351,7 @@ def main_2_levels_agents():
         # tool_objects=tool_list,
         # tool_objects=[fold_tool],
         # mcp_requests=mcp_requests,
-        has_history=True,
+        # has_history=True,
     )
     # dprint("--------------agent_config------------------")
     # dpprint(agent_config.model_dump())

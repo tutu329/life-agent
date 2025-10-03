@@ -299,10 +299,11 @@ class Response_and_Chatml_LLM_Client:
         response_result = Response_Result()
 
         try:
-            temp_chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
+            chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
             # print('----------request------------')
             # print(request)
             # print('---------/request------------')
+            temp_chatml_request = deepcopy(chatml_request)
             if not temp_chatml_request.tools:
                 del temp_chatml_request.tools    # 防止tools==[]交给api
 
@@ -386,8 +387,8 @@ class Response_and_Chatml_LLM_Client:
         # dyellow('==================================1111111====================================')
         # ----------------------注册tool func-------------------------
         self.funcs = []  # 要先清除之前的tools
-        for tool in request.tools:
-        # for tool in chatml_request.tools:
+        # for tool in request.tools:
+        for tool in chatml_request.tools:
             # dred(tool)
             # for item in tool:
             #     dyellow(item)
