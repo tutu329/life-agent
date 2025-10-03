@@ -131,14 +131,14 @@ def get_tool_request_from_tool_class(cls, required_field_in_parameter=True)->Too
 
         rtn_params.required = cls.tool_parameters.get('required')
 
-        tool_param_dict = Tool_Request(
+        tool_request = Tool_Request(
             name=cls.tool_name,
             description=cls.tool_description,
             parameters=rtn_params,
             func=cls.class_call
         )
 
-        return tool_param_dict
+        return tool_request
 
 # ---------------------------------pydantic导出示例---------------------------------
 # class M(BaseModel):
