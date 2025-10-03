@@ -453,9 +453,9 @@ class Response_and_Chatml_LLM_Client:
 
         try:
             # dpprint(request.model_dump(exclude_none=True))
-            print('----------request------------')
-            print(request)
-            print('---------/request------------')
+            # print('----------request------------')
+            # print(request)
+            # print('---------/request------------')
             temp_response_request = deepcopy(request)
             if not temp_response_request.tools:
                 del temp_response_request.tools  # 防止tools==[]交给api
@@ -463,9 +463,9 @@ class Response_and_Chatml_LLM_Client:
                 del temp_response_request.parallel_tool_calls
                 # temp_response_request.instructions='You are a helpful agent.'
 
-            print('----------temp_response_request------------')
-            print(temp_response_request)
-            print('---------/temp_response_request------------')
+            # print('----------temp_response_request------------')
+            # print(temp_response_request)
+            # print('---------/temp_response_request------------')
 
             dyellow('=================================request.tools===================================')
             for tool in request.tools:

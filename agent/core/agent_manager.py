@@ -343,7 +343,7 @@ def main_2_levels_agents():
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='Agent created by Agent_Manager',
-        # allowed_local_tool_names=['Folder_Tool'],
+        allowed_local_tool_names=['Folder_Tool'],
         # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
         # allowed_local_tool_names=['Write_Chapter_Tool'],
         # tool_names=['Folder_Tool'],
