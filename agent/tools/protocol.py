@@ -219,7 +219,7 @@ def get_tool_request_and_func_from_tool_class(cls)->Tool_Request:
         return tool_request, cls.class_call
 
 # [tool_class1, tool_class2, ...] --> (tool_requests, tool_funcs)
-def get_tool_requests_and_tool_funcs(tool_class_list):
+def get_tool_requests_and_tool_funcs_from_tool_classes(tool_class_list):
     tool_request_and_func_pairs = [get_tool_request_and_func_from_tool_class(tool_class) for tool_class in tool_class_list]
     tool_requests, tool_funcs = zip(*tool_request_and_func_pairs)
     return tool_requests, tool_funcs

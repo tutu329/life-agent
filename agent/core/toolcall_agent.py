@@ -407,9 +407,9 @@ def main_response_agent():
 
     from agent.tools.folder_tool import Folder_Tool
     from agent.tools.office_tool import Write_Chapter_Tool
-    from agent.tools.protocol import get_tool_requests_and_tool_funcs
+    from agent.tools.protocol import get_tool_requests_and_tool_funcs_from_tool_classes
 
-    tool_requests, funcs = get_tool_requests_and_tool_funcs([Folder_Tool, Write_Chapter_Tool])
+    tool_requests, funcs = get_tool_requests_and_tool_funcs_from_tool_classes([Folder_Tool, Write_Chapter_Tool])
     # tool_request_and_func_pair1 = get_tool_request_and_func_from_tool_class(Folder_Tool)
     # tool_request_and_func_pair2 = get_tool_request_and_func_from_tool_class(Write_Chapter_Tool)
     #
