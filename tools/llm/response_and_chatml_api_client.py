@@ -64,7 +64,7 @@ class Response_and_Chatml_LLM_Client:
         self.openai = None
 
         # 必须将Response_and_Chatml_LLM_Client中的self.funcs替换为Toolcall_Agent中的tool_funcs_dict来管理
-        self.funcs = []                 # [{'name':'...', 'func':func}]
+        # self.funcs = []                 # [{'name':'...', 'func':func}]
 
         # input_list相关
         self.history_input_list = None  # 历史input_list(用于多轮的tool call)
@@ -407,17 +407,13 @@ class Response_and_Chatml_LLM_Client:
 
         # dyellow('==================================1111111====================================')
         # ----------------------注册tool func-------------------------
-        self.funcs = []  # 要先清除之前的tools
-        # for tool in request.tools:
-        for tool in chatml_request.tools:
-            # dred(tool)
-            # for item in tool:
-            #     dyellow(item)
-            func_dict = {
-                'name' : tool.function.name,
-                'func' : tool.function.func,
-            }
-            self.funcs.append(func_dict)
+        # self.funcs = []  # 要先清除之前的tools
+        # for tool in chatml_request.tools:
+        #     func_dict = {
+        #         'name' : tool.function.name,
+        #         'func' : tool.function.func,
+        #     }
+        #     self.funcs.append(func_dict)
         # ---------------------/注册tool func-------------------------
         # dyellow('==================================2222222====================================')
 
@@ -509,16 +505,13 @@ class Response_and_Chatml_LLM_Client:
             dprint('--------------------------------/response_result(未调用工具)------------------------------------')
 
         # ----------------------注册tool func-------------------------
-        self.funcs = [] # 要先清除之前的tools
-        for tool in request.tools:
-            # dred(tool)
-            # for item in tool:
-            #     dyellow(item)
-            func_dict = {
-                'name' : tool.name,
-                'func' : tool.func,
-            }
-            self.funcs.append(func_dict)
+        # self.funcs = [] # 要先清除之前的tools
+        # for tool in request.tools:
+        #     func_dict = {
+        #         'name' : tool.name,
+        #         'func' : tool.func,
+        #     }
+        #     self.funcs.append(func_dict)
         # ---------------------/注册tool func-------------------------
 
         # 调用tool
