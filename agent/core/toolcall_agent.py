@@ -339,15 +339,18 @@ def main_response_agent():
     # )
 
     from agent.tools.folder_tool import Folder_Tool
-    fold_tool = Folder_Tool.get_tool_param_dict()
+    from agent.tools.protocol import get_tool_request_from_tool_class
 
-    tools = [fold_tool]
+    # fold_tool_request = Folder_Tool.get_tool_param_dict()
+    fold_tool_request = get_tool_request_from_tool_class(Folder_Tool, required_field_in_parameter=False)
+
+    tool_requests = [fold_tool_request]
     # tools = [fold_tool, add_tool, sub_tool, mul_tool, div_tool]
 
     agent_config = Agent_Config(
         agent_name = 'agent for search folder',
         allowed_local_tool_names=['Folder_Tool'],
-        all_tool_requests=tools,
+        all_tool_requests=tool_requests,
         # llm_config=llm_protocol.g_local_qwen3_30b_thinking,
         # llm_config=llm_protocol.g_local_qwen3_30b_chat,
         # llm_config=llm_protocol.g_online_deepseek_chat,
