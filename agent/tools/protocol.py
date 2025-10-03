@@ -64,7 +64,8 @@ class Tool_Request(BaseModel):
     #     print('------------/Tool_Request.__deepcopy__------------')
     #     return new_obj
 
-def get_tool_param_dict_from_tool_class(cls, required_field_in_parameter=True)->Tool_Request:
+# tool_class --> tool_request
+def get_tool_request_from_tool_class(cls, required_field_in_parameter=True)->Tool_Request:
     if required_field_in_parameter:
         # 老格式，如office_tool
         rtn_params = Tool_Parameters(
@@ -96,14 +97,14 @@ def get_tool_param_dict_from_tool_class(cls, required_field_in_parameter=True)->
             if required=='True' or required==True or required=='true':
                 rtn_params.required.append(name)
 
-        tool_param_dict = Tool_Request(
+        tool_request = Tool_Request(
             name = cls.tool_name,
             description = cls.tool_description,
             parameters = rtn_params,
             func = cls.class_call
         )
 
-        return tool_param_dict
+        return tool_request
 
     else:
         # 新格式，如folder_tool

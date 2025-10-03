@@ -9,7 +9,7 @@ from threading import Thread
 from agent.core.mcp.mcp_manager import get_mcp_server_tools, get_mcp_server_tool_names
 from agent.core.agent_config import Agent_Config
 from agent.core.toolcall_agent import Toolcall_Agent
-from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_param_dict_from_tool_class
+from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_request_from_tool_class
 from agent.core.mcp.protocol import MCP_Server_Request
 from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Phase, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Phase
 
@@ -274,7 +274,7 @@ class Agent_Manager:
                             else:
                                 required_field_in_parameter = True
 
-                            tool_param = get_tool_param_dict_from_tool_class(obj, required_field_in_parameter)
+                            tool_param = get_tool_request_from_tool_class(obj, required_field_in_parameter)
                             tool_param_list.append(tool_param)
 
                 except Exception as e:
