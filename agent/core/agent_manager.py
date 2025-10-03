@@ -58,15 +58,24 @@ class Agent_Manager:
         try:
             # 获取所有的local tools
             if agent_config.allowed_local_tool_names:
+                # --------------获取所有的普通local tools--------------
                 for local_tool_request in cls.local_all_tool_requests:
                     if local_tool_request.name in agent_config.allowed_local_tool_names:
                         allowd_local_tool_requests.append(local_tool_request)
+                # -------------/获取所有的普通local tools--------------
+
+                # -----------获取所有的local agent as tools-----------
+
+                # ----------/获取所有的local agent as tools-----------
+
 
             # 根据MCP url，添加allowed对应的tools
             if agent_config.mcp_requests:
+                # --------------获取所有的MCP tools--------------
                 for mcp_req in agent_config.mcp_requests:
                     dprint(f'mcp_url: {mcp_req.url!r}')
                     allowed_mcp_tool_requests += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
+                # -------------、获取所有的MCP tools--------------
 
             # 整理所有tool的requests
             if agent_config.all_tool_requests is None:
