@@ -14,6 +14,7 @@ from agent.core.mcp.protocol import MCP_Server_Request
 from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Phase, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Phase
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
+from console import err
 
 import llm_protocol
 
@@ -56,9 +57,10 @@ class Agent_Manager:
 
         try:
             # 获取所有的local tools
-            for tool in cls.local_tool_objects_list:
-                if tool.name in agent_config.allowed_local_tool_names:
-                    allowd_local_tools.append(tool)
+            if agent_config.allowed_local_tool_names:
+                for tool in cls.local_tool_objects_list:
+                    if tool.name in agent_config.allowed_local_tool_names:
+                        allowd_local_tools.append(tool)
 
             # 根据MCP url，添加allowed对应的tools
             if agent_config.mcp_requests:
@@ -71,6 +73,7 @@ class Agent_Manager:
                 agent_config.tool_objects = []
             agent_config.tool_objects = allowd_local_tools + allowed_mcp_tools
         except Exception as e:
+            err(e)
             result.result_type = Agent_Request_Result_Type.FAILED
             result.result_content = str(e)
             return result
@@ -338,7 +341,7 @@ def main_2_levels_agents():
     agent_config = Agent_Config(
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='Agent created by Agent_Manager',
-        allowed_local_tool_names=['Folder_Tool'],
+        # allowed_local_tool_names=['Folder_Tool'],
         # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
         # allowed_local_tool_names=['Write_Chapter_Tool'],
         # tool_names=['Folder_Tool'],
@@ -352,7 +355,12 @@ def main_2_levels_agents():
     # dpprint(agent_config.model_dump())
     # dprint("-------------/agent_config------------------")
 
-    agent_id = Agent_Manager.create_agent(agent_config).agent_id
+    res = Agent_Manager.create_agent(agent_config)
+    dprint()
+    dprint('--------------agent request result--------------')
+    dprint(res)
+    dprint('-------------/agent request result--------------')
+    agent_id = res.agent_id
 
     dprint("--------------注册后tool情况------------------")
     for info in Agent_Manager._get_all_tool_debug_info_list(agent_id):
