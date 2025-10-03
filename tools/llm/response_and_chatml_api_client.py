@@ -31,7 +31,8 @@ class Response_Request(BaseModel):
     model           :str
     temperature     :float = 1.0
     top_p           :float = 1.0
-    instructions    :str =  'You are a helpful agent. if tool has no arguments, use "{}", do not use "{'', ''}" or "{\"\", \"\"}".'  # 注意这里用了'agent'
+    instructions    :str =  'You are a helpful agent.'
+    # instructions    :str =  'You are a helpful agent. if tool has no arguments, use "{}", do not use "{'', ''}" or "{\"\", \"\"}".'  # 注意这里用了'agent'
     # input           :str | List[Dict[str, Any]] = None  # 非第一次responses.create时为None，并在Response_LLM_Client里采用history_input_list
     tools           :List[Tool_Request]
     previous_response_id    :Optional[str] = None    # 上一次openai.response.create()返回的res.id
@@ -298,14 +299,20 @@ class Response_and_Chatml_LLM_Client:
         response_result = Response_Result()
 
         try:
-            chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
+            temp_chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
+            # print('----------request------------')
+            # print(request)
+            # print('---------/request------------')
+            if not temp_chatml_request.tools:
+                del temp_chatml_request.tools    # 防止tools==[]交给api
+
             # -------------------------/response转chatml--------------------------
 
             # dblue('----------------------------self.history_input_list-------------------------------')
             # for item in self.history_input_list:
             #     dblue(item)
             # dblue('---------------------------/self.history_input_list-------------------------------')
-            res = self.openai.chat.completions.create(messages=self.history_input_list, **chatml_request.model_dump(exclude_none=True))
+            res = self.openai.chat.completions.create(messages=self.history_input_list, **temp_chatml_request.model_dump(exclude_none=True))
         except Exception as e:
             err(e)
             response_result.error = str(e)
@@ -379,7 +386,8 @@ class Response_and_Chatml_LLM_Client:
         # dyellow('==================================1111111====================================')
         # ----------------------注册tool func-------------------------
         self.funcs = []  # 要先清除之前的tools
-        for tool in chatml_request.tools:
+        for tool in request.tools:
+        # for tool in chatml_request.tools:
             # dred(tool)
             # for item in tool:
             #     dyellow(item)
@@ -444,11 +452,25 @@ class Response_and_Chatml_LLM_Client:
 
         try:
             # dpprint(request.model_dump(exclude_none=True))
+            print('----------request------------')
+            print(request)
+            print('---------/request------------')
+            temp_response_request = deepcopy(request)
+            if not temp_response_request.tools:
+                del temp_response_request.tools  # 防止tools==[]交给api
+                del temp_response_request.tool_choice
+                del temp_response_request.parallel_tool_calls
+                # temp_response_request.instructions='You are a helpful agent.'
+
+            print('----------temp_response_request------------')
+            print(temp_response_request)
+            print('---------/temp_response_request------------')
+
             dyellow('=================================request.tools===================================')
             for tool in request.tools:
                 dyellow(tool)
             dyellow('================================/request.tools===================================')
-            res = self.openai.responses.create(input=self.history_input_list, **request.model_dump(exclude_none=True))
+            res = self.openai.responses.create(input=self.history_input_list, **temp_response_request.model_dump(exclude_none=True))
         except Exception as e:
             err(e)
             response_result.error = str(e)

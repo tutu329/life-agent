@@ -339,6 +339,8 @@ def main_2_levels_agents():
     ]
 
     agent_config = Agent_Config(
+        # llm_config=llm_protocol.g_online_deepseek_chat,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='Agent created by Agent_Manager',
         # allowed_local_tool_names=['Folder_Tool'],
@@ -348,7 +350,7 @@ def main_2_levels_agents():
         # tool_names=['read_query', 'write_query', 'create_table', 'list_tables', 'describe_table', 'append_insight', 'tavily-search', 'tavily-extract', 'tavily-crawl', 'tavily-map'],
         # tool_objects=tool_list,
         # tool_objects=[fold_tool],
-        mcp_requests=mcp_requests,
+        # mcp_requests=mcp_requests,
         has_history=True,
     )
     # dprint("--------------agent_config------------------")
