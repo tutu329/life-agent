@@ -41,6 +41,7 @@ class Agent_Config(BaseModel):
 
     # agent配置
     agent_name          :Optional[str] = None           # agent的name
+    agent_instruction   :str = ''                       # agent的instruction
     exp_json_path       :str = ''                       # 如：'my_2_levels_mas_exp.json'
     agent_max_retry         :int = config.Agent.MAX_RETRY       # agent循环的最大次数
     agent_max_error_retry   :int = config.Agent.MAX_ERROR_RETRY # agent循环中遇到错误后的最大尝试次数

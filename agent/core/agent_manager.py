@@ -237,7 +237,76 @@ class Agent_Manager:
 
         return tool_param_list
 
-def main():
+def main_one_agent():
+    # from agent.tools.folder_tool import Folder_Tool
+    # fold_tool = Folder_Tool.get_tool_param_dict()
+
+    # tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
+    local_tool_list = Agent_Manager._on_server_start()
+    dprint("--------------tools_info------------------")
+    for tool_param_dict in local_tool_list:
+        dprint(tool_param_dict)
+    dprint("-------------/tools_info------------------")
+
+    dprint("--------------client_get_server_local_tools_info------------------")
+    dprint(Agent_Manager.get_local_tool_names())
+    dprint(Agent_Manager.get_local_tool_param_dict(tool_name='Write_Chapter_Tool'))
+    dprint(Agent_Manager.get_local_tool_param_dict(tool_name='Folder_Tool'))
+    dprint("--------------client_get_server_local_tools_info------------------")
+
+
+
+    dprint("--------------MCP------------------")
+    dpprint(Agent_Manager.get_mcp_url_tool_names("https://powerai.cc:8011/mcp/sqlite/sse"))
+    dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
+    dprint("-------------/MCP------------------")
+
+    mcp_requests = [
+        MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse", allowed_tool_names=['list_tables', 'read_query']),
+        MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']),
+    ]
+
+    agent_config = Agent_Config(
+        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        agent_name='Agent created by Agent_Manager',
+        allowed_local_tool_names=['Folder_Tool'],
+        # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
+        # allowed_local_tool_names=['Write_Chapter_Tool'],
+        # tool_names=['Folder_Tool'],
+        # tool_names=['read_query', 'write_query', 'create_table', 'list_tables', 'describe_table', 'append_insight', 'tavily-search', 'tavily-extract', 'tavily-crawl', 'tavily-map'],
+        # tool_objects=tool_list,
+        # tool_objects=[fold_tool],
+        mcp_requests=mcp_requests,
+        has_history=True,
+    )
+    # dprint("--------------agent_config------------------")
+    # dpprint(agent_config.model_dump())
+    # dprint("-------------/agent_config------------------")
+
+    agent_id = Agent_Manager.create_agent(agent_config).agent_id
+
+    dprint("--------------注册后tool情况------------------")
+    for info in Agent_Manager._get_all_tool_debug_info_list(agent_id):
+        dprint(info)
+    dprint("-------------/注册后tool情况------------------")
+
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
+    # Agent_Manager.wait_agent(agent_id=agent_id)
+
+    while True:
+        res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才搜索file_to_find.txt这个文件的位置的结果是啥来着')
+        if res.result_type==Agent_Request_Result_Type.SUCCESS:
+            break
+        time.sleep(0.1)
+
+    # Agent_Manager.wait_agent(agent_id=agent_id)
+
+
+    # Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，递归搜索所有子文件夹直到准确找到该文件')
+    # Agent_Manager.run_agent(agent_id=agent_id, query='有哪些表格？')
+    # Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
+
+def main_2_levels_agents():
     # from agent.tools.folder_tool import Folder_Tool
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
@@ -307,4 +376,5 @@ def main():
     # Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
 
 if __name__ == "__main__":
-    main()
+    # main_one_agent()
+    main_2_levels_agents()
