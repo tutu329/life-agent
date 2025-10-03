@@ -2,14 +2,14 @@ import os, time
 import importlib.util
 import inspect
 
-from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Literal, Optional, Union, Tuple, TYPE_CHECKING, Callable
 from pprint import pprint
 from threading import Thread
 
 from agent.core.mcp.mcp_manager import get_mcp_server_tools, get_mcp_server_tool_names
 from agent.core.agent_config import Agent_Config
 from agent.core.toolcall_agent import Toolcall_Agent
-from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_request_from_tool_class
+from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_request_from_tool_class, get_tool_request_and_func_from_tool_class
 from agent.core.mcp.protocol import MCP_Server_Request
 from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Phase, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Phase
 
@@ -36,12 +36,13 @@ def dpprint(*args, **kwargs):
 class Agent_Manager:
     agents_dict: Dict[str, Agent_Data]          = {}    # 用于注册全server所有的agents, agent_id <--> agent_data
     local_all_tool_requests: List[Tool_Request] = []    # 用于存放server本地的所有tool_requests
+    local_all_tool_funcs: List[Callable] = []
 
     # 0、用于server管理时的唯一的、必需的启动
     @classmethod
-    def _on_server_start(cls)->List[Dict[str, Any]]: # 由server侧调用
-        cls.local_all_tool_requests = Agent_Manager.parse_all_local_tools_on_server_start()
-        return cls.local_all_tool_requests
+    def get_local_tool_requests_and_funcs_on_server_start(cls)->List[Dict[str, Any]]: # 由server侧调用
+        cls.local_all_tool_requests, cls.local_all_tool_funcs = Agent_Manager.parse_all_local_tools_on_server_start()
+        return cls.local_all_tool_requests, cls.local_all_tool_funcs
 
     # 获取cls.agents_dict中所有的agents as tool，返回list
     @classmethod
@@ -65,15 +66,22 @@ class Agent_Manager:
         )
 
         allowd_local_tool_requests = []
+        allowd_local_tool_funcs = []
+
         allowed_mcp_tool_requests = []
+        allowed_mcp_tool_funcs = []
+
+        # 最终包含local和MCP的所有allowed的funcs
+        all_tool_funcs = []
 
         try:
             # 获取所有的local tools
             if agent_config.allowed_local_tool_names:
                 # --------------获取所有的普通local tools--------------
-                for local_tool_request in cls.local_all_tool_requests:
+                for local_tool_request, local_tool_func in zip(cls.local_all_tool_requests, cls.local_all_tool_funcs):
                     if local_tool_request.name in agent_config.allowed_local_tool_names:
                         allowd_local_tool_requests.append(local_tool_request)
+                        allowd_local_tool_funcs.append(local_tool_func)
                 # -------------/获取所有的普通local tools--------------
 
                 # -----------获取所有的local agent as tools-----------
@@ -85,21 +93,22 @@ class Agent_Manager:
                         )
 
                         # 构造bound_func，解决deepcopy问题
-                        def _make_bound_func_of_agent_run(*args, **kwargs):
-                            print(f'args={args}')
-                            print(f'kwargs={kwargs}')
-                            res = agent_as_tool.agent.run(query=kwargs['query'])
-                            return res
+                        # def _make_bound_func_of_agent_run(*args, **kwargs):
+                        #     print(f'args={args}')
+                        #     print(f'kwargs={kwargs}')
+                        #     res = agent_as_tool.agent.run(query=kwargs['query'])
+                        #     return res
 
                         agent_as_tool_request = Tool_Request(
                             name=agent_as_tool.agent.agent_config.as_tool_name,
                             description=agent_as_tool.agent.agent_config.as_tool_description,
                             parameters=agent_as_tool_parameters,
                             # func=agent_as_tool.agent.run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
-                            func=_make_bound_func_of_agent_run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
+                            # func=_make_bound_func_of_agent_run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
                             # func=Toolcall_Agent.run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
                         )
                         allowd_local_tool_requests.append(agent_as_tool_request)
+                        allowd_local_tool_funcs.append(agent_as_tool.agent.run)
                 # ----------/获取所有的local agent as tools-----------
 
             # 根据MCP url，添加allowed对应的tools
@@ -107,13 +116,16 @@ class Agent_Manager:
                 # --------------获取所有的MCP tools--------------
                 for mcp_req in agent_config.mcp_requests:
                     dprint(f'mcp_url: {mcp_req.url!r}')
-                    allowed_mcp_tool_requests += get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
+                    tool_requests, tool_funcs = get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
+                    allowed_mcp_tool_requests += tool_requests
+                    allowed_mcp_tool_funcs += tool_funcs
                 # -------------、获取所有的MCP tools--------------
 
-            # 整理所有tool的requests
+            # 整理所有tool的requests和funcs
             if agent_config.all_tool_requests is None:
                 agent_config.all_tool_requests = []
             agent_config.all_tool_requests = allowd_local_tool_requests + allowed_mcp_tool_requests
+            all_tool_funcs = allowd_local_tool_funcs + allowed_mcp_tool_funcs
 
         except Exception as e:
             err(e)
@@ -123,7 +135,7 @@ class Agent_Manager:
 
         # agent初始化
         agent = Toolcall_Agent(agent_config=agent_config)
-        agent.init()
+        agent.init(agent_config.all_tool_requests, all_tool_funcs)
 
         # 注册agent
         agent_data = Agent_Data(
@@ -231,7 +243,7 @@ class Agent_Manager:
         return tool_info_list
 
     @classmethod
-    def parse_all_local_tools_on_server_start(cls) -> List[Dict[str, Any]]:
+    def parse_all_local_tools_on_server_start(cls):
         """
         获取 life-agent.agent.tools 文件夹下所有 py 文件里的 tool 信息
 
@@ -248,7 +260,8 @@ class Agent_Manager:
         dprint(tools_dir)
         dprint(f'-------------/tools_dir----------------')
 
-        tool_param_list = []
+        tool_request_list = []
+        tool_func_list = []
         # 遍历 tools 文件夹下的所有 py 文件
         for filename in os.listdir(tools_dir):
             if filename.endswith('.py') and filename != '__init__.py':
@@ -269,28 +282,29 @@ class Agent_Manager:
                                 hasattr(obj, 'tool_description') and
                                 hasattr(obj, 'tool_parameters')):
 
-                            if 'required' in obj.tool_parameters:
-                                required_field_in_parameter = False
-                            else:
-                                required_field_in_parameter = True
+                            # if 'required' in obj.tool_parameters:
+                            #     required_field_in_parameter = False
+                            # else:
+                            #     required_field_in_parameter = True
 
-                            tool_param = get_tool_request_from_tool_class(obj, required_field_in_parameter)
-                            tool_param_list.append(tool_param)
+                            tool_request, tool_func = get_tool_request_and_func_from_tool_class(obj)
+                            tool_request_list.append(tool_request)
+                            tool_func_list.append(tool_func)
 
                 except Exception as e:
                     dyellow(f"【Agent_Manager.server_init_local_tools_on_start】warning: 尝试动态导入 {filename} 失败: {e!r}")
                     continue
 
-        return tool_param_list
+        return tool_request_list, tool_func_list
 
 def main_one_agent():
     # from agent.tools.folder_tool import Folder_Tool
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
     # tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
-    local_tool_list = Agent_Manager._on_server_start()
+    local_tool_requests, local_tool_funcs = Agent_Manager.get_local_tool_requests_and_funcs_on_server_start()
     dprint("--------------tools_info------------------")
-    for tool_param_dict in local_tool_list:
+    for tool_param_dict in local_tool_requests:
         dprint(tool_param_dict)
     dprint("-------------/tools_info------------------")
 
@@ -357,9 +371,9 @@ def main_2_levels_agents():
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
     # tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
-    local_tool_list = Agent_Manager._on_server_start()
+    local_tool_quests, local_tool_funcs = Agent_Manager.get_local_tool_requests_and_funcs_on_server_start()
     dprint("--------------tools_info------------------")
-    for tool_param_dict in local_tool_list:
+    for tool_param_dict in local_tool_quests:
         dprint(tool_param_dict)
     dprint("-------------/tools_info------------------")
 
@@ -441,5 +455,5 @@ def main_2_levels_agents():
     # Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
 
 if __name__ == "__main__":
-    # main_one_agent()
-    main_2_levels_agents()
+    main_one_agent()
+    # main_2_levels_agents()

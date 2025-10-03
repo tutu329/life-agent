@@ -48,7 +48,7 @@ async def _list_server_and_tools_async(server_url: str):
 # -------------------------------
 # 内部：真正的异步实现（保持原有逻辑）——给每个 tool 绑定 func
 # -------------------------------
-async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable[str]] = None) -> List[Tool_Request]:
+async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable[str]] = None):
     allowed: Optional[set] = set(allowed_tools) if allowed_tools else None
 
     def _pick_json_type(t: Any) -> str:
