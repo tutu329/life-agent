@@ -134,10 +134,10 @@ class Agent_Manager:
 
         result.agent_id = agent.agent_id
 
-        dprint()
-        dprint('--------------agent request result--------------')
-        dprint(result)
-        dprint('-------------/agent request result--------------')
+        # dprint()
+        # dprint('--------------agent request result--------------')
+        # dprint(result)
+        # dprint('-------------/agent request result--------------')
         return result
 
     # 2、启动agent_id下的thread，并run
@@ -167,10 +167,10 @@ class Agent_Manager:
         )
         agent_data.agent_thread.start()
 
-        dprint()
-        dprint('--------------agent request result--------------')
-        dprint(result)
-        dprint('-------------/agent request result--------------')
+        # dprint()
+        # dprint('--------------agent request result--------------')
+        # dprint(result)
+        # dprint('-------------/agent request result--------------')
         return result
 
     # 3、等待agent的某次query(串行，暂不考虑并行和query_id)
@@ -411,10 +411,10 @@ def main_2_levels_agents():
     # dprint("-------------/agent_config------------------")
 
     res = Agent_Manager.create_agent(agent_config)
-    dprint()
-    dprint('--------------agent request result--------------')
-    dprint(res)
-    dprint('-------------/agent request result--------------')
+    # dprint()
+    # dprint('--------------agent request result--------------')
+    # dprint(res)
+    # dprint('-------------/agent request result--------------')
     agent_id = res.agent_id
 
     dprint("--------------注册后tool情况------------------")
@@ -422,7 +422,8 @@ def main_2_levels_agents():
         dprint(info)
     dprint("-------------/注册后tool情况------------------")
 
-    res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='现代物理学的创始人是谁')
+    # res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
     while True:
