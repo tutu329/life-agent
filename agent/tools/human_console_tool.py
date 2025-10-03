@@ -61,7 +61,7 @@ def main_agent_as_tool():
         as_tool_name='Folder_Agent_As_Tool',
         as_tool_description='本工具用于获取文件夹中的文件和文件夹信息',
         has_history = True,
-        tool_agent_experience_json_path='my_1st_example_of_agent_as_tool.json',
+        exp_json_path='my_1st_example_of_agent_as_tool.json',
     )
 
     folder_agent_as_tool = Tool_Agent(

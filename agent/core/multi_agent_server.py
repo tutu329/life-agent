@@ -470,7 +470,7 @@ def main_test_server_start_agent():
         base_url='https://api.deepseek.com/v1',
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         llm_model_id='deepseek-chat',
-        tool_agent_experience_json_path='agent_started_by_server.json',
+        exp_json_path='agent_started_by_server.json',
         has_history=True
     )
     # query='我叫土土，帮我查询下远程服务器下/home/tutu/models/下有哪些文件'
@@ -529,7 +529,7 @@ def main_test_2_level2_agents_system():
         api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
         llm_model_id='deepseek-chat',     # 模型指向 DeepSeek-V3-0324
         has_history=True,
-        tool_agent_experience_json_path='my_2_levels_mas_exp.json'
+        exp_json_path='my_2_levels_mas_exp.json'
     )
     upper_agent_dict = {
         'tool_names':['Human_Console_Tool'],

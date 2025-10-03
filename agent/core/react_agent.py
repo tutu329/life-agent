@@ -181,7 +181,7 @@ class Tool_Agent(Agent_Base, Base_Tool):
         self.llm = None
         # self.agent_config = agent_config
         self.has_history = agent_config.has_history
-        self.tool_agent_experience_json_path = agent_config.tool_agent_experience_json_path
+        self.tool_agent_experience_json_path = agent_config.exp_json_path
 
         self.last_tool_task_id = None   # 用于为下一个tool调用，提供上一个tool_task_id，从而获取上一个tool的context
 
