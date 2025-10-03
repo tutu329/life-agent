@@ -62,6 +62,8 @@ class Response_and_Chatml_LLM_Client:
     # def __init__(self, client: OpenAI):
         self.llm_config = llm_config
         self.openai = None
+
+        # 必须将Response_and_Chatml_LLM_Client中的self.funcs替换为Toolcall_Agent中的tool_funcs_dict来管理
         self.funcs = []                 # [{'name':'...', 'func':func}]
 
         # input_list相关
