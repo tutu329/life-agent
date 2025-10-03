@@ -232,9 +232,9 @@ class Response_and_Chatml_LLM_Client:
         request = deepcopy(request)
 
         # 因此，Pydantic v2情况下改为
-        print('-------------request:Tool_Request in _copy_request_and_modify_from_response_to_chatml--------------')
-        print(request)
-        print('------------/request:Tool_Request in _copy_request_and_modify_from_response_to_chatml-------------')
+        # print('-------------request:Tool_Request in _copy_request_and_modify_from_response_to_chatml--------------')
+        # print(request)
+        # print('------------/request:Tool_Request in _copy_request_and_modify_from_response_to_chatml-------------')
 
         # if hasattr(request, 'tools'):
         #     tools = request.tools
