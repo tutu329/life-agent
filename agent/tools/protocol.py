@@ -44,6 +44,7 @@ class Tool_Request(BaseModel):
 
     # 所调用的函数
     # 仅在本地使用，不参与 JSON 序列化
+    # func必须挪到agent对象内部，不放在任何protocol的request信息中
     func        : Optional[Callable] = Field(default=None, exclude=True, repr=False)
 
     # 允许 pydantic 接受 Callable 等任意类型（否则有些版本会抱怨）
