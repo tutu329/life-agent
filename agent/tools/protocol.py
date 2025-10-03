@@ -66,7 +66,8 @@ class Tool_Request(BaseModel):
 
 # tool_class --> tool_request
 def get_tool_request_from_tool_class(cls, required_field_in_parameter=True)->Tool_Request:
-    if required_field_in_parameter:
+    if isinstance(cls.tool_parameters, List):
+    # if required_field_in_parameter:
         # 老格式，如office_tool
         rtn_params = Tool_Parameters(
             properties={}
@@ -141,8 +142,9 @@ def get_tool_request_from_tool_class(cls, required_field_in_parameter=True)->Too
         return tool_request
 
 # tool_class --> (tool_request, tool_func)
-def get_tool_request_and_func_from_tool_class(cls, required_field_in_parameter=True)->Tool_Request:
-    if required_field_in_parameter:
+def get_tool_request_and_func_from_tool_class(cls)->Tool_Request:
+    if isinstance(cls.tool_parameters, List):
+    # if required_field_in_parameter:
         # 老格式，如office_tool
         rtn_params = Tool_Parameters(
             properties={}
@@ -215,6 +217,12 @@ def get_tool_request_and_func_from_tool_class(cls, required_field_in_parameter=T
         )
 
         return tool_request, cls.class_call
+
+# [tool_class1, tool_class2, ...] --> (tool_requests, tool_funcs)
+def get_tool_requests_and_tool_funcs(tool_class_list):
+    tool_request_and_func_pairs = [get_tool_request_and_func_from_tool_class(tool_class) for tool_class in tool_class_list]
+    tool_requests, tool_funcs = zip(*tool_request_and_func_pairs)
+    return tool_requests, tool_funcs
 
 # ---------------------------------pydantic导出示例---------------------------------
 # class M(BaseModel):

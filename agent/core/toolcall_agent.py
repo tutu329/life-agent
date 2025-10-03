@@ -81,13 +81,13 @@ class Toolcall_Agent:
         # self.decide_final_answer_prompt = f'当完成任务时，请输出"{self.final_answer_flag}"，否则系统无法判断何时结束任务。'
 
     # 初始化self.tool_funcs_dict
-    def _set_funcs(self, tool_request_and_func_pairs):
-        for tool_request, tool_func in tool_request_and_func_pairs:
+    def _set_funcs(self, tool_requests, tool_func):
+        for tool_request, tool_func in zip(tool_requests, tool_func):
             self.tool_funcs_dict[tool_request.name] = tool_func
 
-    def init(self, tool_request_and_func_pairs):
+    def init(self, tool_requests, tool_funcs):
         self.response_llm_client.init()
-        self._set_funcs(tool_request_and_func_pairs)
+        self._set_funcs(tool_requests, tool_funcs)
 
     # def _call_tool(self,
     #                response_result:Response_Result, # response_api的调用结果
@@ -406,14 +406,15 @@ def main_response_agent():
     # )
 
     from agent.tools.folder_tool import Folder_Tool
-    from agent.tools.protocol import get_tool_request_and_func_from_tool_class
+    from agent.tools.office_tool import Write_Chapter_Tool
+    from agent.tools.protocol import get_tool_requests_and_tool_funcs
 
-    # fold_tool_request = Folder_Tool.get_tool_param_dict()
-    tool_request_and_func_pair = get_tool_request_and_func_from_tool_class(Folder_Tool, required_field_in_parameter=False)
-
-    tool_request_and_func_pairs = [tool_request_and_func_pair]
-    tool_requests, funcs = zip(*tool_request_and_func_pairs)
-    # tools = [fold_tool, add_tool, sub_tool, mul_tool, div_tool]
+    tool_requests, funcs = get_tool_requests_and_tool_funcs([Folder_Tool, Write_Chapter_Tool])
+    # tool_request_and_func_pair1 = get_tool_request_and_func_from_tool_class(Folder_Tool)
+    # tool_request_and_func_pair2 = get_tool_request_and_func_from_tool_class(Write_Chapter_Tool)
+    #
+    # tool_request_and_func_pairs = [tool_request_and_func_pair1, tool_request_and_func_pair2]
+    # tool_requests, funcs = zip(*tool_request_and_func_pairs)
 
     agent_config = Agent_Config(
         agent_name = 'agent for search folder',
@@ -435,7 +436,7 @@ def main_response_agent():
     # query = '你是谁？'
 
     agent = Toolcall_Agent(agent_config=agent_config)
-    agent.init(tool_request_and_func_pairs)
+    agent.init(tool_requests, funcs)
     print(f'agent.tool_funcs_dict: {agent.tool_funcs_dict}')
     # agent.run(query=query, tools=tools)
 
