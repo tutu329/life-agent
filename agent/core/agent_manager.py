@@ -65,9 +65,10 @@ class Agent_Manager:
                 # -------------/获取所有的普通local tools--------------
 
                 # -----------获取所有的local agent as tools-----------
-
+                # for agent in agents:
+                #     if agent.name in cls.allowed_local_tool_names:
+                #         allowd_local_tool_requests.append(agent.as_tool_request)
                 # ----------/获取所有的local agent as tools-----------
-
 
             # 根据MCP url，添加allowed对应的tools
             if agent_config.mcp_requests:
