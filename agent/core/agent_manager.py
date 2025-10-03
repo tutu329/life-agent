@@ -71,7 +71,10 @@ class Agent_Manager:
             # 已有tools加上MCP的tools
             if agent_config.all_tool_requests is None:
                 agent_config.all_tool_requests = []
+
+            # 整理所有tool的requests
             agent_config.all_tool_requests = allowd_local_tool_requests + allowed_mcp_tool_requests
+
         except Exception as e:
             err(e)
             result.result_type = Agent_Request_Result_Type.FAILED
