@@ -83,12 +83,21 @@ class Agent_Manager:
                             properties={'query': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的指令')},  # 这里参数必须是toolcall_agent.run(self, query)的query
                             required=['query'],
                         )
+
+                        # 构造bound_func，解决deepcopy问题
+                        def _make_bound_func_of_agent_run(query):
+                            def _bound_func(query):
+                                res = agent_as_tool.agent.run(query=query)
+                                return res
+                            return _bound_func
+
                         agent_as_tool_request = Tool_Request(
                             name=agent_as_tool.agent.agent_config.as_tool_name,
                             description=agent_as_tool.agent.agent_config.as_tool_description,
                             parameters=agent_as_tool_parameters,
                             # func=agent_as_tool.agent.run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
-                            func=Toolcall_Agent.run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
+                            func=_make_bound_func_of_agent_run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
+                            # func=Toolcall_Agent.run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
                         )
                         allowd_local_tool_requests.append(agent_as_tool_request)
                 # ----------/获取所有的local agent as tools-----------
