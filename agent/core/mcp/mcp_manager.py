@@ -89,6 +89,8 @@ async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable
         list_tools_response = await session.list_tools()
 
         tool_requests: List[Tool_Request] = []
+        tool_funcs: List[Callable] = []
+
         for tool in list_tools_response.tools:
             name: str = getattr(tool, "name", "") or ""
             if allowed is not None and name not in allowed:
@@ -129,11 +131,12 @@ async def _get_mcp_tools_async(server_url: str, allowed_tools: Optional[Iterable
                 description=description,
                 strict=True,
                 parameters=parameters,
-                func=bound_func,   # 关键：赋值给 func
+                # func=bound_func,   # 关键：赋值给 func
             )
             tool_requests.append(tr)
+            tool_funcs.append(bound_func)
 
-        return tool_requests
+        return tool_requests, tool_funcs
 
 # -------------------------------
 # 对外：同步封装（阻塞调用）
@@ -153,7 +156,7 @@ def get_mcp_server_tool_names(server_url: str):
     # dprint('tools: ', tool_names)
     return tool_names
 
-def get_mcp_server_tools(server_url: str, allowed_tools: Optional[Iterable[str]] = None) -> List[Tool_Request]:
+def get_mcp_server_tools(server_url: str, allowed_tools: Optional[Iterable[str]] = None):
     """
     同步版本：返回 List[Tool_Request]
     """

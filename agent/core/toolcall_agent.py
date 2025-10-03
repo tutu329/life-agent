@@ -457,7 +457,8 @@ def main_response_agent_mcp_nginx():
     server_url1 = "https://powerai.cc:8011/mcp/sqlite/sse"
     server_url2 = "http://localhost:8789/sse"
     # server_url = "https://powerai.cc:8011/mcp/everything/sse"
-    tools = get_mcp_server_tools(server_url1) +  get_mcp_server_tools(server_url2)
+    tool_requests1, tool_funcs1 = get_mcp_server_tools(server_url1)
+    tool_requests2, tool_funcs2 = get_mcp_server_tools(server_url2)
     tool_names = get_mcp_server_tool_names(server_url1) + get_mcp_server_tool_names(server_url2)
     print(tool_names)
     # print(tools)
@@ -467,7 +468,7 @@ def main_response_agent_mcp_nginx():
     agent_config = Agent_Config(
         agent_name='MCP agent',
         allowed_local_tool_names=tool_names,
-        all_tool_requests=tools,
+        all_tool_requests=tool_requests1+tool_requests2,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_20b,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
@@ -480,7 +481,7 @@ def main_response_agent_mcp_nginx():
         has_history=True,
     )
     agent = Toolcall_Agent(agent_config=agent_config)
-    agent.init()
+    agent.init(tool_requests1+tool_requests2, tool_funcs1+tool_funcs2)
     # agent.run(query='列出所有表格名称', tools=tools)
     # agent.run(query='查看通信录表的数据', tools=tools)
 
@@ -561,7 +562,7 @@ def main_office_agent():
         agent.run(query=input('请输入你的指令：'), tools=tools)
 
 if __name__ == "__main__":
-    main_response_agent()
-    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
+    # main_response_agent()
+    main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()
     # main_office_agent()
