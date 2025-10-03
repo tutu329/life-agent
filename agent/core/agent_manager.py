@@ -43,6 +43,18 @@ class Agent_Manager:
         cls.local_all_tool_requests = Agent_Manager.parse_all_local_tools_on_server_start()
         return cls.local_all_tool_requests
 
+    # 获取cls.agents_dict中所有的agents as tool，返回list
+    @classmethod
+    def get_all_agents_as_tool(cls)->List[Agent_Data]:
+        agent_data_list = []
+        dred('------------------get_all_agents_as_tool---------------------')
+        for agent_id, agent_data in cls.agents_dict.items():
+            if agent_data.agent.agent_config.as_tool_name:
+                agent_data_list.append(agent_data)
+                dred(f'tool_name: {agent_data.agent.agent_config.as_tool_name!r}, tool_description: {agent_data.agent.agent_config.as_tool_description!r}')
+        dred('-----------------/get_all_agents_as_tool---------------------')
+        return agent_data_list
+
     # 1、创建agent，返回agent_id
     @classmethod
     def create_agent(cls, agent_config:Agent_Config)->str:
@@ -65,9 +77,20 @@ class Agent_Manager:
                 # -------------/获取所有的普通local tools--------------
 
                 # -----------获取所有的local agent as tools-----------
-                # for agent_as_tool in cls.get_all_agents_as_tool():
-                #     if agent_as_tool['name'] in cls.allowed_local_tool_names:
-                #         allowd_local_tool_requests.append(agent_as_tool.tool_request)
+                for agent_as_tool in cls.get_all_agents_as_tool():
+                    if agent_as_tool.agent.agent_config.as_tool_name in agent_config.allowed_local_tool_names:
+                        agent_as_tool_parameters = Tool_Parameters(
+                            properties={'query': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的指令')},  # 这里参数必须是toolcall_agent.run(self, query)的query
+                            required=['query'],
+                        )
+                        agent_as_tool_request = Tool_Request(
+                            name=agent_as_tool.agent.agent_config.as_tool_name,
+                            description=agent_as_tool.agent.agent_config.as_tool_description,
+                            parameters=agent_as_tool_parameters,
+                            # func=agent_as_tool.agent.run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
+                            func=Toolcall_Agent.run,   # 注意这里是一个agent的成员函数run(self, query)，而python中，只要这里的func注册的是绑定对象如agent_obj.run()，后续回调就不需要输入self，如果是注册的是未绑定对象的如Toolcall_Agent.run，则回调需要输入self。（但是：obj或者obj.func存在pydantic中时，deepcopy都会报错）
+                        )
+                        allowd_local_tool_requests.append(agent_as_tool_request)
                 # ----------/获取所有的local agent as tools-----------
 
             # 根据MCP url，添加allowed对应的tools
@@ -349,12 +372,22 @@ def main_2_levels_agents():
         MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']),
     ]
 
+    # -----------------------------注册一个agent as tool-----------------------------------
+    agent_config = Agent_Config(
+        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        agent_name='这是一个专门回答理论物理问题的Agent',
+        as_tool_name='Physical_Problems_Solving_Tool',
+        as_tool_description='本工具用来回答理论物理问题',
+    )
+    res = Agent_Manager.create_agent(agent_config)
+    # ----------------------------/注册一个agent as tool-----------------------------------
+
     agent_config = Agent_Config(
         # llm_config=llm_protocol.g_online_deepseek_chat,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         agent_name='Agent created by Agent_Manager',
-        allowed_local_tool_names=['Folder_Tool'],
+        allowed_local_tool_names=['Folder_Tool', 'Physical_Problems_Solving_Tool'],
         # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
         # allowed_local_tool_names=['Write_Chapter_Tool'],
         # tool_names=['Folder_Tool'],

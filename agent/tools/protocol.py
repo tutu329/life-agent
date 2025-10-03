@@ -1,3 +1,6 @@
+from copy import deepcopy
+from pprint import pprint
+
 from typing import List, Dict, Any, Type, Literal, Optional, Callable
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -45,6 +48,20 @@ class Tool_Request(BaseModel):
 
     # 允许 pydantic 接受 Callable 等任意类型（否则有些版本会抱怨）
     model_config = ConfigDict(arbitrary_types_allowed=True, extra='allow')
+
+    # def __deepcopy__(self, memo):
+    #     print('-------------Tool_Request.__deepcopy__------------')
+    #
+    #     data = self.model_dump()           # ✅ 不包含 func/extra 运行期对象
+    #     print('-------------Tool_Request.__deepcopy__1------------')
+    #     pprint(data)
+    #     data = deepcopy(data, memo)
+    #     print('-------------Tool_Request.__deepcopy__2------------')
+    #     new_obj = self.__class__(**data)
+    #     print('-------------Tool_Request.__deepcopy__3------------')
+    #     new_obj.func = self.func           # 浅回填绑定方法（不深拷）
+    #     print('------------/Tool_Request.__deepcopy__------------')
+    #     return new_obj
 
 def get_tool_param_dict_from_tool_class(cls, required_field_in_parameter=True)->Tool_Request:
     if required_field_in_parameter:

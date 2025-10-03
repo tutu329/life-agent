@@ -227,8 +227,22 @@ class Response_and_Chatml_LLM_Client:
 
             return request
 
-    def _copy_request_and_modify_from_response_to_chatml(self, request):
+    def _copy_request_and_modify_from_response_to_chatml(self, request:Response_Request):
+        # 由于涉及Toolcall_Agent的对象实例的copy，deepcopy()会报错：cannot pickle '_thread.RLock' object
         request = deepcopy(request)
+
+        # 因此，Pydantic v2情况下改为
+        print('-------------request:Tool_Request in _copy_request_and_modify_from_response_to_chatml--------------')
+        print(request)
+        print('------------/request:Tool_Request in _copy_request_and_modify_from_response_to_chatml-------------')
+
+        # if hasattr(request, 'tools'):
+        #     tools = request.tools
+        #     del request.__dict__['tools']
+        #     request = deepcopy(request)
+        #     request.tools = tools  # 手动回填，避免深拷贝 func
+        # else:
+        #     request = deepcopy(request)
 
         # --------------------------response转chatml--------------------------
         # dred(request)
@@ -285,7 +299,7 @@ class Response_and_Chatml_LLM_Client:
                     {"role": "user", "content": query}
                 ]
         dyellow('===================================request.instructions====================================')
-        dyellow(request)
+        dpprint(request.model_dump())
         dyellow(request.instructions)
         dyellow('==================================/request.instructions====================================')
 
