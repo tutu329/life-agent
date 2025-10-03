@@ -455,5 +455,5 @@ def main_2_levels_agents():
     # Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
 
 if __name__ == "__main__":
-    main_one_agent()
-    # main_2_levels_agents()
+    # main_one_agent()
+    main_2_levels_agents()
