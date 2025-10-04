@@ -432,7 +432,7 @@ def main_one_agent():
     # Agent_Manager.run_agent(agent_id=agent_id, query='有哪些表格？')
     # Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
 
-def main_2_levels_agents():
+def main_multi_levels_agents():
     # from agent.tools.folder_tool import Folder_Tool
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
@@ -461,23 +461,32 @@ def main_2_levels_agents():
         MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']),
     ]
 
-    # -----------------------------注册一个agent as tool-----------------------------------
+    # -----------------------------注册2层agent as tool-----------------------------------
     agent_config = Agent_Config(
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
-        agent_name='这是一个专门回答理论物理问题的Agent',
+        agent_name='这是一个可以搜索文件夹的Agent',
         allowed_local_tool_names=['Folder_Tool'],
         as_tool_name='File_Search_Tool',
         as_tool_description='本工具用来在文件夹中搜索指定文件',
     )
     res = Agent_Manager.create_agent(agent_config)
-    # ----------------------------/注册一个agent as tool-----------------------------------
 
     agent_config = Agent_Config(
-        # llm_config=llm_protocol.g_online_deepseek_chat,
-        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
-        agent_name='Agent created by Agent_Manager',
+        agent_name='这是一个专门回答理论物理问题的Agent',
         allowed_local_tool_names=['File_Search_Tool'],
+        as_tool_name='Folder_Search_Tool',
+        as_tool_description='本工具用来在文件夹中搜索指定文件',
+    )
+    res = Agent_Manager.create_agent(agent_config)
+    # ----------------------------/注册一2层agent as tool-----------------------------------
+
+    agent_config = Agent_Config(
+        llm_config=llm_protocol.g_online_deepseek_chat,
+        # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
+        # llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        agent_name='Agent created by Agent_Manager',
+        allowed_local_tool_names=['Folder_Search_Tool'],
         # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
         # allowed_local_tool_names=['Write_Chapter_Tool'],
         # tool_names=['Folder_Tool'],
@@ -525,4 +534,4 @@ def main_2_levels_agents():
 
 if __name__ == "__main__":
     # main_one_agent()
-    main_2_levels_agents()
+    main_multi_levels_agents()
