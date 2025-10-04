@@ -159,7 +159,8 @@ def print_color():
 def agent_query_output(query, agent_level=0):
     # print(f'\n{PALE_GRAY}> {query}{RESET}\n')
     query = query.strip().replace('\n', ' ')
-    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+
+    agent_level_str = "  "*agent_level + "| "*agent_level + f'{" "*agent_level}'
     print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{PALE_GRAY}> {get_string_preview(query)}{RESET}')
 
 def agent_thinking_output(answer, output_thinking=False, agent_level=0):
@@ -167,7 +168,8 @@ def agent_thinking_output(answer, output_thinking=False, agent_level=0):
         return
 
     answer = answer.strip().replace('\n', ' ')
-    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+
+    agent_level_str = "  "*agent_level + "| "*agent_level + f'{" "*agent_level}'
     print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{LIGHT_GRAY}⏺ {get_string_preview(answer)}{RESET}')
 
 '''
@@ -185,14 +187,15 @@ def agent_tool_chosen_output(tool_name, tool_paras, agent_level=0):
 
     tool_paras_string = tool_paras_string.replace("\n", " ").strip()
 
-    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+    agent_level_str = "  " + "| "*agent_level + f'{" "*agent_level}'
     print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{LIGHT_GRAY}⏺ {CRIMSON}{tool_name.strip()}{LIGHT_BLACK}({tool_paras_string}){RESET}')
 
 def agent_tool_result_output(action_result, agent_level=0):
     if isinstance(action_result, str):
         action_result = action_result.replace("\n", " ").strip()
-    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
-    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{LIGHT_BLACK}  ⎿ {action_result}{RESET}')
+
+    agent_level_str = "  " + "| "*agent_level + f'{" "*agent_level}'
+    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{LIGHT_BLACK}⎿ {action_result}{RESET}')
 
 def agent_finished_output(final_answer, agent_level=0):
     if final_answer is None:
@@ -201,7 +204,7 @@ def agent_finished_output(final_answer, agent_level=0):
     # final_answer = final_answer.strip()
     final_answer = final_answer.replace("\n", " ").strip()
 
-    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+    agent_level_str = "  " + "| "*agent_level + f'{" "*agent_level}'
     print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer}{RESET}')
 
 def llm_user_output(query):
