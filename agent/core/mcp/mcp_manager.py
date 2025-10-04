@@ -232,7 +232,28 @@ def main_mcp_tavily():
     # for t in tools:
     #     pprint(t)
 
+def main_mcp_playwright():
+    server_url = "https://powerai.cc:8011/mcp/sqlite/sse"
+    result = call_tool(
+        server_url,
+        tool_name="read_query",
+        args={"query": "SELECT name FROM sqlite_master WHERE type='table';"}
+    )
+    print(result)
+
+    get_mcp_server_tool_names(server_url)
+
+    allowed = ["read_query", "write_query"]
+    tools = get_mcp_server_tools(
+        server_url,
+        # allowed_tools = allowed     # 不传则不过滤
+    )
+
+    for t in tools:
+        pprint(t)
+
 if __name__ == "__main__":
     # main_mcp_sqlite()
     # main_func_test()
-    main_mcp_tavily()
+    # main_mcp_tavily()
+    main_mcp_playwright()
