@@ -80,9 +80,14 @@ class Toolcall_Agent:
         # self.final_answer_flag = '【任务完成】'
         # self.decide_final_answer_prompt = f'当完成任务时，请输出"{self.final_answer_flag}"，否则系统无法判断何时结束任务。'
 
+    # 用于尝试cancel当前的任务
+    def set_cancel(self):
+        self.agent_status.canceled = False
+        self.agent_status.canceling = True
+
     # 初始化self.tool_funcs_dict
-    def _set_funcs(self, tool_requests, tool_func):
-        for tool_request, tool_func in zip(tool_requests, tool_func):
+    def _set_funcs(self, tool_requests, tool_funcs):
+        for tool_request, tool_func in zip(tool_requests, tool_funcs):
             self.tool_funcs_dict[tool_request.name] = tool_func
 
     def init(self, tool_requests, tool_funcs):
