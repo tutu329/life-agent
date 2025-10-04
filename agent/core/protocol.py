@@ -4,6 +4,9 @@ from queue import Queue
 from threading import Thread
 from enum import Enum
 
+class Agent_Tool_Result(BaseModel):
+    result          :str
+
 class Agent_Request_Type(Enum):
     CREATE = 'create'
     RUN = 'run'

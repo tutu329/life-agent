@@ -57,6 +57,9 @@ class Response_Result(BaseModel):
 
     error                   :str = ''
 
+    # 用于放置agent as tool的tool调用结果
+    agent_as_tool_call_result   :str = ''
+
 class Response_and_Chatml_LLM_Client:
     def __init__(self, llm_config:LLM_Config):
     # def __init__(self, client: OpenAI):

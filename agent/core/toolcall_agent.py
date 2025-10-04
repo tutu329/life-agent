@@ -31,7 +31,7 @@ from agent.tools.protocol import Tool_Request
 from tools.llm.response_and_chatml_api_client import Response_and_Chatml_LLM_Client, Response_Result, Response_Request
 
 from agent.core.agent_config import Agent_Config
-from agent.core.protocol import Query_Agent_Context, Agent_Status
+from agent.core.protocol import Query_Agent_Context, Agent_Status, Agent_Tool_Result
 from agent.tools.legacy_protocol import Tool_Call_Paras, Action_Result
 
 from config import dred, dgreen, dblue, dyellow, dcyan
@@ -121,11 +121,14 @@ class Toolcall_Agent:
                     dprint(f'tool_name = "{tool_name}"')
                     dprint(func_rtn)
                     dprint('----------------------------/工具调用结果-------------------------------')
-                    if isinstance(func_rtn, Action_Result):
+                    if isinstance(func_rtn, Agent_Tool_Result):
                         response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
-                    elif isinstance(func_rtn, BaseModel):
-                        response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
+                    elif isinstance(func_rtn, Response_Result):
+                        # 如果是agent as tool
+                        agent_tool_result = Agent_Tool_Result(result=func_rtn.agent_as_tool_call_result)     # 由于是agent as tool，在agent.run()中，func_rtn.agent_as_tool_call_result已设置为agent.agent_status.final_answer
+                        response_result.tool_call_result = json.dumps(agent_tool_result.model_dump(), ensure_ascii=False)
                     else:
+                        dyellow(f'【Toolcall_Agent._call_tool()】warning: 工具调用结果既不是Agent_Tool_Result也不是Response_Result.')
                         response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
 
                     # tool_call_result_item = {
@@ -310,15 +313,11 @@ class Toolcall_Agent:
             self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
             self._after_run()
 
+        if self.agent_config.as_tool_name:
+            # 如果是agent as tool，则返回是tool_call结果
+            responses_result.agent_as_tool_call_result = self.agent_status.final_answer
+
         return responses_result
-        # if self.agent_config.as_tool_name:
-        #     # 如果是agent as tool，则返回是tool_call结果
-        #     responses_result.tool_call_result = self.agent_status.final_answer
-        #     return responses_result
-        # else:
-        #     # 如果是普通agent而不是tool
-        #     return responses_result
-        #     # return self.agent_status
 
 def main_response_agent():
     # add_tool = Tool_Request(

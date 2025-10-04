@@ -7,6 +7,7 @@
 from utils.encode import safe_encode
 from agent.tools.base_tool import Base_Tool
 from agent.tools.legacy_protocol import Action_Result, Tool_Call_Paras
+from agent.core.protocol import Agent_Tool_Result
 # from agent.core.legacy_protocol import Action_Result
 from utils.folder import get_folder_all_items_string
 
@@ -56,7 +57,7 @@ class Folder_Tool(Base_Tool):
             items_str = f'报错: {e!r}'
 
         # 调用工具后，结果作为action_result返回
-        action_result = Action_Result(result=items_str)
+        action_result = Agent_Tool_Result(result=items_str)
         # action_result = items_str
         return action_result
 
@@ -83,7 +84,7 @@ class Folder_Tool(Base_Tool):
     #         items_str = f'报错: {e!r}'
     #
     #     # 调用工具后，结果作为action_result返回
-    #     action_result = Action_Result(result=items_str)
+    #     action_result = Agent_Tool_Result(result=items_str)
     #     # action_result = items_str
     #     return action_result
 
