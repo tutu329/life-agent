@@ -164,7 +164,7 @@ def agent_query_output(query, agent_level=0):
         agent_level_str = ''
     else:
         agent_level_str = '  |   '*agent_level
-    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{PALE_GRAY}> {get_string_preview(query)}{RESET}')
+    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{PALE_GRAY}> {get_string_preview(query, preview_width=150)}{RESET}')
 
 def agent_thinking_output(answer, output_thinking=False, agent_level=0):
     if not output_thinking:
