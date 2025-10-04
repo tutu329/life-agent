@@ -156,23 +156,25 @@ def print_color():
 
     config.Global.app_debug = tmp_app_debug
 
-def agent_query_output(query):
+def agent_query_output(query, agent_level=0):
     # print(f'\n{PALE_GRAY}> {query}{RESET}\n')
     query = query.strip().replace('\n', ' ')
-    print(f'{PALE_GRAY}> {get_string_preview(query)}{RESET}')
+    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{PALE_GRAY}> {get_string_preview(query)}{RESET}')
 
-def agent_thinking_output(answer, output_thinking=False):
+def agent_thinking_output(answer, output_thinking=False, agent_level=0):
     if not output_thinking:
         return
 
     answer = answer.strip().replace('\n', ' ')
-    print(f'{LIGHT_GRAY}⏺ {get_string_preview(answer)}{RESET}')
+    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{LIGHT_GRAY}⏺ {get_string_preview(answer)}{RESET}')
 
 '''
 ⏺ Web Search("MacBook Air M5 release date 2025")
   ⎿ Found 10 results for "MacBook Air M5 release date 2025"
 '''
-def agent_tool_chosen_output(tool_name, tool_paras):
+def agent_tool_chosen_output(tool_name, tool_paras, agent_level=0):
     if isinstance(tool_paras, str):
         tool_paras = json.loads(tool_paras)
 
@@ -183,21 +185,24 @@ def agent_tool_chosen_output(tool_name, tool_paras):
 
     tool_paras_string = tool_paras_string.replace("\n", " ").strip()
 
-    print(f'{LIGHT_GRAY}⏺ {CRIMSON}{tool_name.strip()}{LIGHT_BLACK}({tool_paras_string}){RESET}')
+    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{LIGHT_GRAY}⏺ {CRIMSON}{tool_name.strip()}{LIGHT_BLACK}({tool_paras_string}){RESET}')
 
-def agent_tool_result_output(action_result):
+def agent_tool_result_output(action_result, agent_level=0):
     if isinstance(action_result, str):
         action_result = action_result.replace("\n", " ").strip()
-    print(f'{LIGHT_BLACK}  ⎿ {action_result}{RESET}')
+    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{LIGHT_BLACK}  ⎿ {action_result}{RESET}')
 
-def agent_finished_output(final_answer):
+def agent_finished_output(final_answer, agent_level=0):
     if final_answer is None:
         final_answer = ''
 
-    final_answer = final_answer.strip()
+    # final_answer = final_answer.strip()
+    final_answer = final_answer.replace("\n", " ").strip()
 
-    # final_answer = final_answer.replace("\n", " ").strip()
-    print(f'{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer.strip()}{RESET}\n')
+    agent_level_str = "| " + f'{" " * agent_level}' if agent_level>0 else ''
+    print(f'{LIGHT_BLACK}{agent_level_str}{RESET}{PALE_GREEN}⏺ {LIGHT_BLACK}{final_answer}{RESET}')
 
 def llm_user_output(query):
     print(f'{PALE_GRAY}> {query.strip()!r}{RESET}')

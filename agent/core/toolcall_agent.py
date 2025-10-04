@@ -64,6 +64,7 @@ class Toolcall_Agent:
 
         # 自己的id
         self.agent_id = str(uuid4())
+        self.agent_level = 0            # 用于表示agent是顶层agent，还是下级的agent_as_tool
         # 多层agent体系中的顶层agent的id
         self.top_agent_id = self.agent_config.top_agent_id if self.agent_config.top_agent_id else self.agent_id
 
@@ -90,9 +91,19 @@ class Toolcall_Agent:
         for tool_request, tool_func in zip(tool_requests, tool_funcs):
             self.tool_funcs_dict[tool_request.name] = tool_func
 
+    # 计算agent的level数(完整版: 应该由agent_manager递归访问上级agent，直到agent_id==top_agent_id判断，并通过agent_manager调用agent.set_agent_level()设置)
+    def _calculate_agent_level(self):
+        if self.agent_config.as_tool_name:
+            self.agent_level = 1
+        else:
+            self.agent_level = 0
+    def set_agent_level(self, agent_level):
+        self.agent_level = agent_level
+
     def init(self, tool_requests, tool_funcs):
         self.response_llm_client.init()
         self._set_funcs(tool_requests, tool_funcs)
+        self._calculate_agent_level()
 
     def _call_tool(self,
                    response_result:Response_Result, # response_api的调用结果
@@ -108,7 +119,7 @@ class Toolcall_Agent:
             #     if func['name'] in tool_name:   # vllm的response api有时候会出错，如：'name': 'div_tool<|channel|>json' 而不是 'name': 'div_tool'
                 # if tool_name == func['name']:
                 try:
-                    agent_tool_chosen_output(tool_name=tool_name, tool_paras=tool_call['arguments'])
+                    agent_tool_chosen_output(tool_name=tool_name, tool_paras=tool_call['arguments'], agent_level=self.agent_level)
                     args = json.loads(tool_call['arguments'])
 
                     # -----------------------------工具调用-----------------------------
@@ -144,7 +155,7 @@ class Toolcall_Agent:
                         output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
                         error=response_result.error
                     )
-                    agent_tool_result_output(json.loads(response_result.tool_call_result))
+                    agent_tool_result_output(json.loads(response_result.tool_call_result), agent_level=self.agent_level)
                     # agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
                     # self.response_llm_client.history_input_list.append(tool_call_result_item)
 
@@ -154,7 +165,7 @@ class Toolcall_Agent:
                     response_result.error = e
                     # response_result.tool_call_result = e
                     dred(f'【Toolcall_Agent._call_tool()】responses_result.error: {e!r}')
-                    agent_tool_result_output(response_result.error)
+                    agent_tool_result_output(response_result.error, agent_level=self.agent_level)
                     return response_result
 
         return response_result
@@ -165,7 +176,7 @@ class Toolcall_Agent:
         self.agent_status.canceled = False
         self.agent_status.canceling = False
         self.agent_status.final_answer = ''
-        agent_query_output(query)
+        agent_query_output(query, agent_level=self.agent_level)
 
     # run之后的处理
     def _after_run(self):
@@ -181,7 +192,7 @@ class Toolcall_Agent:
         dgreen(self.agent_status.final_answer)
         dgreen('-----------------------------------最终结果---------------------------------------------')
         # print(f'final: {self.agent_status.final_answer}')
-        agent_finished_output(self.agent_status.final_answer)
+        agent_finished_output(self.agent_status.final_answer, agent_level=self.agent_level)
 
     def run(self, instruction, tool_call_paras:Tool_Call_Paras=None):
         self._before_run(instruction)
@@ -304,7 +315,7 @@ class Toolcall_Agent:
         if self.agent_status.canceled:
             # canceled退出
             canceled_output = f'agent任务已被取消(agent name: {self.agent_config.agent_name!r}).'
-            agent_finished_output(canceled_output)
+            agent_finished_output(canceled_output, agent_level=self.agent_level)
             self.agent_status.querying = False
         else:
             # 正常退出
