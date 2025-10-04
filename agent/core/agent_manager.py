@@ -451,15 +451,33 @@ def main_multi_levels_agents():
 
     dprint("--------------MCP------------------")
     dpprint(Agent_Manager.get_mcp_url_tool_names("https://powerai.cc:8011/mcp/sqlite/sse"))
-    dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
+    # dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
+
+    # npx @playwright/mcp@latest --port 8788 --headless --browser chromium
+    dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8788/sse"))
     dprint("-------------/MCP------------------")
 
     mcp_requests = [
         MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse", allowed_tool_names=['list_tables', 'read_query']),
         MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']),
+        MCP_Server_Request(url="http://localhost:8788/sse"),
+    ]
+    mcp_playwright_requests = [
+        MCP_Server_Request(url="http://localhost:8788/sse"),
     ]
 
     # -----------------------------注册2层agent as tool-----------------------------------
+    agent_config = Agent_Config(
+        # llm_config=llm_protocol.g_online_deepseek_chat,
+        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        agent_name='agent level 1-playwright',
+        # allowed_local_tool_names=['browser_navigate', 'browser_wait_for', 'browser_network_requests', ''],
+        mcp_requests=mcp_playwright_requests,
+        as_tool_name='Playwright_Tool',
+        as_tool_description='本工具用来调用playwright的工具',
+    )
+    res = Agent_Manager.create_agent(agent_config)
+
     agent_config = Agent_Config(
         # llm_config=llm_protocol.g_online_deepseek_chat,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
@@ -486,7 +504,7 @@ def main_multi_levels_agents():
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         agent_name='agent level 0',
-        allowed_local_tool_names=['Folder_Search_Tool'],
+        allowed_local_tool_names=['Folder_Search_Tool', 'Playwright_Tool'],
         # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
         # allowed_local_tool_names=['Write_Chapter_Tool'],
         # tool_names=['Folder_Tool'],
@@ -513,7 +531,8 @@ def main_multi_levels_agents():
     dprint("-------------/注册后tool情况------------------")
 
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='现代物理学的创始人是谁')
-    res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ这个链接的网页内容讲了什么？')
+    # res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
     # time.sleep(3)
@@ -524,7 +543,8 @@ def main_multi_levels_agents():
         Agent_Manager.cancel_agent_run(agent_id=agent_id)
 
     while True:
-        res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才搜索file_to_find.txt这个文件的位置的结果是啥来着')
+        res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才分析的网页内容是什么？')
+        # res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才搜索file_to_find.txt这个文件的位置的结果是啥来着')
         if res.result_type==Agent_Request_Result_Type.SUCCESS:
             if debug_cancel:
                 Agent_Manager.cancel_agent_run(agent_id=res.agent_id)
