@@ -531,7 +531,8 @@ def main_multi_levels_agents():
     dprint("-------------/注册后tool情况------------------")
 
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='现代物理学的创始人是谁')
-    res = Agent_Manager.run_agent(agent_id=agent_id, query='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ这个链接的网页内容讲了什么？')
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='https://www.ccps.gov.cn/xtt/202410/t20241004_164720.shtml这个链接的网页内容讲了什么？')
+    # res = Agent_Manager.run_agent(agent_id=agent_id, query='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ这个链接的网页内容讲了什么？')
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
