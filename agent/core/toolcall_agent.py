@@ -65,6 +65,7 @@ class Toolcall_Agent:
         # 自己的id
         self.agent_id = str(uuid4())
         self.agent_level = 0            # 用于表示agent是顶层agent，还是下级的agent_as_tool
+        self.lower_agents_as_tool = []  # lower的agent_as_tool的列表
         # 多层agent体系中的顶层agent的id
         self.top_agent_id = self.agent_config.top_agent_id if self.agent_config.top_agent_id else self.agent_id
 
@@ -85,6 +86,14 @@ class Toolcall_Agent:
     def set_cancel(self):
         self.agent_status.canceled = False
         self.agent_status.canceling = True
+
+        # 尝试cancel所有lower_agent_as_tool
+        for lower_agent in self.lower_agents_as_tool:
+            lower_agent.set_cancel()
+
+    def register_lower_agents_as_tool(self, lower_agent_data_list):
+        for agent_data in lower_agent_data_list:
+            self.lower_agents_as_tool.append(agent_data.agent)
 
     # 初始化self.tool_funcs_dict
     def _set_funcs(self, tool_requests, tool_funcs):

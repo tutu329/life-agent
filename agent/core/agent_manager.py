@@ -74,6 +74,8 @@ class Agent_Manager:
         # 最终包含local和MCP的所有allowed的funcs
         all_tool_funcs = []
 
+        lower_agent_data_list = []
+
         try:
             # 获取所有的local tools
             if agent_config.allowed_local_tool_names:
@@ -87,6 +89,9 @@ class Agent_Manager:
                 # -----------获取所有的local agent as tools-----------
                 for agent_as_tool in cls.get_all_agents_as_tool():
                     if agent_as_tool.agent.agent_config.as_tool_name in agent_config.allowed_local_tool_names:
+                        # 在upper agent中注册lower的agent_as_tool
+                        lower_agent_data_list.append(agent_as_tool)
+
                         agent_as_tool_parameters = Tool_Parameters(
                             properties={'instruction': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的自然语言指令')},  # 这里参数必须是toolcall_agent.run(self, instruction)的instruction
                             required=['instruction'],
@@ -136,6 +141,7 @@ class Agent_Manager:
         # agent初始化
         agent = Toolcall_Agent(agent_config=agent_config)
         agent.init(agent_config.all_tool_requests, all_tool_funcs)
+        agent.register_lower_agents_as_tool(lower_agent_data_list)
 
         # 注册agent
         agent_data = Agent_Data(
@@ -501,7 +507,7 @@ def main_2_levels_agents():
     res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
-    # time.sleep(1)
+    # time.sleep(3)
     # Agent_Manager.cancel_agent_run(agent_id=agent_id)
 
     while True:
