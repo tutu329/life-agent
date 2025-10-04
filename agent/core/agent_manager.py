@@ -449,8 +449,6 @@ def main_multi_levels_agents():
     dprint(Agent_Manager.get_local_tool_param_dict(tool_name='Folder_Tool'))
     dprint("--------------client_get_server_local_tools_info------------------")
 
-
-
     dprint("--------------MCP------------------")
     dpprint(Agent_Manager.get_mcp_url_tool_names("https://powerai.cc:8011/mcp/sqlite/sse"))
     dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
@@ -519,12 +517,19 @@ def main_multi_levels_agents():
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
     # time.sleep(3)
-    # Agent_Manager.cancel_agent_run(agent_id=agent_id)
+
+    # debug_cancel = True
+    debug_cancel = False
+    if debug_cancel:
+        Agent_Manager.cancel_agent_run(agent_id=agent_id)
 
     while True:
         res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才搜索file_to_find.txt这个文件的位置的结果是啥来着')
         if res.result_type==Agent_Request_Result_Type.SUCCESS:
+            if debug_cancel:
+                Agent_Manager.cancel_agent_run(agent_id=res.agent_id)
             break
+
         time.sleep(0.1)
 
     # Agent_Manager.wait_agent(agent_id=agent_id)

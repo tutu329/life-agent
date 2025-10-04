@@ -92,8 +92,27 @@ class Toolcall_Agent:
             lower_agent.set_cancel()
 
     def register_lower_agents_as_tool(self, lower_agent_data_list):
+        # 注册lower的agents
         for agent_data in lower_agent_data_list:
             self.lower_agents_as_tool.append(agent_data.agent)
+
+        # 尝试计算本agent及下层所有agent的agent_level
+        self._calculate_all_agents_level()
+
+    # 在所有层agent都注册完之后，计算所有层agent的agent_level
+    def _calculate_all_agents_level(self, agent_level=0):
+        # 仅当本agent为顶层agent时，计算本agent及下面所有层agent的agent_level，
+        if not self.agent_config.as_tool_name:
+            self.agent_level = agent_level
+            print(f'----------set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
+            for lower_agent in self.lower_agents_as_tool:
+                lower_agent._calculate_all_agents_level(self.agent_level + 1)
+        else:
+            # dyellow(f'【Toolcall_Agent.calculate_all_agents_level】warning: 未从顶层agent开始计算所有层agent的level.')
+            self.agent_level = agent_level
+            print(f'----------set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
+            for lower_agent in self.lower_agents_as_tool:
+                lower_agent._calculate_all_agents_level(self.agent_level + 1)
 
     # 初始化self.tool_funcs_dict
     def _set_funcs(self, tool_requests, tool_funcs):
@@ -101,18 +120,18 @@ class Toolcall_Agent:
             self.tool_funcs_dict[tool_request.name] = tool_func
 
     # 计算agent的level数(完整版: 应该由agent_manager递归访问上级agent，直到agent_id==top_agent_id判断，并通过agent_manager调用agent.set_agent_level()设置)
-    def _calculate_agent_level(self):
-        if self.agent_config.as_tool_name:
-            self.agent_level = 1
-        else:
-            self.agent_level = 0
+    # def _calculate_agent_level(self):
+    #     if self.agent_config.as_tool_name:
+    #         self.agent_level = 1
+    #     else:
+    #         self.agent_level = 0
     def set_agent_level(self, agent_level):
         self.agent_level = agent_level
 
     def init(self, tool_requests, tool_funcs):
         self.response_llm_client.init()
         self._set_funcs(tool_requests, tool_funcs)
-        self._calculate_agent_level()
+        # self._calculate_agent_level()
 
     def _call_tool(self,
                    response_result:Response_Result, # response_api的调用结果
