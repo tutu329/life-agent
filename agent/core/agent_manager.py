@@ -463,7 +463,7 @@ def main_multi_levels_agents():
     agent_config = Agent_Config(
         # llm_config=llm_protocol.g_online_deepseek_chat,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
-        agent_name='这是一个可以搜索文件夹的Agent',
+        agent_name='agent level 2',
         allowed_local_tool_names=['Folder_Tool'],
         as_tool_name='File_Search_Tool',
         as_tool_description='本工具用来在文件夹中搜索指定文件',
@@ -473,7 +473,7 @@ def main_multi_levels_agents():
     agent_config = Agent_Config(
         # llm_config=llm_protocol.g_online_deepseek_chat,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
-        agent_name='这是一个专门回答理论物理问题的Agent',
+        agent_name='agent level 1',
         allowed_local_tool_names=['File_Search_Tool'],
         as_tool_name='Folder_Search_Tool',
         as_tool_description='本工具用来在文件夹中搜索指定文件',
@@ -485,7 +485,7 @@ def main_multi_levels_agents():
         # llm_config=llm_protocol.g_online_deepseek_chat,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
-        agent_name='Agent created by Agent_Manager',
+        agent_name='agent level 0',
         allowed_local_tool_names=['Folder_Search_Tool'],
         # allowed_local_tool_names=['Folder_Tool', 'Write_Chapter_Tool'],
         # allowed_local_tool_names=['Write_Chapter_Tool'],
