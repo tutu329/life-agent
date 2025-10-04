@@ -88,8 +88,8 @@ class Agent_Manager:
                 for agent_as_tool in cls.get_all_agents_as_tool():
                     if agent_as_tool.agent.agent_config.as_tool_name in agent_config.allowed_local_tool_names:
                         agent_as_tool_parameters = Tool_Parameters(
-                            properties={'query': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的自然语言指令')},  # 这里参数必须是toolcall_agent.run(self, query)的query
-                            required=['query'],
+                            properties={'instruction': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的自然语言指令')},  # 这里参数必须是toolcall_agent.run(self, instruction)的instruction
+                            required=['instruction'],
                         )
 
                         # 构造bound_func，解决deepcopy问题
@@ -170,7 +170,7 @@ class Agent_Manager:
             return result
 
         def _worker(query):
-            agent.run(query=query)
+            agent.run(instruction=query)
 
         # 启动agent的thread
         agent_data.agent_thread = Thread(

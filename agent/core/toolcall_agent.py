@@ -229,8 +229,8 @@ class Toolcall_Agent:
         # print(f'final: {self.agent_status.final_answer}')
         agent_finished_output(self.agent_status.final_answer)
 
-    def run(self, query, tool_call_paras:Tool_Call_Paras=None):
-        self._run_before(query)
+    def run(self, instruction, tool_call_paras:Tool_Call_Paras=None):
+        self._run_before(instruction)
 
         use_chatml = self.response_llm_client.llm_config.chatml
 
@@ -277,9 +277,9 @@ class Toolcall_Agent:
 
                 # dred(tools)
                 if use_chatml:
-                    responses_result = self.response_llm_client.chatml_create(query=query, request=response_request, new_run=new_run)
+                    responses_result = self.response_llm_client.chatml_create(query=instruction, request=response_request, new_run=new_run)
                 else:
-                    responses_result = self.response_llm_client.responses_create(query=query, request=response_request, new_run=new_run)
+                    responses_result = self.response_llm_client.responses_create(query=instruction, request=response_request, new_run=new_run)
                 # dpprint(responses_result.model_dump())
                 dblue(f'-------------------------responses_result(use_chatml: {use_chatml})-----------------------------')
                 for item in responses_result:
@@ -441,7 +441,7 @@ def main_response_agent():
     # agent.run(query=query, tools=tools)
 
     # agent.run(query='你好，我的名字是土土', tools=tools)
-    agent.run(query=query)
+    agent.run(instruction=query)
     # agent.run(query=query, tools=tools)
     # agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到', tools=tools)
 
@@ -487,7 +487,7 @@ def main_response_agent_mcp_nginx():
     # agent.run(query='查看通信录表的数据', tools=tools)
 
     while True:
-        agent.run(query=input('请输入你的指令：'))
+        agent.run(instruction=input('请输入你的指令：'))
 
 def main_response_agent_mcp_server():
     from openai import OpenAI
@@ -560,7 +560,7 @@ def main_office_agent():
 
     while True:
         # query = '请帮我编制报告，项目名称是"基于AI-native框架的自主化咨询设计系统"，投资控制在100万元左右，章节编制需求是3.2章、编写项目必要性，项目关键诉求是方案具有前瞻性。'
-        agent.run(query=input('请输入你的指令：'), tools=tools)
+        agent.run(instruction=input('请输入你的指令：'), tools=tools)
 
 if __name__ == "__main__":
     # main_response_agent()
