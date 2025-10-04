@@ -166,8 +166,9 @@ class Toolcall_Agent:
 
     # run被canceled的处理
     def _run_canceled(self):
-        canceled_output = f'agent任务已被取消({self.agent_config.agent_name!r}).'
+        canceled_output = f'agent任务已被取消(agent name: {self.agent_config.agent_name!r}).'
         agent_finished_output(canceled_output)
+        self.agent_status.querying = False
 
     # run之后的处理
     def _after_run(self):

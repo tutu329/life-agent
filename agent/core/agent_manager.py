@@ -501,6 +501,9 @@ def main_2_levels_agents():
     res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
+    time.sleep(1)
+    Agent_Manager.cancel_agent_run(agent_id=agent_id)
+
     while True:
         res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才搜索file_to_find.txt这个文件的位置的结果是啥来着')
         if res.result_type==Agent_Request_Result_Type.SUCCESS:
