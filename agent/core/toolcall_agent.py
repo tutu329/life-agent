@@ -94,65 +94,6 @@ class Toolcall_Agent:
         self.response_llm_client.init()
         self._set_funcs(tool_requests, tool_funcs)
 
-    # def _call_tool(self,
-    #                response_result:Response_Result, # response_api的调用结果
-    #                tool_call_paras:Tool_Call_Paras, # agent调度的上下文
-    #                ):
-    #     tool_call = response_result.function_tool_call
-    #     if tool_call and 'name' in tool_call:
-    #         tool_name = tool_call['name']
-    #
-    #         for func in self.response_llm_client.funcs:
-    #             if func['name'] in tool_name:   # vllm的response api有时候会出错，如：'name': 'div_tool<|channel|>json' 而不是 'name': 'div_tool'
-    #             # if tool_name == func['name']:
-    #                 try:
-    #                     agent_tool_chosen_output(tool_name=tool_name, tool_paras=tool_call['arguments'])
-    #                     args = json.loads(tool_call['arguments'])
-    #
-    #                     # -----------------------------工具调用-----------------------------
-    #                     # tool_call_paras.callback_tool_paras_dict = args
-    #                     func_rtn = func['func'](tool_call_paras=tool_call_paras, **args)
-    #                     # ----------------------------/工具调用-----------------------------
-    #
-    #                     dprint('-----------------------------工具调用结果-------------------------------')
-    #                     dprint(f'tool_name = "{tool_name}"')
-    #                     dprint(func_rtn)
-    #                     dprint('----------------------------/工具调用结果-------------------------------')
-    #                     if isinstance(func_rtn, Action_Result):
-    #                         response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
-    #                     elif isinstance(func_rtn, BaseModel):
-    #                         response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
-    #                     else:
-    #                         response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
-    #
-    #                     # tool_call_result_item = {
-    #                     #     "type": "function_call_output",
-    #                     #     "call_id": tool_call['call_id'],
-    #                     #     "output": json.dumps({tool_call['name']: response_result.tool_call_result}),
-    #                     #     "error": response_result.error
-    #                     # }
-    #
-    #                     self.response_llm_client.history_input_add_tool_call_result_item(
-    #                         arguments=tool_call['arguments'],
-    #                         call_id=tool_call['call_id'],
-    #                         output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
-    #                         error=response_result.error
-    #                     )
-    #                     agent_tool_result_output(json.loads(response_result.tool_call_result))
-    #                     # agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
-    #                     # self.response_llm_client.history_input_list.append(tool_call_result_item)
-    #
-    #                     return response_result
-    #                 except Exception as e:
-    #                     err(e)
-    #                     response_result.error = e
-    #                     # response_result.tool_call_result = e
-    #                     dred(f'【Toolcall_Agent._call_tool()】responses_result.error: {e!r}')
-    #                     agent_tool_result_output(response_result.error)
-    #                     return response_result
-    #
-    #     return response_result
-
     def _call_tool(self,
                    response_result:Response_Result, # response_api的调用结果
                    tool_call_paras:Tool_Call_Paras, # agent调度的上下文
@@ -215,11 +156,21 @@ class Toolcall_Agent:
 
         return response_result
 
-    def _run_before(self, query):
+    # run之前的初始化
+    def _before_run(self, query):
         self.agent_status.querying = True
+        self.agent_status.canceled = False
+        self.agent_status.canceling = False
+        self.agent_status.final_answer = ''
         agent_query_output(query)
 
-    def _run_after(self):
+    # run被canceled的处理
+    def _run_canceled(self):
+        canceled_output = f'agent任务已被取消({self.agent_config.agent_name!r}).'
+        agent_finished_output(canceled_output)
+
+    # run之后的处理
+    def _after_run(self):
         self.agent_status.query_task_finished = True
         self.agent_status.querying = False
 
@@ -235,7 +186,7 @@ class Toolcall_Agent:
         agent_finished_output(self.agent_status.final_answer)
 
     def run(self, instruction, tool_call_paras:Tool_Call_Paras=None):
-        self._run_before(instruction)
+        self._before_run(instruction)
 
         use_chatml = self.response_llm_client.llm_config.chatml
 
@@ -263,6 +214,12 @@ class Toolcall_Agent:
         # 只有当res包含output、且不包含function_tool_call时，才退出
         while (responses_result.function_tool_call and responses_result.function_tool_call['name']) or (not hasattr(responses_result, 'output') or responses_result.output=='' or responses_result.output is None):
         # while (responses_result.function_tool_call) or (not hasattr(responses_result, 'output') or responses_result.output=='' or responses_result.output is None):
+
+            # 处理cancel
+            if self.agent_status.canceling:
+                self.agent_status.canceled = True
+                break
+
             agent_count += 1
             if agent_err_count >= self.agent_max_error_retry:
                 dred(f'【Response_API_Tool_Agent.run()】出错次数超出agent_max_error_retry({self.agent_max_error_retry})，退出循环.')
@@ -310,7 +267,7 @@ class Toolcall_Agent:
                     self.agent_status.final_answer = responses_result.output
 
                 self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
-                self._run_after()
+                self._after_run()
                 return self.agent_status
             # if not responses_result.function_tool_call:
             #     # dred(f'function_tool_call为空2, responses_result.output:{responses_result.output!r}')
@@ -346,11 +303,16 @@ class Toolcall_Agent:
             if responses_result is None:
                 continue
 
-        self.agent_status.final_answer = responses_result.output.strip()
+        if self.agent_status.canceled:
+            # canceled退出
+            self._run_canceled()
+        else:
+            # 正常退出
+            self.agent_status.final_answer = responses_result.output.strip()
 
-        self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
-        self._run_after()
-        return self.agent_status
+            self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
+            self._after_run()
+            return self.agent_status
 
 def main_response_agent():
     # add_tool = Tool_Request(

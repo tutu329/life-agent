@@ -4,9 +4,12 @@ from queue import Queue
 from threading import Thread
 from enum import Enum
 
-class Agent_Phase(Enum):
-    CREATING = 'creating'
-    RUNNING = 'running'
+class Agent_Request_Type(Enum):
+    CREATE = 'create'
+    RUN = 'run'
+    WAIT = 'wait'
+    CANCEL = 'cancel'
+    GET_STATUS = 'get_status'
 
 class Agent_Request_Result_Type(Enum):
     SUCCESS = 'success'
@@ -14,9 +17,10 @@ class Agent_Request_Result_Type(Enum):
 
 class Agent_Request_Result(BaseModel):
     agent_id        : str
-    phase           : Agent_Phase
+    request_type    : Agent_Request_Type
     result_type     : Agent_Request_Result_Type
-    result_content  : str = ''
+    result_string   : str = ''
+    result_content  : Any = {}
 
 class Agent_Status(BaseModel):
     started             :bool = False   # agent是否created

@@ -11,7 +11,7 @@ from agent.core.agent_config import Agent_Config
 from agent.core.toolcall_agent import Toolcall_Agent
 from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_request_from_tool_class, get_tool_request_and_func_from_tool_class
 from agent.core.mcp.protocol import MCP_Server_Request
-from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Phase, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Phase
+from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Request_Type, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Request_Type
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from console import err
@@ -58,10 +58,10 @@ class Agent_Manager:
 
     # 1、创建agent，返回agent_id
     @classmethod
-    def create_agent(cls, agent_config:Agent_Config)->str:
+    def create_agent(cls, agent_config:Agent_Config)->Agent_Request_Result:
         result = Agent_Request_Result(
             agent_id='',
-            phase=Agent_Phase.CREATING,
+            request_type=Agent_Request_Type.CREATE,
             result_type=Agent_Request_Result_Type.SUCCESS,
         )
 
@@ -130,7 +130,7 @@ class Agent_Manager:
         except Exception as e:
             err(e)
             result.result_type = Agent_Request_Result_Type.FAILED
-            result.result_content = str(e)
+            result.result_string = str(e)
             return result
 
         # agent初始化
@@ -154,19 +154,26 @@ class Agent_Manager:
 
     # 2、启动agent_id下的thread，并run
     @classmethod
-    def run_agent(cls, agent_id:str, query):
+    def run_agent(cls, agent_id:str, query)->Agent_Request_Result:
         result = Agent_Request_Result(
             agent_id=agent_id,
-            phase=Agent_Phase.RUNNING,
+            request_type=Agent_Request_Type.RUN,
             result_type=Agent_Request_Result_Type.SUCCESS,
         )
 
         agent_data = cls.agents_dict[agent_id]
-        agent = cls._get_agent(agent_id=agent_id)
+        agent = agent_data.agent
+
+        if not agent:
+            # agent不存在，退出
+            result.result_type = Agent_Request_Result_Type.FAILED
+            result.result_string = f'agent_id({agent_id!r})不存在.'
+            return result
 
         if agent.agent_status.querying:
+            # agent已经在quering了，run失败退出
             result.result_type = Agent_Request_Result_Type.FAILED
-            result.result_content = f'agent "{agent_id}" is still querying.'
+            result.result_string = f'agent(agent_id={agent_id!r})已在执行中，退出.'
             return result
 
         def _worker(query):
@@ -187,27 +194,76 @@ class Agent_Manager:
 
     # 3、等待agent的某次query(串行，暂不考虑并行和query_id)
     @classmethod
-    def wait_agent(cls, agent_id):
+    def wait_agent(cls, agent_id)->Agent_Request_Result:
+        result = Agent_Request_Result(
+            agent_id=agent_id,
+            request_type=Agent_Request_Type.WAIT,
+            result_type=Agent_Request_Result_Type.SUCCESS,
+        )
+
         thread = cls._get_thread(agent_id=agent_id)
-        thread.join()
+        if thread:
+            thread.join()
+        else:
+            result.result_type = Agent_Request_Result_Type.FAILED
+            result.result_string = f'agent(agent_id={agent_id!r})未成功执行wait操作.'
+
+        return result
 
     # 4、获取agent的实时状态
     @classmethod
-    def get_agent_status(cls, agent_id)->Agent_Status:
+    def get_agent_status(cls, agent_id)->Agent_Request_Result:
+        result = Agent_Request_Result(
+            agent_id=agent_id,
+            request_type=Agent_Request_Type.GET_STATUS,
+            result_type=Agent_Request_Result_Type.SUCCESS,
+        )
+
         agent_data = cls.agents_dict[agent_id]
-        return agent_data.agent.agent_status
+        if agent_data and agent_data.agent:
+            result.result_content = agent_data.agent.agent_status
+        else:
+            result.result_type = Agent_Request_Result_Type.FAILED
+            result.result_string = f'agent(agent_id={agent_id!r})未取得Agent_Status.'
+
+        return result
+
+    # 5、取消agent的run
+    @classmethod
+    def cancel_agent_run(cls, agent_id)->Agent_Request_Result:
+        result = Agent_Request_Result(
+            agent_id=agent_id,
+            request_type=Agent_Request_Type.CANCEL,
+            result_type=Agent_Request_Result_Type.SUCCESS,
+        )
+
+        agent_data = cls.agents_dict[agent_id]
+        if agent_data and agent_data.agent:
+            agent_data.agent.set_cancel()
+        else:
+            result.result_type=Agent_Request_Result_Type.FAILED
+            result.result_string = f'agent(agent_id={agent_id!r})未成功执行cancel操作.'
+
+        return result
+
 
     # 根据agent_id，获取agent对象
     @classmethod
     def _get_agent(cls, agent_id:str)->Toolcall_Agent:
         agent_data = cls.agents_dict.get(agent_id)
-        return agent_data.agent
+        if agent_data and agent_data.agent:
+            return agent_data.agent
+        else:
+            return None
 
     # 根据agent_id，获取thread
     @classmethod
     def _get_thread(cls, agent_id:str)->Thread:
         agent_data = cls.agents_dict.get(agent_id)
-        return agent_data.agent_thread
+        if agent_data and agent_data.agent_thread:
+            return agent_data.agent_thread
+        else:
+            return None
 
     # 获取MCP url对应的tools列表
     @classmethod
@@ -351,6 +407,10 @@ def main_one_agent():
     dprint("-------------/注册后tool情况------------------")
 
     res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
+    dprint("--------------run_agent------------------")
+    dprint(f'result=({res})')
+    dprint("-------------/run_agent------------------")
+
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
     while True:
