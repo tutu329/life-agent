@@ -164,12 +164,6 @@ class Toolcall_Agent:
         self.agent_status.final_answer = ''
         agent_query_output(query)
 
-    # run被canceled的处理
-    def _run_canceled(self):
-        canceled_output = f'agent任务已被取消(agent name: {self.agent_config.agent_name!r}).'
-        agent_finished_output(canceled_output)
-        self.agent_status.querying = False
-
     # run之后的处理
     def _after_run(self):
         self.agent_status.query_task_finished = True
@@ -306,14 +300,25 @@ class Toolcall_Agent:
 
         if self.agent_status.canceled:
             # canceled退出
-            self._run_canceled()
+            canceled_output = f'agent任务已被取消(agent name: {self.agent_config.agent_name!r}).'
+            agent_finished_output(canceled_output)
+            self.agent_status.querying = False
         else:
             # 正常退出
             self.agent_status.final_answer = responses_result.output.strip()
 
             self.response_llm_client.history_input_add_output_item(self.agent_status.final_answer)
             self._after_run()
-            return self.agent_status
+
+        return responses_result
+        # if self.agent_config.as_tool_name:
+        #     # 如果是agent as tool，则返回是tool_call结果
+        #     responses_result.tool_call_result = self.agent_status.final_answer
+        #     return responses_result
+        # else:
+        #     # 如果是普通agent而不是tool
+        #     return responses_result
+        #     # return self.agent_status
 
 def main_response_agent():
     # add_tool = Tool_Request(
