@@ -53,9 +53,15 @@ class Redis_Resource_Manager:
     def get_resource(cls, resource_id)->Resource_Data:
         # 读取data
         # ------------------redis data load-------------------
-        data_str = cls.redis_client.get_string(key=resource_id)
-        json_data = json.loads(data_str)
+        resource_data_json = cls.redis_client.get_string(key=resource_id)
+        json_data = json.loads(resource_data_json)
         resource_data = Resource_Data(**json_data)
+
+        dblue('------------------Redis_Resource_Manager.get_resource()-------------------')
+        dblue(f'resource_id={resource_id!r}')
+        print_str = resource_data_json.replace("\n", " ").strip()
+        dblue(f'resource_data={print_str!r}')
+        dblue('-----------------/Redis_Resource_Manager.get_resource()-------------------')
         # -----------------/redis data load-------------------
 
         return resource_data
@@ -65,6 +71,12 @@ class Redis_Resource_Manager:
         # 读取data
         # ------------------redis data load-------------------
         resource_data_json = cls.redis_client.get_string(key=resource_id)
+
+        dblue('------------------Redis_Resource_Manager.get_resource()-------------------')
+        dblue(f'resource_id={resource_id!r}')
+        print_str = resource_data_json.replace("\n", " ").strip()
+        dblue(f'resource_data={print_str!r}')
+        dblue('-----------------/Redis_Resource_Manager.get_resource()-------------------')
         # -----------------/redis data load-------------------
 
         return resource_data_json
@@ -79,6 +91,12 @@ class Redis_Resource_Manager:
         # ------------------redis data save-------------------
         data_str = json.dumps(resource_data.model_dump(), ensure_ascii=False)
         cls.redis_client.set_string(key=resource_id, value_string=data_str)
+
+        dred('------------------Redis_Resource_Manager.set_resource()-------------------')
+        dred(f'resource_id={resource_id!r}')
+        print_str = data_str.replace("\n", " ").strip()
+        dred(f'resource_data={print_str!r}')
+        dred('-----------------/Redis_Resource_Manager.set_resource()-------------------')
         # -----------------/redis data save-------------------
 
         return resource_id
