@@ -422,6 +422,9 @@ class Response_and_Chatml_LLM_Client:
 
         return responses_result
 
+    # 清除历史
+    def clear_history(self):
+        self.history_input_list = None
 
     def responses_create(self, query, request:Response_Request, new_run)->Response_Result:
         # dred(request.tools)

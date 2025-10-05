@@ -252,6 +252,23 @@ class Agent_Manager:
 
         return result
 
+    # 6、清除agent的历史
+    @classmethod
+    def clear_agent_history(cls, agent_id)->Agent_Request_Result:
+        result = Agent_Request_Result(
+            agent_id=agent_id,
+            request_type=Agent_Request_Type.CLEAR_HISTORY,
+            result_type=Agent_Request_Result_Type.SUCCESS,
+        )
+
+        agent_data = cls.agents_dict[agent_id]
+        if agent_data and agent_data.agent:
+            agent_data.agent.clear_history()
+        else:
+            result.result_type = Agent_Request_Result_Type.FAILED
+            result.result_string = f'agent(agent_id={agent_id!r})未成功执行clear history操作.'
+
+        return result
 
     # 根据agent_id，获取agent对象
     @classmethod
@@ -531,9 +548,8 @@ def main_multi_levels_agents():
     dprint("-------------/注册后tool情况------------------")
 
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='现代物理学的创始人是谁')
-    res = Agent_Manager.run_agent(agent_id=agent_id, query='https://www.ccps.gov.cn/xtt/202410/t20241004_164720.shtml这个链接的网页内容讲了什么？')
-    # res = Agent_Manager.run_agent(agent_id=agent_id, query='https://mp.weixin.qq.com/s/DFIwiKvnhERzI-QdQcZvtQ这个链接的网页内容讲了什么？')
-    # res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
+    # res = Agent_Manager.run_agent(agent_id=agent_id, query='https://www.ccps.gov.cn/xtt/202410/t20241004_164720.shtml这个链接的网页内容讲了什么？')
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
     # time.sleep(3)
@@ -544,9 +560,10 @@ def main_multi_levels_agents():
         Agent_Manager.cancel_agent_run(agent_id=agent_id)
 
     while True:
-        res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才分析的网页内容是什么？')
-        # res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才搜索file_to_find.txt这个文件的位置的结果是啥来着')
+        # res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才分析的网页内容是什么？')
+        res = Agent_Manager.run_agent(agent_id=agent_id, query='你刚才搜索file_to_find.txt这个文件的位置的结果是啥来着')
         if res.result_type==Agent_Request_Result_Type.SUCCESS:
+            # Agent_Manager.clear_agent_history(agent_id=agent_id)
             if debug_cancel:
                 Agent_Manager.cancel_agent_run(agent_id=res.agent_id)
             break

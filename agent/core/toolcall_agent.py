@@ -133,6 +133,10 @@ class Toolcall_Agent:
         self._set_funcs(tool_requests, tool_funcs)
         # self._calculate_agent_level()
 
+        # 若为lower agent，则设置self.history为False
+        if self.agent_config.as_tool_name:
+            self.agent_config.has_history = False
+
     def _call_tool(self,
                    response_result:Response_Result, # response_api的调用结果
                    tool_call_paras:Tool_Call_Paras, # agent调度的上下文
@@ -222,8 +226,16 @@ class Toolcall_Agent:
         # print(f'final: {self.agent_status.final_answer}')
         agent_finished_output(self.agent_status.final_answer, agent_level=self.agent_level)
 
+    # 清除历史
+    def clear_history(self):
+        self.response_llm_client.clear_history()
+
     def run(self, instruction, tool_call_paras:Tool_Call_Paras=None):
         self._before_run(instruction)
+
+        if not self.agent_config.has_history:
+            # 如果不含hisotry，则清除history
+            self.clear_history()
 
         use_chatml = self.response_llm_client.llm_config.chatml
 
@@ -439,6 +451,7 @@ def main_response_agent():
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4,
         # llm_config=llm_protocol.g_local_gpt_oss_20b_mxfp4_lmstudio,
         llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        # has_history=False,
         has_history=True,
     )
 
@@ -449,15 +462,15 @@ def main_response_agent():
     agent = Toolcall_Agent(agent_config=agent_config)
     agent.init(tool_requests, funcs)
     print(f'agent.tool_funcs_dict: {agent.tool_funcs_dict}')
-    # agent.run(query=query, tools=tools)
+    # agent.run(instruction=query, tools=tools)
 
-    # agent.run(query='你好，我的名字是土土', tools=tools)
+    # agent.run(instruction='你好，我的名字是土土', tools=tools)
     agent.run(instruction=query)
-    # agent.run(query=query, tools=tools)
-    # agent.run(query='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到', tools=tools)
+    # agent.run(instruction=query, tools=tools)
+    agent.run(instruction='你还记得我的名字是什么吗？还有之前你已经找到了file_to_find.txt，告诉我具体是在哪里找到')
 
-    # agent.run(query='你好，我的名字是土土', tools=tools)
-    # agent.run(query='你还记得我的名字是什么吗？', tools=tools)
+    # agent.run(instruction='你好，我的名字是土土', tools=tools)
+    # agent.run(instruction='你还记得我的名字是什么吗？', tools=tools)
 
 def main_response_agent_mcp_nginx():
     from openai import OpenAI
@@ -574,7 +587,7 @@ def main_office_agent():
         agent.run(instruction=input('请输入你的指令：'), tools=tools)
 
 if __name__ == "__main__":
-    # main_response_agent()
-    main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
+    main_response_agent()
+    # main_response_agent_mcp_nginx()     # mcp经过nginx映射后测试可用，但目前groq api不支持调用mcp
     # main_response_agent_mcp_server()
     # main_office_agent()
