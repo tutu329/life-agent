@@ -43,7 +43,6 @@ class Web_Socket_Server:
         async def handler(websocket):
             dgreen(f'📱 新的WebSocket连接: {websocket.remote_address}')
             self.web_socket = websocket
-            self._test()
 
             try:
                 async for message in websocket:
@@ -72,6 +71,7 @@ class Web_Socket_Server:
                     dprint(f'❌ WebSocket服务器启动完全失败: {fallback_error}')
 
         loop.run_until_complete(start_server())
+        print('----------------------server quit.----------------------')
 
     def send_command(self, command):
         """向指定客户端发送命令（同步接口）"""
@@ -96,53 +96,63 @@ class Web_Socket_Server:
         except Exception as e:
             return False, f'发送失败: {e}'
 
-    def _test(self):
+    def _test_call_collabora_api(self):
+        print('------------------_test_call_collabora_api--------------------')
         while True:
             if self.web_socket:
                 break
+
             time.sleep(0.1)
 
-        thread = Thread(target=self._test_call_collabora_api)
-        thread.start()
-        thread.join()
+        if self.web_socket:
+            # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
+            timeout = 30  # 等待30秒
+            start_time = time.time()
 
-    def _test_call_collabora_api(self):
-        print('------------------_test_call_collabora_api--------------------')
-        # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
-        timeout = 30  # 等待30秒
-        start_time = time.time()
+            # 桥接collabora CODE接口
+            command = {
+                'type': 'office_operation',
+                'operation': 'call_python_script',
+                # 'agent_id': agent_id,
+                # 'agent_id': top_agent_id,
+                'data': {},
+                'timestamp': int(time.time() * 1000)
+            }
 
-        # 桥接collabora CODE接口
-        command = {
-            'type': 'office_operation',
-            'operation': 'call_python_script',
-            # 'agent_id': agent_id,
-            # 'agent_id': top_agent_id,
-            'data': {},
-            'timestamp': int(time.time() * 1000)
-        }
+            params = {
+                'text':'hi every body4!\n hi every body5!',
+                'font_name':'SimSun',
+                'font_color':'blue',
+                'font_size':12,
+            }
+            command['data'] = {
+                'cmd':'insert_text',
+                'params':params
+            }
 
-        params = {
-            'text':'hi every body4!\n hi every body5!',
-            'font_name':'SimSun',
-            'font_color':'blue',
-            'font_size':12,
-        }
-        command['data'] = {
-            'cmd':'insert_text',
-            'params':params
-        }
-
-        # 通过web-socket发送至前端
-        success, message = self.send_command(command)
-        print('-----------------/_test_call_collabora_api--------------------')
-        return success, message
+            # 通过web-socket发送至前端
+            success, message = self.send_command(command)
+            print(f'command={command!r}')
+            print(f'success={success!r}, message={message!r}')
+            print('-----------------/_test_call_collabora_api--------------------')
+            return success, message
 
 def main():
     ws_server = Web_Socket_Server(port=5113)
+
+    def _test():
+        print('-----------------_test--------------------')
+        ws_server._test_call_collabora_api()
+        print('----------------/_test--------------------')
+
+    thread = Thread(target=_test)
+    thread.start()
+
     ws_server.start_server()
 
-    ws_server._test_call_collabora_api()
+    thread.join()
+    # ws_server._test_call_collabora_api()
+    print('----------------------main() quit.----------------------')
 
 if __name__ == "__main__":
     main()
