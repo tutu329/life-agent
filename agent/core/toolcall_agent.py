@@ -339,6 +339,7 @@ class Toolcall_Agent:
                 callback_tool_paras_dict=tool_params_dict,
                 callback_agent_config=self.agent_config,
                 callback_agent_id=self.agent_id,
+                callback_tool_call_id=str(uuid4()),
                 # callback_last_tool_ctx=last_tool_ctx,
                 # callback_client_ctx=context,
                 callback_father_agent_exp=self.current_exp_str

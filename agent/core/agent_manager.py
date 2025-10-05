@@ -389,6 +389,7 @@ class Agent_Manager:
     def load_resource(cls, resource_id:str)->Resource_Data:
         resource_data = Redis_Resource_Manager.get_resource(resource_id)
         return resource_data
+
 def main_one_agent():
     # from agent.tools.folder_tool import Folder_Tool
     # fold_tool = Folder_Tool.get_tool_param_dict()

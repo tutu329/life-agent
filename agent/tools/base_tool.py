@@ -8,6 +8,10 @@ from agent.tools.legacy_protocol import Tool_Context
 from agent.tools.legacy_protocol import Tool_Call_Paras
 from utils.decorator import timer
 
+from agent.core.resource.protocol import Resource_Data
+from agent.core.resource.redis_resource_manager import Redis_Resource_Manager
+
+
 DEBUG = False
 # DEBUG = True
 
@@ -188,6 +192,18 @@ class Base_Tool(ABC):
     def is_canceling(self):
         pass
     # -----------/用于agent_as_tool------------
+
+    # 供本地tool使用: 存储resource_data(会生成全局唯一的resource_id)
+    @classmethod
+    def save_resource(cls, resource_data:Resource_Data)->str:
+        resource_id = Redis_Resource_Manager.set_resource(resource_data)
+        return resource_id
+
+    # 供本地tool使用: 读取resource_data, 用于client的远程tool调用
+    @classmethod
+    def load_resource(cls, resource_id:str)->Resource_Data:
+        resource_data = Redis_Resource_Manager.get_resource(resource_id)
+        return resource_data
 
     @abstractmethod
     def call(self, tool_call_paras:Tool_Call_Paras):

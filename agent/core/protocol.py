@@ -5,8 +5,8 @@ from threading import Thread
 from enum import Enum
 
 class Agent_Tool_Result(BaseModel):
-    result              :str    # tool调用生成的结果(摘要)
-    result_resource_id  :str    # tool调用生成的结果的resource_id, 与tool_call_id对应
+    result              :str        # tool调用生成的结果(摘要)
+    result_resource_id  :str = None # tool调用生成的结果的resource_id, 与tool_call_id对应
 
 class Agent_Request_Type(Enum):
     CREATE = 'create'
