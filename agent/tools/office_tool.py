@@ -1186,7 +1186,7 @@ class Write_Chapter_Tool(Base_Tool):
         operation = paras.get('operation')
 
         if not operation:
-            return Agent_Tool_Result(result=safe_encode('❌ 【Write_Chapter_Tool】必须提供 "operation" 参数'))
+            return Agent_Tool_Result(result_summary=safe_encode('❌ 【Write_Chapter_Tool】必须提供 "operation" 参数'))
 
         # docx_write_chapter_title参数
         title = paras.get('title')
@@ -1214,7 +1214,7 @@ class Write_Chapter_Tool(Base_Tool):
             if operation == 'docx_write_chapter_title':
                 # 校核参数
                 if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
-                    return Agent_Tool_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
+                    return Agent_Tool_Result(result_summary=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
 
                 params = {
                     'title': title,
@@ -1230,7 +1230,7 @@ class Write_Chapter_Tool(Base_Tool):
             elif operation == 'docx_write_chapter_text':
                 # 校核参数
                 if 'chapter_demand' not in paras:
-                    return Agent_Tool_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数chapter_demand'))
+                    return Agent_Tool_Result(result_summary=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数chapter_demand'))
 
                 # 处理prompt
                 prompt = Prompt_Write_Chapter_Text()
@@ -1347,16 +1347,16 @@ class Write_Chapter_Tool(Base_Tool):
             #     pass
             else:
                 result = f'❌ 【Write_Chapter_Tool】operation "{operation}" 暂未实现或未知'
-                return Agent_Tool_Result(result=safe_encode(result))
+                return Agent_Tool_Result(result_summary=safe_encode(result))
 
         except (ValueError, SyntaxError) as e:
-            return Agent_Tool_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 解析失败(报错: "{e}").'))
+            return Agent_Tool_Result(result_summary=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 解析失败(报错: "{e}").'))
         except Exception as e:
             err(e)
             result = f"❌ 【Write_Chapter_Tool】'{operation}':操作失败: {e!r}"
 
         # 确保返回安全编码的结果
-        return Agent_Tool_Result(result=safe_encode(result))
+        return Agent_Tool_Result(result_summary=safe_encode(result))
 
     def call(self, tool_call_paras:Tool_Call_Paras, **kwargs):
         print(f'🔧 【Write_Chapter_Tool】开始调用，调用参数: {tool_call_paras.callback_tool_paras_dict}')
@@ -1368,7 +1368,7 @@ class Write_Chapter_Tool(Base_Tool):
         operation = paras.get('operation')
 
         if not operation:
-            return Agent_Tool_Result(result=safe_encode('❌ 【Write_Chapter_Tool】必须提供 "operation" 参数'))
+            return Agent_Tool_Result(result_summary=safe_encode('❌ 【Write_Chapter_Tool】必须提供 "operation" 参数'))
 
         # docx_write_chapter_title参数
         title = paras.get('title')
@@ -1396,7 +1396,7 @@ class Write_Chapter_Tool(Base_Tool):
             if operation == 'docx_write_chapter_title':
                 # 校核参数
                 if 'title' not in paras or 'heading' not in paras or 'font-size' not in paras:
-                    return Agent_Tool_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
+                    return Agent_Tool_Result(result_summary=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数title、heading或font-size'))
 
                 params = {
                     'title': title,
@@ -1412,7 +1412,7 @@ class Write_Chapter_Tool(Base_Tool):
             elif operation == 'docx_write_chapter_text':
                 # 校核参数
                 if 'chapter_demand' not in paras:
-                    return Agent_Tool_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数chapter_demand'))
+                    return Agent_Tool_Result(result_summary=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 操作缺少参数chapter_demand'))
 
                 # 处理prompt
                 prompt = Prompt_Write_Chapter_Text()
@@ -1528,16 +1528,16 @@ class Write_Chapter_Tool(Base_Tool):
             #     pass
             else:
                 result = f'❌ 【Write_Chapter_Tool】operation "{operation}" 暂未实现或未知'
-                return Agent_Tool_Result(result=safe_encode(result))
+                return Agent_Tool_Result(result_summary=safe_encode(result))
 
         except (ValueError, SyntaxError) as e:
-            return Agent_Tool_Result(result=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 解析失败(报错: "{e}").'))
+            return Agent_Tool_Result(result_summary=safe_encode(f'❌ 【Write_Chapter_Tool】"{operation}": 解析失败(报错: "{e}").'))
         except Exception as e:
             err(e)
             result = f"❌ 【Write_Chapter_Tool】'{operation}':操作失败: {e!r}"
 
         # 确保返回安全编码的结果
-        return Agent_Tool_Result(result=safe_encode(result))
+        return Agent_Tool_Result(result_summary=safe_encode(result))
 
 # class Office_Tool(Base_Tool):
 #     name = 'Office_Tool'

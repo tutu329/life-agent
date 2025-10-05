@@ -169,7 +169,7 @@ class Toolcall_Agent:
                         response_result.tool_call_result = json.dumps(func_rtn.model_dump(), ensure_ascii=False)
                     elif isinstance(func_rtn, Response_Result):
                         # 如果是agent as tool
-                        agent_tool_result = Agent_Tool_Result(result=func_rtn.agent_as_tool_call_result)     # 由于是agent as tool，在agent.run()中，func_rtn.agent_as_tool_call_result已设置为agent.agent_status.final_answer
+                        agent_tool_result = Agent_Tool_Result(result_summary=func_rtn.agent_as_tool_call_result)     # 由于是agent as tool，在agent.run()中，func_rtn.agent_as_tool_call_result已设置为agent.agent_status.final_answer
                         response_result.tool_call_result = json.dumps(agent_tool_result.model_dump(), ensure_ascii=False)
                     else:
                         dyellow(f'【Toolcall_Agent._call_tool()】warning: 工具调用结果既不是Agent_Tool_Result也不是Response_Result.')

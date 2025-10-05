@@ -8,6 +8,7 @@ from utils.encode import safe_encode
 from agent.tools.base_tool import Base_Tool
 from agent.tools.legacy_protocol import Action_Result, Tool_Call_Paras
 from agent.core.protocol import Agent_Tool_Result
+from agent.core.resource.protocol import Resource_Data, Resource_Data_Type
 # from agent.core.legacy_protocol import Action_Result
 from utils.folder import get_folder_all_items_string
 
@@ -57,7 +58,19 @@ class Folder_Tool(Base_Tool):
             items_str = f'报错: {e!r}'
 
         # 调用工具后，结果作为action_result返回
-        action_result = Agent_Tool_Result(result=items_str)
+
+        resource_data = Resource_Data(
+            resource_id = tool_call_paras.callback_tool_call_id,
+            data_type = Resource_Data_Type.STRING,
+            data = {'result': items_str}
+        )
+
+        action_result = Agent_Tool_Result(
+            result_summary=items_str,
+            result_resource_id=tool_call_paras.callback_tool_call_id,
+            resource_data=resource_data
+        )
+
         # action_result = items_str
         return action_result
 
