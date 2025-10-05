@@ -60,16 +60,20 @@ class Folder_Tool(Base_Tool):
         # 调用工具后，结果作为action_result返回
 
         resource_data = Resource_Data(
-            resource_id = tool_call_paras.callback_tool_call_id,
-            data_type = Resource_Data_Type.STRING,
-            data = {'result': items_str}
+            # resource_id=tool_call_paras.callback_tool_call_id,
+            data_type=Resource_Data_Type.STRING,
+            data={'result': items_str}
         )
+
+        resource_id = cls.save_resource(resource_data)
 
         action_result = Agent_Tool_Result(
             result_summary=items_str,
-            result_resource_id=tool_call_paras.callback_tool_call_id,
-            resource_data=resource_data
+            result_resource_id=resource_id,
+            # resource_data=resource_data
         )
+
+        # print(f'resource_id: {resource_id}')
 
         # action_result = items_str
         return action_result

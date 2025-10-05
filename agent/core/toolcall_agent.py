@@ -156,7 +156,7 @@ class Toolcall_Agent:
 
                     # -----------------------------工具调用-----------------------------
                     # tool_call_paras.callback_tool_paras_dict = args
-                    tool_call_paras.callback_tool_call_id = str(uuid4())    # 生成tool_call_id, 主要用于resource_id
+                    # tool_call_paras.callback_tool_call_id = str(uuid4())    # 生成tool_call_id, 主要用于resource_id
                     func_rtn = func(tool_call_paras=tool_call_paras, **args)
                     # func_rtn = func['func'](tool_call_paras=tool_call_paras, **args)
                     # ----------------------------/工具调用-----------------------------
@@ -339,7 +339,7 @@ class Toolcall_Agent:
                 callback_tool_paras_dict=tool_params_dict,
                 callback_agent_config=self.agent_config,
                 callback_agent_id=self.agent_id,
-                callback_tool_call_id=str(uuid4()),
+                # callback_tool_call_id=str(uuid4()),
                 # callback_last_tool_ctx=last_tool_ctx,
                 # callback_client_ctx=context,
                 callback_father_agent_exp=self.current_exp_str

@@ -61,7 +61,7 @@ class Tool_Call_Paras(BaseModel):
     callback_client_ctx         :Optional[Query_Agent_Context] = None  # client发过来的context
     callback_father_agent_exp   :str                            # 如："搜索远程文件夹的经验是，如果失败可能是..."
 
-    callback_tool_call_id       :str                            # 每调用一次tool的唯一ID, 主要用于resource_id
+    # callback_tool_call_id       :str                            # 每调用一次tool的唯一ID, 主要用于resource_id
 
     # 开启“任意类型”支持
     # model_config = ConfigDict(arbitrary_types_allowed=True)

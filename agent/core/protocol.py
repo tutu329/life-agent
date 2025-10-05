@@ -9,7 +9,7 @@ from agent.core.resource.protocol import Resource_Data
 class Agent_Tool_Result(BaseModel):
     result_summary      :str                                # tool调用生成的结果(摘要)
     result_resource_id  :Optional[str] = None               # tool调用生成的结果的resource_id, 与tool_call_id对应
-    result_data         :Optional[Resource_Data] = None     # tool调用生成的结果数据
+    # result_data         :Optional[Resource_Data] = None     # tool调用生成的结果数据
 
 class Agent_Request_Type(Enum):
     CREATE = 'create'

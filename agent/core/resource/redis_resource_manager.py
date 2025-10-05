@@ -73,7 +73,7 @@ class Redis_Resource_Manager:
     def set_resource(cls, resource_data:Resource_Data):
         # 生成resource_id
         resource_id = str(uuid4())
-        resource_data.resource_id = resource_id
+        # resource_data.resource_id = resource_id
 
         # 存储data
         # ------------------redis data save-------------------

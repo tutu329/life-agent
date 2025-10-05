@@ -10,6 +10,6 @@ class Resource_Data_Type:
     FILE            = 'file'
 
 class Resource_Data(BaseModel):
-    resource_id     :str = ''               # resource_id由server生成
+    # resource_id     :str = ''               # resource_id由server生成
     data_type       :str                    # 枚举直接用普通class映射到str，不用Enum类，否则无法json序列化
     data            :Any
