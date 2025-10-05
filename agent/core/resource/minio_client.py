@@ -4,8 +4,10 @@
 # # 可选：切换到某个发布标签
 # # git checkout RELEASE.2025-09-xxTxx-xx-xxZ
 #
-# # 2) 用官方 release Dockerfile 构建镜像
-# docker build -t minio:release -f Dockerfile.release .
+# # 2) 用官方 release Dockerfile 构建镜像(------------这一步仍然报错-------------)
+# sudo DOCKER_BUILDKIT=1 docker build --network=host -t minio:release -f Dockerfile.release .
+# 如果网络问题失败，则直接pull：
+#   sudo docker pull docker.io/library/golang:1.24-alpine
 #
 # # 3) 准备数据目录
 # sudo mkdir -p /srv/minio
@@ -21,3 +23,4 @@
 #   -e MINIO_SERVER_URL="https://s3.powerai.cc" \
 #   -e MINIO_BROWSER_REDIRECT_URL="https://minio.powerai.cc/" \
 #   minio:release server /data --console-address ":9001"
+
