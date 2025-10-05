@@ -28,6 +28,7 @@
 
 from uuid import uuid4
 from pprint import pprint
+import json
 
 import config
 from config import dred,dgreen,dcyan,dyellow,dblue,dblack,dwhite
@@ -47,12 +48,15 @@ def dpprint(*args, **kwargs):
         pprint(*args, **kwargs)
 
 class Redis_Resource_Manager:
+    redis_client = Redis_Client(host='powerai.cc', ssl=False)
     @classmethod
     def get_resource(cls, resource_id):
         # 读取data
         # ------------------mem data load-------------------
         # resource_data = cls.mem_data_dict.get(resource_id)
-
+        data_str = cls.redis_client.get_string(key=resource_id)
+        json_data = json.loads(data_str)
+        resource_data = Resource_Data(**json_data)
         # -----------------/mem data load-------------------
 
         return resource_data
@@ -66,26 +70,28 @@ class Redis_Resource_Manager:
         # 存储data
         # ------------------mem data save-------------------
         # cls.mem_data_dict[resource_id] = resource_data
-
+        data_str = json.dumps(resource_data.model_dump(), ensure_ascii=False)
+        cls.redis_client.set_string(key=resource_id, value_string=data_str)
         # -----------------/mem data save-------------------
 
         return resource_id
 
-def main_mem():
-    print('------------Mem_Resource_Manager------------')
+def main_redis():
+    print('------------Redis_Resource_Manager------------')
     data = Resource_Data(
         data_type=Resource_Data_Type.STRING,
-        data='hello'
+        data={'content':'hello'}
     )
     rid = Redis_Resource_Manager.set_resource(data)
     print(f'rid={rid!r}')
     data = Redis_Resource_Manager.get_resource(rid)
-    print(f'data={data!r}')
+    print(f'resource_data={data!r}')
 
-    print('-----------/Mem_Resource_Manager------------')
+    print('-----------/Redis_Resource_Manager------------')
 
 if __name__ == "__main__":
-    # main_mem()
-    r = Redis_Client(ssl=False)
-    r.set_string('client_string1', '你是谁')
-    print(r.get_string('client_string1'))
+    main_redis()
+
+    # r = Redis_Client(ssl=False)
+    # r.set_string('client_string1', '你是谁')
+    # print(r.get_string('client_string1'))

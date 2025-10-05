@@ -56,7 +56,7 @@ def main_mem():
     rid = Mem_Resource_Manager.set_resource(data)
     print(f'rid={rid!r}')
     data = Mem_Resource_Manager.get_resource(rid)
-    print(f'data={data!r}')
+    print(f'resource_data={data!r}')
 
     print('-----------/Mem_Resource_Manager------------')
 
