@@ -26,7 +26,7 @@ class Resource_Data_Type(Enum):
     AUDIO           = 'audio'
     FILE            = 'file'
 
-class c(BaseModel):
+class Resource_Data(BaseModel):
     resource_id     :str
     data_type       :Resource_Data_Type
     data            :Any
@@ -37,6 +37,11 @@ class Resource_Manager:
         pass
 
     @classmethod
-    def set_resource(cls, resource_data:Resource_Data_Type):
+    def set_resource(cls, resource_data:Resource_Data):
         pass
 
+def main():
+    print('------------Resource_Manager------------')
+
+if __name__ == "__main__":
+    main()
