@@ -235,8 +235,11 @@ class Port:
     chroma_api:int      = 8004 # chroma单独的api
 
 
+    minio_api:int       = 8007 # minio的S3 api端口
+    minio_console:int   = 8008 # minio的console端口
+
     redis_monitor:int   = 8009 # redis monitor
-    redis_client:int    = 8010 # redis消息服务
+    redis_client:int    = 8010 # redis的server端口
 
     mcp:int             = 8011 # --------------------------------所有的MCP端口通过nginx映射到8005--------------------------------
 
