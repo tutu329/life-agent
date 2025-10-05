@@ -229,6 +229,7 @@ class Toolcall_Agent:
     # 清除历史
     def clear_history(self):
         self.response_llm_client.clear_history()
+        dred('--------------------Toolcall_Agent.clear_history()已调用--------------------')
 
     def run(self, instruction, tool_call_paras:Tool_Call_Paras=None):
         self._before_run(instruction)
