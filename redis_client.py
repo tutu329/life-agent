@@ -313,6 +313,7 @@ if __name__ == "__main__":
 
     # tls_test()
 
-    r = Redis_Client()
+    r = Redis_Client(ssl=False)
+    # r = Redis_Client(ssl=True)
     r.set_string('client_string1', '你是谁')
     print(r.get_string('client_string1'))
