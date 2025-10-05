@@ -12,6 +12,8 @@ from agent.core.toolcall_agent import Toolcall_Agent
 from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_request_from_tool_class, get_tool_request_and_func_from_tool_class
 from agent.core.mcp.protocol import MCP_Server_Request
 from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Request_Type, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Request_Type
+from agent.core.resource.protocol import Resource_Data
+from agent.core.resource.redis_resource_manager import Redis_Resource_Manager
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from console import err
@@ -376,6 +378,17 @@ class Agent_Manager:
 
         return tool_request_list, tool_func_list
 
+    # 存储resource_data(会生成全局唯一的resource_id)
+    @classmethod
+    def save_resource(cls, resource_data:Resource_Data)->str:
+        resource_id = Redis_Resource_Manager.set_resource(resource_data)
+        return resource_id
+
+    # 读取resource_data, 用于client的远程tool调用
+    @classmethod
+    def load_resource(cls, resource_id:str)->Resource_Data:
+        resource_data = Redis_Resource_Manager.get_resource(resource_id)
+        return resource_data
 def main_one_agent():
     # from agent.tools.folder_tool import Folder_Tool
     # fold_tool = Folder_Tool.get_tool_param_dict()

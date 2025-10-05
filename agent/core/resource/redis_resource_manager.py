@@ -50,16 +50,24 @@ def dpprint(*args, **kwargs):
 class Redis_Resource_Manager:
     redis_client = Redis_Client(host='powerai.cc', ssl=False)
     @classmethod
-    def get_resource(cls, resource_id):
+    def get_resource(cls, resource_id)->Resource_Data:
         # 读取data
-        # ------------------mem data load-------------------
-        # resource_data = cls.mem_data_dict.get(resource_id)
+        # ------------------redis data load-------------------
         data_str = cls.redis_client.get_string(key=resource_id)
         json_data = json.loads(data_str)
         resource_data = Resource_Data(**json_data)
-        # -----------------/mem data load-------------------
+        # -----------------/redis data load-------------------
 
         return resource_data
+
+    @classmethod
+    def get_resource_json(cls, resource_id):
+        # 读取data
+        # ------------------redis data load-------------------
+        resource_data_json = cls.redis_client.get_string(key=resource_id)
+        # -----------------/redis data load-------------------
+
+        return resource_data_json
 
     @classmethod
     def set_resource(cls, resource_data:Resource_Data):
@@ -68,11 +76,10 @@ class Redis_Resource_Manager:
         resource_data.resource_id = resource_id
 
         # 存储data
-        # ------------------mem data save-------------------
-        # cls.mem_data_dict[resource_id] = resource_data
+        # ------------------redis data save-------------------
         data_str = json.dumps(resource_data.model_dump(), ensure_ascii=False)
         cls.redis_client.set_string(key=resource_id, value_string=data_str)
-        # -----------------/mem data save-------------------
+        # -----------------/redis data save-------------------
 
         return resource_id
 
@@ -86,6 +93,9 @@ def main_redis():
     print(f'rid={rid!r}')
     data = Redis_Resource_Manager.get_resource(rid)
     print(f'resource_data={data!r}')
+
+    data_json = Redis_Resource_Manager.get_resource_json(rid)
+    print(f'resource_data_json={data_json!r}')
 
     print('-----------/Redis_Resource_Manager------------')
 
