@@ -118,17 +118,33 @@ class Web_Socket_Server:
                 'data': {},
                 'timestamp': int(time.time() * 1000)
             }
-
+            # command = {
+            #     'type': 'office_operation',
+            #     'operation': 'call_python_script',
+            #     # 'agent_id': agent_id,
+            #     # 'agent_id': top_agent_id,
+            #     'data': {},
+            #     'timestamp': int(time.time() * 1000)
+            # }
             params = {
-                'text':'hi every body4!\n hi every body5!',
-                'font_name':'SimSun',
-                'font_color':'blue',
-                'font_size':12,
+                'formula':'E = m c^2',
+                'as_inline':True,
+                'base_font_height':12,
             }
+            # params = {
+            #     'text':'hi every body4!\n hi every body5!',
+            #     'font_name':'SimSun',
+            #     'font_color':'blue',
+            #     'font_size':12,
+            # }
             command['data'] = {
-                'cmd':'insert_text',
+                'cmd':'insert_math',
                 'params':params
             }
+            # command['data'] = {
+            #     'cmd':'insert_text',
+            #     'params':params
+            # }
 
             # 通过web-socket发送至前端
             success, message = self.send_command(command)
@@ -156,3 +172,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

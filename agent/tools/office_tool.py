@@ -1539,6 +1539,112 @@ class Write_Chapter_Tool(Base_Tool):
         # 确保返回安全编码的结果
         return Agent_Tool_Result(result_summary=safe_encode(result))
 
+class Insert_Math_Formula_Tool(Base_Tool):
+    tool_name= 'Insert_Math_Formula_Tool'
+    tool_description='在文档中插入数学公式的工具。'
+    tool_parameters={
+        'type':'object',
+        'properties':{
+            'formula': {'type': 'string', 'description': '公式字符串，如“E = m c^2”'},
+            'as_inline': {'type': 'bool', 'description': '是否inline'},
+            'base_font_height': {'type': 'int', 'description': '公式基本字体高度'},
+        },
+        'required': ['formula'],
+        'additionalProperties': False,
+    }
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def class_call(cls, tool_call_paras:Tool_Call_Paras, **kwargs):
+        from web_socket_server import  Web_Socket_Server
+        from threading import Thread
+        from uuid import uuid4
+
+        paras = tool_call_paras.callback_tool_paras_dict
+        print('------------------paras--------------------')
+        print(paras)
+        print('-----------------/paras--------------------')
+        formula = paras.get('formula')
+        as_inline = paras.get('as_inline')
+        base_font_height = paras.get('base_font_height')
+
+        ws_server = Web_Socket_Server(port=5113)
+        def _test():
+            print('------------------_test_call_collabora_api--------------------')
+            while True:
+                if ws_server.web_socket:
+                    break
+
+                time.sleep(0.1)
+
+            if ws_server.web_socket:
+                command = {
+                    'type': 'office_operation',
+                    'operation': 'call_python_script',
+                    'data': {},
+                    'timestamp': int(time.time() * 1000)
+                }
+                params = {
+                    'formula': 'E = m c^2',
+                    'as_inline': True,
+                    'base_font_height': 12,
+                }
+                command['data'] = {
+                    'cmd': 'insert_math',
+                    'params': params
+                }
+                # 通过web-socket发送至前端
+                success, message = ws_server.send_command(command)
+                print(f'command={command!r}')
+                print(f'success={success!r}, message={message!r}')
+                print('-----------------/_test_call_collabora_api--------------------')
+                return success, message
+
+        thread = Thread(target=_test)
+        thread.start()
+
+        ws_server.start_server()
+
+        thread.join()
+
+        action_result = Agent_Tool_Result(
+            result_summary=f'formula: {formula!r}已经成功插入文档。',
+            result_resource_id=str(uuid4()),
+            # resource_data=resource_data
+        )
+
+        return action_result
+
+    def call(self, tool_call_paras:Tool_Call_Paras, **kwargs):
+        return Insert_Math_Formula_Tool.class_call(tool_call_paras=tool_call_paras, **kwargs)
+
+
+#     # def call(self, tool_call_paras:Tool_Call_Paras, **kwargs):
+#     # # def call(self,
+#     # #          callback_tool_paras_dict,
+#     # #          callback_agent_config,
+#     # #          callback_agent_id,
+#     # #          callback_last_tool_ctx,
+#     # #          callback_father_agent_exp,
+#     # #          ):
+#     #     dgreen(f'tool_paras_dict: "{tool_call_paras.callback_tool_paras_dict}"')
+#     #     dir = tool_call_paras.callback_tool_paras_dict['path']
+#     #
+#     #     try:
+#     #         # 调用工具
+#     #         # files_str = get_folder_files_info_string(directory=dir, mode='name')
+#     #         items_str = safe_encode(get_folder_all_items_string(directory=dir))
+#     #         # files_str = get_folder_files_info_string(directory=dir, mode='basename')
+#     #     except Exception as e:
+#     #         items_str = f'报错: {e!r}'
+#     #
+#     #     # 调用工具后，结果作为action_result返回
+#     #     action_result = Agent_Tool_Result(result=items_str)
+#     #     # action_result = items_str
+#     #     return action_result
+
 # class Office_Tool(Base_Tool):
 #     name = 'Office_Tool'
 #     description = \
