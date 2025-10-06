@@ -127,7 +127,8 @@ class Web_Socket_Server:
             #     'timestamp': int(time.time() * 1000)
             # }
             params = {
-                'formula':'int_{a}^{b}f(x)dx = F(b)-F(a)',
+                'formula':'E = m cdot c^{2} int from a to b f(x) dx = F(b) - F(a)',
+                # 'formula':'int_{a}^{b}f(x)dx = F(b)-F(a)',
                 # 'formula':'E = m c^2',
                 'as_inline':True,
                 'base_font_height':12,

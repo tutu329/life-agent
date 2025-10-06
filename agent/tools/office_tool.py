@@ -1541,7 +1541,16 @@ class Write_Chapter_Tool(Base_Tool):
 
 class Insert_Math_Formula_Tool(Base_Tool):
     tool_name= 'Insert_Math_Formula_Tool'
-    tool_description='在文档中插入libre-office的StarMath格式的数学公式的工具。'
+    tool_description='''
+在文档中插入libre-office的StarMath格式的数学公式的工具。要注意StarMath格式和LaTeX格式不同，以下是LaTeX转为StarMath格式的简要说明：
+\int_{a}^{b} g(x)\,dx → int from a to b g(x) dx
+\frac{A}{B} → {A} over {B}
+\sqrt{X} → sqrt {X}
+\sum_{i=1}^{n} → sum from i = 1 to n
+\cdot → cdot
+\alpha,\beta,\gamma → alpha, beta, gamma（去掉反斜杠）
+^, _ 指数/下标语法相同：x^2, x^{ab}, x_{0}
+'''
     tool_parameters={
         'type':'object',
         'properties':{
@@ -1600,6 +1609,8 @@ class Insert_Math_Formula_Tool(Base_Tool):
                 print(f'command={command!r}')
                 print(f'success={success!r}, message={message!r}')
                 print('-----------------/_test_call_collabora_api--------------------')
+
+                ws_server.web_socket.close()   # 可能是 ws.close() / ws.shutdown() / await ws.close()
                 return success, message
 
         thread = Thread(target=_test)
