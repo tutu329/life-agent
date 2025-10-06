@@ -609,6 +609,16 @@ class Response_and_Chatml_LLM_Client:
         dred(response)
         for item in response:
             print(item)
+            if hasattr(item, 'choices'):
+                delta = item.choices[0].delta
+                if delta.reasoning_content:
+                    self.on_reasoning(chunk=delta.reasoning_content)
+                    self.current_chunk = delta.reasoning_content
+                    self.reasoning_text += self.current_chunk
+                if delta.content:
+                    self.on_content(chunk=delta.content)
+                    self.current_chunk = delta.content
+                    self.output_text += self.current_chunk
 
     def _responses_result(self, res:Response):
         # dprint(res)
@@ -769,6 +779,10 @@ def main_response_llm_client():
     response_request = Response_Request(
         model=client.llm_config.llm_model_id,
         tools=tools,
+        temperature=client.llm_config.temperature,
+        top_p=client.llm_config.top_p,
+        max_output_tokens=client.llm_config.max_new_tokens,
+        reasoning={"effort": client.llm_config.reasoning_effort},
         # stream=True,
     )
     responses_result = client.responses_create(query=query, request=response_request, new_run=False)
@@ -877,6 +891,10 @@ def main_response_llm_client_chat():
     query = '写一首20字的诗'
     response_request = Response_Request(
         model=client.llm_config.llm_model_id,
+        temperature=client.llm_config.temperature,
+        top_p=client.llm_config.top_p,
+        max_output_tokens=client.llm_config.max_new_tokens,
+        reasoning={"effort": client.llm_config.reasoning_effort},
         stream=True,
     )
     responses_result = client.responses_create(query=query, request=response_request, new_run=False)
@@ -915,8 +933,8 @@ def main_chatml_llm_client_chat():
         temperature=client.llm_config.temperature,
         top_p=client.llm_config.top_p,
         max_output_tokens=client.llm_config.max_new_tokens,
-        reasoning={"effort": client.llm_config.reasoning_effort}
-        # stream=True,
+        reasoning={"effort": client.llm_config.reasoning_effort},
+        stream=True,
     )
     responses_result = client.chatml_create(query=query, request=response_request, new_run=False)
 
@@ -927,21 +945,6 @@ def main_chatml_llm_client_chat():
     dprint(f'responses_result.output: {responses_result.output!r}')
     dprint('-------------------------responses_result--------------------------------')
 
-    while not hasattr(responses_result, 'output') or responses_result.output=='' :
-        responses_result = client.responses_create(query=query, request=response_request, new_run=False)
-        dprint(f'responses_result: {responses_result!r}')
-
-        if not responses_result.output:
-            continue
-
-        if responses_result.output != '':
-            dprint('-----------------------------------最终结果---------------------------------------------')
-            dprint(responses_result.output)
-            dprint('-----------------------------------最终结果---------------------------------------------')
-            dgreen('-----------------------------------最终结果---------------------------------------------')
-            dgreen(responses_result.output)
-            dgreen('-----------------------------------最终结果---------------------------------------------')
-            break
 
 if __name__ == "__main__":
     # main_response_request_pprint()
