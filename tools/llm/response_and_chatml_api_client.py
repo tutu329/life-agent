@@ -222,7 +222,7 @@ class Response_and_Chatml_LLM_Client:
         #     }
         # }
 
-        if hasattr(request, 'tools'):
+        if hasattr(request, 'tools') and request.tools:
             # for tool_dict in request.tools:
                 # dyellow(tool_dict)
 
@@ -242,7 +242,7 @@ class Response_and_Chatml_LLM_Client:
             # for tool_dict in request.tools:
                 # dyellow(tool_dict)
 
-            return request
+        return request
 
     def _copy_request_and_modify_from_response_to_chatml(self, request:Response_Request):
         # 由于涉及Toolcall_Agent的对象实例的copy，deepcopy()会报错：cannot pickle '_thread.RLock' object
@@ -330,7 +330,9 @@ class Response_and_Chatml_LLM_Client:
         response_result = Response_Result()
 
         try:
+            dred(request)
             chatml_request = self._copy_request_and_modify_from_response_to_chatml(request)
+            dred(chatml_request)
 
             # print('----------chatml_request------------')
             # print(chatml_request)
@@ -349,90 +351,105 @@ class Response_and_Chatml_LLM_Client:
             # for item in self.history_input_list:
             #     dblue(item)
             # dblue('---------------------------/self.history_input_list-------------------------------')
+            dred(temp_chatml_request.model_dump())
+            dred(temp_chatml_request.model_dump(exclude_none=True))
             res = self.openai.chat.completions.create(messages=self.history_input_list, **temp_chatml_request.model_dump(exclude_none=True))
         except Exception as e:
             err(e)
             response_result.error = str(e)
 
-        dyellow('===================================chatml.choices[0].message====================================')
-        dyellow('response: ', res)
+        if not request.stream:
+            # 非stream输出
+            dyellow('===================================chatml.choices[0].message====================================')
+            dyellow('response: ', res)
 
-        if res is None:
-            self.history_input_list.append({'role': 'assistant', 'content': response_result.error})
-        else:
-            # 在history_input_list末尾添加上一次res的message
-            if not self.llm_config.msgs_must_have_content:
-                self.history_input_list.append(res.choices[0].message.model_dump(exclude_none=True))
+            if res is None:
+                self.history_input_list.append({'role': 'assistant', 'content': response_result.error})
             else:
-                # 有些模型要求message里必须有content，则msg如{'role': 'assistant', 'tool_calls': [...], 'reasoning_content': '...'}就不行
-                dict_have_content = res.choices[0].message.model_dump(exclude_none=True)
-                dict_have_content['content'] = dict_have_content.get('content', '')
-                self.history_input_list.append(dict_have_content)
+                # 在history_input_list末尾添加上一次res的message
+                if not self.llm_config.msgs_must_have_content:
+                    self.history_input_list.append(res.choices[0].message.model_dump(exclude_none=True))
+                else:
+                    # 有些模型要求message里必须有content，则msg如{'role': 'assistant', 'tool_calls': [...], 'reasoning_content': '...'}就不行
+                    dict_have_content = res.choices[0].message.model_dump(exclude_none=True)
+                    dict_have_content['content'] = dict_have_content.get('content', '')
+                    self.history_input_list.append(dict_have_content)
 
 
 
-        content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else None
-        if content:
-            content = content.strip()
-            dyellow('content: ', content.replace('\n', ' '))
+            content = res.choices[0].message.content if hasattr(res.choices[0].message, 'content') else None
+            if content:
+                content = content.strip()
+                dyellow('content: ', content.replace('\n', ' '))
 
-        if hasattr(res.choices[0].message, 'reasoning_content'):
-            reasoning_content = res.choices[0].message.reasoning_content
+            if hasattr(res.choices[0].message, 'reasoning_content'):
+                reasoning_content = res.choices[0].message.reasoning_content
+            else:
+                reasoning_content = ''
+            if reasoning_content:
+                dyellow('reasoning_content: ', reasoning_content.replace('\n', ' '))
+
+            if hasattr(res.choices[0].message, 'tool_calls') and res.choices[0].message.tool_calls:
+                tool_arguments = res.choices[0].message.tool_calls[0].function.arguments
+                tool_name = res.choices[0].message.tool_calls[0].function.name
+                call_id = res.choices[0].message.tool_calls[0].id
+            else:
+                tool_arguments = ''
+                tool_name = ''
+            dyellow('tool_arguments: ', tool_arguments)
+            dyellow('tool_name: ', tool_name)
+
+            # dyellow(res.choices[0].message.content)
+            dyellow('==================================/chatml.choices[0].message====================================')
+
+            # -----------------------------添加到历史-------------------------------
+            tool_call_error = ''
+            if reasoning_content:
+                # chatml下，reasoning添加到历史似乎导致上下文过长
+                pass
+                # self.history_input_list += [
+                #     {"role": "assistant", "reasoning_content": reasoning_content}
+                # ]
+            elif content:
+                pass
+                # self.history_input_list += [
+                #     {"role": "assistant", "content": content}
+                # ]
+            # else:
+            #     dred(f'【Response_LLM_Client.chatml_create】Warning: chatml.create()返回失败.')
+            # ----------------------------/添加到历史-------------------------------
+
+            responses_result = Response_Result(
+                reasoning = reasoning_content,
+                output = content,
+                function_tool_call = {'arguments': tool_arguments, 'call_id': call_id, 'name': tool_name},
+                error=tool_call_error
+            )
+
+            # dyellow('==================================1111111====================================')
+            # ----------------------注册tool func-------------------------
+            # self.funcs = []  # 要先清除之前的tools
+            # for tool in chatml_request.tools:
+            #     func_dict = {
+            #         'name' : tool.function.name,
+            #         'func' : tool.function.func,
+            #     }
+            #     self.funcs.append(func_dict)
+            # ---------------------/注册tool func-------------------------
+            # dyellow('==================================2222222====================================')
+
+            return responses_result
         else:
-            reasoning_content = ''
-        if reasoning_content:
-            dyellow('reasoning_content: ', reasoning_content.replace('\n', ' '))
+            # stream输出
+            self._parse_chatml_stream(res)
+            response_result.reasoning = self.reasoning_text
+            response_result.output = self.output_text
+            response_result.function_tool_call = self.function_tool_call
+            dred(response_result)
 
-        if hasattr(res.choices[0].message, 'tool_calls') and res.choices[0].message.tool_calls:
-            tool_arguments = res.choices[0].message.tool_calls[0].function.arguments
-            tool_name = res.choices[0].message.tool_calls[0].function.name
-            call_id = res.choices[0].message.tool_calls[0].id
-        else:
-            tool_arguments = ''
-            tool_name = ''
-        dyellow('tool_arguments: ', tool_arguments)
-        dyellow('tool_name: ', tool_name)
+            self.history_input_list += self.response_output # 类似无stream时的self.history_input_list += res.output
 
-        # dyellow(res.choices[0].message.content)
-        dyellow('==================================/chatml.choices[0].message====================================')
-
-        # -----------------------------添加到历史-------------------------------
-        tool_call_error = ''
-        if reasoning_content:
-            # chatml下，reasoning添加到历史似乎导致上下文过长
-            pass
-            # self.history_input_list += [
-            #     {"role": "assistant", "reasoning_content": reasoning_content}
-            # ]
-        elif content:
-            pass
-            # self.history_input_list += [
-            #     {"role": "assistant", "content": content}
-            # ]
-        # else:
-        #     dred(f'【Response_LLM_Client.chatml_create】Warning: chatml.create()返回失败.')
-        # ----------------------------/添加到历史-------------------------------
-
-        responses_result = Response_Result(
-            reasoning = reasoning_content,
-            output = content,
-            function_tool_call = {'arguments': tool_arguments, 'call_id': call_id, 'name': tool_name},
-            error=tool_call_error
-        )
-
-        # dyellow('==================================1111111====================================')
-        # ----------------------注册tool func-------------------------
-        # self.funcs = []  # 要先清除之前的tools
-        # for tool in chatml_request.tools:
-        #     func_dict = {
-        #         'name' : tool.function.name,
-        #         'func' : tool.function.func,
-        #     }
-        #     self.funcs.append(func_dict)
-        # ---------------------/注册tool func-------------------------
-        # dyellow('==================================2222222====================================')
-
-        return responses_result
+            return response_result
 
     # 清除历史
     def clear_history(self):
@@ -507,12 +524,15 @@ class Response_and_Chatml_LLM_Client:
                 for tool in request.tools:
                     dyellow(tool)
             dyellow('================================/request.tools===================================')
+            # dred(temp_response_request.model_dump())
+            # dred(temp_response_request.model_dump(exclude_none=True))
             res = self.openai.responses.create(input=self.history_input_list, **temp_response_request.model_dump(exclude_none=True))
         except Exception as e:
             err(e)
             response_result.error = str(e)
 
         if not request.stream:
+            # 非stream输出
             # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
             if res:
                 self.history_input_list += res.output
@@ -540,6 +560,7 @@ class Response_and_Chatml_LLM_Client:
 
             return response_result
         else:
+            # stream输出
             self._parse_response_stream(res)
             response_result.reasoning = self.reasoning_text
             response_result.output = self.output_text
@@ -583,6 +604,11 @@ class Response_and_Chatml_LLM_Client:
                                     'call_id': self.tool_call_id,
                                     'name': self.tool_name,
                                 }
+
+    def _parse_chatml_stream(self, response:Response):
+        dred(response)
+        for item in response:
+            print(item)
 
     def _responses_result(self, res:Response):
         # dprint(res)
@@ -878,9 +904,49 @@ def main_response_llm_client_chat():
             dgreen('-----------------------------------最终结果---------------------------------------------')
             break
 
+def main_chatml_llm_client_chat():
+    dred(llm_protocol.g_online_groq_kimi_k2)
+    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_kimi_k2)
+    client.init()
+
+    query = '写一首20字的诗'
+    response_request = Response_Request(
+        model=client.llm_config.llm_model_id,
+        temperature=client.llm_config.temperature,
+        top_p=client.llm_config.top_p,
+        max_output_tokens=client.llm_config.max_new_tokens,
+        reasoning={"effort": client.llm_config.reasoning_effort}
+        # stream=True,
+    )
+    responses_result = client.chatml_create(query=query, request=response_request, new_run=False)
+
+    dprint()
+    dprint('-------------------------responses_result--------------------------------')
+    pprint(responses_result.model_dump())
+    dprint()
+    dprint(f'responses_result.output: {responses_result.output!r}')
+    dprint('-------------------------responses_result--------------------------------')
+
+    while not hasattr(responses_result, 'output') or responses_result.output=='' :
+        responses_result = client.responses_create(query=query, request=response_request, new_run=False)
+        dprint(f'responses_result: {responses_result!r}')
+
+        if not responses_result.output:
+            continue
+
+        if responses_result.output != '':
+            dprint('-----------------------------------最终结果---------------------------------------------')
+            dprint(responses_result.output)
+            dprint('-----------------------------------最终结果---------------------------------------------')
+            dgreen('-----------------------------------最终结果---------------------------------------------')
+            dgreen(responses_result.output)
+            dgreen('-----------------------------------最终结果---------------------------------------------')
+            break
+
 if __name__ == "__main__":
     # main_response_request_pprint()
-    main_response_llm_client()
+    # main_response_llm_client()
     # main_response_llm_client_chat()
+    main_chatml_llm_client_chat()
     # main_response_llm_client()
     # main_response_agent()
