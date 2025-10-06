@@ -1,5 +1,5 @@
 from openai import OpenAI, APIError
-from openai.types.responses import Response, ResponseReasoningItem, ResponseFunctionToolCall, ResponseOutputMessage
+from openai.types.responses import Response, ResponseReasoningItem, ResponseFunctionToolCall, ResponseOutputMessage, ResponseCompletedEvent
 from openai.types.responses import ToolParam, FunctionToolParam
 
 from typing import List, Dict, Any, Type, Literal, Optional, Callable
@@ -71,6 +71,16 @@ class Response_and_Chatml_LLM_Client:
 
         # input_list相关
         self.history_input_list = None  # 历史input_list(用于多轮的tool call)
+
+        # stream的数据
+        self.current_chunk = ''
+        self.reasoning_text = ''
+        self.output_text = ''
+
+        self.function_tool_call = {}    # {'arguments': '{"a":22,"b":33}', 'call_id': 'fc_250d570d-15ca-4619-a27b-0ee9b008063b', 'name': 'mul_tool'}
+        self.tool_arguments = ''        # {"a":22,"b":33}
+        self.tool_call_id = ''
+        self.tool_name = ''
 
     # 将Response_LLM_Client当作agent用(用tool call)
     def init(self):
@@ -500,31 +510,71 @@ class Response_and_Chatml_LLM_Client:
             err(e)
             response_result.error = str(e)
 
-        # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
-        if res:
-            self.history_input_list += res.output
-            response_result = self._responses_result(res)
+        if not request.stream:
+            # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
+            if res:
+                self.history_input_list += res.output
+                response_result = self._responses_result(res)
+            else:
+                dred(f'【Response_LLM_Client.responses_create】Warning: responses.create()返回失败.')
+                self.history_input_list.append({'role': 'assistant', 'content': response_result.error})
+                dprint('---------------------------------response_result(未调用工具)------------------------------------')
+                dpprint(response_result.model_dump())
+                dprint('--------------------------------/response_result(未调用工具)------------------------------------')
+
+            # ----------------------注册tool func-------------------------
+            # self.funcs = [] # 要先清除之前的tools
+            # for tool in request.tools:
+            #     func_dict = {
+            #         'name' : tool.name,
+            #         'func' : tool.func,
+            #     }
+            #     self.funcs.append(func_dict)
+            # ---------------------/注册tool func-------------------------
+
+            # 调用tool
+            # response_result = self.call_tool(response_result)
+
+            return response_result
         else:
-            dred(f'【Response_LLM_Client.responses_create】Warning: responses.create()返回失败.')
-            self.history_input_list.append({'role': 'assistant', 'content': response_result.error})
-            dprint('---------------------------------response_result(未调用工具)------------------------------------')
-            dpprint(response_result.model_dump())
-            dprint('--------------------------------/response_result(未调用工具)------------------------------------')
+            self._parse_response_stream(res)
+            response_result.reasoning = self.reasoning_text
+            response_result.output = self.output_text
+            response_result.function_tool_call = self.function_tool_call
+            return response_result
 
-        # ----------------------注册tool func-------------------------
-        # self.funcs = [] # 要先清除之前的tools
-        # for tool in request.tools:
-        #     func_dict = {
-        #         'name' : tool.name,
-        #         'func' : tool.func,
-        #     }
-        #     self.funcs.append(func_dict)
-        # ---------------------/注册tool func-------------------------
+    def on_reasoning(self, chunk):
+        dred(chunk, end='', flush=True)
 
-        # 调用tool
-        # response_result = self.call_tool(response_result)
+    def on_content(self, chunk):
+        dgreen(chunk, end='', flush=True)
 
-        return response_result
+    def _parse_response_stream(self, response:Response):
+        for item in response:
+            # print(item)
+            if item.type=='response.reasoning_text.delta':
+                self.on_reasoning(chunk=item.delta)
+                self.current_chunk = item.delta
+            if item.type=='response.output_text.delta':
+                self.on_content(chunk=item.delta)
+                self.current_chunk = item.delta
+            if isinstance(item, ResponseCompletedEvent):
+                if hasattr(item, 'response'):
+                    if hasattr(item.response, 'output'):
+                        for output_item in item.response.output:
+                            if output_item.type=='reasoning':
+                                self.reasoning_text = output_item.content[0]['text']
+                            if output_item.type=='message':
+                                self.output_text = output_item.content[0].text
+                            if output_item.type=='function_call':
+                                self.tool_call_id = output_item.call_id
+                                self.tool_arguments = output_item.arguments
+                                self.tool_name = output_item.name
+                                self.function_tool_call = {
+                                    'arguments': self.tool_arguments,
+                                    'call_id': self.tool_call_id,
+                                    'name': self.tool_name,
+                                }
 
     def _responses_result(self, res:Response):
         # dprint(res)
@@ -676,17 +726,25 @@ def main_response_llm_client():
     # -------------打印输入参数--------------
     # dpprint(response_request.model_dump())
 
-    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_120b)
+    # client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
     client.init()
 
+    # query = '请告诉我2356/3567等于多少，保留10位小数，要调用工具计算，不能直接心算'
     query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     response_request = Response_Request(
         model=client.llm_config.llm_model_id,
         tools=tools,
+        stream=True,
     )
     responses_result = client.responses_create(query=query, request=response_request, new_run=False)
 
+    dprint()
+    dprint('-------------------------responses_result--------------------------------')
+    pprint(responses_result.model_dump())
+    dprint()
     dprint(f'responses_result.output: {responses_result.output!r}')
+    dprint('-------------------------responses_result--------------------------------')
     # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
 
     while not hasattr(responses_result, 'output') or responses_result.output=='' :
@@ -785,11 +843,16 @@ def main_response_llm_client_chat():
     query = '写一首20字的诗'
     response_request = Response_Request(
         model=client.llm_config.llm_model_id,
+        stream=True,
     )
     responses_result = client.responses_create(query=query, request=response_request, new_run=False)
 
+    dprint()
+    dprint('-------------------------responses_result--------------------------------')
+    pprint(responses_result.model_dump())
+    dprint()
     dprint(f'responses_result.output: {responses_result.output!r}')
-    # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
+    dprint('-------------------------responses_result--------------------------------')
 
     while not hasattr(responses_result, 'output') or responses_result.output=='' :
         responses_result = client.responses_create(query=query, request=response_request, new_run=False)
