@@ -1541,7 +1541,7 @@ class Write_Chapter_Tool(Base_Tool):
 
 class Insert_Math_Formula_Tool(Base_Tool):
     tool_name= 'Insert_Math_Formula_Tool'
-    tool_description='在文档中插入数学公式的工具。'
+    tool_description='在文档中插入libre-office的StarMath格式的数学公式的工具。'
     tool_parameters={
         'type':'object',
         'properties':{
@@ -1587,9 +1587,9 @@ class Insert_Math_Formula_Tool(Base_Tool):
                     'timestamp': int(time.time() * 1000)
                 }
                 params = {
-                    'formula': 'E = m c^2',
-                    'as_inline': True,
-                    'base_font_height': 12,
+                    'formula': formula,
+                    'as_inline': as_inline,
+                    'base_font_height': base_font_height,
                 }
                 command['data'] = {
                     'cmd': 'insert_math',
