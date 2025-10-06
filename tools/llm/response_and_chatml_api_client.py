@@ -607,6 +607,7 @@ def main_response_request_pprint():
     dpprint(response_request.model_dump())
 
 def main_response_llm_client():
+    from agent.tools.protocol import Tool_Parameters, Tool_Property
     add_tool = Tool_Request(
         name='add_tool',
         description='加法计算工具',
@@ -618,7 +619,7 @@ def main_response_llm_client():
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b: {"result": a + b}
+        # func=lambda a, b: {"result": a + b}
         # func=lambda a, b, unit: {"result": a + b, "unit": unit}
     )
     sub_tool = Tool_Request(
@@ -632,7 +633,7 @@ def main_response_llm_client():
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b: {"result": a - b}
+        # func=lambda a, b: {"result": a - b}
         # func=lambda a, b, unit: {"result": a - b, "unit": unit}
     )
     mul_tool = Tool_Request(
@@ -646,7 +647,7 @@ def main_response_llm_client():
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b: {"result": a * b}
+        # func=lambda a, b: {"result": a * b}
         # func=lambda a, b, unit: {"result": a * b, "unit": unit}
     )
     div_tool = Tool_Request(
@@ -660,7 +661,7 @@ def main_response_llm_client():
             },
             required=['a', 'b'],
         ),
-        func=lambda a, b: {"result": a / b}
+        # func=lambda a, b: {"result": a / b}
         # func=lambda a, b, unit: {"result": a / b, "unit": unit}
     )
 
@@ -704,6 +705,7 @@ def main_response_llm_client():
             break
 
 def main_response_agent():
+    from agent.tools.protocol import Tool_Parameters, Tool_Property
     add_tool = Tool_Request(
         name='add_tool',
         description='加法计算工具',
@@ -777,6 +779,6 @@ def main_response_agent():
 
 if __name__ == "__main__":
     # main_response_request_pprint()
-    # main_response_llm_client(model='openai/gpt-oss-120b')
     main_response_llm_client()
+    # main_response_llm_client()
     # main_response_agent()
