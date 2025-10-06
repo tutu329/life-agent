@@ -34,7 +34,7 @@ class Response_Request(BaseModel):
     instructions    :str =  'You are a helpful agent.'
     # instructions    :str =  'You are a helpful agent. if tool has no arguments, use "{}", do not use "{'', ''}" or "{\"\", \"\"}".'  # 注意这里用了'agent'
     # input           :str | List[Dict[str, Any]] = None  # 非第一次responses.create时为None，并在Response_LLM_Client里采用history_input_list
-    tools           :List[Tool_Request]
+    tools           :Optional[List[Tool_Request]] = None
     previous_response_id    :Optional[str] = None    # 上一次openai.response.create()返回的res.id
     tool_choice     :str = 'auto'
     parallel_tool_calls :bool = False
@@ -491,8 +491,9 @@ class Response_and_Chatml_LLM_Client:
             # print('---------/temp_response_request------------')
 
             dyellow('=================================request.tools===================================')
-            for tool in request.tools:
-                dyellow(tool)
+            if request.tools:
+                for tool in request.tools:
+                    dyellow(tool)
             dyellow('================================/request.tools===================================')
             res = self.openai.responses.create(input=self.history_input_list, **temp_response_request.model_dump(exclude_none=True))
         except Exception as e:
@@ -777,8 +778,38 @@ def main_response_agent():
     client.init()
     client.legacy_agent_run(query=query, tools=tools)
 
+def main_response_llm_client_chat():
+    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    client.init()
+
+    query = '写一首20字的诗'
+    response_request = Response_Request(
+        model=client.llm_config.llm_model_id,
+    )
+    responses_result = client.responses_create(query=query, request=response_request, new_run=False)
+
+    dprint(f'responses_result.output: {responses_result.output!r}')
+    # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
+
+    while not hasattr(responses_result, 'output') or responses_result.output=='' :
+        responses_result = client.responses_create(query=query, request=response_request, new_run=False)
+        dprint(f'responses_result: {responses_result!r}')
+
+        if not responses_result.output:
+            continue
+
+        if responses_result.output != '':
+            dprint('-----------------------------------最终结果---------------------------------------------')
+            dprint(responses_result.output)
+            dprint('-----------------------------------最终结果---------------------------------------------')
+            dgreen('-----------------------------------最终结果---------------------------------------------')
+            dgreen(responses_result.output)
+            dgreen('-----------------------------------最终结果---------------------------------------------')
+            break
+
 if __name__ == "__main__":
     # main_response_request_pprint()
-    main_response_llm_client()
+    # main_response_llm_client()
+    main_response_llm_client_chat()
     # main_response_llm_client()
     # main_response_agent()
