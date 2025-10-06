@@ -172,6 +172,17 @@ g_online_deepseek_chat = LLM_Config(
     max_new_tokens=8192
 )
 
+g_online_deepseek_reasoner = LLM_Config(
+    name = 'deepseek_reasoner',
+    base_url='https://api.deepseek.com/v1',
+    api_key='sk-c1d34a4f21e3413487bb4b2806f6c4b8',
+    llm_model_id='deepseek-reasoner',
+    temperature=0.6,
+    top_p=0.95,
+    chatml=True,
+    max_new_tokens=8192
+)
+
 g_online_groq_kimi_k2 = LLM_Config(
     name = 'groq_kimi_k2',
     base_url='https://api.groq.com/openai/v1',

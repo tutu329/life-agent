@@ -906,10 +906,10 @@ def main_response_llm_client_chat():
 
 def main_chatml_llm_client_chat():
     dred(llm_protocol.g_online_groq_kimi_k2)
-    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_kimi_k2)
+    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_deepseek_reasoner)
     client.init()
 
-    query = '写一首20字的诗'
+    query = '写一首几行字的诗'
     response_request = Response_Request(
         model=client.llm_config.llm_model_id,
         temperature=client.llm_config.temperature,
