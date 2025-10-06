@@ -608,17 +608,30 @@ class Response_and_Chatml_LLM_Client:
     def _parse_chatml_stream(self, response:Response):
         dred(response)
         for item in response:
-            print(item)
+            # print(item)
             if hasattr(item, 'choices'):
                 delta = item.choices[0].delta
-                if delta.reasoning_content:
+                if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
                     self.on_reasoning(chunk=delta.reasoning_content)
                     self.current_chunk = delta.reasoning_content
                     self.reasoning_text += self.current_chunk
+                if hasattr(delta, 'tool_calls') and delta.tool_calls:
+                    if delta.tool_calls[0].function.name:
+                        self.tool_name = delta.tool_calls[0].function.name
+                    if delta.tool_calls[0].function.arguments:
+                        self.tool_arguments += delta.tool_calls[0].function.arguments
+                    if delta.tool_calls[0].id:
+                        self.tool_call_id = delta.tool_calls[0].id
                 if delta.content:
                     self.on_content(chunk=delta.content)
                     self.current_chunk = delta.content
                     self.output_text += self.current_chunk
+
+        self.function_tool_call = {
+            'arguments': self.tool_arguments,
+            'call_id': self.tool_call_id,
+            'name': self.tool_name,
+        }
 
     def _responses_result(self, res:Response):
         # dprint(res)
@@ -811,6 +824,116 @@ def main_response_llm_client():
             dgreen('-----------------------------------最终结果---------------------------------------------')
             break
 
+def main_chatml_llm_client():
+    from agent.tools.protocol import Tool_Parameters, Tool_Property
+    add_tool = Tool_Request(
+        name='add_tool',
+        description='加法计算工具',
+        parameters=Tool_Parameters(
+            properties={
+                'a': Tool_Property(type='number', description='加数'),
+                'b': Tool_Property(type='number', description='被加数'),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+            },
+            required=['a', 'b'],
+        ),
+        # func=lambda a, b: {"result": a + b}
+        # func=lambda a, b, unit: {"result": a + b, "unit": unit}
+    )
+    sub_tool = Tool_Request(
+        name='sub_tool',
+        description='减法计算工具',
+        parameters=Tool_Parameters(
+            properties={
+                'a': Tool_Property(type='number', description='减数'),
+                'b': Tool_Property(type='number', description='被减数'),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+            },
+            required=['a', 'b'],
+        ),
+        # func=lambda a, b: {"result": a - b}
+        # func=lambda a, b, unit: {"result": a - b, "unit": unit}
+    )
+    mul_tool = Tool_Request(
+        name='mul_tool',
+        description='乘法计算工具',
+        parameters=Tool_Parameters(
+            properties={
+                'a': Tool_Property(type='number', description='乘数'),
+                'b': Tool_Property(type='number', description='被乘数'),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+            },
+            required=['a', 'b'],
+        ),
+        # func=lambda a, b: {"result": a * b}
+        # func=lambda a, b, unit: {"result": a * b, "unit": unit}
+    )
+    div_tool = Tool_Request(
+        name='div_tool',
+        description='除法计算工具',
+        parameters=Tool_Parameters(
+            properties={
+                'a': Tool_Property(type='number', description='除数'),
+                'b': Tool_Property(type='number', description='被除数'),
+                # 'unit': Tool_Property(type='string', description='单位', enum=['meter', 'kilo-miter']),
+            },
+            required=['a', 'b'],
+        ),
+        # func=lambda a, b: {"result": a / b}
+        # func=lambda a, b, unit: {"result": a / b, "unit": unit}
+    )
+
+    # from agent.tools.folder_tool import Folder_Tool
+    # fold_tool = Folder_Tool.get_tool_param_dict()
+
+    # tools = []
+    # tools = [div_tool]
+    tools = [add_tool, sub_tool, mul_tool, div_tool]
+
+    # -------------打印输入参数--------------
+    # dpprint(response_request.model_dump())
+
+    client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_qwen3_next_80b_thinking)
+    # client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
+    client.init()
+
+    query = '请告诉我2356/3567等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    # query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    response_request = Response_Request(
+        model=client.llm_config.llm_model_id,
+        tools=tools,
+        temperature=client.llm_config.temperature,
+        top_p=client.llm_config.top_p,
+        max_output_tokens=client.llm_config.max_new_tokens,
+        reasoning={"effort": client.llm_config.reasoning_effort},
+        stream=True,
+    )
+    responses_result = client.chatml_create(query=query, request=response_request, new_run=False)
+
+    dprint()
+    dprint('-------------------------responses_result--------------------------------')
+    pprint(responses_result.model_dump())
+    dprint()
+    dprint(f'responses_result.output: {responses_result.output!r}')
+    dprint('-------------------------responses_result--------------------------------')
+    # dprint(f'responses_result.function_tool_call: {responses_result.function_tool_call}')
+
+    # while not hasattr(responses_result, 'output') or responses_result.output=='' :
+    #     responses_result = client.responses_create(query=query, request=response_request, new_run=False)
+    #     dprint(f'responses_result: {responses_result!r}')
+    #
+    #     if not responses_result.output:
+    #         continue
+    #
+    #     if responses_result.output != '':
+    #         dprint('-----------------------------------最终结果---------------------------------------------')
+    #         dprint(responses_result.output)
+    #         dprint('-----------------------------------最终结果---------------------------------------------')
+    #         dgreen('-----------------------------------最终结果---------------------------------------------')
+    #         dgreen(responses_result.output)
+    #         dgreen('-----------------------------------最终结果---------------------------------------------')
+    #         break
+
 def main_response_agent():
     from agent.tools.protocol import Tool_Parameters, Tool_Property
     add_tool = Tool_Request(
@@ -950,6 +1073,7 @@ if __name__ == "__main__":
     # main_response_request_pprint()
     # main_response_llm_client()
     # main_response_llm_client_chat()
-    main_chatml_llm_client_chat()
+    main_chatml_llm_client()
+    # main_chatml_llm_client_chat()
     # main_response_llm_client()
     # main_response_agent()
