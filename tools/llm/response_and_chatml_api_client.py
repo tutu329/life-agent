@@ -368,6 +368,8 @@ class Response_and_Chatml_LLM_Client:
             else:
                 # 在history_input_list末尾添加上一次res的message
                 if not self.llm_config.msgs_must_have_content:
+                    dred(f'full_res({res})')
+                    dred(f'chatml_output({res.choices[0].message.model_dump(exclude_none=True)})')
                     self.history_input_list.append(res.choices[0].message.model_dump(exclude_none=True))
                 else:
                     # 有些模型要求message里必须有content，则msg如{'role': 'assistant', 'tool_calls': [...], 'reasoning_content': '...'}就不行
@@ -448,7 +450,7 @@ class Response_and_Chatml_LLM_Client:
             dred(response_result)
 
             self.history_input_list += self.response_output # 类似无stream时的self.history_input_list += res.output
-
+            dred(f'self.history_input_list需要append: {self.response_output}')
             return response_result
 
     # 清除历史
@@ -608,7 +610,7 @@ class Response_and_Chatml_LLM_Client:
     def _parse_chatml_stream(self, response:Response):
         dred(response)
         for item in response:
-            # print(item)
+            print(item)
             if hasattr(item, 'choices'):
                 delta = item.choices[0].delta
                 if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
@@ -632,6 +634,33 @@ class Response_and_Chatml_LLM_Client:
             'call_id': self.tool_call_id,
             'name': self.tool_name,
         }
+
+        if self.tool_name:
+            # 如果有tool_call
+            self.response_output = {
+                'content': self.output_text,
+                'role': 'assistant',
+                'tool_calls': [
+                    {
+                        'id': self.tool_call_id,
+                        'function': {
+                            'arguments': self.tool_arguments,
+                            'name': self.tool_name
+                        },
+                        'type': 'function',
+                        'index': 0
+                    }
+                ],
+                'reasoning_content': ''     # 这里暂时不向history添加reasoning内容
+                # 'reasoning_content': self.reasoning_text
+            }
+        else:
+            # 如果无tool_call
+            self.response_output = {
+                'content': self.output_text,
+                'role': 'assistant',
+                'reasoning_content': self.reasoning_text
+            }
 
     def _responses_result(self, res:Response):
         # dprint(res)
