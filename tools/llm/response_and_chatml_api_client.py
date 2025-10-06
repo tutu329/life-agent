@@ -73,14 +73,16 @@ class Response_and_Chatml_LLM_Client:
         self.history_input_list = None  # 历史input_list(用于多轮的tool call)
 
         # stream的数据
+
         self.current_chunk = ''
         self.reasoning_text = ''
         self.output_text = ''
 
-        self.function_tool_call = {}    # {'arguments': '{"a":22,"b":33}', 'call_id': 'fc_250d570d-15ca-4619-a27b-0ee9b008063b', 'name': 'mul_tool'}
-        self.tool_arguments = ''        # {"a":22,"b":33}
-        self.tool_call_id = ''
-        self.tool_name = ''
+        self.response_output = []       # stream完成后的：可以作为history的output
+        self.function_tool_call = {}    # stream完成后的：function_tool_call如{'arguments': '{"a":22,"b":33}', 'call_id': 'fc_250d570d-15ca-4619-a27b-0ee9b008063b', 'name': 'mul_tool'}
+        self.tool_arguments = ''        # stream完成后的：tool_arguments如{"a":22,"b":33}
+        self.tool_call_id = ''          # stream完成后的：tool_call_id
+        self.tool_name = ''             # stream完成后的：tool_name
 
     # 将Response_LLM_Client当作agent用(用tool call)
     def init(self):
@@ -514,6 +516,7 @@ class Response_and_Chatml_LLM_Client:
             # 不管responses_create是否为第一次，按照官方要求，添加responses.create()的response.output(后续需要在tool调用成功后，在history_input_list末尾添加{"type": "function_call_output", ...})
             if res:
                 self.history_input_list += res.output
+                dred(res.output)
                 response_result = self._responses_result(res)
             else:
                 dred(f'【Response_LLM_Client.responses_create】Warning: responses.create()返回失败.')
@@ -541,6 +544,10 @@ class Response_and_Chatml_LLM_Client:
             response_result.reasoning = self.reasoning_text
             response_result.output = self.output_text
             response_result.function_tool_call = self.function_tool_call
+            dred(response_result)
+
+            self.history_input_list += self.response_output # 类似无stream时的self.history_input_list += res.output
+
             return response_result
 
     def on_reasoning(self, chunk):
@@ -561,6 +568,7 @@ class Response_and_Chatml_LLM_Client:
             if isinstance(item, ResponseCompletedEvent):
                 if hasattr(item, 'response'):
                     if hasattr(item.response, 'output'):
+                        self.response_output = item.response.output
                         for output_item in item.response.output:
                             if output_item.type=='reasoning':
                                 self.reasoning_text = output_item.content[0]['text']
@@ -625,10 +633,10 @@ class Response_and_Chatml_LLM_Client:
                     response_result.other_item = item
         dprint('=========================================/Response Items==========================================')
 
-        dprint()
-        dprint('---------------------------------response_result(未调用工具)------------------------------------')
-        dpprint(response_result.model_dump())
-        dprint('--------------------------------/response_result(未调用工具)------------------------------------')
+        # dprint()
+        # dprint('---------------------------------response_result(未调用工具)------------------------------------')
+        # dpprint(response_result.model_dump())
+        # dprint('--------------------------------/response_result(未调用工具)------------------------------------')
 
         return response_result
 
@@ -730,12 +738,12 @@ def main_response_llm_client():
     # client = Response_and_Chatml_LLM_Client(llm_config=llm_protocol.g_online_groq_gpt_oss_20b)
     client.init()
 
-    # query = '请告诉我2356/3567等于多少，保留10位小数，要调用工具计算，不能直接心算'
-    query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    query = '请告诉我2356/3567等于多少，保留10位小数，要调用工具计算，不能直接心算'
+    # query = '请告诉我2356/3567+22*33+3567/8769+4356/5678等于多少，保留10位小数，要调用工具计算，不能直接心算'
     response_request = Response_Request(
         model=client.llm_config.llm_model_id,
         tools=tools,
-        stream=True,
+        # stream=True,
     )
     responses_result = client.responses_create(query=query, request=response_request, new_run=False)
 
@@ -872,7 +880,7 @@ def main_response_llm_client_chat():
 
 if __name__ == "__main__":
     # main_response_request_pprint()
-    # main_response_llm_client()
-    main_response_llm_client_chat()
+    main_response_llm_client()
+    # main_response_llm_client_chat()
     # main_response_llm_client()
     # main_response_agent()
