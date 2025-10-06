@@ -1620,6 +1620,34 @@ class Insert_Math_Formula_Tool(Base_Tool):
     def call(self, tool_call_paras:Tool_Call_Paras, **kwargs):
         return Insert_Math_Formula_Tool.class_call(tool_call_paras=tool_call_paras, **kwargs)
 
+# import re
+# def latex_to_starmath(s: str) -> str:
+#     rules = [
+#         (r'\\int\s*_\{([^}]*)\}\s*\^\{([^}]*)\}', r'int from \1 to \2'),
+#         (r'\\sum\s*_\{([^}]*)\}\s*\^\{([^}]*)\}', r'sum from \1 to \2'),
+#         (r'\\prod\s*_\{([^}]*)\}\s*\^\{([^}]*)\}', r'prod from \1 to \2'),
+#         (r'\\sqrt\{([^}]*)\}', r'sqrt {\1}'),
+#         (r'\\frac\{([^}]*)\}\{([^}]*)\}', r'{\1} over {\2}'),
+#         (r'\\cdot', 'cdot'),
+#         (r'\\,|\\;|\\:|\\!', ' '),
+#         # 常见希腊字母
+#         (r'\\alpha','alpha'), (r'\\beta','beta'), (r'\\gamma','gamma'),
+#         (r'\\Delta','Delta'), (r'\\delta','delta'),
+#         # ……需要再补就继续加
+#     ]
+#     for pat, rep in rules:
+#         s = re.sub(pat, rep, s)
+#     return s
+#
+# def insert_math_mixed(input_formula: str, **opts):
+#     # 先简单判别是否像 LaTeX（包含 \int 或 \frac 等），是的话转一下
+#     maybe_latex = any(tok in input_formula for tok in ['\\int','\\frac','\\sqrt','\\sum','\\prod','\\cdot','\\alpha','\\beta','\\gamma'])
+#     formula = latex_to_starmath(input_formula) if maybe_latex else input_formula
+#     return InsertMath(formula=formula, **opts)  # 复用你已有的 InsertMath
+
+
+
+
 
 #     # def call(self, tool_call_paras:Tool_Call_Paras, **kwargs):
 #     # # def call(self,
