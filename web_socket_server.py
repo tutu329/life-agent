@@ -91,11 +91,17 @@ class Web_Socket_Server:
         dyellow(f'self.connections: {self.connections}')
         dyellow(f'self.registered_client: {self.registered_client}')
         for connection, connection_info in self.connections.items():
-            for reg_client_id, reg_connection in self.registered_client.items():
-                if connection == reg_connection:
-                    dgreen(f'Web_Socket_Server.send_client发送成功(client_id={client_id!r}, data={data}, connection={connection}).')
-                    await connection.send(data)
-                    return
+            reg_conn = self.registered_client.get(client_id)
+            if reg_conn and reg_conn==connection:
+                dgreen(f'Web_Socket_Server.send_client发送成功(client_id={client_id!r}, data={data}, connection={connection}).')
+                await connection.send(data)
+                return
+        # for connection, connection_info in self.connections.items():
+        #     for reg_client_id, reg_connection in self.registered_client.items():
+        #         if connection == reg_connection:
+        #             dgreen(f'Web_Socket_Server.send_client发送成功(client_id={client_id!r}, data={data}, connection={connection}).')
+        #             await connection.send(data)
+        #             return
 
         dred(f'Web_Socket_Server.send_client发送失败(client_id={client_id!r}, data={data}).')
 
