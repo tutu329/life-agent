@@ -29,7 +29,7 @@ from agent.tools.protocol import Tool_Parameters, Tool_Property, Property_Type
 from tools.llm.response_and_chatml_api_client import Response_Result, Tool_Request, Response_Request
 from console import err
 
-OFFICE_WS_CLIENT_ID = '5113_ws_client'
+OFFICE_WS_CLIENT_ID = config.Agent.OFFICE_WS_CLIENT_ID
 
 def _test_call_collabora_api(ws_server):
     while True:
