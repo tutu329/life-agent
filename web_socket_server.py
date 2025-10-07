@@ -31,9 +31,10 @@ def dpprint(*args, **kwargs):
 
 class Connection_Info(BaseModel):
     user_id: str = ''               # user_id
+    client_id: str = ''             # client_id(临时连接的id)
 
 class Web_Socket_Server:
-    def __init__(self, port=5113):  # 5113为测试port
+    def __init__(self, port):
         self.thread: Thread = None
         self.port = port
         self.server_started = False
@@ -43,7 +44,10 @@ class Web_Socket_Server:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+        # connections的管理
         self.connections:Dict[ServerConnection, Connection_Info] = {}   # 1 server <--> m connections, n connections <--> user_id
+        # connections中client的筛选(这里的client_id不是应用层面user一一对应的client_id，只是应用层user的某个临时连接id)
+        self.registered_client:Dict[str, ServerConnection] = {}         # 1 client_id <--> 1 connection, 1 user <--> n client_id
 
     def stop_server(self, timeout: float = 5.0):
         """优雅停止服务器并回收线程"""
@@ -63,6 +67,12 @@ class Web_Socket_Server:
             self.thread.start()
             self.server_started = True
 
+    def register_client(self, client_id:str, connection:ServerConnection):
+        self.registered_client[client_id] = connection
+
+    def unregister_client(self, client_id:str):
+        self.registered_client.pop(client_id, None)
+
     def print_connections(self):
         dgreen(f'-----------------Web_Socket_Server(Port={self.port}) connections----------------------')
         for k, v in self.connections.items():
@@ -72,6 +82,18 @@ class Web_Socket_Server:
     async def broadcast(self, data: Any):
         for connection, connection_info in self.connections.items():
             await connection.send(data)
+
+    async def send_client(self, client_id:str, data: Any):
+        dyellow(f'self.connections: {self.connections}')
+        dyellow(f'self.registered_client: {self.registered_client}')
+        for connection, connection_info in self.connections.items():
+            for reg_client_id, reg_connection in self.registered_client.items():
+                if connection == reg_connection:
+                    dgreen(f'Web_Socket_Server.send_client发送成功(client_id={client_id!r}, data={data}, connection={connection}).')
+                    await connection.send(data)
+                    return
+
+        dred(f'Web_Socket_Server.send_client发送失败(client_id={client_id!r}, data={data}).')
 
     def _server_run(self, port):
         async def handler(websocket):
@@ -84,7 +106,23 @@ class Web_Socket_Server:
             try:
                 async for message in websocket:
                     data = json.loads(message)
+
+                    # --------------------client在on-open时，会发register信息-----------------------
+                    # 如data={'type': 'register', 'client_id': '5113_ws_client'}
                     dgreen(f'data: {data}')
+                    if 'type' in data and data['type']=='register' and 'client_id' in data:
+                        client_id = data['client_id']
+
+                        connection_info.client_id = client_id
+                        self.print_connections()
+
+                        self.register_client(client_id, websocket)
+                        # dgreen(f'-------------------client_id={client_id!r} registered------------------------')
+                        # dblue(self.registered_client)
+                        # dgreen(f'------------------/client_id={client_id!r} registered------------------------')
+                        # time.sleep(1) # 防止后续的send_client()失败
+                    # -------------------/client在on-open时，会发register信息-----------------------
+
             except websockets.exceptions.ConnectionClosed as e:
                 dprint(f'📱 WebSocket连接已关闭: {websocket.remote_address}')
                 self.connections.pop(websocket, None)
@@ -117,7 +155,7 @@ class Web_Socket_Server_Manager:
     @classmethod
     def start_server(cls, port)->Web_Socket_Server:
         if port not in cls.server_pool:
-            server = Web_Socket_Server()
+            server = Web_Socket_Server(port=port)
             server.start_server()
             cls.server_pool[port] = server
             dgreen(f'Web_Socket_Server已启动(port:{port})')
@@ -135,10 +173,12 @@ class Web_Socket_Server_Manager:
             dgreen(f'Web_Socket_Server已停止(port:{port})')
 
 def main():
-    ws_server = Web_Socket_Server_Manager.start_server(port=5113)
-    ws_server = Web_Socket_Server_Manager.start_server(port=5113)
+    port = 5113
+    # port = 5112
+    ws_server = Web_Socket_Server_Manager.start_server(port=port)
+    ws_server = Web_Socket_Server_Manager.start_server(port=port)
     time.sleep(3)
-    Web_Socket_Server_Manager.stop_server(port=5113)
+    # Web_Socket_Server_Manager.stop_server(port=port)
 
 if __name__ == "__main__":
     # print(len({}))

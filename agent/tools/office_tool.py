@@ -29,15 +29,16 @@ from agent.tools.protocol import Tool_Parameters, Tool_Property, Property_Type
 from tools.llm.response_and_chatml_api_client import Response_Result, Tool_Request, Response_Request
 from console import err
 
+OFFICE_WS_CLIENT_ID = '5113_ws_client'
 
 def _test_call_collabora_api(ws_server):
     while True:
-        if ws_server.connections:
+        if OFFICE_WS_CLIENT_ID in ws_server.registered_client:
             break
 
         time.sleep(0.1)
 
-    if ws_server.connections:
+    if OFFICE_WS_CLIENT_ID in ws_server.registered_client:
         # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
         timeout = 30  # 等待30秒
         start_time = time.time()
@@ -93,6 +94,21 @@ def _send_office_command_test(ws, command):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
+    async def _async_send_command(ws, command):
+            try:
+                command_json = json.dumps(command, ensure_ascii=False)
+
+                # ------------------web_socket发送指令---------------------
+                await ws.send_client(client_id=OFFICE_WS_CLIENT_ID, data=command_json)
+                # await ws.send_client(client_id='1', data=command_json)
+                # await ws.broadcast((command_json))
+                # -----------------/web_socket发送指令---------------------
+
+                # dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
+                return True, 'success'
+            except Exception as e:
+                return False, f'发送失败: {e}'
+
     try:
         success, message = loop.run_until_complete(_async_send_command(ws, command))
         return success, message
@@ -100,16 +116,6 @@ def _send_office_command_test(ws, command):
         return False, f'发送失败: {e}'
     finally:
         loop.close()
-
-async def _async_send_command(ws, command):
-        try:
-            command_json = json.dumps(command, ensure_ascii=False)
-            await ws.broadcast((command_json))
-            # dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
-            return True, 'success'
-        except Exception as e:
-            return False, f'发送失败: {e}'
-
 
 class Prompt_Write_Chapter_Text(BaseModel):
     project_name            :str =''  # 项目名称
