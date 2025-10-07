@@ -202,6 +202,10 @@ class Port:
     remote_tool_fastapi_server          :int = 5111     # 后端agent的remote_tools
     collabora_code_web_socket_server    :int = 5112     # 前端collabora CODE office控件(基于libre-office，完全开源、可商用)被后台agent控制的端口
 
+    # web_socket port
+    office_test_web_socket_server       :int = 5113     # 专用于office测试的ws port
+    global_web_socket_server            :int = 5115     # 正式的全局ws port
+
     # 顶层应用
     flowise:int         = 7860
     llm_ui: int         = 7861

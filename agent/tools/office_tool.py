@@ -1097,7 +1097,7 @@ class Write_Chapter_Tool(Base_Tool):
         if cls._s_ws_manager is None:
             cls._s_ws_manager = get_websocket_manager()
 
-            port = 5113 # ---------------------测试用5113---------------------
+            port = config.Port.office_test_web_socket_server # ---------------------测试用5113---------------------
             # port = config.Port.collabora_code_web_socket_server # 5112
             cls._s_ws_manager.start_server(port=port)
             print(f'✅ Write_Chapter_Tool.init(cls) 初始化完成, port:{port}')
@@ -1629,7 +1629,7 @@ class Write_Chapter_Tool(Base_Tool):
         # 确保返回安全编码的结果
         return Agent_Tool_Result(result_summary=safe_encode(result))
 
-ws_server = Web_Socket_Server_Manager.start_server(5113)
+ws_server = Web_Socket_Server_Manager.start_server(config.Port.office_test_web_socket_server)
 class Insert_Math_Formula_Tool(Base_Tool):
     tool_name= 'Insert_Math_Formula_Tool'
     tool_description='''
