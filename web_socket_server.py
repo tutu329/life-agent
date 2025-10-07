@@ -6,7 +6,8 @@ from threading import Thread
 import time
 import ssl
 
-import asyncio, json, logging, uuid
+import asyncio, json, logging
+from uuid import uuid4
 from collections import defaultdict
 from urllib.parse import urlsplit, parse_qs
 from websockets.server import ServerConnection
@@ -33,6 +34,11 @@ class Connection_Info(BaseModel):
     user_id: str = ''               # user_id
     client_id: str = ''             # client_id(临时连接的id)
 
+class Web_Socket_Client_Register_Response(BaseModel):
+    client_id: str
+    client_id_generated_by_server: bool   # client_id是否由server生成
+
+# 主要用于远程client，client在ws.onopen()中通过ws.send()进行注册时需遵循
 class Web_Socket_Client_Register_Request(BaseModel):
     type: str = 'register'
     client_id: str
@@ -106,27 +112,38 @@ class Web_Socket_Server:
         dred(f'Web_Socket_Server.send_client发送失败(client_id={client_id!r}, data={data}).')
 
     def _server_run(self, port):
-        async def handler(websocket):
-            dgreen(f'📱 新的WebSocket连接: {websocket.remote_address}')
+        async def handler(conn):
+            dgreen(f'📱 新的WebSocket连接: {conn.remote_address}')
             connection_info = Connection_Info()
-            self.connections[websocket] = connection_info
+            self.connections[conn] = connection_info
 
             self.print_connections()
 
             try:
-                async for message in websocket:
+                async for message in conn:
                     data = json.loads(message)
 
                     # --------------------client在on-open时，会发register信息-----------------------
-                    # 如data={'type': 'register', 'client_id': '5113_ws_client'}
-                    dgreen(f'data: {data}')
+                    # 注册data为Web_Socket_Client_Register_Request格式：{'type': 'register', 'client_id': '5113_ws_client'}
+                    dgreen(f'【Web_Socket_Server.handler()】data: {data}')
                     if 'type' in data and data['type']=='register' and 'client_id' in data:
                         client_id = data['client_id']
+                        if not client_id:
+                        # if not client_id:
+                            # 如果client没有提供client_id，则生成唯一client_id，并
+                            client_id = str(uuid4())
+                            res = Web_Socket_Client_Register_Response(client_id=client_id, client_id_generated_by_server=True)
+                            await conn.send(json.dumps(res.model_dump(), ensure_ascii=False))
+                            dred(f'【Web_Socket_Server.handler()】conn.send: client_id={client_id!r}, client_id_generated_by_server={res.client_id_generated_by_server}')
+                        else:
+                            res = Web_Socket_Client_Register_Response(client_id=client_id, client_id_generated_by_server=False)
+                            await conn.send(json.dumps(res.model_dump(), ensure_ascii=False))
+                            dred(f'【Web_Socket_Server.handler()】conn.send: client_id={client_id!r}, client_id_generated_by_server={res.client_id_generated_by_server}')
 
                         connection_info.client_id = client_id
                         self.print_connections()
 
-                        self.register_client(client_id, websocket)
+                        self.register_client(client_id, conn)
                         # dgreen(f'-------------------client_id={client_id!r} registered------------------------')
                         # dblue(self.registered_client)
                         # dgreen(f'------------------/client_id={client_id!r} registered------------------------')
@@ -134,11 +151,11 @@ class Web_Socket_Server:
                     # -------------------/client在on-open时，会发register信息-----------------------
 
             except websockets.exceptions.ConnectionClosed as e:
-                dprint(f'📱 WebSocket连接已关闭: {websocket.remote_address}')
-                self.connections.pop(websocket, None)
+                dprint(f'📱 WebSocket连接已关闭: {conn.remote_address}')
+                self.connections.pop(conn, None)
                 self.print_connections()
             except Exception as e:
-                dprint(f'⚠️ WebSocket连接错误: {websocket.remote_address} - {e}')
+                dprint(f'⚠️ WebSocket连接错误: {conn.remote_address} - {e}')
 
         async def start_server():
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
