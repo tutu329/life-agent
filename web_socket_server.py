@@ -33,6 +33,10 @@ class Connection_Info(BaseModel):
     user_id: str = ''               # user_id
     client_id: str = ''             # client_id(临时连接的id)
 
+class Web_Socket_Client_Register_Request(BaseModel):
+    type: str = 'register'
+    client_id: str
+
 class Web_Socket_Server:
     def __init__(self, port):
         self.thread: Thread = None
