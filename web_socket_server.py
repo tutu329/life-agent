@@ -128,9 +128,10 @@ class Web_Socket_Server:
                     dgreen(f'【Web_Socket_Server.handler()】data: {data}')
                     if 'type' in data and data['type']=='register' and 'client_id' in data:
                         client_id = data['client_id']
+
+                        # 将client_id反馈给client
                         if not client_id:
-                        # if not client_id:
-                            # 如果client没有提供client_id，则生成唯一client_id，并
+                            # 若client没有提供client_id，为''，则生成唯一client_id，并
                             client_id = str(uuid4())
                             res = Web_Socket_Client_Register_Response(client_id=client_id, client_id_generated_by_server=True)
                             await conn.send(json.dumps(res.model_dump(), ensure_ascii=False))
@@ -140,10 +141,11 @@ class Web_Socket_Server:
                             await conn.send(json.dumps(res.model_dump(), ensure_ascii=False))
                             dred(f'【Web_Socket_Server.handler()】conn.send: client_id={client_id!r}, client_id_generated_by_server={res.client_id_generated_by_server}')
 
+                        # 在server注册client_id和connection
+                        self.register_client(client_id, conn)
                         connection_info.client_id = client_id
                         self.print_connections()
 
-                        self.register_client(client_id, conn)
                         # dgreen(f'-------------------client_id={client_id!r} registered------------------------')
                         # dblue(self.registered_client)
                         # dgreen(f'------------------/client_id={client_id!r} registered------------------------')
