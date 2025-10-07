@@ -1102,7 +1102,7 @@ class Write_Chapter_Tool(Base_Tool):
         }
 
         # 通过web-socket发送至前端
-        success, message = self.ws_manager.send_command(agent_id, command)
+        success, message = self.ws_manager._send_office_command_test(agent_id, command)
         return success, message
 
     @classmethod
@@ -1141,11 +1141,11 @@ class Write_Chapter_Tool(Base_Tool):
             if registered_clients:
                 # 选择第一个连接的客户端进行测试，而不是真正对应的agent!!!
                 fake_agent_id = registered_clients[0]
-                success, message = cls._s_ws_manager.send_command(fake_agent_id, command)
+                success, message = cls._s_ws_manager._send_office_command_test(fake_agent_id, command)
             # ----------------------/DEBUG-----------------------------
         else:
             # 通过web-socket发送至前端
-            success, message = cls._s_ws_manager.send_command(top_agent_id, command)
+            success, message = cls._s_ws_manager._send_office_command_test(top_agent_id, command)
         return success, message
 
     def _call_collabora_api(self, top_agent_id, cmd, params):
@@ -1172,7 +1172,7 @@ class Write_Chapter_Tool(Base_Tool):
         }
 
         # 通过web-socket发送至前端
-        success, message = self.ws_manager.send_command(top_agent_id, command)
+        success, message = self.ws_manager._send_office_command_test(top_agent_id, command)
         return success, message
 
     @classmethod
@@ -1605,7 +1605,7 @@ class Insert_Math_Formula_Tool(Base_Tool):
                     'params': params
                 }
                 # 通过web-socket发送至前端
-                success, message = ws_server.send_command(command)
+                success, message = ws_server._send_office_command_test(command)
                 print(f'command={command!r}')
                 print(f'success={success!r}, message={message!r}')
                 print('-----------------/_test_call_collabora_api--------------------')

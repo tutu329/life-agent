@@ -105,7 +105,7 @@ def main():
         print(f"\n🚀 准备向 Agent ID '{agent_id}' 发送原生指令...")
         print(f"📋 指令内容: {json.dumps(command, indent=2, ensure_ascii=False)}")
 
-        success, message = ws_manager.send_command(agent_id, command)
+        success, message = ws_manager._send_office_command_test(agent_id, command)
 
         if success:
             print(f"✅ 指令已成功发送。")

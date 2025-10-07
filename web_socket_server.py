@@ -11,6 +11,7 @@ from collections import defaultdict
 from urllib.parse import urlsplit, parse_qs
 from websockets.server import ServerConnection
 from websockets.exceptions import ConnectionClosed, ConnectionClosedOK, ConnectionClosedError
+from pydantic import BaseModel, Field, ConfigDict
 
 
 from typing import Any, Dict, Set, List, Literal, Optional, Union, Tuple, TYPE_CHECKING, Callable
@@ -28,19 +29,21 @@ def dpprint(*args, **kwargs):
     if DEBUG:
         pprint(*args, **kwargs)
 
+class Connection_Info(BaseModel):
+    user_id: str = ''               # user_id
+
 class Web_Socket_Server:
     def __init__(self, port=5113):  # 5113为测试port
         self.thread: Thread = None
         self.port = port
         self.server_started = False
-        self.web_socket = None
 
         self.server = None  # websockets.serve()
 
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-        self.clients:Set[ServerConnection] = set()
+        self.connections:Dict[ServerConnection, Connection_Info] = {}   # 1 server <--> m connections, n connections <--> user_id
 
     def stop_server(self, timeout: float = 5.0):
         """优雅停止服务器并回收线程"""
@@ -51,19 +54,31 @@ class Web_Socket_Server:
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=timeout)
 
+        self.server_started = False
+
     def start_server(self):
         self.thread = Thread(target=self._server_run, kwargs={'port': self.port})
         # self.thread = Thread(target=self._server_run, kwargs={'port': self.port}, daemon=True)
         self.thread.start()
         self.server_started = True
 
+    def print_connections(self):
+        dgreen(f'-----------------Web_Socket_Server(Port={self.port}) connections----------------------')
+        for k, v in self.connections.items():
+            dblue(f'client_info: {v}, connection: {k}')
+        dgreen(f'----------------/Web_Socket_Server(Port={self.port}) connections----------------------')
+
+    async def broadcast(self, data: Any):
+        for connection, connection_info in self.connections.items():
+            await connection.send(data)
+
     def _server_run(self, port):
         async def handler(websocket):
-            dgreen(f'📱 新的WebSocket连接: {websocket.remote_address}, type(websocket): {type(websocket)}')
-            dgreen(f'websocket: {websocket}')
-            self.clients.add(websocket)
-            dred(f'clients: {self.clients}')
-            self.web_socket = websocket
+            dgreen(f'📱 新的WebSocket连接: {websocket.remote_address}')
+            connection_info = Connection_Info()
+            self.connections[websocket] = connection_info
+
+            self.print_connections()
 
             try:
                 async for message in websocket:
@@ -71,11 +86,12 @@ class Web_Socket_Server:
                     dgreen(f'data: {data}')
             except websockets.exceptions.ConnectionClosed as e:
                 dprint(f'📱 WebSocket连接已关闭: {websocket.remote_address}')
+                self.connections.pop(websocket, None)
+                self.print_connections()
             except Exception as e:
                 dprint(f'⚠️ WebSocket连接错误: {websocket.remote_address} - {e}')
 
         async def start_server():
-            print('----------------------start_server----------------------')
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             try:
                 ssl_context.load_cert_chain('/home/tutu/ssl/powerai_public.crt', '/home/tutu/ssl/powerai.key')
@@ -92,9 +108,8 @@ class Web_Socket_Server:
                     dprint(f'❌ WebSocket服务器启动完全失败: {fallback_error}')
 
         self.loop.run_until_complete(start_server())
-        print('----------------------server quit.----------------------')
 
-    def send_command(self, command):
+    def _send_office_command_test(self, command):
         """向指定客户端发送命令（同步接口）"""
         # 创建新的事件循环发送命令
         loop = asyncio.new_event_loop()
@@ -111,21 +126,20 @@ class Web_Socket_Server:
     async def _async_send_command(self, command):
         try:
             command_json = json.dumps(command, ensure_ascii=False)
-            await self.web_socket.send(command_json)
+            await self.broadcast((command_json))
             # dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
             return True, 'success'
         except Exception as e:
             return False, f'发送失败: {e}'
 
     def _test_call_collabora_api(self):
-        print('------------------_test_call_collabora_api--------------------')
         while True:
-            if self.web_socket:
+            if len(self.connections)>0:
                 break
 
             time.sleep(0.1)
 
-        if self.web_socket:
+        if len(self.connections)>0:
             # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
             timeout = 30  # 等待30秒
             start_time = time.time()
@@ -170,10 +184,9 @@ class Web_Socket_Server:
             # }
 
             # 通过web-socket发送至前端
-            success, message = self.send_command(command)
+            success, message = self._send_office_command_test(command)
             print(f'command={command!r}')
             print(f'success={success!r}, message={message!r}')
-            print('-----------------/_test_call_collabora_api--------------------')
             return success, message
 
 class Web_Socket_Server_Manager:
@@ -184,6 +197,7 @@ class Web_Socket_Server_Manager:
         server = Web_Socket_Server()
         server.start_server()
         cls.server_pool[port] = server
+        dgreen(f'Web_Socket_Server已启动(port:{port})')
 
         return server
 
@@ -191,6 +205,7 @@ class Web_Socket_Server_Manager:
     def stop_server(cls, port):
         server = cls.server_pool.pop(port)
         server.stop_server()
+        dgreen(f'Web_Socket_Server已停止(port:{port})')
 
 def main():
     ws_server = Web_Socket_Server_Manager.start_server(5113)
@@ -206,8 +221,9 @@ def main():
 
     # thread.join()
     # ws_server._test_call_collabora_api()
-    print('----------------------main() quit.----------------------')
 
 if __name__ == "__main__":
+    # print(len({}))
+    # print(len({'a':['b','cc'], 'aa':[]}))
     main()
 
