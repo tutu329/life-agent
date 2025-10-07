@@ -391,6 +391,7 @@ class Agent_Manager:
         return resource_data
 
 def main_one_agent():
+    from web_socket_server import Web_Socket_Server_Manager
     # from agent.tools.folder_tool import Folder_Tool
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
@@ -451,6 +452,8 @@ def main_one_agent():
     dprint("--------------run_agent------------------")
     dprint(f'result=({res})')
     dprint("-------------/run_agent------------------")
+
+
 
     # dprint("-----------------------------------------------------------")
     # while True:
