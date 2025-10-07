@@ -4,6 +4,7 @@ from accelerate.commands.config.update import description
 from streamlit import success
 
 import config
+from agent.core.agent_config import Agent_Config
 from config import dred, dgreen, dcyan, dblue, dyellow
 from utils.encode import safe_encode
 from utils.extract import extract_chapter_no
@@ -15,6 +16,7 @@ from tools.doc.docx_para import DocxParser
 from tools.doc.docx_outline import DocxOutlineExtractor
 
 from utils.web_socket_manager import get_websocket_manager
+from web_socket_server import Web_Socket_Server_Manager
 
 from agent.tools.office_tool_uno_command.uno_command import Uno_Command, Uno_Color
 from tools.llm.api_client import LLM_Client
@@ -1539,6 +1541,7 @@ class Write_Chapter_Tool(Base_Tool):
         # 确保返回安全编码的结果
         return Agent_Tool_Result(result_summary=safe_encode(result))
 
+ws_server = Web_Socket_Server_Manager.start_server(5113)
 class Insert_Math_Formula_Tool(Base_Tool):
     tool_name= 'Insert_Math_Formula_Tool'
     tool_description='''
@@ -1579,16 +1582,16 @@ class Insert_Math_Formula_Tool(Base_Tool):
         as_inline = paras.get('as_inline')
         base_font_height = paras.get('base_font_height')
 
-        ws_server = Web_Socket_Server(port=5113)
+        # ws_server = Web_Socket_Server_Manager.start_server(5113)
         def _test():
             print('------------------_test_call_collabora_api--------------------')
             while True:
-                if ws_server.web_socket:
+                if ws_server.connections:
                     break
 
                 time.sleep(0.1)
 
-            if ws_server.web_socket:
+            if ws_server.connections:
                 command = {
                     'type': 'office_operation',
                     'operation': 'call_python_script',
@@ -1610,13 +1613,13 @@ class Insert_Math_Formula_Tool(Base_Tool):
                 print(f'success={success!r}, message={message!r}')
                 print('-----------------/_test_call_collabora_api--------------------')
 
-                ws_server.web_socket.close()   # 可能是 ws.close() / ws.shutdown() / await ws.close()
+                # ws_server.web_socket.close()   # 可能是 ws.close() / ws.shutdown() / await ws.close()
                 return success, message
 
         thread = Thread(target=_test)
         thread.start()
 
-        ws_server.start_server()
+        # ws_server.start_server()
 
         thread.join()
 
@@ -1950,6 +1953,24 @@ def main_write_chapter_tool_test():
     tool = Write_Chapter_Tool()
     tool._test_call_collabora_api()
 
+def main_only_call_test():
+    paras = {
+        'formula': 'E = m cdot c^{2} int from a to b f(x) dx = F(b) - F(a)',
+        'as_inline': True,
+        'base_font_height': 12,
+    }
+
+    tool_call_paras = Tool_Call_Paras(
+        callback_tool_paras_dict = paras,
+        callback_agent_config=Agent_Config(),
+        callback_top_agent_id='',
+        callback_agent_id='',
+        callback_father_agent_exp=''
+    )
+    Insert_Math_Formula_Tool.class_call(tool_call_paras)
+
 if __name__ == "__main__":
     # main_office()
-    main_write_chapter_tool_test()
+    # main_write_chapter_tool_test()
+    main_only_call_test()
+    main_only_call_test()

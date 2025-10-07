@@ -57,10 +57,11 @@ class Web_Socket_Server:
         self.server_started = False
 
     def start_server(self):
-        self.thread = Thread(target=self._server_run, kwargs={'port': self.port})
-        # self.thread = Thread(target=self._server_run, kwargs={'port': self.port}, daemon=True)
-        self.thread.start()
-        self.server_started = True
+        if not self.server_started:
+            self.thread = Thread(target=self._server_run, kwargs={'port': self.port})
+            # self.thread = Thread(target=self._server_run, kwargs={'port': self.port}, daemon=True)
+            self.thread.start()
+            self.server_started = True
 
     def print_connections(self):
         dgreen(f'-----------------Web_Socket_Server(Port={self.port}) connections----------------------')
@@ -108,6 +109,7 @@ class Web_Socket_Server:
                     dprint(f'❌ WebSocket服务器启动完全失败: {fallback_error}')
 
         self.loop.run_until_complete(start_server())
+        # print('oops!')
 
     def _send_office_command_test(self, command):
         """向指定客户端发送命令（同步接口）"""
@@ -134,12 +136,12 @@ class Web_Socket_Server:
 
     def _test_call_collabora_api(self):
         while True:
-            if len(self.connections)>0:
+            if self.connections:
                 break
 
             time.sleep(0.1)
 
-        if len(self.connections)>0:
+        if self.connections:
             # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
             timeout = 30  # 等待30秒
             start_time = time.time()
@@ -194,12 +196,16 @@ class Web_Socket_Server_Manager:
 
     @classmethod
     def start_server(cls, port)->Web_Socket_Server:
-        server = Web_Socket_Server()
-        server.start_server()
-        cls.server_pool[port] = server
-        dgreen(f'Web_Socket_Server已启动(port:{port})')
+        if port not in cls.server_pool:
+            server = Web_Socket_Server()
+            server.start_server()
+            cls.server_pool[port] = server
+            dgreen(f'Web_Socket_Server已启动(port:{port})')
 
-        return server
+            return server
+        else:
+            dyellow(f'Web_Socket_Server(port:{port})已有，不再新建.')
+            return cls.server_pool[port]
 
     @classmethod
     def stop_server(cls, port):
@@ -225,5 +231,10 @@ def main():
 if __name__ == "__main__":
     # print(len({}))
     # print(len({'a':['b','cc'], 'aa':[]}))
+    # print('a1' in {'a':['b','cc'], 'aa':[]})
+    # if {'a':33}:
+    #     print(1)
+    # else:
+    #     print(2)
     main()
 
