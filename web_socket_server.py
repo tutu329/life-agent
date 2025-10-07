@@ -111,86 +111,6 @@ class Web_Socket_Server:
         self.loop.run_until_complete(start_server())
         # print('oops!')
 
-    def _send_office_command_test(self, command):
-        """向指定客户端发送命令（同步接口）"""
-        # 创建新的事件循环发送命令
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        try:
-            success, message = loop.run_until_complete(self._async_send_command(command))
-            return success, message
-        except Exception as e:
-            return False, f'发送失败: {e}'
-        finally:
-            loop.close()
-
-    async def _async_send_command(self, command):
-        try:
-            command_json = json.dumps(command, ensure_ascii=False)
-            await self.broadcast((command_json))
-            # dgreen(f'_async_send_command()成功：client_id为"{client_id}".')
-            return True, 'success'
-        except Exception as e:
-            return False, f'发送失败: {e}'
-
-    def _test_call_collabora_api(self):
-        while True:
-            if self.connections:
-                break
-
-            time.sleep(0.1)
-
-        if self.connections:
-            # ------临时的websocket连接方式（选择第一个连接的客户端进行测试）------
-            timeout = 30  # 等待30秒
-            start_time = time.time()
-
-            # 桥接collabora CODE接口
-            command = {
-                'type': 'office_operation',
-                'operation': 'call_python_script',
-                # 'agent_id': agent_id,
-                # 'agent_id': top_agent_id,
-                'data': {},
-                'timestamp': int(time.time() * 1000)
-            }
-            # command = {
-            #     'type': 'office_operation',
-            #     'operation': 'call_python_script',
-            #     # 'agent_id': agent_id,
-            #     # 'agent_id': top_agent_id,
-            #     'data': {},
-            #     'timestamp': int(time.time() * 1000)
-            # }
-            params = {
-                'formula':'E = m cdot c^{2} int from a to b f(x) dx = F(b) - F(a)',
-                # 'formula':'int_{a}^{b}f(x)dx = F(b)-F(a)',
-                # 'formula':'E = m c^2',
-                'as_inline':True,
-                'base_font_height':12,
-            }
-            # params = {
-            #     'text':'hi every body4!\n hi every body5!',
-            #     'font_name':'SimSun',
-            #     'font_color':'blue',
-            #     'font_size':12,
-            # }
-            command['data'] = {
-                'cmd':'insert_math',
-                'params':params
-            }
-            # command['data'] = {
-            #     'cmd':'insert_text',
-            #     'params':params
-            # }
-
-            # 通过web-socket发送至前端
-            success, message = self._send_office_command_test(command)
-            print(f'command={command!r}')
-            print(f'success={success!r}, message={message!r}')
-            return success, message
-
 class Web_Socket_Server_Manager:
     server_pool:Dict[str, Web_Socket_Server] = {}   # port <--> ws_server
 
@@ -209,24 +129,16 @@ class Web_Socket_Server_Manager:
 
     @classmethod
     def stop_server(cls, port):
-        server = cls.server_pool.pop(port)
-        server.stop_server()
-        dgreen(f'Web_Socket_Server已停止(port:{port})')
+        if port in cls.server_pool:
+            server = cls.server_pool.pop(port)
+            server.stop_server()
+            dgreen(f'Web_Socket_Server已停止(port:{port})')
 
 def main():
-    ws_server = Web_Socket_Server_Manager.start_server(5113)
-
-    def _test():
-        print('-----------------_test--------------------')
-        ws_server._test_call_collabora_api()
-        print('----------------/_test--------------------')
-        Web_Socket_Server_Manager.stop_server(5113)
-
-    thread = Thread(target=_test)
-    thread.start()
-
-    # thread.join()
-    # ws_server._test_call_collabora_api()
+    ws_server = Web_Socket_Server_Manager.start_server(port=5113)
+    ws_server = Web_Socket_Server_Manager.start_server(port=5113)
+    time.sleep(3)
+    Web_Socket_Server_Manager.stop_server(port=5113)
 
 if __name__ == "__main__":
     # print(len({}))
