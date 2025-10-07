@@ -41,7 +41,7 @@ class Web_Socket_Client_Register_Response(BaseModel):
 # 主要用于远程client，client在ws.onopen()中通过ws.send()进行注册时需遵循
 class Web_Socket_Client_Register_Request(BaseModel):
     type: str = 'register'
-    client_id: str
+    client_id: str = ''     # 若不指定client_id，则由server的uuid4()生成
 
 class Web_Socket_Server:
     def __init__(self, port):
