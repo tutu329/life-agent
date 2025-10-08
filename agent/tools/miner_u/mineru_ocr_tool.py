@@ -4,7 +4,7 @@
 # conda activate mineru
 # uv pip install mineru[all]
 #
-# 2、使用ui(注意要用transformer不要用pipe。)
+# 2、使用ui(注意要用transformer不要用pipe；pipe不用vlm模型，质量不行。)
 # https://opendatalab.github.io/MinerU/usage/quick_usage/#quick-usage-via-command-line
 # 如使用含vllm的ui（启动后，会下载模型，由于开VPN会造成启动测试失败，因此必须关VPN）：
 # export MINERU_MODEL_SOURCE=modelscope
