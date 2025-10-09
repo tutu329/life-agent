@@ -177,7 +177,7 @@ class Agent:
     MAX_ERROR_RETRY:int = 20    # agent的最大错误尝试轮次
     TIMEOUT_SECONDS:int = 3600  # agent运行的超时时间
 
-    OFFICE_WS_CLIENT_ID = '5113_ws_client'  # 专用于office测试的client_id
+    OFFICE_test_WS_CLIENT_ID = '5113_ws_client'  # 专用于office测试的client_id
 
 class Uploads:
     uploads_path        :str = '/home/tutu/server/life-agent-web/uploads/'
