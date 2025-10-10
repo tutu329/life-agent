@@ -97,6 +97,8 @@ class Toolcall_Agent:
         for agent_data in sub_agent_data_list:
             self.sub_agents.append(agent_data.agent)
 
+        if self.is_sub_agent():
+            return
         print('------------------------------所有需要遍历上下层agents的操作------------------------------')
         # 1、尝试计算本agent及下层所有agent的agent_level
         self._calculate_all_agents_level()
