@@ -65,7 +65,7 @@ class Toolcall_Agent:
         # 自己的id
         self.agent_id = str(uuid4())
         self.agent_level = 0            # 用于表示agent是顶层agent，还是下级的agent_as_tool
-        self.lower_agents_as_tool = []  # lower的agent_as_tool的列表
+        self.sub_agents = []  # lower的agent_as_tool的列表
         # 多层agent体系中的顶层agent的id
         self.top_agent_id = self.agent_config.top_agent_id if self.agent_config.top_agent_id else self.agent_id
 
@@ -88,13 +88,13 @@ class Toolcall_Agent:
         self.agent_status.canceling = True
 
         # 尝试cancel所有lower_agent_as_tool
-        for lower_agent in self.lower_agents_as_tool:
-            lower_agent.set_cancel()
+        for sub_agent in self.sub_agents:
+            sub_agent.set_cancel()
 
-    def register_lower_agents_as_tool(self, lower_agent_data_list):
+    def register_sub_agents(self, sub_agent_data_list):
         # 注册lower的agents
-        for agent_data in lower_agent_data_list:
-            self.lower_agents_as_tool.append(agent_data.agent)
+        for agent_data in sub_agent_data_list:
+            self.sub_agents.append(agent_data.agent)
 
         # 尝试计算本agent及下层所有agent的agent_level
         self._calculate_all_agents_level()
@@ -112,13 +112,13 @@ class Toolcall_Agent:
         if not self.is_agent_as_tool():
             self.agent_level = agent_level
             print(f'----------set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
-            for lower_agent in self.lower_agents_as_tool:
+            for lower_agent in self.sub_agents:
                 lower_agent._calculate_all_agents_level(self.agent_level + 1)
         else:
             # dyellow(f'【Toolcall_Agent.calculate_all_agents_level】warning: 未从顶层agent开始计算所有层agent的level.')
             self.agent_level = agent_level
             print(f'----------set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
-            for lower_agent in self.lower_agents_as_tool:
+            for lower_agent in self.sub_agents:
                 lower_agent._calculate_all_agents_level(self.agent_level + 1)
 
     # 初始化self.tool_funcs_dict
