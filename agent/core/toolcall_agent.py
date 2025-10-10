@@ -99,10 +99,17 @@ class Toolcall_Agent:
         # 尝试计算本agent及下层所有agent的agent_level
         self._calculate_all_agents_level()
 
+    # 是否为agent as tool(sub-agent)
+    def is_agent_as_tool(self):
+        if self.agent_config.as_tool_name:
+            return True
+        else:
+            return False
+
     # 在所有层agent都注册完之后，计算所有层agent的agent_level
     def _calculate_all_agents_level(self, agent_level=0):
         # 仅当本agent为顶层agent时，计算本agent及下面所有层agent的agent_level，
-        if not self.agent_config.as_tool_name:
+        if not self.is_agent_as_tool():
             self.agent_level = agent_level
             print(f'----------set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
             for lower_agent in self.lower_agents_as_tool:
@@ -128,7 +135,10 @@ class Toolcall_Agent:
     def set_agent_level(self, agent_level):
         self.agent_level = agent_level
 
-    def init(self, tool_requests, tool_funcs):
+    def init(self,
+             tool_requests,     # 所有的tool的描述
+             tool_funcs         # 所有的tool的回调func
+             ):
         self.response_llm_client.init()
         self._set_funcs(tool_requests, tool_funcs)
         # self._calculate_agent_level()
