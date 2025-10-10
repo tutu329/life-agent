@@ -156,6 +156,9 @@ def print_color():
 
     config.Global.app_debug = tmp_app_debug
 
+def server_startup_output(info):
+    print(f'{LIGHT_BLACK}⏺ {RESET}{LIGHT_RED}{info}{RESET}')
+
 def agent_query_output(query, agent_level=0):
     # print(f'\n{PALE_GRAY}> {query}{RESET}\n')
     query = query.strip().replace('\n', ' ')
