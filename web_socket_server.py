@@ -183,7 +183,10 @@ class Web_Socket_Server_Manager:
     server_pool:Dict[str, Web_Socket_Server] = {}   # port <--> ws_server
 
     @classmethod
-    def start_server(cls, port, server_at='')->Web_Socket_Server:
+    def start_server(cls,
+                     port,
+                     server_at=''   # 如："office_tool.py"
+                     ) -> Web_Socket_Server:
         if port not in cls.server_pool:
             server = Web_Socket_Server(port=port)
             server.start_server()
