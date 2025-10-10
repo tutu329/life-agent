@@ -339,9 +339,9 @@ class Agent_Manager:
         """
         tool_param_dict_list = []
         tools_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tools')
-        dprint(f'--------------tools_dir----------------')
+        dprint(f'--------------server本地存放所有local tool的文件夹----------------')
         dprint(tools_dir)
-        dprint(f'-------------/tools_dir----------------')
+        dprint(f'-------------/server本地存放所有local tool的文件夹----------------')
 
         tool_request_list = []
         tool_func_list = []
@@ -391,6 +391,17 @@ class Agent_Manager:
     def load_resource(cls, resource_id:str)->Resource_Data:
         resource_data = Redis_Resource_Manager.get_resource(resource_id)
         return resource_data
+
+    # 遍历整个agents的tree(仅用于server本地调用，因为远程无法设置on_node())
+    @classmethod
+    def _traverse_agents_tree(cls, agent_id:str, on_node:Callable[[Toolcall_Agent, str], Any], parent_agent_id=''):
+        agent = cls._get_agent(agent_id)
+
+        on_node(agent, parent_agent_id)
+
+        if agent:
+            for sub_agent in agent.sub_agents:
+                cls._traverse_agents_tree(agent_id=sub_agent.agent_id, on_node=on_node, parent_agent_id=agent.agent_id)
 
 def main_one_agent():
     from web_socket_server import Web_Socket_Server_Manager
@@ -476,24 +487,28 @@ def main_multi_levels_agents():
 
     # tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
     local_tool_quests, local_tool_funcs = Agent_Manager.get_local_tool_requests_and_funcs_on_server_start()
-    dprint("--------------tools_info------------------")
+    dprint("--------------所有local tools的信息------------------")
     for tool_param_dict in local_tool_quests:
         dprint(tool_param_dict)
-    dprint("-------------/tools_info------------------")
+    dprint("-------------/所有local tools的信息------------------")
 
-    dprint("--------------client_get_server_local_tools_info------------------")
+    dprint("--------------指定tool_name的local tool的信息------------------")
     dprint(Agent_Manager.get_local_tool_names())
     dprint(Agent_Manager.get_local_tool_param_dict(tool_name='Write_Chapter_Tool'))
     dprint(Agent_Manager.get_local_tool_param_dict(tool_name='Folder_Tool'))
-    dprint("--------------client_get_server_local_tools_info------------------")
+    dprint("-------------/指定tool_name的local tool的信息------------------")
 
-    dprint("--------------MCP------------------")
-    dpprint(Agent_Manager.get_mcp_url_tool_names("https://powerai.cc:8011/mcp/sqlite/sse"))
+    dprint("--------------指定url的MCP的所有tool_name------------------")
+    url = "https://powerai.cc:8011/mcp/sqlite/sse"
+    dprint(f'url={url}')
+    dpprint(Agent_Manager.get_mcp_url_tool_names(url))
     # dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
 
     # npx @playwright/mcp@latest --port 8788 --headless --browser chromium
-    dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8788/sse"))
-    dprint("-------------/MCP------------------")
+    url = "http://localhost:8788/sse"
+    dprint(f'url={url}')
+    dpprint(Agent_Manager.get_mcp_url_tool_names(url))
+    dprint("-------------/指定url的MCP的所有tool_name------------------")
 
     mcp_requests = [
         MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse", allowed_tool_names=['list_tables', 'read_query']),
@@ -567,6 +582,15 @@ def main_multi_levels_agents():
     for info in Agent_Manager._get_all_tool_debug_info_list(agent_id):
         dprint(info)
     dprint("-------------/注册后tool情况------------------")
+
+    def _on_node(agent, parent_agent_id):
+        level = agent.agent_level
+        top_agent_id = agent.top_agent_id
+        print(f'{"   "*level} agent_id={agent.agent_id!r}, parent_agent_id={parent_agent_id!r}, top_agent_id={top_agent_id}, agent_name={agent.agent_config.agent_name}')
+
+    dprint("---------------------------------------完整agents tree--------------------------------------------")
+    Agent_Manager._traverse_agents_tree(agent_id=agent_id, on_node=_on_node)
+    dprint("--------------------------------------/完整agents tree--------------------------------------------")
 
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='现代物理学的创始人是谁')
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='https://www.ccps.gov.cn/xtt/202410/t20241004_164720.shtml这个链接的网页内容讲了什么？')

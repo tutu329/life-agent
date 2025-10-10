@@ -99,12 +99,12 @@ class Toolcall_Agent:
 
         if self.is_sub_agent():
             return
-        print('------------------------------所有需要遍历上下层agents的操作------------------------------')
+        # print('------------------------------所有需要遍历上下层agents的操作------------------------------')
         # 1、尝试计算本agent及下层所有agent的agent_level
         self._calculate_all_agents_level()
         # 2、遍历设置top_agent_id
         self._calculate_all_agents_top_agent_id()
-        print('-----------------------------/所有需要遍历上下层agents的操作------------------------------')
+        # print('-----------------------------/所有需要遍历上下层agents的操作------------------------------')
 
     # 是否为agent as tool(sub-agent)
     def is_sub_agent(self):
@@ -117,17 +117,17 @@ class Toolcall_Agent:
     def _calculate_all_agents_top_agent_id(self, top_agent_id=None):
         if top_agent_id is None:
             top_agent_id = self.top_agent_id
-            print(f'----------agent_id={self.agent_id}, top_agent_id={self.top_agent_id}, agent_name={self.agent_config.agent_name}------------')
+            # print(f'----------agent_id={self.agent_id}, top_agent_id={self.top_agent_id}, agent_name={self.agent_config.agent_name}------------')
 
         for sub_agent in self.sub_agents:
             sub_agent.top_agent_id = top_agent_id
-            print(f'----------agent_id={sub_agent.agent_id}, set top_agent_id={sub_agent.top_agent_id}, agent_name={sub_agent.agent_config.agent_name}------------')
+            # print(f'----------agent_id={sub_agent.agent_id}, set top_agent_id={sub_agent.top_agent_id}, agent_name={sub_agent.agent_config.agent_name}------------')
             sub_agent._calculate_all_agents_top_agent_id(top_agent_id=top_agent_id)
 
     # 在所有层agent都注册完之后，计算所有层agent的agent_level
     def _calculate_all_agents_level(self, agent_level=0):
         self.agent_level = agent_level
-        print(f'----------agent_id={self.agent_id}, set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
+        # print(f'----------agent_id={self.agent_id}, set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
         for sub_agent in self.sub_agents:
             sub_agent._calculate_all_agents_level(self.agent_level + 1)
 
