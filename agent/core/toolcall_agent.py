@@ -101,7 +101,7 @@ class Toolcall_Agent:
         self._calculate_all_agents_level()
 
     # 是否为agent as tool(sub-agent)
-    def is_agent_as_tool(self):
+    def is_sub_agent(self):
         if self.agent_config.as_tool_name:
             return True
         else:
@@ -110,17 +110,17 @@ class Toolcall_Agent:
     # 在所有层agent都注册完之后，计算所有层agent的agent_level
     def _calculate_all_agents_level(self, agent_level=0):
         # 仅当本agent为顶层agent时，计算本agent及下面所有层agent的agent_level，
-        if not self.is_agent_as_tool():
+        if not self.is_sub_agent():
             self.agent_level = agent_level
             print(f'----------set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
-            for lower_agent in self.sub_agents:
-                lower_agent._calculate_all_agents_level(self.agent_level + 1)
+            for sub_agent in self.sub_agents:
+                sub_agent._calculate_all_agents_level(self.agent_level + 1)
         else:
             # dyellow(f'【Toolcall_Agent.calculate_all_agents_level】warning: 未从顶层agent开始计算所有层agent的level.')
             self.agent_level = agent_level
             print(f'----------set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
-            for lower_agent in self.sub_agents:
-                lower_agent._calculate_all_agents_level(self.agent_level + 1)
+            for sub_agent in self.sub_agents:
+                sub_agent._calculate_all_agents_level(self.agent_level + 1)
 
     # 初始化self.tool_funcs_dict
     def _set_funcs(self, tool_requests, tool_funcs):
