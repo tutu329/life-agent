@@ -1629,7 +1629,7 @@ class Write_Chapter_Tool(Base_Tool):
         # 确保返回安全编码的结果
         return Agent_Tool_Result(result_summary=safe_encode(result))
 
-ws_server = Web_Socket_Server_Manager.start_server(config.Port.office_test_web_socket_server, server_used_in="office_tool.py")
+ws_server = Web_Socket_Server_Manager.start_server(config.Port.office_test_web_socket_server, server_at="office_tool.py")
 class Insert_Math_Formula_Tool(Base_Tool):
     tool_name= 'Insert_Math_Formula_Tool'
     tool_description='''
