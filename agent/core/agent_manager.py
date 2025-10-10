@@ -76,7 +76,7 @@ class Agent_Manager:
         # 最终包含local和MCP的所有allowed的funcs
         all_tool_funcs = []
 
-        sub_agent_data_list = []
+        sub_agents_data_list = []
 
         try:
             # 获取所有的local tools
@@ -92,7 +92,7 @@ class Agent_Manager:
                 for agent_as_tool in cls.get_all_agents_as_tool():
                     if agent_as_tool.agent.agent_config.as_tool_name in agent_config.allowed_local_tool_names:
                         # 在upper agent中注册lower的agent_as_tool
-                        sub_agent_data_list.append(agent_as_tool)
+                        sub_agents_data_list.append(agent_as_tool)
 
                         agent_as_tool_parameters = Tool_Parameters(
                             properties={'instruction': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的自然语言指令')},  # 这里参数必须是toolcall_agent.run(self, instruction)的instruction
@@ -145,7 +145,7 @@ class Agent_Manager:
         agent.init(agent_config.all_tool_requests, all_tool_funcs)
 
         # 用于建立agent和sub_agent之间的关联（如cancel的遍历、level计算的遍历、设置top_agent_id的遍历）
-        agent.register_sub_agents(sub_agent_data_list)
+        agent.calculate_all_agents_in_the_tree(sub_agents_data_list)
 
         # 注册agent
         agent_data = Agent_Data(
