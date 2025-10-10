@@ -178,6 +178,7 @@ class Agent:
     TIMEOUT_SECONDS:int = 3600  # agent运行的超时时间
 
     OFFICE_test_WS_CLIENT_ID = '5113_ws_client'  # 专用于office测试的client_id
+    SUB_AGENT_AS_TOOL_DESCRIPTION = '交给该tool(该tool同时是一个agent)的自然语言指令'  # 用于约束sub_agent的指令提示
 
 class Uploads:
     uploads_path        :str = '/home/tutu/server/life-agent-web/uploads/'

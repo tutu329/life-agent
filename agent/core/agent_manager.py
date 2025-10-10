@@ -95,7 +95,7 @@ class Agent_Manager:
                         sub_agents_data_list.append(agent_as_tool)
 
                         agent_as_tool_parameters = Tool_Parameters(
-                            properties={'instruction': Tool_Property(type="string", description='交给该tool(该tool同时是一个agent)的自然语言指令')},  # 这里参数必须是toolcall_agent.run(self, instruction)的instruction
+                            properties={'instruction': Tool_Property(type="string", description=config.Agent.SUB_AGENT_AS_TOOL_DESCRIPTION)},  # 这里参数必须是toolcall_agent.run(self, instruction)的instruction
                             required=['instruction'],
                         )
 
