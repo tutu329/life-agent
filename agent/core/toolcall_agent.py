@@ -91,6 +91,7 @@ class Toolcall_Agent:
         for sub_agent in self.sub_agents:
             sub_agent.set_cancel()
 
+    # 用于建立agent和sub_agent之间的关联（如cancel的遍历、level计算的遍历）
     def register_sub_agents(self, sub_agent_data_list):
         # 注册lower的agents
         for agent_data in sub_agent_data_list:
