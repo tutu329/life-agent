@@ -91,7 +91,7 @@ class Toolcall_Agent:
         for sub_agent in self.sub_agents:
             sub_agent.set_cancel()
 
-    # 用于建立agent和sub_agent之间的关联（如cancel的遍历、level计算的遍历、设置top_agent_id的遍历）
+    # 通过遍历，建立agent和sub_agent之间的关联（如cancel的遍历、level计算的遍历、设置top_agent_id的遍历）
     def calculate_all_agents_in_the_tree(self, sub_agent_data_list):
         # 注册lower的agents
         for agent_data in sub_agent_data_list:
@@ -124,18 +124,10 @@ class Toolcall_Agent:
 
     # 在所有层agent都注册完之后，计算所有层agent的agent_level
     def _calculate_all_agents_level(self, agent_level=0):
-        # 仅当本agent为顶层agent时，计算本agent及下面所有层agent的agent_level，
-        if not self.is_sub_agent():
-            self.agent_level = agent_level
-            print(f'----------agent_id={self.agent_id}, set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
-            for sub_agent in self.sub_agents:
-                sub_agent._calculate_all_agents_level(self.agent_level + 1)
-        else:
-            # dyellow(f'【Toolcall_Agent.calculate_all_agents_level】warning: 未从顶层agent开始计算所有层agent的level.')
-            self.agent_level = agent_level
-            print(f'----------agent_id={self.agent_id}, set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
-            for sub_agent in self.sub_agents:
-                sub_agent._calculate_all_agents_level(self.agent_level + 1)
+        self.agent_level = agent_level
+        print(f'----------agent_id={self.agent_id}, set agent_level={agent_level}, agent_name={self.agent_config.agent_name}------------')
+        for sub_agent in self.sub_agents:
+            sub_agent._calculate_all_agents_level(self.agent_level + 1)
 
     # 初始化self.tool_funcs_dict
     def _set_funcs(self, tool_requests, tool_funcs):

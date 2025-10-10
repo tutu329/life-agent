@@ -144,7 +144,7 @@ class Agent_Manager:
         agent = Toolcall_Agent(agent_config=agent_config)
         agent.init(agent_config.all_tool_requests, all_tool_funcs)
 
-        # 用于建立agent和sub_agent之间的关联（如cancel的遍历、level计算的遍历、设置top_agent_id的遍历）
+        # 通过遍历，建立agent和sub_agent之间的关联（如cancel的遍历、level计算的遍历、设置top_agent_id的遍历）
         agent.calculate_all_agents_in_the_tree(sub_agents_data_list)
 
         # 注册agent
