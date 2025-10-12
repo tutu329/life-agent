@@ -61,11 +61,13 @@ def _test_call_collabora_api(ws_server):
         #     'timestamp': int(time.time() * 1000)
         # }
         params = {
-            'formula': 'E = m cdot c^{2} int from a to b f(x) dx = F(b) - F(a)',
+            'formula': '∫_{a}^{b} f\'(x) dx = f(b) - f(a)',
+            # 'formula': 'E = m cdot c^{2} int from a to b f(x) dx = F(b) - F(a)',
+
             # 'formula':'int_{a}^{b}f(x)dx = F(b)-F(a)',
             # 'formula':'E = m c^2',
             'as_inline': True,
-            'base_font_height': 12,
+            'base_font_height': 6,
         }
         # params = {
         #     'text':'hi every body4!\n hi every body5!',
@@ -1645,7 +1647,7 @@ class Insert_Math_Formula_Tool(Base_Tool):
     tool_parameters={
         'type':'object',
         'properties':{
-            'formula': {'type': 'string', 'description': '公式字符串，如“E = m c^2”'},
+            'formula': {'type': 'string', 'description': '公式字符串，如“E = m c^2”，只能输入公式字符串、不能输入其他无关文字'},
             'as_inline': {'type': 'bool', 'description': '是否inline'},
             'base_font_height': {'type': 'int', 'description': '公式基本字体高度'},
         },
@@ -1672,7 +1674,7 @@ class Insert_Math_Formula_Tool(Base_Tool):
 
         # ws_server = Web_Socket_Server_Manager.start_server(5113)
         def _test():
-            print('------------------_test_call_collabora_api--------------------')
+            print('------------------Insert_Math_Formula_Tool._test()--------------------')
             while True:
                 if ws_server.connections:
                     break
@@ -1699,7 +1701,7 @@ class Insert_Math_Formula_Tool(Base_Tool):
                 success, message = _send_office_command_test(ws_server, command)
                 print(f'command={command!r}')
                 print(f'success={success!r}, message={message!r}')
-                print('-----------------/_test_call_collabora_api--------------------')
+                print('-----------------/Insert_Math_Formula_Tool._test()--------------------')
 
                 # ws_server.web_socket.close()   # 可能是 ws.close() / ws.shutdown() / await ws.close()
                 return success, message
@@ -2063,3 +2065,4 @@ if __name__ == "__main__":
     # main_only_call_test()
     # main_only_call_test()
     _test_call_collabora_api(ws_server)
+    Web_Socket_Server_Manager.stop_all_servers()

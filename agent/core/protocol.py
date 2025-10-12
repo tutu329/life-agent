@@ -17,6 +17,7 @@ class Agent_Request_Type(Enum):
     WAIT = 'wait'
     CANCEL = 'cancel'
     GET_STATUS = 'get_status'
+    GET_QUERY_FINISHED = 'get_query_finished'
     CLEAR_HISTORY = 'clear_history'
 
 class Agent_Request_Result_Type(Enum):
