@@ -192,12 +192,12 @@ class Web_Socket_Server_Manager:
             server.start_server()
             cls.server_pool[port] = server
             info = f'Web_Socket_Server已启动(port:{port}, server_at:{server_at!r})...'
-            console.server_startup_output(info)
+            console.server_output(info)
 
             return server
         else:
             info = f'Web_Socket_Server(port:{port})已有，不再新建, server_at:{server_at!r})...'
-            console.server_startup_output(info)
+            console.server_output(info)
             return cls.server_pool[port]
 
     @classmethod
@@ -205,7 +205,17 @@ class Web_Socket_Server_Manager:
         if port in cls.server_pool:
             server = cls.server_pool.pop(port)
             server.stop_server()
-            dgreen(f'Web_Socket_Server已停止(port:{port})')
+            info = f'Web_Socket_Server已停止(port:{port}).'
+            console.server_output(info)
+
+    @classmethod
+    def stop_all_servers(cls):
+        ports = []
+        for port, server in cls.server_pool.items():
+            ports.append(port)
+
+        for port in ports:
+            cls.stop_server(port)
 
 def main():
     port = 5113

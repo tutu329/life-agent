@@ -622,6 +622,9 @@ def main_multi_levels_agents():
     # Agent_Manager.run_agent(agent_id=agent_id, query='有哪些表格？')
     # Agent_Manager.run_agent(agent_id=agent_id, query='通信录表里有哪些数据？')
 
+    from web_socket_server import Web_Socket_Server_Manager
+    Web_Socket_Server_Manager.stop_all_servers()
+
 if __name__ == "__main__":
     # main_one_agent()
     main_multi_levels_agents()

@@ -156,7 +156,7 @@ def print_color():
 
     config.Global.app_debug = tmp_app_debug
 
-def server_startup_output(info):
+def server_output(info):
     print(f'{LIGHT_BLACK}⏺ {RESET}{LIGHT_RED}{info}{RESET}')
 
 def agent_query_output(query, agent_level=0):
