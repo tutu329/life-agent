@@ -12,7 +12,7 @@ class LLM_Default:
     top_p:float         = 0.95
     max_new_tokens:int  = 8192
     # stop:List[str]      = field(default_factory=list)
-    stream:int              = 1         # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
+    stream:int              = 0         # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     has_history:int         = 1         # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     history_max_turns:int   = 99999     # 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True
     clear_history:int   = 0             # 用于ask_prepare()中的清空history_list, 注意这里不能用bool，因为经过redis后，False会转为‘0’, 而字符‘0’为bool的True

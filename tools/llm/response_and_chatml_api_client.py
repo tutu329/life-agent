@@ -305,6 +305,10 @@ class Response_and_Chatml_LLM_Client:
         return request
 
     def chatml_create(self, query, request:Response_Request, new_run)->Response_Result:
+        dred(f'--------------------old history input list-------------------------')
+        dred(self.history_input_list)
+        dred(f'-------------------/old history input list-------------------------')
+
         if self.history_input_list is None:
             self.history_input_list = [
                 {"role": "system", "content": request.instructions},
@@ -315,6 +319,11 @@ class Response_and_Chatml_LLM_Client:
                 self.history_input_list += [
                     {"role": "user", "content": query}
                 ]
+
+        dblue(f'--------------------new history input list-------------------------')
+        dred(self.history_input_list)
+        dblue(f'-------------------/new history input list-------------------------')
+
         dyellow('===================================request.instructions====================================')
         dpprint(request.model_dump())
         dyellow(request.instructions)
@@ -358,6 +367,9 @@ class Response_and_Chatml_LLM_Client:
             err(e)
             response_result.error = str(e)
 
+        dred('-----------------request.stream---------------------')
+        dred(request.stream)
+        dred('----------------/request.stream---------------------')
         if not request.stream:
             # 非stream输出
             dyellow('===================================chatml.choices[0].message====================================')

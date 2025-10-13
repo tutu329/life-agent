@@ -124,8 +124,8 @@ class Global:
     temp_dir = './temp'
     api_dir = './custom_command/t2i/api'
 
-    # app_debug = True
-    app_debug = False
+    app_debug = True
+    # app_debug = False
 
     @staticmethod
     def get_work_dir():
