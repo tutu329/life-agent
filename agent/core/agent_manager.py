@@ -525,8 +525,8 @@ def main_multi_levels_agents():
         MCP_Server_Request(url="http://localhost:8788/sse"),
     ]
 
-    llm_c = llm_protocol.g_online_qwen3_next_80b_thinking
-    # llm_c = llm_protocol.g_online_qwen3_next_80b_instruct
+    # llm_c = llm_protocol.g_online_qwen3_next_80b_thinking
+    llm_c = llm_protocol.g_online_qwen3_next_80b_instruct
     # llm_c = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
 
     # -----------------------------注册2层agent as tool-----------------------------------
@@ -607,8 +607,8 @@ def main_multi_levels_agents():
     res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
-    debug_cancel = True
-    # debug_cancel = False
+    # debug_cancel = True
+    debug_cancel = False
 
     if debug_cancel:
         time.sleep(3)
