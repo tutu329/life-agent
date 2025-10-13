@@ -462,7 +462,6 @@ class Response_and_Chatml_LLM_Client:
             dred(response_result)
 
             self.history_input_list.append(self.response_output) # 类似无stream时的self.history_input_list += res.output
-            # self.history_input_list += self.response_output # 类似无stream时的self.history_input_list += res.output
             dred(f'self.history_input_list需要append: {self.response_output}')
             return response_result
 
@@ -652,6 +651,19 @@ class Response_and_Chatml_LLM_Client:
             'call_id': self.tool_call_id,
             'name': self.tool_name,
         }
+        # if self.tool_arguments:
+        #     self.function_tool_call = {
+        #         'arguments': self.tool_arguments,
+        #         'call_id': self.tool_call_id,
+        #         'name': self.tool_name,
+        #     }
+        # else:
+        #     self.function_tool_call = {
+        #         'arguments': '',
+        #         'call_id': '',
+        #         'name': '',
+        #     }
+
 
         dred('--------------------self.tool_arguments------------------------------')
         dred(self.tool_arguments)
