@@ -524,10 +524,14 @@ def main_multi_levels_agents():
         MCP_Server_Request(url="http://localhost:8788/sse"),
     ]
 
+    # llm_c = llm_protocol.g_online_qwen3_next_80b_thinking
+    llm_c = llm_protocol.g_online_qwen3_next_80b_instruct
+    # llm_c = llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio
+
     # -----------------------------注册2层agent as tool-----------------------------------
     agent_config = Agent_Config(
         # llm_config=llm_protocol.g_online_deepseek_chat,
-        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        llm_config=llm_c,
         agent_name='agent level 1-playwright',
         # allowed_local_tool_names=['browser_navigate', 'browser_wait_for', 'browser_network_requests', ''],
         mcp_requests=mcp_playwright_requests,
@@ -538,7 +542,7 @@ def main_multi_levels_agents():
 
     agent_config = Agent_Config(
         # llm_config=llm_protocol.g_online_deepseek_chat,
-        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        llm_config=llm_c,
         agent_name='agent level 2-Folder_Tool_Level_2',
         allowed_local_tool_names=['Folder_Tool'],
         as_tool_name='Folder_Tool_Level_2',
@@ -548,7 +552,7 @@ def main_multi_levels_agents():
 
     agent_config = Agent_Config(
         # llm_config=llm_protocol.g_online_deepseek_chat,
-        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        llm_config=llm_c,
         agent_name='agent level 1-Folder_Tool_Level_1',
         allowed_local_tool_names=['Folder_Tool_Level_2'],
         as_tool_name='Folder_Tool_Level_1',
@@ -559,7 +563,7 @@ def main_multi_levels_agents():
 
     agent_config = Agent_Config(
         # llm_config=llm_protocol.g_online_deepseek_chat,
-        llm_config=llm_protocol.g_local_gpt_oss_120b_mxfp4_lmstudio,
+        llm_config=llm_c,
         # llm_config=llm_protocol.g_online_groq_gpt_oss_120b,
         agent_name='agent level 0-top agent',
         allowed_local_tool_names=['Folder_Tool_Level_1', 'Playwright_Tool'],

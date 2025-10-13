@@ -630,6 +630,7 @@ class Response_and_Chatml_LLM_Client:
             # print(item)
             if hasattr(item, 'choices'):
                 delta = item.choices[0].delta
+                # print(delta)
                 if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
                     self.on_reasoning(chunk=delta.reasoning_content)
                     self.current_chunk = delta.reasoning_content

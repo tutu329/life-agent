@@ -248,7 +248,8 @@ g_online_qwen3_next_80b_instruct = LLM_Config(
     temperature=0.7,
     top_p=0.8,
     chatml=True,
-    max_new_tokens=8192
+    max_new_tokens=8192,
+    stream=True,
 )
 
 g_online_qwen3_next_80b_thinking = LLM_Config(
@@ -259,7 +260,8 @@ g_online_qwen3_next_80b_thinking = LLM_Config(
     temperature=0.6,
     top_p=0.95,
     chatml=True,
-    max_new_tokens=8192
+    max_new_tokens=8192,
+    stream=True,
 )
 
 g_llm_configs = [
