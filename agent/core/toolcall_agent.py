@@ -307,6 +307,7 @@ class Toolcall_Agent:
             # 处理cancel
             if self.agent_status.canceling:
                 self.agent_status.canceled = True
+                self.response_llm_client.set_cancel()
                 break
 
             agent_count += 1

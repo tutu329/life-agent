@@ -27,6 +27,10 @@ def dpprint(*args, **kwargs):
     if DEBUG:
         pprint(*args, **kwargs)
 
+class LLM_Status(BaseModel):
+    canceling           :bool = False   # agent的query是否正在canceling
+    canceled            :bool = False   # agent的query是否canceled
+
 class Response_Request(BaseModel):
     model           :str
     temperature     :float = 1.0
@@ -83,6 +87,12 @@ class Response_and_Chatml_LLM_Client:
         self.tool_arguments = ''        # stream完成后的：tool_arguments如{"a":22,"b":33}
         self.tool_call_id = ''          # stream完成后的：tool_call_id
         self.tool_name = ''             # stream完成后的：tool_name
+
+        self.status:LLM_Status = LLM_Status()
+
+    def set_cancel(self):
+        # print('-----------llm canceling...-------------')
+        self.status.canceling = True
 
     # 将Response_LLM_Client当作agent用(用tool call)
     def init(self):
@@ -627,6 +637,10 @@ class Response_and_Chatml_LLM_Client:
 
 
         for item in response:
+            if self.status.canceling:
+                self.status.canceled = True
+                return
+
             # print(item)
             if hasattr(item, 'choices'):
                 delta = item.choices[0].delta
