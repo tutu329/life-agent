@@ -295,6 +295,7 @@ class Toolcall_Agent:
 
         # 只有当res包含output、且不包含function_tool_call时，才退出
         while (
+                # 2025-10-13: g_local_gpt_oss_120b_mxfp4_lmstudio模型stream==True时，最终output会输出 {'arguments': '', 'name': 'xxx'}这种有tool_name但没有arguments的情况，必须增加arguments判断，否则completions.create()报错
                 (responses_result.function_tool_call and responses_result.function_tool_call['name'] and responses_result.function_tool_call['arguments'])
                 # (responses_result.function_tool_call and responses_result.function_tool_call['name'])
                or (not hasattr(responses_result, 'output')

@@ -669,7 +669,9 @@ class Response_and_Chatml_LLM_Client:
         dred(self.tool_arguments)
         dred('-------------------/self.tool_arguments------------------------------')
 
-        if self.tool_name:
+        # 2025-10-13: g_local_gpt_oss_120b_mxfp4_lmstudio模型stream==True时，最终output时会输出 {'arguments': '', 'name': 'xxx'}这种有tool_name但没有arguments的情况，必须增加arguments判断，否则completions.create()报错
+        if self.tool_name and self.tool_arguments:
+        # if self.tool_name:
             # 如果有tool_call
             self.response_output = {
                 'content': self.output_text,

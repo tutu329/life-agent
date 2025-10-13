@@ -159,7 +159,7 @@ g_local_gpt_oss_120b_mxfp4_lmstudio = LLM_Config(
     # reasoning_effort=LLM_Reasoning_Effort.MEDIUM,
     reasoning_effort=LLM_Reasoning_Effort.LOW,
     chatml=True,
-    # stream=True,
+    stream=True,
 )
 
 g_online_deepseek_chat = LLM_Config(
