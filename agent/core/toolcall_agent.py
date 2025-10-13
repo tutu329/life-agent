@@ -279,6 +279,7 @@ class Toolcall_Agent:
             top_p=self.llm_config.top_p,
             max_output_tokens=self.llm_config.max_new_tokens,
             reasoning={"effort": self.llm_config.reasoning_effort},
+            # stream=self.llm_config.stream,
         )
         responses_result = Response_Result()
 
