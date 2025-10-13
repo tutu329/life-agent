@@ -183,6 +183,9 @@ def agent_thinking_output(answer, output_thinking=False, agent_level=0):
   ⎿ Found 10 results for "MacBook Air M5 release date 2025"
 '''
 def agent_tool_chosen_output(tool_name, tool_paras, agent_level=0):
+    if not tool_paras:
+        return
+
     if isinstance(tool_paras, str):
         tool_paras = json.loads(tool_paras)
 

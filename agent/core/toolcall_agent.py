@@ -162,7 +162,7 @@ class Toolcall_Agent:
                    tool_call_paras:Tool_Call_Paras, # agent调度的上下文
                    ):
         tool_call = response_result.function_tool_call
-        if tool_call and 'name' in tool_call:
+        if tool_call and 'name' in tool_call and 'arguments' in tool_call and tool_call['arguments']:
             tool_name = tool_call['name']
 
             func = self.tool_funcs_dict.get(tool_name)
@@ -171,6 +171,12 @@ class Toolcall_Agent:
             #     if func['name'] in tool_name:   # vllm的response api有时候会出错，如：'name': 'div_tool<|channel|>json' 而不是 'name': 'div_tool'
                 # if tool_name == func['name']:
                 try:
+                    # print('-------------tool_call------------------')
+                    # print(f'{tool_call["arguments"]!r}')
+                    # print('------------/tool_call-------------------')
+                    # if not tool_call['arguments']:
+                    #     return None
+
                     agent_tool_chosen_output(tool_name=tool_name, tool_paras=tool_call['arguments'], agent_level=self.agent_level)
                     args = json.loads(tool_call['arguments'])
 
@@ -355,6 +361,9 @@ class Toolcall_Agent:
             #         return self.agent_status
             #     else:
             #         continue
+            dred("-----------------------responses_result.function_tool_call['arguments']------------------------")
+            dyellow(responses_result.function_tool_call['arguments'])
+            dred("-----------------------responses_result.function_tool_call['arguments']------------------------")
             if use_chatml:
                 tool_params_dict = json.loads(responses_result.function_tool_call['arguments']) if responses_result.function_tool_call['arguments'] else None
             else:

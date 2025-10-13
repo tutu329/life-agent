@@ -461,7 +461,8 @@ class Response_and_Chatml_LLM_Client:
             response_result.function_tool_call = self.function_tool_call
             dred(response_result)
 
-            self.history_input_list += self.response_output # 类似无stream时的self.history_input_list += res.output
+            self.history_input_list.append(self.response_output) # 类似无stream时的self.history_input_list += res.output
+            # self.history_input_list += self.response_output # 类似无stream时的self.history_input_list += res.output
             dred(f'self.history_input_list需要append: {self.response_output}')
             return response_result
 
@@ -621,6 +622,11 @@ class Response_and_Chatml_LLM_Client:
 
     def _parse_chatml_stream(self, response:Response):
         dred(response)
+        self.tool_arguments = ''
+        self.reasoning_text = ''
+        self.output_text = ''
+
+
         for item in response:
             # print(item)
             if hasattr(item, 'choices'):
@@ -646,6 +652,10 @@ class Response_and_Chatml_LLM_Client:
             'call_id': self.tool_call_id,
             'name': self.tool_name,
         }
+
+        dred('--------------------self.tool_arguments------------------------------')
+        dred(self.tool_arguments)
+        dred('-------------------/self.tool_arguments------------------------------')
 
         if self.tool_name:
             # 如果有tool_call
