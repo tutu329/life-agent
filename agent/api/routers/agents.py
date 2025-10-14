@@ -7,6 +7,12 @@ from agent.core.agent_manager import Agent_Manager
 
 router = APIRouter()
 
+
+@router.post("/get_all_tools")
+def get_all_tools(cls):
+    res = Agent_Manager.get_local_all_tool_info_json()
+    return res
+
 @router.post("/create_agent", response_model=Agent_Request_Result)
 def create_agent(agent_config: Agent_Config):
     res = Agent_Manager.create_agent(agent_config)

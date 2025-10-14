@@ -1,4 +1,4 @@
-import os, time
+import os, time, copy
 import importlib.util
 import inspect
 
@@ -42,9 +42,20 @@ class Agent_Manager:
 
     # 0、用于server管理时的唯一的、必需的启动
     @classmethod
-    def get_local_tool_requests_and_funcs_on_server_start(cls)->List[Dict[str, Any]]: # 由server侧调用
+    def get_local_tool_requests_and_funcs_on_server_start(cls)->Tuple[List[Tool_Request], List[Callable]]: # 由server侧调用
         cls.local_all_tool_requests, cls.local_all_tool_funcs = Agent_Manager.parse_all_local_tools_on_server_start()
         return cls.local_all_tool_requests, cls.local_all_tool_funcs
+
+    # 返回tool的name、description、parameters
+    @classmethod
+    def get_local_all_tool_info_json(cls)->List[Tool_Request]:
+        rtn_tool_requests = copy.deepcopy(cls.local_all_tool_requests)
+        rtn_list = []
+        for rtn_tool_request in rtn_tool_requests:
+            del rtn_tool_request.type
+            del rtn_tool_request.strict
+            rtn_list.append(rtn_tool_request.model_dump(exclude_none=True))
+        return rtn_list
 
     # 获取cls.agents_dict中所有的agents as tool，返回list
     @classmethod
@@ -496,6 +507,7 @@ def main_multi_levels_agents():
 
     # tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
     local_tool_quests, local_tool_funcs = Agent_Manager.get_local_tool_requests_and_funcs_on_server_start()
+    # print(f'local_tool_quests={Agent_Manager.get_local_all_tool_info_json()}')
     dprint("--------------所有local tools的信息------------------")
     for tool_param_dict in local_tool_quests:
         dprint(tool_param_dict)

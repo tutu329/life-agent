@@ -1,5 +1,6 @@
 import requests, time
 from agent.core.agent_config import Agent_Config
+from agent.core.mcp.protocol import MCP_Server_Request
 import llm_protocol
 
 BASE_URL = "http://powerai.cc:8005"
@@ -18,7 +19,7 @@ def main():
     #     max_new_tokens=8192,
     #     stream=True,
     # )
-    # ------------------------------ 1.1、底层agent as tool ------------------------------
+    # ------------------------------ 1.1、底层agent1 as tool ------------------------------
     agent_config = Agent_Config(
         llm_config=llm_c,
         agent_name='agent level 2-Folder_Tool_Level_2',
@@ -31,11 +32,31 @@ def main():
     agent_id = r.json()["agent_id"]
     print(f'sub-agent as tool(agent_id: {agent_id!r}) created.')
 
-    # ------------------------------ 1.2、上层agent(可以叠加若干层) ------------------------------
+    # ------------------------------ 1.2、底层agent2 as tool ------------------------------
+    mcp_requests = [
+        MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse",
+                           allowed_tool_names=['list_tables', 'read_query']).model_dump(exclude_none=True),
+        MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']).model_dump(exclude_none=True),
+        MCP_Server_Request(url="http://localhost:8788/sse").model_dump(exclude_none=True),
+    ]
     agent_config = Agent_Config(
         llm_config=llm_c,
-        agent_name='agent level 1-Folder_Tool_Level_1',
-        allowed_local_tool_names=['Folder_Tool_Level_2'],   # 关键参数，通过'Folder_Tool_Level_2'这个字符串，指定1.1注册的agent作为tool
+        agent_name='agent level 2-List_Table_Tool_Level_2',
+        allowed_local_tool_names=['List_Table_Tool'],
+        # mcp_requests=mcp_requests,
+        as_tool_name='List_Table_Tool_Level_2',
+        as_tool_description='本工具用来查询数据库中有哪些表格',
+    )
+    r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60)
+    r.raise_for_status()
+    agent_id = r.json()["agent_id"]
+    print(f'sub-agent as tool(agent_id: {agent_id!r}) created.')
+
+    # ------------------------------ 1.3、上层agent(可以叠加若干层) ------------------------------
+    agent_config = Agent_Config(
+        llm_config=llm_c,
+        agent_name='agent level 1',
+        allowed_local_tool_names=['Folder_Tool_Level_2', 'List_Table_Tool_Level_2'],   # 关键参数，通过'Folder_Tool_Level_2'这个字符串，指定1.1注册的agent作为tool
     )
     r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60)
     r.raise_for_status()
@@ -43,7 +64,8 @@ def main():
     print(f'upper-agent(agent_id: {agent_id!r}) created.')
 
     # ------------------------------ 2、run_agent(agent_id) 运行上层agent------------------------------
-    query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到'
+    query = '请告诉我有哪些表格'
+    # query = '请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到'
     r = requests.post(f"{BASE_URL}/agents/run_agent", params={'agent_id':agent_id, 'query':query}, timeout=60)
 
     while True:
