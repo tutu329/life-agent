@@ -7,21 +7,21 @@ from agent.core.agent_manager import Agent_Manager
 
 router = APIRouter()
 
-@router.post("", response_model=Agent_Request_Result)
+@router.post("/create_agent", response_model=Agent_Request_Result)
 def create_agent(agent_config: Agent_Config):
     res = Agent_Manager.create_agent(agent_config)
     if not res or not res.agent_id:
         raise HTTPException(status_code=500, detail=getattr(res, "result_string", "create failed"))
     return res
 
-@router.post("/run")
+@router.post("/run_agent")
 def run_agent(agent_id: str, query: str):
     res = Agent_Manager.run_agent(agent_id=agent_id, query=query)
     if res.result_type.name != "SUCCESS":
         raise HTTPException(status_code=409, detail=res.result_string or "run_agent failed")
     return {"ok": True, "agent_id": agent_id, "result_string": res.result_string}
 
-@router.post("/get_status")
+@router.post("/get_agent_status")
 def get_agent_status(agent_id: str):
     res = Agent_Manager.get_agent_status(agent_id=agent_id)
     if res.result_type.name != "SUCCESS":
