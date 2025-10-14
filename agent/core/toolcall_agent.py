@@ -309,9 +309,9 @@ class Toolcall_Agent:
             reasoning={"effort": self.llm_config.reasoning_effort},
             stream=self.llm_config.stream,
         )
-        dred('-----------------------Response_Request---------------------------')
-        dblue(f'{self.llm_config.stream!r}')
-        dred('----------------------/Response_Request---------------------------')
+        # dred('-----------------------Response_Request---------------------------')
+        # dblue(f'{self.llm_config.stream!r}')
+        # dred('----------------------/Response_Request---------------------------')
 
         responses_result = Response_Result()
 
@@ -391,9 +391,9 @@ class Toolcall_Agent:
             #         return self.agent_status
             #     else:
             #         continue
-            dred("-----------------------responses_result.function_tool_call['arguments']------------------------")
-            dyellow(responses_result.function_tool_call['arguments'])
-            dred("-----------------------responses_result.function_tool_call['arguments']------------------------")
+            # dred("-----------------------responses_result.function_tool_call['arguments']------------------------")
+            # dyellow(responses_result.function_tool_call['arguments'])
+            # dred("-----------------------responses_result.function_tool_call['arguments']------------------------")
             if use_chatml:
                 tool_params_dict = json.loads(responses_result.function_tool_call['arguments']) if responses_result.function_tool_call['arguments'] else None
             else:
