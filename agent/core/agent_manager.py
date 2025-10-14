@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Set, Literal, Optional, Union, Tuple, TYPE_C
 from pprint import pprint
 from threading import Thread
 
-from agent.core.mcp.mcp_manager import get_mcp_server_tools, get_mcp_server_tool_names
+from agent.core.mcp.mcp_manager import get_mcp_server_tools, get_mcp_server_tool_names, get_mcp_server_tool_names_async
 from agent.core.agent_config import Agent_Config
 from agent.core.toolcall_agent import Toolcall_Agent
 from agent.tools.protocol import Tool_Request, Tool_Parameters, Tool_Property, Property_Type, get_tool_request_from_tool_class, get_tool_request_and_func_from_tool_class
@@ -296,6 +296,10 @@ class Agent_Manager:
     @classmethod
     def get_mcp_url_tool_names(cls, mcp_url:str)->List[str]:
         return get_mcp_server_tool_names(server_url=mcp_url)
+
+    @classmethod
+    async def get_mcp_url_tool_names_async(cls, mcp_url:str)->List[str]:
+        return await get_mcp_server_tool_names_async(server_url=mcp_url)
 
     @classmethod
     def get_local_tool_names(cls)->List[str]:

@@ -1,0 +1,22 @@
+# app/routers/agents.py
+from fastapi import APIRouter, HTTPException
+
+from agent.core.agent_config import Agent_Config
+from agent.core.protocol import Agent_Request_Result
+from agent.core.agent_manager import Agent_Manager
+
+router = APIRouter()
+
+@router.post("", response_model=Agent_Request_Result)
+def create_agent(agent_config: Agent_Config):
+    res = Agent_Manager.create_agent(agent_config)
+    if not res or not res.agent_id:
+        raise HTTPException(status_code=500, detail=getattr(res, "result_string", "create failed"))
+    return res
+
+@router.post("/{agent_id}/run")
+def run_agent(agent_id: str, query: str):
+    res = Agent_Manager.run_agent(agent_id=agent_id, query=query)
+    if res.result_type.name != "SUCCESS":
+        raise HTTPException(status_code=409, detail=res.result_string or "already running?")
+    return {"ok": True, "agent_id": agent_id}

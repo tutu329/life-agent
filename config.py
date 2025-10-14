@@ -246,6 +246,7 @@ class Port:
     milvus_api:int      = 8003 # milvus单独的api
     chroma_api:int      = 8004 # chroma单独的api
 
+    agents_api:int      = 8005 # agents api
 
     minio_api:int       = 8007 # minio的S3 api端口
     minio_console:int   = 8008 # minio的console端口

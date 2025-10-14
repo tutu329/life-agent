@@ -150,8 +150,20 @@ def list_server_and_tools(server_url: str):
     """
     return asyncio.run(_list_server_and_tools_async(server_url))
 
+async def list_server_and_tools_async(server_url: str):
+    """
+    同步版本：返回 (initialize_response, list_tools_response)
+    """
+    return await _list_server_and_tools_async(server_url)
+
 def get_mcp_server_tool_names(server_url: str):
     initialize_response, list_tools_response = list_server_and_tools(server_url)
+    tool_names = [tool.name for tool in list_tools_response.tools]
+    # dprint('tools: ', tool_names)
+    return tool_names
+
+async def get_mcp_server_tool_names_async(server_url: str):
+    initialize_response, list_tools_response = await list_server_and_tools_async(server_url)
     tool_names = [tool.name for tool in list_tools_response.tools]
     # dprint('tools: ', tool_names)
     return tool_names
