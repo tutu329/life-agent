@@ -94,6 +94,10 @@ class Response_and_Chatml_LLM_Client:
         # print('-----------llm canceling...-------------')
         self.status.canceling = True
 
+    def unset_cancel(self):
+        # print('-----------llm canceling...-------------')
+        self.status.canceling = False
+
     # 将Response_LLM_Client当作agent用(用tool call)
     def init(self):
         if self.llm_config.vpn_on:

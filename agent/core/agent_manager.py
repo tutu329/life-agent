@@ -606,8 +606,8 @@ def main_multi_levels_agents():
     res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
-    debug_cancel = True
-    # debug_cancel = False
+    # debug_cancel = True
+    debug_cancel = False
 
     if debug_cancel:
         time.sleep(3)
@@ -619,6 +619,7 @@ def main_multi_levels_agents():
         if res.result_type==Agent_Request_Result_Type.SUCCESS:
             # Agent_Manager.clear_agent_history(agent_id=agent_id)
             if debug_cancel:
+                time.sleep(5)
                 Agent_Manager.cancel_agent_run(agent_id=res.agent_id)
             break
 
