@@ -16,7 +16,7 @@ from agent.core.resource.protocol import Resource_Data
 from agent.core.resource.redis_resource_manager import Redis_Resource_Manager
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
-from console import err
+from console import err, server_output
 
 import llm_protocol
 
@@ -142,7 +142,13 @@ class Agent_Manager:
 
                     dprint(f'mcp_url: {url!r}')
                     dprint(f'allowed_tool_names: {allowed_tool_names!r}')
-                    tool_requests, tool_funcs = get_mcp_server_tools(server_url=url, allowed_tools=allowed_tool_names)
+                    try:
+                        tool_requests, tool_funcs = get_mcp_server_tools(server_url=url, allowed_tools=allowed_tool_names)
+                    except Exception as e:
+                        info = f'MCP服务器解析失败（server_url: {url!r}, allowed_tool_names: {allowed_tool_names!r}）'
+                        server_output(info)
+                        continue
+
                     allowed_mcp_tool_requests += tool_requests
                     allowed_mcp_tool_funcs += tool_funcs
                 # -------------、获取所有的MCP tools--------------

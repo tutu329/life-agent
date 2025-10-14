@@ -34,8 +34,9 @@ def main():
 
     # ------------------------------ 1.2、底层agent2 as tool ------------------------------
     mcp_requests = [
+        # MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse").model_dump(exclude_none=True),
         MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse", allowed_tool_names=['list_tables', 'read_query']).model_dump(exclude_none=True),
-        # MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']).model_dump(exclude_none=True),
+        MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']).model_dump(exclude_none=True),
         MCP_Server_Request(url="http://localhost:8788/sse").model_dump(exclude_none=True),
     ]
     agent_config = Agent_Config(

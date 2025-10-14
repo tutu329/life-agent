@@ -44,17 +44,17 @@ async def lifespan(app: FastAPI):
         dprint(Agent_Manager.get_local_tool_param_dict(tool_name='Folder_Tool'))
         dprint("-------------/指定tool_name的local tool的信息------------------")
 
-        dprint("--------------指定url的MCP的所有tool_name------------------")
-        url = "https://powerai.cc:8011/mcp/sqlite/sse"
-        dprint(f'url={url}')
-        dpprint(await Agent_Manager.get_mcp_url_tool_names_async(url))
-        # dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
-
-        # npx @playwright/mcp@latest --port 8788 --headless --browser chromium
-        url = "http://localhost:8788/sse"
-        dprint(f'url={url}')
-        dpprint(await Agent_Manager.get_mcp_url_tool_names_async(url))
-        dprint("-------------/指定url的MCP的所有tool_name------------------")
+        # dprint("--------------指定url的MCP的所有tool_name------------------")
+        # url = "https://powerai.cc:8011/mcp/sqlite/sse"
+        # dprint(f'url={url}')
+        # dpprint(await Agent_Manager.get_mcp_url_tool_names_async(url))
+        # # dpprint(Agent_Manager.get_mcp_url_tool_names("http://localhost:8789/sse"))
+        #
+        # # npx @playwright/mcp@latest --port 8788 --headless --browser chromium
+        # url = "http://localhost:8788/sse"
+        # dprint(f'url={url}')
+        # dpprint(await Agent_Manager.get_mcp_url_tool_names_async(url))
+        # dprint("-------------/指定url的MCP的所有tool_name------------------")
 
         # 如果你还有额外注册流程：
         # server_register_all_local_tool_on_start()
