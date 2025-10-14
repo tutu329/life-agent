@@ -141,7 +141,8 @@ class Agent_Manager:
                         allowed_tool_names = mcp_req['allowed_tool_names']
 
                     dprint(f'mcp_url: {url!r}')
-                    tool_requests, tool_funcs = get_mcp_server_tools(url, allowed_tools=allowed_tool_names)
+                    dprint(f'allowed_tool_names: {allowed_tool_names!r}')
+                    tool_requests, tool_funcs = get_mcp_server_tools(server_url=url, allowed_tools=allowed_tool_names)
                     allowed_mcp_tool_requests += tool_requests
                     allowed_mcp_tool_funcs += tool_funcs
                 # -------------、获取所有的MCP tools--------------

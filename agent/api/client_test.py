@@ -34,16 +34,15 @@ def main():
 
     # ------------------------------ 1.2、底层agent2 as tool ------------------------------
     mcp_requests = [
-        MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse",
-                           allowed_tool_names=['list_tables', 'read_query']).model_dump(exclude_none=True),
-        MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']).model_dump(exclude_none=True),
+        MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse", allowed_tool_names=['list_tables', 'read_query']).model_dump(exclude_none=True),
+        # MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']).model_dump(exclude_none=True),
         MCP_Server_Request(url="http://localhost:8788/sse").model_dump(exclude_none=True),
     ]
     agent_config = Agent_Config(
         llm_config=llm_c,
         agent_name='agent level 2-List_Table_Tool_Level_2',
         allowed_local_tool_names=['List_Table_Tool'],
-        # mcp_requests=mcp_requests,
+        mcp_requests=mcp_requests,
         as_tool_name='List_Table_Tool_Level_2',
         as_tool_description='本工具用来查询数据库中有哪些表格',
     )

@@ -214,7 +214,11 @@ class Toolcall_Agent:
                         # print(func_rtn)
                         # print('---------/Toolcall_Agent._call_tool().func_rtn------------')
                         response_result.tool_call_result = ''
-                        # response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+                        try:
+                            response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+                        except Exception as e:
+                            dyellow(f'【Toolcall_Agent._call_tool()】warning: json.dumps(func_rtn, ensure_ascii=False), {e!r}.')
+                            response_result.tool_call_result = ''
 
                     # tool_call_result_item = {
                     #     "type": "function_call_output",
