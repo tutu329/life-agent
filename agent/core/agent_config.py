@@ -53,7 +53,7 @@ class Agent_Config(BaseModel):
     allowed_local_tool_names          :Optional[List[str]] = None     # 如：['Human_Console_Tool', 'Remote_Folder_Tool']
 
     # MCP tools
-    mcp_requests :Optional[List[MCP_Server_Request]] = None                # 如: [("https://powerai.cc:8011/mcp/sqlite/sse",['read_query', 'write_query']), ("http://localhost:8789/sse", [...])]
+    mcp_requests :Optional[List[MCP_Server_Request|Dict[str, List[str]]]] = None                # 如: [("https://powerai.cc:8011/mcp/sqlite/sse",['read_query', 'write_query']), ("http://localhost:8789/sse", [...])]
 
     # agent_as_tool配置
     as_tool_name        :Optional[str] = None  # As_Tool的name，如取: "Folder_Agent_As_Tool"

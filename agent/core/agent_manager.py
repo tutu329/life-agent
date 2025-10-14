@@ -133,8 +133,15 @@ class Agent_Manager:
             if agent_config.mcp_requests:
                 # --------------获取所有的MCP tools--------------
                 for mcp_req in agent_config.mcp_requests:
-                    dprint(f'mcp_url: {mcp_req.url!r}')
-                    tool_requests, tool_funcs = get_mcp_server_tools(mcp_req.url, allowed_tools=mcp_req.allowed_tool_names)
+                    if isinstance(mcp_req, MCP_Server_Request):
+                        url = mcp_req.url
+                        allowed_tool_names = mcp_req.allowed_tool_names
+                    else:
+                        url = mcp_req['url']
+                        allowed_tool_names = mcp_req['allowed_tool_names']
+
+                    dprint(f'mcp_url: {url!r}')
+                    tool_requests, tool_funcs = get_mcp_server_tools(url, allowed_tools=allowed_tool_names)
                     allowed_mcp_tool_requests += tool_requests
                     allowed_mcp_tool_funcs += tool_funcs
                 # -------------、获取所有的MCP tools--------------
