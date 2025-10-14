@@ -8,8 +8,8 @@ from agent.core.agent_manager import Agent_Manager
 router = APIRouter()
 
 
-@router.post("/get_all_tools")
-def get_all_tools(cls):
+@router.post("/get_all_local_tools")
+def get_all_local_tools():
     res = Agent_Manager.get_local_all_tool_info_json()
     return res
 

@@ -6,6 +6,15 @@ import llm_protocol
 BASE_URL = "http://powerai.cc:8005"
 
 def main():
+    # ------------------------------ 0、get_all_local_tools() -> List[tool_info] ------------------------------
+    r = requests.post(f"{BASE_URL}/agents/get_all_local_tools", timeout=60)
+    r.raise_for_status()
+    tools_info = r.json()
+    print('------------------get_all_local_tools-----------------------')
+    for tool_info in tools_info:
+        print(tool_info)
+    print('-----------------/get_all_local_tools-----------------------')
+
     # ------------------------------ 1、create_agent() -> agent_id ------------------------------
     llm_c = llm_protocol.g_online_qwen3_next_80b_instruct
     # g_online_qwen3_next_80b_instruct = LLM_Config(
