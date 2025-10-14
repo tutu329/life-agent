@@ -98,11 +98,17 @@ app.include_router(agents.router, prefix="/agents", tags=["agents"])
 # CORS/鉴权请视情况在这里加
 
 if __name__ == "__main__":
-    # 指定端口为 8000
+    import console
+
+    port = config.Port.agents_api
+    server_at = 'agent.api.main.py'
+    info = f'Agents API server已启动(port:{port}, server_at:{server_at!r})...'
+    console.server_output(info)
+
     uvicorn.run(
         app,
         host="0.0.0.0",                 # 监听所有网络接口
-        port=config.Port.agents_api,    # 指定端口8005
+        port=port,                      # 指定端口8005
         # 其他可选参数：
         # reload=True,                  # 开发模式，代码改动自动重启
         # log_level="info",
