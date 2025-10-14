@@ -86,6 +86,7 @@ class Toolcall_Agent:
     def set_cancel(self):
         self.agent_status.canceled = False
         self.agent_status.canceling = True
+        self.response_llm_client.set_cancel()
 
         # 尝试cancel所有lower_agent_as_tool
         for sub_agent in self.sub_agents:
@@ -199,7 +200,11 @@ class Toolcall_Agent:
                         response_result.tool_call_result = json.dumps(agent_tool_result.model_dump(), ensure_ascii=False)
                     else:
                         dyellow(f'【Toolcall_Agent._call_tool()】warning: 工具调用结果既不是Agent_Tool_Result也不是Response_Result.')
-                        response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
+                        print('----------Toolcall_Agent._call_tool().func_rtn------------')
+                        print(func_rtn)
+                        print('---------/Toolcall_Agent._call_tool().func_rtn------------')
+                        response_result.tool_call_result = ''
+                        # response_result.tool_call_result = json.dumps(func_rtn, ensure_ascii=False)
 
                     # tool_call_result_item = {
                     #     "type": "function_call_output",
@@ -214,7 +219,10 @@ class Toolcall_Agent:
                         output=json.dumps({tool_call['name']: response_result.tool_call_result}, ensure_ascii=False),
                         error=response_result.error
                     )
-                    agent_tool_result_output(json.loads(response_result.tool_call_result), agent_level=self.agent_level)
+                    if response_result.tool_call_result:
+                        agent_tool_result_output(json.loads(response_result.tool_call_result), agent_level=self.agent_level)
+                    else:
+                        agent_tool_result_output('', agent_level=self.agent_level)
                     # agent_tool_result_output(json.loads(response_result.tool_call_result).get('result'))
                     # self.response_llm_client.history_input_list.append(tool_call_result_item)
 
@@ -241,6 +249,9 @@ class Toolcall_Agent:
     def _after_run(self):
         self.agent_status.query_task_finished = True
         self.agent_status.querying = False
+
+        print('---------------agent_status.canceling = False------------------')
+        self.agent_status.canceling = False
 
         # --------------------------------
         # 一轮run结束后，需要将input_list中的ResponseReasoningItem、ResponseFunctionToolCall和ResponseOutputMessage清除

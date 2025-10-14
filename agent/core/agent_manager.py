@@ -250,7 +250,6 @@ class Agent_Manager:
         agent_data = cls.agents_dict[agent_id]
         if agent_data and agent_data.agent:
             agent_data.agent.set_cancel()
-            agent_data.agent.response_llm_client.set_cancel()
         else:
             result.result_type=Agent_Request_Result_Type.FAILED
             result.result_string = f'agent(agent_id={agent_id!r})未成功执行cancel操作.'
@@ -607,8 +606,8 @@ def main_multi_levels_agents():
     res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     # Agent_Manager.wait_agent(agent_id=agent_id)
 
-    # debug_cancel = True
-    debug_cancel = False
+    debug_cancel = True
+    # debug_cancel = False
 
     if debug_cancel:
         time.sleep(3)
