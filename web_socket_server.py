@@ -112,6 +112,32 @@ class Web_Socket_Server:
 
         dred(f'Web_Socket_Server.send_client发送失败(client_id={client_id!r}, data={data}).')
 
+    async def _on_client_register(self, client_id, connection):
+        dgreen(f'【Web_Socket_Server.on_client_register()】: client_id={client_id!r}')
+
+        # 将client_id反馈给client
+        if not client_id:
+            # 若client没有提供client_id，为''，则生成唯一client_id，并
+            client_id = str(uuid4())
+            res = Web_Socket_Client_Register_Response(client_id=client_id, client_id_generated_by_server=True)
+            await connection.send(json.dumps(res.model_dump(), ensure_ascii=False))
+            dblue(f'【Web_Socket_Server.handler()】conn.send: client_id={client_id!r}, client_id_generated_by_server={res.client_id_generated_by_server}')
+        else:
+            res = Web_Socket_Client_Register_Response(client_id=client_id, client_id_generated_by_server=False)
+            await connection.send(json.dumps(res.model_dump(), ensure_ascii=False))
+            dblue(f'【Web_Socket_Server.handler()】conn.send: client_id={client_id!r}, client_id_generated_by_server={res.client_id_generated_by_server}')
+
+        # 在server注册client_id和connection
+        self.register_client(client_id, connection)
+        # connection_info.client_id = client_id
+        self.print_connections()
+
+        return client_id
+
+    async def _on_client_data(self, data):
+        dgreen(f'【Web_Socket_Server.on_client_data()】: data={data!r}')
+
+
     def _server_run(self, port):
         async def handler(conn):
             dgreen(f'📱 新的WebSocket连接: {conn.remote_address}')
@@ -126,26 +152,13 @@ class Web_Socket_Server:
 
                     # --------------------client在on-open时，会发register信息-----------------------
                     # 注册data为Web_Socket_Client_Register_Request格式：{'type': 'register', 'client_id': '5113_ws_client'}
-                    dgreen(f'【Web_Socket_Server.handler()】data: {data}')
+                    # dgreen(f'【Web_Socket_Server.handler()】data: {data}')
                     if 'type' in data and data['type']=='register' and 'client_id' in data:
                         client_id = data['client_id']
-
-                        # 将client_id反馈给client
-                        if not client_id:
-                            # 若client没有提供client_id，为''，则生成唯一client_id，并
-                            client_id = str(uuid4())
-                            res = Web_Socket_Client_Register_Response(client_id=client_id, client_id_generated_by_server=True)
-                            await conn.send(json.dumps(res.model_dump(), ensure_ascii=False))
-                            dred(f'【Web_Socket_Server.handler()】conn.send: client_id={client_id!r}, client_id_generated_by_server={res.client_id_generated_by_server}')
-                        else:
-                            res = Web_Socket_Client_Register_Response(client_id=client_id, client_id_generated_by_server=False)
-                            await conn.send(json.dumps(res.model_dump(), ensure_ascii=False))
-                            dred(f'【Web_Socket_Server.handler()】conn.send: client_id={client_id!r}, client_id_generated_by_server={res.client_id_generated_by_server}')
-
-                        # 在server注册client_id和connection
-                        self.register_client(client_id, conn)
+                        client_id = await self._on_client_register(client_id=client_id, connection=conn)
                         connection_info.client_id = client_id
-                        self.print_connections()
+                    else:
+                        await self._on_client_data(data)
 
                         # dgreen(f'-------------------client_id={client_id!r} registered------------------------')
                         # dblue(self.registered_client)
