@@ -498,7 +498,7 @@ def main_one_agent():
         dprint(info)
     dprint("-------------/注册后tool情况------------------")
 
-    res = Agent_Manager.run_agent(agent_id=agent_id, query='帮我证明一下定积分公式。证明过程内容都插入文档')
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='帮我插入一个定积分公式。')
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='帮我在文档中插入一个复杂的数学公式')
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     dprint("--------------run_agent------------------")
@@ -678,5 +678,5 @@ def main_multi_levels_agents():
     Web_Socket_Server_Manager.stop_all_servers()
 
 if __name__ == "__main__":
-    # main_one_agent()
-    main_multi_levels_agents()
+    main_one_agent()
+    # main_multi_levels_agents()
