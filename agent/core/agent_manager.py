@@ -499,7 +499,8 @@ def main_one_agent():
     dprint("-------------/注册后tool情况------------------")
 
     # 注意，insert公式可能失败（慢于前端和server的web_socket连接），是因为office前端控件是周期性向server发送{'type': 'register', 'client_id': '5113_ws_client'}
-    res = Agent_Manager.run_agent(agent_id=agent_id, query='帮我插入一个定积分公式。')
+    time.sleep(2)
+    res = Agent_Manager.run_agent(agent_id=agent_id, query='帮我插入一个复杂的定积分公式。')
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='帮我在文档中插入一个复杂的数学公式')
     # res = Agent_Manager.run_agent(agent_id=agent_id, query='请告诉我/home/tutu/demo下的哪个子目录里有file_to_find.txt这个文件，需要遍历每一个子文件夹，一定能找到')
     dprint("--------------run_agent------------------")
