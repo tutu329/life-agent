@@ -6,7 +6,7 @@ import llm_protocol
 BASE_URL = "http://powerai.cc:8005"
 
 def main():
-    # ------------------------------ 0、get_all_local_tools() -> List[tool_info] ------------------------------
+    # ------------------------------ 0.1、get_all_local_tools() -> List[tool_info] ------------------------------
     r = requests.post(f"{BASE_URL}/agents/get_all_local_tools", timeout=60)
     r.raise_for_status()
     tools_info = r.json()
@@ -14,6 +14,14 @@ def main():
     for tool_info in tools_info:
         print(tool_info)
     print('-----------------/get_all_local_tools-----------------------')
+
+    # ------------------------------ 0.2、get_all_mcp_tools() -> List[tool_name] ------------------------------
+    r = requests.post(f"{BASE_URL}/agents/get_all_mcp_tools", params={'mcp_url':'https://powerai.cc:8011/mcp/sqlite/sse'}, timeout=60)
+    r.raise_for_status()
+    tool_names = r.json()
+    print('------------------get_all_mcp_tools-----------------------')
+    print(tool_names)
+    print('-----------------/get_all_mcp_tools-----------------------')
 
     # ------------------------------ 1、create_agent() -> agent_id ------------------------------
     llm_c = llm_protocol.g_online_qwen3_next_80b_instruct
@@ -28,7 +36,7 @@ def main():
     #     max_new_tokens=8192,
     #     stream=True,
     # )
-    # ------------------------------ 1.1、底层agent1 as tool ------------------------------
+    # ------------------------------ 1.1、create 底层agent1 as tool ------------------------------
     agent_config = Agent_Config(
         llm_config=llm_c,
         agent_name='agent level 2-Folder_Tool_Level_2',
@@ -41,7 +49,7 @@ def main():
     agent_id = r.json()["agent_id"]
     print(f'sub-agent as tool(agent_id: {agent_id!r}) created.')
 
-    # ------------------------------ 1.2、底层agent2 as tool ------------------------------
+    # ------------------------------ 1.2、create 底层agent2 as tool ------------------------------
     mcp_requests = [
         # MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse").model_dump(exclude_none=True),
         MCP_Server_Request(url="https://powerai.cc:8011/mcp/sqlite/sse", allowed_tool_names=['list_tables', 'read_query']).model_dump(exclude_none=True),
@@ -61,7 +69,7 @@ def main():
     agent_id = r.json()["agent_id"]
     print(f'sub-agent as tool(agent_id: {agent_id!r}) created.')
 
-    # ------------------------------ 1.3、上层agent(可以叠加若干层) ------------------------------
+    # ------------------------------ 1.3、create 上层agent(可以叠加若干层) ------------------------------
     agent_config = Agent_Config(
         llm_config=llm_c,
         agent_name='agent level 1',

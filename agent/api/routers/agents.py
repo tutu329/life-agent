@@ -7,6 +7,10 @@ from agent.core.agent_manager import Agent_Manager
 
 router = APIRouter()
 
+@router.post("/get_all_mcp_tools")
+def get_all_mcp_tools(mcp_url:str):
+    res = Agent_Manager.get_mcp_url_tool_names(mcp_url=mcp_url)
+    return res
 
 @router.post("/get_all_local_tools")
 def get_all_local_tools():
