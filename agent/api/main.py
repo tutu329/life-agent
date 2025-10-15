@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     # --------- startup ----------
     # 1) 初始化本地工具（只做一次）
     try:
-        local_tool_quests, local_tool_funcs = Agent_Manager.get_local_tool_requests_and_funcs_on_server_start()
+        local_tool_quests, local_tool_funcs = Agent_Manager.init()
         dprint("--------------所有local tools的信息------------------")
         for tool_param_dict in local_tool_quests:
             dprint(tool_param_dict)

@@ -14,6 +14,7 @@ from agent.core.mcp.protocol import MCP_Server_Request
 from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Request_Type, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Request_Type
 from agent.core.resource.protocol import Resource_Data
 from agent.core.resource.redis_resource_manager import Redis_Resource_Manager
+from web_socket_server import Web_Socket_Server_Manager
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from console import err, server_output
@@ -40,10 +41,19 @@ class Agent_Manager:
     local_all_tool_requests: List[Tool_Request] = []    # 用于存放server本地的所有tool_requests
     local_all_tool_funcs: List[Callable] = []
 
+    web_socket_server:Web_Socket_Server_Manager = None
+
     # 0、用于server管理时的唯一的、必需的启动
     @classmethod
-    def get_local_tool_requests_and_funcs_on_server_start(cls)->Tuple[List[Tool_Request], List[Callable]]: # 由server侧调用
+    def init(cls)->Tuple[List[Tool_Request], List[Callable]]: # 由server侧调用
+    # def get_local_tool_requests_and_funcs_on_server_start(cls)->Tuple[List[Tool_Request], List[Callable]]: # 由server侧调用
+
+        # 初始化local tools
         cls.local_all_tool_requests, cls.local_all_tool_funcs = Agent_Manager.parse_all_local_tools_on_server_start()
+
+        # 初始化ws server
+        cls.web_socket_server = Web_Socket_Server_Manager.start_server(config.Port.global_web_socket_server, server_at="agent_manager.py")
+
         return cls.local_all_tool_requests, cls.local_all_tool_funcs
 
     # 返回tool的name、description、parameters
@@ -438,7 +448,7 @@ def main_one_agent():
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
     # tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
-    local_tool_requests, local_tool_funcs = Agent_Manager.get_local_tool_requests_and_funcs_on_server_start()
+    local_tool_requests, local_tool_funcs = Agent_Manager.init()
     dprint("--------------tools_info------------------")
     for tool_param_dict in local_tool_requests:
         dprint(tool_param_dict)
@@ -520,7 +530,7 @@ def main_multi_levels_agents():
     # fold_tool = Folder_Tool.get_tool_param_dict()
 
     # tool_list = Agent_Manager.parse_all_local_tools_on_server_start()
-    local_tool_quests, local_tool_funcs = Agent_Manager.get_local_tool_requests_and_funcs_on_server_start()
+    local_tool_quests, local_tool_funcs = Agent_Manager.init()
     # print(f'local_tool_quests={Agent_Manager.get_local_all_tool_info_json()}')
     dprint("--------------所有local tools的信息------------------")
     for tool_param_dict in local_tool_quests:
