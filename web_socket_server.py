@@ -112,7 +112,7 @@ class Web_Socket_Server:
 
         dred(f'Web_Socket_Server.send_client发送失败(client_id={client_id!r}, data={data}).')
 
-    async def _on_client_register(self, client_id, connection):
+    async def _on_client_register(self, client_id, connection:ServerConnection):
         dgreen(f'【Web_Socket_Server.on_client_register()】: client_id={client_id!r}')
 
         # 将client_id反馈给client
@@ -134,12 +134,12 @@ class Web_Socket_Server:
 
         return client_id
 
-    async def _on_client_data(self, data):
+    async def _on_client_data(self, data, connection:ServerConnection):
         dgreen(f'【Web_Socket_Server.on_client_data()】: data={data!r}')
 
 
     def _server_run(self, port):
-        async def handler(conn):
+        async def handler(conn:ServerConnection):
             dgreen(f'📱 新的WebSocket连接: {conn.remote_address}')
             connection_info = Connection_Info()
             self.connections[conn] = connection_info
@@ -158,7 +158,7 @@ class Web_Socket_Server:
                         client_id = await self._on_client_register(client_id=client_id, connection=conn)
                         connection_info.client_id = client_id
                     else:
-                        await self._on_client_data(data)
+                        await self._on_client_data(data=data, connection=conn)
 
                         # dgreen(f'-------------------client_id={client_id!r} registered------------------------')
                         # dblue(self.registered_client)
