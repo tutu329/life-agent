@@ -5,7 +5,7 @@ import websocket  # 注意：库名叫 websocket-client，导入名是 websocket
 
 import config
 
-URL = "wss://echo.websocket.events"  # 公共回声服务，便于本地测试
+URL = "wss://powerai.cc:5115"  # 公共回声服务，便于本地测试
 
 def on_open(ws):
     print("✅ on_open: 连接已建立")
