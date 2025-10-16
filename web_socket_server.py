@@ -206,12 +206,12 @@ class Web_Socket_Server_Manager:
             server = Web_Socket_Server(port=port)
             server.start_server()
             cls.server_pool[port] = server
-            info = f'Web_Socket_Server已启动(port:{port}, server_at:{server_at!r})...'
+            info = f'Web_Socket_Server(port:{port}, server_at:{server_at!r})已启动...'
             console.server_output(info)
 
             return server
         else:
-            info = f'Web_Socket_Server(port:{port})已有，不再新建, server_at:{server_at!r})...'
+            info = f'Web_Socket_Server(port:{port}, server_at:{server_at!r})已在运行中，不另行启动...'
             console.server_output(info)
             return cls.server_pool[port]
 
