@@ -353,11 +353,19 @@ class Toolcall_Agent:
                     new_run = True
                     self.agent_status.query_task_finished = False
 
-                # dred(tools)
+                # ---------------------------------------------调用llm-----------------------------------------------------------
+                # 1、将agent的管理信息、回调对象，同步给llm
+                # self.response_llm_client.set_web_socket_server
+                # self.response_llm_client.set_agent_id
+                # self.response_llm_client.set_agent_level
+
+                # 2、调用llm
                 if use_chatml:
                     responses_result = self.response_llm_client.chatml_create(query=instruction, request=response_request, new_run=new_run)
                 else:
                     responses_result = self.response_llm_client.responses_create(query=instruction, request=response_request, new_run=new_run)
+                # --------------------------------------------/调用llm-----------------------------------------------------------
+
                 # dpprint(responses_result.model_dump())
                 dblue(f'-------------------------responses_result(use_chatml: {use_chatml})-----------------------------')
                 for item in responses_result:
