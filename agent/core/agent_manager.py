@@ -14,7 +14,7 @@ from agent.core.mcp.protocol import MCP_Server_Request
 from agent.core.protocol import Agent_Status, Agent_Data, Agent_Request_Result_Type, Agent_Request_Type, Query_Agent_Context, Agent_Request_Result, Agent_Request_Result_Type, Agent_Request_Type
 from agent.core.resource.protocol import Resource_Data
 from agent.core.resource.redis_resource_manager import Redis_Resource_Manager
-from web_socket_server import Web_Socket_Server_Manager
+from web_socket_server import Web_Socket_Server_Manager, Web_Socket_Server
 
 from agent.tools.tool_manager import server_register_all_local_tool_on_start
 from console import err, server_output
@@ -41,7 +41,7 @@ class Agent_Manager:
     local_all_tool_requests: List[Tool_Request] = []    # 用于存放server本地的所有tool_requests
     local_all_tool_funcs: List[Callable] = []
 
-    web_socket_server:Web_Socket_Server_Manager = None
+    web_socket_server:Web_Socket_Server = None
 
     # 0、用于server管理时的唯一的、必需的启动
     @classmethod
@@ -177,7 +177,11 @@ class Agent_Manager:
 
         # agent初始化
         agent = Toolcall_Agent(agent_config=agent_config)
-        agent.init(agent_config.all_tool_requests, all_tool_funcs)
+        agent.init(
+            tool_requests=agent_config.all_tool_requests,
+            tool_funcs=all_tool_funcs,
+            ws_server_ref=cls.web_socket_server
+        )
 
         # 通过遍历，建立agent和sub_agent之间的关联（如cancel的遍历、level计算的遍历、设置top_agent_id的遍历）
         agent.calculate_all_agents_in_the_tree(sub_agents_data_list)

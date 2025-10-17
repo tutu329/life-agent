@@ -52,6 +52,13 @@ def dpprint(*args, **kwargs):
     if DEBUG:
         pprint(*args, **kwargs)
 
+# agent和llm之间的数据包，因此不需要pydantic的接口化
+class Agent_Info_For_LLM():
+    def __init__(self, agent_id:str, agent_level:int, ws_server):
+        self.agent_id = agent_id
+        self.agent_level = agent_level
+        self.ws_server = ws_server
+
 class Toolcall_Agent:
     def __init__(self, agent_config:Agent_Config):
 
@@ -65,6 +72,7 @@ class Toolcall_Agent:
         # 自己的id
         self.agent_id = str(uuid4())
         self.agent_level = 0            # 用于表示agent是顶层agent，还是下级的agent_as_tool
+        self.ws_server_ref = None       # Agent_Manager中管理的web_socket_server的引用
         self.sub_agents = []  # lower的agent_as_tool的列表
         # 多层agent体系中的顶层agent的id
         self.top_agent_id = self.agent_config.top_agent_id if self.agent_config.top_agent_id else self.agent_id
@@ -158,7 +166,8 @@ class Toolcall_Agent:
 
     def init(self,
              tool_requests,     # 所有的tool的描述
-             tool_funcs         # 所有的tool的回调func
+             tool_funcs,        # 所有的tool的回调func
+             ws_server_ref=None # Agent_Manager管理的web_socket_manager引用
              ):
         self.response_llm_client.init()
         self._set_funcs(tool_requests, tool_funcs)
@@ -167,6 +176,8 @@ class Toolcall_Agent:
         # 若为lower agent，则设置self.history为False
         if self.agent_config.as_tool_name:
             self.agent_config.has_history = False
+
+        self.ws_server_ref = ws_server_ref
 
     def _call_tool(self,
                    response_result:Response_Result, # response_api的调用结果
@@ -355,15 +366,17 @@ class Toolcall_Agent:
 
                 # ---------------------------------------------调用llm-----------------------------------------------------------
                 # 1、将agent的管理信息、回调对象，同步给llm
-                # self.response_llm_client.set_web_socket_server
-                # self.response_llm_client.set_agent_id
-                # self.response_llm_client.set_agent_level
+                agent_info = Agent_Info_For_LLM(
+                    agent_id=self.agent_id,
+                    agent_level=self.agent_level,
+                    ws_server=self.ws_server_ref
+                )
 
                 # 2、调用llm
                 if use_chatml:
-                    responses_result = self.response_llm_client.chatml_create(query=instruction, request=response_request, new_run=new_run)
+                    responses_result = self.response_llm_client.chatml_create(query=instruction, request=response_request, new_run=new_run, extra_agent_info=agent_info)
                 else:
-                    responses_result = self.response_llm_client.responses_create(query=instruction, request=response_request, new_run=new_run)
+                    responses_result = self.response_llm_client.responses_create(query=instruction, request=response_request, new_run=new_run, extra_agent_info=agent_info)
                 # --------------------------------------------/调用llm-----------------------------------------------------------
 
                 # dpprint(responses_result.model_dump())

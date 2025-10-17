@@ -90,6 +90,9 @@ class Response_and_Chatml_LLM_Client:
 
         self.status:LLM_Status = LLM_Status()
 
+        # 所属agent的额外信息
+        self.extra_agent_info = None    # 如agent_id、agent_level、web_socket_server，用于stream回调等
+
     def set_cancel(self):
         # print('-----------llm canceling...-------------')
         self.status.canceling = True
@@ -318,7 +321,8 @@ class Response_and_Chatml_LLM_Client:
 
         return request
 
-    def chatml_create(self, query, request:Response_Request, new_run)->Response_Result:
+    def chatml_create(self, query, request:Response_Request, new_run, extra_agent_info=None)->Response_Result:
+        self.extra_agent_info = extra_agent_info
         # dred(f'--------------------old history input list-------------------------')
         # dred(self.history_input_list)
         # dred(f'-------------------/old history input list-------------------------')
@@ -483,7 +487,9 @@ class Response_and_Chatml_LLM_Client:
     def clear_history(self):
         self.history_input_list = None
 
-    def responses_create(self, query, request:Response_Request, new_run)->Response_Result:
+    def responses_create(self, query, request:Response_Request, new_run, extra_agent_info=None)->Response_Result:
+        self.extra_agent_info = extra_agent_info
+
         # dred(request.tools)
         # dred(request)
         # 第一次responses.create
