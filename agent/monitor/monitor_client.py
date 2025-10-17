@@ -1,6 +1,7 @@
 # pip install websocket-client
 
 import json
+import ssl
 import websocket  # 注意：库名叫 websocket-client，导入名是 websocket
 
 import config
@@ -29,4 +30,9 @@ if __name__ == "__main__":
         on_close=on_close,
     )
     # ping_interval 可做保活；遇到断线可自行做重连循环
-    app.run_forever(ping_interval=20, ping_timeout=10)
+    # sslopt 禁用证书验证（如果证书链不完整）
+    app.run_forever(
+        ping_interval=20, 
+        ping_timeout=10,
+        sslopt={"cert_reqs": ssl.CERT_NONE}
+    )
