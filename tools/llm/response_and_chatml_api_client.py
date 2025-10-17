@@ -607,9 +607,30 @@ class Response_and_Chatml_LLM_Client:
 
     def on_reasoning(self, chunk):
         dred(chunk, end='', flush=True)
+        self._callback_output(chunk)
 
     def on_content(self, chunk):
         dgreen(chunk, end='', flush=True)
+        self._callback_output(chunk)
+
+    def _callback_output(self, chunk):
+        if self.extra_agent_info:
+            try:
+                data = {
+                    'agent_id':self.extra_agent_info.agent_id,
+                    'agent_level':self.extra_agent_info.agent_level,
+                    'chunk':chunk,
+                }
+                # send到ws_monitor_client
+                self.extra_agent_info.ws_server.sync_send_client(
+                    client_id=config.Agent.AGENT_MONITOR_WS_CLIENT_ID,
+                    # client_id=self.extra_agent_info.agent_id,
+                    data=data
+                )
+                print(f'_callback_output(): data={data}')
+            except Exception as e:
+                err(e)
+                dred(f'【Response_and_Chatml_LLM_Client._callback_output()】报错：{e!r}')
 
     def _parse_response_stream(self, response:Response):
         for item in response:

@@ -94,6 +94,9 @@ class Web_Socket_Server:
         for connection, connection_info in self.connections.items():
             await connection.send(data)
 
+    def sync_send_client(self, client_id:str, data: Any):
+        asyncio.run(self.send_client(client_id, data))
+
     async def send_client(self, client_id:str, data: Any):
         dyellow(f'self.connections: {self.connections}')
         dyellow(f'self.registered_client: {self.registered_client}')
@@ -101,7 +104,7 @@ class Web_Socket_Server:
             reg_conn = self.registered_client.get(client_id)
             if reg_conn and reg_conn==connection:
                 dgreen(f'Web_Socket_Server.send_client发送成功(client_id={client_id!r}, data={data}, connection={connection}).')
-                await connection.send(data)
+                await connection.send(json.dumps(data, ensure_ascii=False))
                 return
         # for connection, connection_info in self.connections.items():
         #     for reg_client_id, reg_connection in self.registered_client.items():
