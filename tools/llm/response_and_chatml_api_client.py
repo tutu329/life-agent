@@ -627,7 +627,7 @@ class Response_and_Chatml_LLM_Client:
                     # client_id=self.extra_agent_info.agent_id,
                     data=data
                 )
-                print(f'_callback_output(): data={data}')
+                # print(f'_callback_output(): data={data}')
             except Exception as e:
                 err(e)
                 dred(f'【Response_and_Chatml_LLM_Client._callback_output()】报错：{e!r}')
