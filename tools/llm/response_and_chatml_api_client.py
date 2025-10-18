@@ -483,6 +483,7 @@ class Response_and_Chatml_LLM_Client:
             # ---------------------/注册tool func-------------------------
             # dyellow('==================================2222222====================================')
 
+            self.on_query_finished()
             return responses_result
         else:
             # stream输出
@@ -494,6 +495,8 @@ class Response_and_Chatml_LLM_Client:
 
             self.history_input_list.append(self.response_output) # 类似无stream时的self.history_input_list += res.output
             dred(f'self.history_input_list需要append: {self.response_output}')
+
+            self.on_query_finished()
             return response_result
 
     # 清除历史
@@ -605,6 +608,7 @@ class Response_and_Chatml_LLM_Client:
             # 调用tool
             # response_result = self.call_tool(response_result)
 
+            self.on_query_finished()
             return response_result
         else:
             # stream输出
@@ -616,6 +620,7 @@ class Response_and_Chatml_LLM_Client:
 
             self.history_input_list += self.response_output # 类似无stream时的self.history_input_list += res.output
 
+            self.on_query_finished()
             return response_result
 
     def on_reasoning(self, chunk):
@@ -625,6 +630,9 @@ class Response_and_Chatml_LLM_Client:
     def on_content(self, chunk):
         dgreen(chunk, end='', flush=True)
         self._callback_output(type='content', chunk=chunk, stream=True)
+
+    def on_query_finished(self):
+        self._callback_output(type='llm_finished', chunk='', stream=False)
 
     def _callback_output(self, type, chunk, stream=False):
         # print('----------------_callback_output--------------------')
