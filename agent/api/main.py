@@ -1,20 +1,13 @@
-# app/main.py
 import uvicorn
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-# 你现有模块
-from agent.core.agent_manager import Agent_Manager   # 假设将你贴的代码保存为 agent_manager.py
-from web_socket_server import Web_Socket_Server_Manager  # 如有
-# from agent.tools.tool_manager import server_register_all_local_tool_on_start  # 如你需要
+from agent.core.agent_manager import Agent_Manager
+from agent.core.llm_manager import LLM_Manager
+from web_socket_server import Web_Socket_Server_Manager
 
 import config
-from config import dred,dgreen,dcyan,dyellow,dblue,dblack,dwhite
-from typing import Any, Dict, List, Set, Literal, Optional, Union, Tuple, TYPE_CHECKING, Callable
 from pprint import pprint
-
-from agent.core.mcp.protocol import MCP_Server_Request
-
 
 DEBUG = True
 # DEBUG = config.Global.app_debug
@@ -32,7 +25,12 @@ async def lifespan(app: FastAPI):
     # --------- startup ----------
     # 1) 初始化本地工具（只做一次）
     try:
+        # 初始化LLM_Manager（启动web_socket_server 5116）
+        LLM_Manager.init()
+
+        # 初始化Agent_Manager（启动web_socket_server 5115）
         local_tool_quests, local_tool_funcs = Agent_Manager.init()
+
         dprint("--------------所有local tools的信息------------------")
         for tool_param_dict in local_tool_quests:
             dprint(tool_param_dict)
@@ -93,7 +91,9 @@ app = FastAPI(lifespan=lifespan)
 
 # 路由
 from agent.api.routers import agents
+from agent.api.routers import llm
 app.include_router(agents.router, prefix="/agents", tags=["agents"])
+app.include_router(llm.router, prefix="/llm", tags=["llm"])
 
 # CORS/鉴权请视情况在这里加
 

@@ -50,6 +50,7 @@ class LLM_Manager:
     # 2、启动llm_id下的thread，并run
     @classmethod
     def run_llm(cls, llm_id:str, query, response_request:Response_Request):
+        print('-------------llm_thread.started-------------')
         llm_data = cls.llms_dict.get(llm_id)
         if llm_data:
             llm = llm_data.llm
@@ -66,6 +67,7 @@ class LLM_Manager:
                 args=(query,),
             )
             llm_data.llm_thread.start()
+            print('-------------llm_thread.started-------------')
 
     # 3、等待llm的某次query(串行，暂不考虑并行和query_id)
     @classmethod
@@ -74,6 +76,7 @@ class LLM_Manager:
         if llm_data:
             thread = llm_data.llm_thread
             if thread:
+                print('-------------wait_llm-------------')
                 thread.join()
 
     # 4、取消llm的run
