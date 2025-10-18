@@ -257,7 +257,13 @@ class Toolcall_Agent:
                             response_result.tool_call_result = ''
 
                     type = 'tool_call_result'
-                    res = response_result.tool_call_result
+                    if isinstance(func_rtn, Response_Result):
+                        # 结果为{'result_summary': '...', 'result_resource_id':'...'}
+                        res = agent_tool_result.result_summary
+                    else:
+                        # 结果为'...'
+                        res = response_result.tool_call_result
+
                     self._callback_output(type=type, result=res, function_tool_call=None, stream=False)
 
                     # tool_call_result_item = {
