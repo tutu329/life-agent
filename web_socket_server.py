@@ -113,7 +113,7 @@ class Web_Socket_Server:
         #             await connection.send(data)
         #             return
 
-        dred(f'Web_Socket_Server.send_client发送失败(client_id={client_id!r}, data={data}).')
+        dred(f'Web_Socket_Server.send_client发送失败, client_id未注册(client_id={client_id!r}, data={data}).')
 
     async def _on_client_register(self, client_id, connection:ServerConnection):
         remote_address = connection.remote_address

@@ -70,16 +70,17 @@ def main():
     #     stream=True,
     # )
     # ------------------------------ 1.1、create 底层agent1 as tool ------------------------------
+    agent_name = 'agent level 2-Folder_Tool_Level_2'
     agent_config = Agent_Config(
         llm_config=llm_c,
-        agent_name='agent level 2-Folder_Tool_Level_2',
+        agent_name=agent_name,
         allowed_local_tool_names=['Folder_Tool'],
         as_tool_name='Folder_Tool_Level_2',
         as_tool_description='本工具用来在文件夹中搜索指定文件',
     )
     r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60).json()
     agent_id = r["agent_id"]
-    print(f'sub-agent as tool(agent_id: {agent_id!r}) created.')
+    print(f'sub-agent as tool(agent_name: {agent_name}, agent_id: {agent_id!r}) created.')
 
     # ------------------------------ 1.2、create 底层agent2 as tool ------------------------------
     mcp_requests = [
@@ -88,9 +89,10 @@ def main():
         MCP_Server_Request(url="http://localhost:8789/sse", allowed_tool_names=['tavily-search']).model_dump(exclude_none=True),
         MCP_Server_Request(url="http://localhost:8788/sse").model_dump(exclude_none=True),
     ]
+    agent_name = 'agent level 2-List_Table_Tool_Level_2'
     agent_config = Agent_Config(
         llm_config=llm_c,
-        agent_name='agent level 2-List_Table_Tool_Level_2',
+        agent_name=agent_name,
         allowed_local_tool_names=['List_Table_Tool'],
         mcp_requests=mcp_requests,
         as_tool_name='List_Table_Tool_Level_2',
@@ -98,7 +100,7 @@ def main():
     )
     r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60).json()
     agent_id = r["agent_id"]
-    print(f'sub-agent as tool(agent_id: {agent_id!r}) created.')
+    print(f'sub-agent as tool(agent_name: {agent_name}, agent_id: {agent_id!r}) created.')
 
     # ------------------------------ 1.3、create 上层agent(可以叠加若干层) ------------------------------
     agent_config = Agent_Config(

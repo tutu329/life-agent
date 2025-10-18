@@ -179,6 +179,31 @@ class Toolcall_Agent:
 
         self.ws_server_ref = ws_server_ref
 
+    def _callback_output(self, type, result, function_tool_call=None, stream=False):
+        # 作为agent，发送回调信息
+        try:
+            data = {
+                'agent_id':self.agent_id,
+                'agent_level':self.agent_level,
+                'type':type,
+                'stream':stream,
+                'result':result,
+                'function_tool_call':function_tool_call,
+            }
+            # 1、send到ws_monitor_client
+            self.ws_server_ref.sync_send_client(
+                client_id=config.Agent.AGENT_MONITOR_WS_CLIENT_ID,
+                data=data
+            )
+            # 2、send到agent_id对应的client
+            self.ws_server_ref.sync_send_client(
+                client_id=self.agent_id,
+                data=data
+            )
+        except Exception as e:
+            err(e)
+            dred(f'【Toolcall_Agent._callback_output()】报错：{e!r}')
+
     def _call_tool(self,
                    response_result:Response_Result, # response_api的调用结果
                    tool_call_paras:Tool_Call_Paras, # agent调度的上下文
@@ -220,7 +245,7 @@ class Toolcall_Agent:
                         agent_tool_result = Agent_Tool_Result(result_summary=func_rtn.agent_as_tool_call_result)     # 由于是agent as tool，在agent.run()中，func_rtn.agent_as_tool_call_result已设置为agent.agent_status.final_answer
                         response_result.tool_call_result = json.dumps(agent_tool_result.model_dump(), ensure_ascii=False)
                     else:
-                        dyellow(f'【Toolcall_Agent._call_tool()】warning: 工具调用结果既不是Agent_Tool_Result也不是Response_Result.')
+                        dyellow(f'【Toolcall_Agent._call_tool()】warning: 工具调用结果既不是Agent_Tool_Result也不是Response_Result. 可能为MCP调用.')
                         # print('----------Toolcall_Agent._call_tool().func_rtn------------')
                         # print(func_rtn)
                         # print('---------/Toolcall_Agent._call_tool().func_rtn------------')
@@ -230,6 +255,10 @@ class Toolcall_Agent:
                         except Exception as e:
                             dyellow(f'【Toolcall_Agent._call_tool()】warning: json.dumps(func_rtn, ensure_ascii=False), {e!r}.')
                             response_result.tool_call_result = ''
+
+                    type = 'tool_call_result'
+                    res = response_result.tool_call_result
+                    self._callback_output(type=type, result=res, function_tool_call=None, stream=False)
 
                     # tool_call_result_item = {
                     #     "type": "function_call_output",
@@ -378,6 +407,15 @@ class Toolcall_Agent:
                 else:
                     responses_result = self.response_llm_client.responses_create(query=instruction, request=response_request, new_run=new_run, extra_agent_info=agent_info)
                 # --------------------------------------------/调用llm-----------------------------------------------------------
+
+                type = None
+                if responses_result.function_tool_call and responses_result.function_tool_call['name'] and responses_result.function_tool_call['arguments']:
+                    type = 'tool_call'
+                else:
+                    type = 'reasoning' if responses_result.reasoning else 'content'
+                data = responses_result.output
+                function_tool_call = responses_result.function_tool_call
+                self._callback_output(type, result=data, function_tool_call=function_tool_call, stream=False)
 
                 # dpprint(responses_result.model_dump())
                 dblue(f'-------------------------responses_result(use_chatml: {use_chatml})-----------------------------')
