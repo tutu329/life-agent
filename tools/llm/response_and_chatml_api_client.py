@@ -631,6 +631,7 @@ class Response_and_Chatml_LLM_Client:
         print(f'self.extra_agent_info: {self.extra_agent_info}')
         print(f'self.ws_server: {self.ws_server}')
         print(f'self.llm_id: {self.llm_id}')
+        print(f'chunk: {chunk}')
         print('---------------/_callback_output--------------------')
         if self.extra_agent_info:
             # 作为agent，发送回调信息
@@ -664,12 +665,7 @@ class Response_and_Chatml_LLM_Client:
                     'stream':stream,
                     'chunk':chunk,
                 }
-                # 1、send到ws_monitor_client
-                self.ws_server.sync_send_client(
-                    client_id=self.llm_id,
-                    data=data
-                )
-                # 2、send到agent_id对应的client
+                # 1、send到agent_id对应的client
                 self.ws_server.sync_send_client(
                     client_id=self.llm_id,
                     data=data
