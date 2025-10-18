@@ -5,7 +5,14 @@ from agent.core.agent_config import Agent_Config
 from agent.core.protocol import Agent_Request_Result
 from agent.core.agent_manager import Agent_Manager
 
+import config
+
 router = APIRouter()
+
+@router.post("/get_web_socket_server_port")
+def get_web_socket_server_port():
+    res = config.Port.global_web_socket_server
+    return res
 
 @router.post("/get_all_mcp_tools")
 def get_all_mcp_tools(mcp_url:str):

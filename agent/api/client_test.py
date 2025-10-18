@@ -6,19 +6,19 @@ import llm_protocol
 BASE_URL = "http://powerai.cc:8005"
 
 def main():
+    # ---------获取web_socket_server的port---------
+    port = requests.post(f"{BASE_URL}/agents/get_web_socket_server_port", timeout=60).json()
+    print(f'【web_socket_server的port】{port!r}')
+
     # ------------------------------ 0.1、get_all_local_tools() -> List[tool_info] ------------------------------
-    r = requests.post(f"{BASE_URL}/agents/get_all_local_tools", timeout=60)
-    r.raise_for_status()
-    tools_info = r.json()
+    tools_info = requests.post(f"{BASE_URL}/agents/get_all_local_tools", timeout=60).json()
     print('------------------get_all_local_tools-----------------------')
     for tool_info in tools_info:
         print(tool_info)
     print('-----------------/get_all_local_tools-----------------------')
 
     # ------------------------------ 0.2、get_all_mcp_tools() -> List[tool_name] ------------------------------
-    r = requests.post(f"{BASE_URL}/agents/get_all_mcp_tools", params={'mcp_url':'https://powerai.cc:8011/mcp/sqlite/sse'}, timeout=60)
-    r.raise_for_status()
-    tool_names = r.json()
+    tool_names = requests.post(f"{BASE_URL}/agents/get_all_mcp_tools", params={'mcp_url':'https://powerai.cc:8011/mcp/sqlite/sse'}, timeout=60).json()
     print('------------------get_all_mcp_tools-----------------------')
     print(tool_names)
     print('-----------------/get_all_mcp_tools-----------------------')
@@ -44,9 +44,8 @@ def main():
         as_tool_name='Folder_Tool_Level_2',
         as_tool_description='本工具用来在文件夹中搜索指定文件',
     )
-    r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60)
-    r.raise_for_status()
-    agent_id = r.json()["agent_id"]
+    r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60).json()
+    agent_id = r["agent_id"]
     print(f'sub-agent as tool(agent_id: {agent_id!r}) created.')
 
     # ------------------------------ 1.2、create 底层agent2 as tool ------------------------------
@@ -64,9 +63,8 @@ def main():
         as_tool_name='List_Table_Tool_Level_2',
         as_tool_description='本工具用来查询数据库中有哪些表格',
     )
-    r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60)
-    r.raise_for_status()
-    agent_id = r.json()["agent_id"]
+    r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60).json()
+    agent_id = r["agent_id"]
     print(f'sub-agent as tool(agent_id: {agent_id!r}) created.')
 
     # ------------------------------ 1.3、create 上层agent(可以叠加若干层) ------------------------------
@@ -75,9 +73,8 @@ def main():
         agent_name='agent level 1',
         allowed_local_tool_names=['Folder_Tool_Level_2', 'List_Table_Tool_Level_2'],   # 关键参数，通过'Folder_Tool_Level_2'这个字符串，指定1.1注册的agent作为tool
     )
-    r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60)
-    r.raise_for_status()
-    agent_id = r.json()["agent_id"]
+    r = requests.post(f"{BASE_URL}/agents/create_agent", json=agent_config.model_dump(exclude_none=True), timeout=60).json()
+    agent_id = r["agent_id"]
     print(f'upper-agent(agent_id: {agent_id!r}) created.')
 
     # ------------------------------ 2、run_agent(agent_id) 运行上层agent------------------------------
