@@ -710,7 +710,7 @@ class Response_and_Chatml_LLM_Client:
         for item in response:
             if self.status.canceling:
                 self.status.canceled = True
-                return
+                break
 
             # print(item)
             if hasattr(item, 'choices'):

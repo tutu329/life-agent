@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Set, Literal, Optional, Union, Tuple, TYPE_CHECKING, Callable
 from pprint import pprint
 from threading import Thread
+import time
 
 import llm_protocol
 from agent.core.protocol import LLM_Data
@@ -90,8 +91,14 @@ def main():
         # reasoning={"effort": llm_config.reasoning_effort},
         stream=True,
     )
-    query='你是谁'
+    query='我叫土土'
     LLM_Manager.run_llm(llm_id=llm_id, query=query, response_request=response_request)
+    # LLM_Manager.cancel_llm_run(llm_id=llm_id)
+
+    time.sleep(3)
+    query='我刚才告诉你我叫什么？'
+    LLM_Manager.run_llm(llm_id=llm_id, query=query, response_request=response_request)
+
 
 if __name__ == "__main__":
     main()
