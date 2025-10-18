@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.post("/get_web_socket_server_port")
 def get_web_socket_server_port():
-    res = config.Port.global_web_socket_server
+    res = config.Port.global_agent_web_socket_server
     return res
 
 @router.post("/get_all_mcp_tools")

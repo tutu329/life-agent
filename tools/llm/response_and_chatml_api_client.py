@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from openai import OpenAI, APIError
 from openai.types.responses import Response, ResponseReasoningItem, ResponseFunctionToolCall, ResponseOutputMessage, ResponseCompletedEvent
 from openai.types.responses import ToolParam, FunctionToolParam
@@ -14,6 +16,7 @@ from llm_protocol import LLM_Config
 import config
 from config import dred, dgreen, dblue, dyellow, dcyan
 from console import err
+from web_socket_server import Web_Socket_Server_Manager
 
 from copy import deepcopy
 
@@ -65,8 +68,11 @@ class Response_Result(BaseModel):
     agent_as_tool_call_result   :str = ''
 
 class Response_and_Chatml_LLM_Client:
+    web_socket_server = None    # 所有llm调用共享的ws，通过self.llm_id区分通道
+
     def __init__(self, llm_config:LLM_Config):
     # def __init__(self, client: OpenAI):
+        self.llm_id = str(uuid4())
         self.llm_config = llm_config
         self.openai = None
 
@@ -93,6 +99,9 @@ class Response_and_Chatml_LLM_Client:
         # 所属agent的额外信息
         self.extra_agent_info = None    # 如agent_id、agent_level、web_socket_server，用于stream回调等
 
+        # 自己所属的web_socket_server
+        self.ws_server = None
+
     def set_cancel(self):
         # print('-----------llm canceling...-------------')
         self.status.canceling = True
@@ -103,6 +112,9 @@ class Response_and_Chatml_LLM_Client:
 
     # 将Response_LLM_Client当作agent用(用tool call)
     def init(self):
+        if Response_and_Chatml_LLM_Client.web_socket_server is None:
+            Response_and_Chatml_LLM_Client.web_socket_server = Web_Socket_Server_Manager.start_server(config.Port.global_llm_socket_server, server_at="response_and_chatml_api_client.py")
+
         if self.llm_config.vpn_on:
             import httpx
             http_client = httpx.Client(proxy=config.g_vpn_proxy)
@@ -607,18 +619,21 @@ class Response_and_Chatml_LLM_Client:
 
     def on_reasoning(self, chunk):
         dred(chunk, end='', flush=True)
-        self._callback_output(chunk)
+        self._callback_output(type='reasoning', chunk=chunk, stream=True)
 
     def on_content(self, chunk):
         dgreen(chunk, end='', flush=True)
-        self._callback_output(chunk)
+        self._callback_output(type='content', chunk=chunk, stream=True)
 
-    def _callback_output(self, chunk):
+    def _callback_output(self, type, chunk, stream=False):
         if self.extra_agent_info:
+            # 作为agent，发送回调信息
             try:
                 data = {
                     'agent_id':self.extra_agent_info.agent_id,
                     'agent_level':self.extra_agent_info.agent_level,
+                    'type':type,
+                    'stream':stream,
                     'chunk':chunk,
                 }
                 # 1、send到ws_monitor_client
@@ -629,6 +644,28 @@ class Response_and_Chatml_LLM_Client:
                 # 2、send到agent_id对应的client
                 self.extra_agent_info.ws_server.sync_send_client(
                     client_id=self.extra_agent_info.agent_id,
+                    data=data
+                )
+            except Exception as e:
+                err(e)
+                dred(f'【Response_and_Chatml_LLM_Client._callback_output()】报错：{e!r}')
+        elif self.ws_server:
+            # 作为普通llm，发送回调信息
+            try:
+                data = {
+                    'llm_id':self.llm_id,
+                    'type':type,
+                    'stream':stream,
+                    'chunk':chunk,
+                }
+                # 1、send到ws_monitor_client
+                self.ws_server.sync_send_client(
+                    client_id=self.llm_id,
+                    data=data
+                )
+                # 2、send到agent_id对应的client
+                self.ws_server.sync_send_client(
+                    client_id=self.llm_id,
                     data=data
                 )
             except Exception as e:

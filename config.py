@@ -211,7 +211,8 @@ class Port:
 
     # web_socket port
     office_test_web_socket_server       :int = 5113     # 专用于office测试的ws port
-    global_web_socket_server            :int = 5115     # 正式的全局ws port
+    global_agent_web_socket_server      :int = 5115     # 正式的全局agent的ws port
+    global_llm_socket_server            :int = 5116     # 正式的全局llm的ws port
 
     # 顶层应用
     flowise:int         = 7860

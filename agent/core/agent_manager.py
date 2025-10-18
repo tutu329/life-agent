@@ -52,7 +52,7 @@ class Agent_Manager:
         cls.local_all_tool_requests, cls.local_all_tool_funcs = Agent_Manager.parse_all_local_tools_on_server_start()
 
         # 初始化ws server
-        cls.web_socket_server = Web_Socket_Server_Manager.start_server(config.Port.global_web_socket_server, server_at="agent_manager.py")
+        cls.web_socket_server = Web_Socket_Server_Manager.start_server(config.Port.global_agent_web_socket_server, server_at="agent_manager.py")
 
         return cls.local_all_tool_requests, cls.local_all_tool_funcs
 
