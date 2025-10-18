@@ -621,13 +621,16 @@ class Response_and_Chatml_LLM_Client:
                     'agent_level':self.extra_agent_info.agent_level,
                     'chunk':chunk,
                 }
-                # send到ws_monitor_client
+                # 1、send到ws_monitor_client
                 self.extra_agent_info.ws_server.sync_send_client(
                     client_id=config.Agent.AGENT_MONITOR_WS_CLIENT_ID,
-                    # client_id=self.extra_agent_info.agent_id,
                     data=data
                 )
-                # print(f'_callback_output(): data={data}')
+                # 2、send到agent_id对应的client
+                self.extra_agent_info.ws_server.sync_send_client(
+                    client_id=self.extra_agent_info.agent_id,
+                    data=data
+                )
             except Exception as e:
                 err(e)
                 dred(f'【Response_and_Chatml_LLM_Client._callback_output()】报错：{e!r}')
