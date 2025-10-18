@@ -1,4 +1,3 @@
-# app/routers/agents.py
 from fastapi import APIRouter, HTTPException
 
 from agent.core.agent_config import Agent_Config
