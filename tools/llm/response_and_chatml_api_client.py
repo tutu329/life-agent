@@ -633,7 +633,6 @@ class Response_and_Chatml_LLM_Client:
         # print(f'self.llm_id: {self.llm_id}')
         # print(f'chunk: {chunk}')
         # print('---------------/_callback_output--------------------')
-
         if self.extra_agent_info:
             # 作为agent，发送回调信息
             try:
