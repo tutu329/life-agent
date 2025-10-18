@@ -627,12 +627,12 @@ class Response_and_Chatml_LLM_Client:
         self._callback_output(type='content', chunk=chunk, stream=True)
 
     def _callback_output(self, type, chunk, stream=False):
-        print('----------------_callback_output--------------------')
-        print(f'self.extra_agent_info: {self.extra_agent_info}')
-        print(f'self.ws_server: {self.ws_server}')
-        print(f'self.llm_id: {self.llm_id}')
-        print(f'chunk: {chunk}')
-        print('---------------/_callback_output--------------------')
+        # print('----------------_callback_output--------------------')
+        # print(f'self.extra_agent_info: {self.extra_agent_info}')
+        # print(f'self.ws_server: {self.ws_server}')
+        # print(f'self.llm_id: {self.llm_id}')
+        # print(f'chunk: {chunk}')
+        # print('---------------/_callback_output--------------------')
         if self.extra_agent_info:
             # 作为agent，发送回调信息
             try:
