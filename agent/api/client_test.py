@@ -9,6 +9,8 @@ BASE_URL = "http://powerai.cc:8005"
 def register_web_socket_and_run_forever(agent_id, port, url="wss://powerai.cc"):
     import json
     import ssl
+
+    # pip install websocket-client
     import websocket  # 注意：库名叫 websocket-client，导入名是 websocket
 
     URL = url + f':{port}'  # 公共回声服务，便于本地测试
