@@ -50,35 +50,47 @@ class LLM_Manager:
     # 2、启动llm_id下的thread，并run
     @classmethod
     def run_llm(cls, llm_id:str, query, response_request:Response_Request):
-        llm_data = cls.llms_dict[llm_id]
-        llm = llm_data.llm
+        llm_data = cls.llms_dict.get(llm_id)
+        if llm_data:
+            llm = llm_data.llm
 
-        def _worker(query):
-            if llm.llm_config.chatml:
-                llm.chatml_create(query=query, request=response_request, new_run=False)     # new_run仅针对agent的query run，这里不需要
-            else:
-                llm.responses_create(query=query, request=response_request, new_run=False)
+            def _worker(query):
+                if llm.llm_config.chatml:
+                    llm.chatml_create(query=query, request=response_request, new_run=False)     # new_run仅针对agent的query run，这里不需要
+                else:
+                    llm.responses_create(query=query, request=response_request, new_run=False)
 
-        # 启动agent的thread
-        llm_data.llm_thread = Thread(
-            target=_worker,
-            args=(query,),
-        )
-        llm_data.llm_thread.start()
+            # 启动agent的thread
+            llm_data.llm_thread = Thread(
+                target=_worker,
+                args=(query,),
+            )
+            llm_data.llm_thread.start()
 
-    # 3、取消llm的run
+    # 3、等待llm的某次query(串行，暂不考虑并行和query_id)
+    @classmethod
+    def wait_llm(cls, llm_id):
+        llm_data = cls.llms_dict.get(llm_id)
+        if llm_data:
+            thread = llm_data.llm_thread
+            if thread:
+                thread.join()
+
+    # 4、取消llm的run
     @classmethod
     def cancel_llm_run(cls, llm_id):
-        llm_data = cls.llms_dict[llm_id]
-        llm = llm_data.llm
-        llm.set_cancel()
+        llm_data = cls.llms_dict.get(llm_id)
+        if llm_data:
+            llm = llm_data.llm
+            llm.set_cancel()
 
-    # 4、清除llm的历史
+    # 5、清除llm的历史
     @classmethod
     def clear_llm_history(cls, llm_id):
-        llm_data = cls.llms_dict[llm_id]
-        llm = llm_data.llm
-        llm.clear_history()
+        llm_data = cls.llms_dict.get(llm_id)
+        if llm_data:
+            llm = llm_data.llm
+            llm.clear_history()
 
 def main():
     llm_config = llm_protocol.g_online_qwen3_next_80b_instruct
@@ -93,12 +105,13 @@ def main():
     )
     query='我叫土土'
     LLM_Manager.run_llm(llm_id=llm_id, query=query, response_request=response_request)
+    LLM_Manager.wait_llm(llm_id=llm_id)
+    # time.sleep(1)
     # LLM_Manager.cancel_llm_run(llm_id=llm_id)
 
-    time.sleep(3)
+    # LLM_Manager.clear_llm_history(llm_id=llm_id)
     query='我刚才告诉你我叫什么？'
     LLM_Manager.run_llm(llm_id=llm_id, query=query, response_request=response_request)
-
 
 if __name__ == "__main__":
     main()
