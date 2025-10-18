@@ -16,7 +16,7 @@ from llm_protocol import LLM_Config
 import config
 from config import dred, dgreen, dblue, dyellow, dcyan
 from console import err
-from web_socket_server import Web_Socket_Server_Manager
+# from web_socket_server import Web_Socket_Server_Manager
 
 from copy import deepcopy
 
@@ -68,7 +68,7 @@ class Response_Result(BaseModel):
     agent_as_tool_call_result   :str = ''
 
 class Response_and_Chatml_LLM_Client:
-    web_socket_server = None    # 所有llm调用共享的ws，通过self.llm_id区分通道
+    # web_socket_server = None    # 所有llm调用共享的ws，通过self.llm_id区分通道
 
     def __init__(self, llm_config:LLM_Config):
     # def __init__(self, client: OpenAI):
@@ -112,8 +112,8 @@ class Response_and_Chatml_LLM_Client:
 
     # 将Response_LLM_Client当作agent用(用tool call)
     def init(self):
-        if Response_and_Chatml_LLM_Client.web_socket_server is None:
-            Response_and_Chatml_LLM_Client.web_socket_server = Web_Socket_Server_Manager.start_server(config.Port.global_llm_socket_server, server_at="response_and_chatml_api_client.py")
+        # if Response_and_Chatml_LLM_Client.web_socket_server is None:
+        #     Response_and_Chatml_LLM_Client.web_socket_server = Web_Socket_Server_Manager.start_server(config.Port.global_llm_socket_server, server_at="response_and_chatml_api_client.py")
 
         if self.llm_config.vpn_on:
             import httpx

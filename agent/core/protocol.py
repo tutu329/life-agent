@@ -42,6 +42,12 @@ class Agent_Status(BaseModel):
 
     final_answer        :str = ''       # agent的query任务的最终answer
 
+class LLM_Data(BaseModel):
+    llm_id:       str
+    llm:          Any = None      # llm对象
+    llm_thread:   Optional[Thread] = Field(default=None, exclude=True, repr=False)  # 该变量不出现在model_dump()和str中
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 class Agent_Data(BaseModel):
     agent_id:       str
     agent:          Any = None      # agent对象
