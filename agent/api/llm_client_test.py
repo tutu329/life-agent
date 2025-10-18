@@ -81,6 +81,14 @@ def main():
     requests.post(f"{BASE_URL}/llm/run_llm", json=json, timeout=60).json()
     requests.post(f"{BASE_URL}/llm/wait_llm", params={'llm_id':llm_id}, timeout=60).json()
 
+    query='我刚才告诉你我叫什么来着？'
+    json = {
+        'llm_id': llm_id,
+        'query': query,
+        'response_request': response_request,
+    }
+    requests.post(f"{BASE_URL}/llm/run_llm", json=json, timeout=60).json()
+
     if SHOW_WEBSOCKET_CALLBACK_MESSAGES:
         register_web_socket_and_run_forever(llm_id, port)
 

@@ -36,7 +36,8 @@ class LLM_Manager:
     @classmethod
     def create_llm(cls, llm_config:LLM_Config)->str:
         llm = Response_and_Chatml_LLM_Client(llm_config=llm_config)
-        llm.init()
+        # llm.init()
+        llm.init(ws_server_ref=cls.web_socket_server)
         llm_id = llm.llm_id
 
         # 注册agent

@@ -111,7 +111,8 @@ class Response_and_Chatml_LLM_Client:
         self.status.canceling = False
 
     # 将Response_LLM_Client当作agent用(用tool call)
-    def init(self):
+    def init(self, ws_server_ref=None):
+        self.ws_server = ws_server_ref
         # if Response_and_Chatml_LLM_Client.web_socket_server is None:
         #     Response_and_Chatml_LLM_Client.web_socket_server = Web_Socket_Server_Manager.start_server(config.Port.global_llm_socket_server, server_at="response_and_chatml_api_client.py")
 
@@ -626,6 +627,11 @@ class Response_and_Chatml_LLM_Client:
         self._callback_output(type='content', chunk=chunk, stream=True)
 
     def _callback_output(self, type, chunk, stream=False):
+        print('----------------_callback_output--------------------')
+        print(f'self.extra_agent_info: {self.extra_agent_info}')
+        print(f'self.ws_server: {self.ws_server}')
+        print(f'self.llm_id: {self.llm_id}')
+        print('---------------/_callback_output--------------------')
         if self.extra_agent_info:
             # 作为agent，发送回调信息
             try:
