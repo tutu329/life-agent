@@ -1,8 +1,10 @@
 from typing import Any, Dict, List, Set, Literal, Optional, Union, Tuple, TYPE_CHECKING, Callable
 from pprint import pprint
+from threading import Thread
 
+import llm_protocol
 from agent.core.protocol import LLM_Data
-from tools.llm.response_and_chatml_api_client import Response_and_Chatml_LLM_Client
+from tools.llm.response_and_chatml_api_client import Response_and_Chatml_LLM_Client, Response_Request
 from llm_protocol import LLM_Config
 import config
 from web_socket_server import Web_Socket_Server_Manager, Web_Socket_Server
@@ -32,7 +34,7 @@ class LLM_Manager:
     # 1、创建llm，返回llm_id
     @classmethod
     def create_llm(cls, llm_config:LLM_Config)->str:
-        llm = Response_and_Chatml_LLM_Client()
+        llm = Response_and_Chatml_LLM_Client(llm_config=llm_config)
         llm.init()
         llm_id = llm.llm_id
 
@@ -46,9 +48,50 @@ class LLM_Manager:
 
     # 2、启动llm_id下的thread，并run
     @classmethod
-    def run_llm(cls, llm_id:str, query):
+    def run_llm(cls, llm_id:str, query, response_request:Response_Request):
         llm_data = cls.llms_dict[llm_id]
         llm = llm_data.llm
 
-        llm.
+        def _worker(query):
+            if llm.llm_config.chatml:
+                llm.chatml_create(query=query, request=response_request, new_run=False)     # new_run仅针对agent的query run，这里不需要
+            else:
+                llm.responses_create(query=query, request=response_request, new_run=False)
 
+        # 启动agent的thread
+        llm_data.llm_thread = Thread(
+            target=_worker,
+            args=(query,),
+        )
+        llm_data.llm_thread.start()
+
+    # 3、取消llm的run
+    @classmethod
+    def cancel_llm_run(cls, llm_id):
+        llm_data = cls.llms_dict[llm_id]
+        llm = llm_data.llm
+        llm.set_cancel()
+
+    # 4、清除llm的历史
+    @classmethod
+    def clear_llm_history(cls, llm_id):
+        llm_data = cls.llms_dict[llm_id]
+        llm = llm_data.llm
+        llm.clear_history()
+
+def main():
+    llm_config = llm_protocol.g_online_qwen3_next_80b_instruct
+    llm_id = LLM_Manager.create_llm(llm_config=llm_config)
+    response_request = Response_Request(
+        model=llm_config.llm_model_id,
+        temperature=llm_config.temperature,
+        top_p=llm_config.top_p,
+        max_output_tokens=llm_config.max_new_tokens,
+        # reasoning={"effort": llm_config.reasoning_effort},
+        stream=True,
+    )
+    query='你是谁'
+    LLM_Manager.run_llm(llm_id=llm_id, query=query, response_request=response_request)
+
+if __name__ == "__main__":
+    main()
